@@ -10,8 +10,12 @@ junit = "5.11.4"
 kotest = "5.9.1"
 mockk = "1.13.13"
 kover = "0.9.1"
+# Matches Android Studio Ladybug (2024.2.1) / AGP ~8.6's ddmlib generation, consistent with the
+# docs/adr/0003 IntelliJ Platform 2024.2 (build 242) baseline.
+ddmlib = "31.7.3"
 
 [libraries]
+ddmlib = { module = "com.android.tools.ddms:ddmlib", version.ref = "ddmlib" }
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutines" }
 kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "datetime" }

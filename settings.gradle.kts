@@ -11,6 +11,9 @@ pluginManagement {
 dependencyResolutionManagement {
     repositories {
         mavenCentral()
+        // ddmlib (com.android.tools.ddms:ddmlib), used by :adapters-adb's ddmlib transport
+        // (docs/adr/0005), is published to Google's Maven repository, not Maven Central.
+        google()
     }
 }
 

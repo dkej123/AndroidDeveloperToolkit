@@ -14,6 +14,11 @@ dependencies {
     implementation(project(":adapters-jvm"))
     implementation(libs.kotlinx.coroutines.core)
 
+    // ddmlib (docs/adr/0005's preferred transport): a plain JVM library published by Google, not
+    // an IntelliJ Platform API — safe to depend on directly here without pulling in
+    // org.jetbrains.android or any com.intellij type (enforced by architectureCheck).
+    implementation(libs.ddmlib)
+
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.kotest.assertions.core)
     testImplementation(libs.kotlinx.coroutines.test)

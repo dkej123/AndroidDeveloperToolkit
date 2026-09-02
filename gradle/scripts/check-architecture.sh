@@ -61,7 +61,7 @@ reject_dependency() {
 # --- ADR 0002: :domain and :application must stay KMP-ready and free of IntelliJ/Swing/JVM-only
 #     process, filesystem, and networking types in their own source (not their test fixtures,
 #     which are allowed to use JVM-only test infra per tdd-implementation).
-kmp_forbidden='^import (com\.intellij|javax\.swing|java\.io\.(File|FileInputStream|FileOutputStream)|java\.nio\.file|java\.net\.(Socket|URL|NetworkInterface)|java\.time)\b|\bProcessBuilder\b'
+kmp_forbidden='^import (com\.intellij|com\.android\.ddmlib|javax\.swing|java\.io\.(File|FileInputStream|FileOutputStream)|java\.nio\.file|java\.net\.(Socket|URL|NetworkInterface)|java\.time)\b|\bProcessBuilder\b'
 
 reject_pattern "$kmp_forbidden" domain/src/main \
     ":domain must stay KMP-ready (no IntelliJ/Swing/ProcessBuilder/filesystem/JVM-networking/java.time types)"

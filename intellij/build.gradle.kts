@@ -15,6 +15,9 @@ version = providers.gradleProperty("pluginVersion").get()
 
 repositories {
     mavenCentral()
+    // ddmlib (com.android.tools.ddms:ddmlib), pulled in transitively via :adapters-adb (docs/adr/0005),
+    // is published to Google's Maven repository, not Maven Central.
+    google()
     intellijPlatform {
         defaultRepositories()
     }
