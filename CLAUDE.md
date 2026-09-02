@@ -9,9 +9,12 @@ These rules apply to every session in this repository.
 - Use TDD: write a failing test before production code, for every behavior change.
 - Minimum automated coverage: 80%. Do not write meaningless/coverage-only tests.
 - Inspect the relevant existing code before making assumptions about it.
-- Never run `./gradlew :intellij:verifyPlugin` (or any `verifyPlugin` task) — it is extremely slow
-  (downloads/unpacks a full IDE) and is not required to validate a task. Use `./gradlew build`,
-  `./gradlew test`, and the architecture/coverage gates instead.
+- Agents must not run `./gradlew :intellij:verifyPlugin` (or any `verifyPlugin`/pluginVerifier task)
+  locally — it is extremely slow (downloads/unpacks full IDE distributions) and has repeatedly hung
+  agent sessions. For local task validation, use `./gradlew build`, `./gradlew test`, and the
+  architecture/coverage gates instead. `verifyPlugin` still belongs in CI (GitHub Actions), scoped to
+  a single IDE build target (not the full `recommended()` matrix) so it stays fast there — CI running
+  it is expected and required; only ad hoc/local agent invocation is banned.
 
 ## Architecture
 - Preserve Clean Architecture boundaries between layers.

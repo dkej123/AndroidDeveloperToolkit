@@ -15,13 +15,14 @@ enforced 80% coverage floor before feature implementation.
 
 - Add the Gradle wrapper, pinned Kotlin/JDK/IntelliJ Platform 2.x configuration, repositories, and
   modules selected by the ADR.
-- Add minimal valid plugin metadata and `runIde` configuration without final UI. Plugin-verifier
-  (`verifyPlugin`) is intentionally out of scope for this task's gates and CI — see repository
-  `CLAUDE.md`, which bans running it — and is not a required build/CI/local step.
+- Add minimal valid plugin metadata and `runIde`/plugin-verifier configuration without final UI.
+  Plugin-verifier (`verifyPlugin`) must be scoped to a single IDE build target (not the full
+  `recommended()` matrix) so it stays fast. Per `CLAUDE.md`, agents must never invoke `verifyPlugin`
+  locally/ad hoc — it runs only in CI.
 - Configure deterministic coroutine testing, unit-test fixtures, coverage reporting and an 80%
   verification rule for measurable production logic.
 - Add architecture checks for dependency direction and forbidden IntelliJ/Swing/process imports.
-- Add CI for clean build, tests, architecture checks, and coverage.
+- Add CI for clean build, tests, architecture checks, coverage, and plugin verification.
 - Document local build requirements and keep the read-only `as_plugin` reference untouched.
 
 ## Out of scope
@@ -37,13 +38,15 @@ enforced 80% coverage floor before feature implementation.
 
 ## Acceptance criteria
 
-- The pinned JDK can run `./gradlew clean build`, tests, and coverage.
+- The pinned JDK can run `./gradlew clean build`, tests, coverage, and plugin verification (the
+  latter scoped to a single IDE build target; CI runs it, agents never run it locally).
 - Dependency direction is frontend/adapters → application → domain.
 - Normal tests need no real adb, scrcpy, IDE user profile, or physical device.
 - CI and local builds enforce meaningful 80% coverage for changed production logic.
 
 ## Validation
 
-- Run `./gradlew clean build test koverVerify` or the ADR-selected equivalents.
-- Inspect module dependencies and verify the plugin ZIP contains required runtime modules (without
-  running `verifyPlugin` — see `CLAUDE.md`).
+- Agents locally: run `./gradlew clean build test koverVerify` (never `verifyPlugin`) or the
+  ADR-selected equivalents.
+- CI: additionally runs `verifyPlugin`, scoped to a single IDE build target.
+- Inspect module dependencies and verify the plugin ZIP contains required runtime modules.
