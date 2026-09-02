@@ -13,6 +13,9 @@ visual design lives under `design/` (start at `design/README.md`).
   installed `gradle`.
 - First build downloads the Gradle 9.6.1 distribution and IntelliJ Platform 2024.2 (build 242)
   artifacts; both require network access and disk space, and can take several minutes.
+- The IntelliJ Plugin Verifier (`verifyPlugin`) is intentionally not configured — see `CLAUDE.md`,
+  which bans running it (it downloads/unpacks a full IDE distribution and is not required by any
+  gate here).
 
 ## Common commands
 
@@ -21,12 +24,11 @@ visual design lives under `design/` (start at `design/README.md`).
 ./gradlew test                 # unit tests only (no adb/scrcpy/IDE fixture/device required)
 ./gradlew architectureCheck    # dependency-direction + forbidden-import gate (docs/adr/0001, 0002)
 ./gradlew koverVerify          # 80% line-coverage floor for :domain/:application/:adapters-jvm/:adapters-adb
-./gradlew :intellij:verifyPlugin   # IntelliJ Plugin Verifier CLI against the recommended IDE set
 ./gradlew :intellij:runIde     # launch a sandboxed IDE instance with the plugin installed
 ```
 
-`./gradlew check` runs tests, `architectureCheck`, and `koverVerify` together; CI (`.github/workflows/ci.yml`)
-runs `check` plus `:intellij:verifyPlugin` on every push and pull request.
+`./gradlew check` runs tests, `architectureCheck`, and `koverVerify` together; CI
+(`.github/workflows/ci.yml`) runs `clean build koverVerify` on every push and pull request.
 
 ## Module layout
 
