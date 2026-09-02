@@ -20,6 +20,9 @@ repositories {
     google()
     intellijPlatform {
         defaultRepositories()
+        // Needed by the bytecode-instrumentation tasks TestFrameworkType.Platform pulls in (nullability
+        // instrumentation, forms-runtime), which resolve a Java compiler artifact from this repository.
+        intellijDependencies()
     }
 }
 
@@ -29,18 +32,47 @@ dependencies {
     implementation(project(":adapters-jvm"))
     implementation(project(":adapters-adb"))
 
+    // ddmlib device/bridge types (com.android.ddmlib.IDevice, AndroidDebugBridge) referenced
+    // directly by the task 007 composition root when wiring the real IDE bridge into
+    // DdmlibDeviceSource (docs/adr/0005) — a plain JVM library, not an IntelliJ Platform API.
+    // compileOnly, never bundled: see the matching comment in :adapters-adb's build.gradle.kts —
+    // the Android plugin dependency above provides the one copy of ddmlib this plugin's runtime
+    // ever touches, and that code path only runs when that plugin (and its ddmlib) is present.
+    compileOnly(libs.ddmlib)
+
     testImplementation(libs.junit.jupiter)
-    testImplementation(libs.kotest.assertions.core)
+    testImplementation(libs.mockk)
+    testImplementation(libs.ddmlib)
+    // junit4: BasePlatformTestCase ultimately extends junit.framework.TestCase (JUnit 3). Every
+    // test in this module extends it — a plain Jupiter `@Test` class is not discovered by
+    // `:intellij:test`'s IntelliJ-Platform-aware runner (`testFramework(TestFrameworkType.Platform)`
+    // below), verified directly rather than assumed; see AdbTransportSelectionTest's class doc.
+    testImplementation(libs.junit4)
     testRuntimeOnly(libs.junit.platform.launcher)
+    // No kotlinx-coroutines-test/-core dependency here: the IntelliJ Platform test sandbox already
+    // puts its own bundled kotlinx.coroutines runtime on the classpath, and a second, differently
+    // versioned copy pulled in transitively (even test-only) shadows it and breaks IDE-internal
+    // calls into coroutines-only APIs (observed as `NoSuchMethodError:
+    // BuildersKt.runBlockingWithParallelismCompensation` during indexing, hanging the whole test
+    // JVM). Platform tests use plain `runBlocking`/`withContext` from the platform-provided runtime.
+    // The vintage engine runs BasePlatformTestCase's JUnit 3/4-style test methods under Gradle's
+    // useJUnitPlatform().
+    testRuntimeOnly(libs.junit.vintage.engine)
 
     intellijPlatform {
         // Compiled against the ADR 0003 baseline: IntelliJ Platform 2024.2+ (build 242+).
         intellijIdeaCommunity(providers.gradleProperty("platformVersion").get())
 
         // org.jetbrains.android (preferred ddmlib/AdbLibService path, docs/adr/0005, when present)
-        // is declared `optional` in plugin.xml only. It is bundled with Android Studio but not with
-        // IntelliJ IDEA Community, so it is not a compile-time dependency here — task 005 adds a
-        // compile-time dependency on it once ddmlib-backed code needs its APIs.
+        // is declared `optional` in plugin.xml (config-file adb-toolbox-android.xml) and, per task
+        // 007, taken as a compile-time-only dependency here so the composition root can call its
+        // real device-bridge APIs. Pinned to the exact build (242.26775.15) matching this module's
+        // `platformVersion`/pluginVerifier target for guaranteed binary compatibility; it is never
+        // bundled into this plugin's distribution (IntelliJ resolves it against the user's own
+        // installed Android plugin at runtime), so plain IntelliJ IDEA users without it still run
+        // fine via the binary-adb fallback (ADR 0005).
+        plugin("org.jetbrains.android", "242.26775.15")
+
         testFramework(TestFrameworkType.Platform)
 
         pluginVerifier()
@@ -49,6 +81,13 @@ dependencies {
 }
 
 intellijPlatform {
+    // Bytecode instrumentation (@NotNull assertions, .form binding) is irrelevant to this plugin
+    // (no Swing UI Designer forms; nullability is enforced by Kotlin's own type system) and its
+    // Ant-task wiring is broken against this Gradle Plugin/IDE version combination
+    // ("instrumentIdeaExtensions doesn't support the nested ... element"), unrelated to any of
+    // this plugin's own code — disabling it avoids depending on an unrelated toolchain bug.
+    instrumentCode = false
+
     pluginConfiguration {
         ideaVersion {
             sinceBuild = "242"
@@ -99,4 +138,25 @@ tasks.withType<JavaCompile>().configureEach {
 
 tasks.test {
     useJUnitPlatform()
+    // Platform tests (BasePlatformTestCase) must never require a real display — this sandboxed
+    // build environment has none, and the tests are meant to run deterministically in CI too.
+    systemProperty("java.awt.headless", "true")
+}
+
+// :domain/:application/:adapters-jvm/:adapters-adb each declare kotlinx-coroutines-core as their
+// own `implementation` dependency (correct for building/testing those modules standalone), but the
+// sandboxed test IDE this module's platform tests run in already bundles its own (older,
+// IntelliJ-patched) copy of that library. Letting our newer copy onto the test sandbox's classpath
+// as well lets IDE-internal code bind to the wrong copy and fail with NoSuchMethodError on
+// IntelliJ-only coroutines APIs (observed hanging file indexing during a real `:intellij:test`
+// run) — excluding it here forces every platform test to run against the one bundled copy, matching
+// how a real installed IDE session behaves. kotlin-stdlib is deliberately NOT excluded alongside
+// it: this project's pinned Kotlin compiler (2.2.20) emits calls into newer stdlib runtime helpers
+// (e.g. `kotlin.coroutines.jvm.internal.SpillingKt`) the sandbox's own older bundled stdlib lacks,
+// so our stdlib must stay on the classpath — which in turn means platform tests here must not
+// invoke `suspend` functions (AdbTransportSelectionTest verifies routing structurally instead of
+// calling through `executeText`, for exactly this reason).
+configurations.matching { it.name == "testRuntimeClasspath" }.configureEach {
+    exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-coroutines-core")
+    exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-coroutines-core-jvm")
 }

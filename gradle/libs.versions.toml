@@ -7,6 +7,7 @@ coroutines = "1.10.2"
 datetime = "0.6.2"
 serialization = "1.7.3"
 junit = "5.11.4"
+junit4 = "4.13.2"
 kotest = "5.9.1"
 mockk = "1.13.13"
 kover = "0.9.1"
@@ -22,6 +23,12 @@ kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "serialization" }
 junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit" }
 junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher" }
+# Lets Gradle's useJUnitPlatform() run IntelliJ Platform's JUnit 3/4-style BasePlatformTestCase
+# tests (task 007's headless platform tests) alongside plain Jupiter tests in the same module.
+junit-vintage-engine = { module = "org.junit.vintage:junit-vintage-engine", version.ref = "junit" }
+# BasePlatformTestCase ultimately extends junit.framework.TestCase (JUnit 3); needed on the
+# compile classpath for task 007's platform tests, on top of the vintage engine that runs them.
+junit4 = { module = "junit:junit", version.ref = "junit4" }
 kotest-assertions-core = { module = "io.kotest:kotest-assertions-core", version.ref = "kotest" }
 mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
 

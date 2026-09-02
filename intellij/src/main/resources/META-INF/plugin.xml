@@ -10,4 +10,12 @@
 
     <depends>com.intellij.modules.platform</depends>
     <depends optional="true" config-file="adb-toolbox-android.xml">org.jetbrains.android</depends>
+
+    <!-- Neutral placeholder content only (task 007) — no visual design, styling, icons, or
+         branding; those land in tasks 042+ per design/README.md. Project services are registered
+         as light @Service classes (AdbToolboxProjectService), which need no XML entry here. -->
+    <extensions defaultExtensionNs="com.intellij">
+        <toolWindow id="ADB Toolbox" anchor="right" secondary="false"
+                    factoryClass="dev.acme.adbtoolbox.intellij.toolwindow.AdbToolboxToolWindowFactory"/>
+    </extensions>
 </idea-plugin>
