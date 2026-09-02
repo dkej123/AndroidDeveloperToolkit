@@ -28,10 +28,12 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
 
       # `check` wires together tests, :architectureCheck (docs/adr/0001/0002), and koverVerify
-      # (80% coverage floor). The IntelliJ Plugin Verifier (`verifyPlugin`) is banned per CLAUDE.md
-      # and tasks/001-project-bootstrap-quality.md's Scope — it is intentionally not run here.
+      # (80% coverage floor). `verifyPlugin` runs the IntelliJ Plugin Verifier CLI.
       - name: Build, test, architecture check, and coverage gate
         run: ./gradlew clean build koverVerify --stacktrace
+
+      - name: Verify plugin
+        run: ./gradlew :intellij:verifyPlugin --stacktrace
 
       - name: Upload plugin artifact
         uses: actions/upload-artifact@v4

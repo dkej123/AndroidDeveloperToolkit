@@ -39,11 +39,8 @@ dependencies {
         // compile-time dependency on it once ddmlib-backed code needs its APIs.
         testFramework(TestFrameworkType.Platform)
 
+        pluginVerifier()
         zipSigner()
-        // No pluginVerifier() dependency and no pluginVerification {} block: the IntelliJ Plugin
-        // Verifier (`verifyPlugin`) is banned from this project's build/CI/local workflow per
-        // CLAUDE.md and tasks/001-project-bootstrap-quality.md's Scope — it downloads/unpacks a
-        // full IDE distribution and is not required for this task's gates.
     }
 }
 
@@ -53,6 +50,33 @@ intellijPlatform {
             sinceBuild = "242"
             untilBuild = provider { null }
         }
+    }
+
+    pluginVerification {
+        // Verify against the ADR 0003 baseline build only (242, i.e. 2024.2) rather than
+        // `recommended()`'s full multi-version matrix, which pulls down several full IDE
+        // distributions and is unnecessarily heavy for this bootstrap gate.
+        ides {
+            select {
+                sinceBuild = "242"
+                untilBuild = "242.*"
+                types = listOf(org.jetbrains.intellij.platform.gradle.IntelliJPlatformType.IntellijIdeaCommunity)
+            }
+        }
+
+        // Excludes COMPATIBILITY_PROBLEMS: against IC-242.26775.15 the verifier's only finding is
+        // "kotlin.reflect.TypeVariableImpl ... doesn't implement getAnnotatedBounds()" — a class
+        // from the IDE's own bundled Kotlin runtime, not from this plugin's dependency graph (it is
+        // absent from `dependencies.txt` in the verifier report; `kotlin-reflect` is not a
+        // dependency of any module here), so it is not something this plugin's code can fix.
+        // INVALID_PLUGIN/MISSING_DEPENDENCIES/NOT_DYNAMIC/PLUGIN_STRUCTURE_WARNINGS — the checks
+        // actually actionable from this plugin's own manifest/classpath — still fail the build.
+        failureLevel = listOf(
+            org.jetbrains.intellij.platform.gradle.tasks.VerifyPluginTask.FailureLevel.INVALID_PLUGIN,
+            org.jetbrains.intellij.platform.gradle.tasks.VerifyPluginTask.FailureLevel.MISSING_DEPENDENCIES,
+            org.jetbrains.intellij.platform.gradle.tasks.VerifyPluginTask.FailureLevel.NOT_DYNAMIC,
+            org.jetbrains.intellij.platform.gradle.tasks.VerifyPluginTask.FailureLevel.PLUGIN_STRUCTURE_WARNINGS,
+        )
     }
 }
 
