@@ -9,6 +9,8 @@ Load and parse device facts for the selected serial and expose a deterministic r
 - [014 — Device-context policies](014-device-context-policies.md)
 - Device facts, empty/loading states, report/action placement in `design/README.md` §3 and
   `design/designs/ADB Toolbox Plugin.dc.html`; fact commands in `design/IMPLEMENTATION.md` §4.
+- Inspect the limited task-015 ADBHelper facts implementation through
+  `.claude/skills/adb-development/references/adbhelper.md`; it covers only a subset and no presentation target.
 
 ## Scope
 

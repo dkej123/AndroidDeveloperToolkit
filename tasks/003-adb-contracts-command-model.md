@@ -11,6 +11,8 @@ single shared command manager.
 - [002 — Process execution](002-process-execution.md)
 - Required operation/result shapes in `design/IMPLEMENTATION.md` §4 and state/error expectations in
   `design/README.md`; command examples are behavioral references, not permission to bypass typed ports.
+- Before implementation, inspect the ADBHelper files routed for task 003 in
+  `.claude/skills/adb-development/references/adbhelper.md`; use them only as a clean-room comparison.
 
 ## Scope
 

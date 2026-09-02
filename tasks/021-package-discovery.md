@@ -10,6 +10,8 @@ Load user/system packages plus label/debuggable metadata for one selected serial
 - [009 — Selected-device state](009-selected-device-state.md)
 - Package/metadata requirements in `design/README.md` §4 and command references in
   `design/IMPLEMENTATION.md` §4. The package label note requires the task-000 approved strategy.
+- Inspect the task-021 ADBHelper package-list implementation through
+  `.claude/skills/adb-development/references/adbhelper.md`; retain none of its UI coupling or parser code.
 
 ## Scope
 

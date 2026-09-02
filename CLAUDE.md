@@ -31,3 +31,7 @@ These rules apply to every session in this repository.
 - `/Users/dkwasniak/Workspace/as_plugin` is READ-ONLY. Use it only as a technical reference for
   Android Studio / IntelliJ plugin configuration (Gradle, plugin.xml, ToolWindow, runIde,
   packaging). Never modify it. Never copy its visual design.
+- `references/ADBHelper` is a local, Git-ignored, READ-ONLY checkout pinned by
+  `references/README.md`. For the tasks routed by the `adb-development` skill, inspect its relevant
+  implementation before coding. It has no declared license: copy no code, parsers, strings, names,
+  resources, or UI, never modify/package it, and do not treat it as a project dependency.

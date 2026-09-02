@@ -1,1 +1,4 @@
 .vscode/
+
+# Local read-only technical reference. Bootstrap instructions live in CLAUDE.md.
+/references/ADBHelper/

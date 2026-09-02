@@ -20,9 +20,12 @@ before implementation. Do not start a dependent task early or bundle the next ta
   assets: [`design/icons/`](../design/icons/).
 - `design/designs/support.js` is prototype runtime only and must never be ported or packaged.
 - Technical IntelliJ reference, read-only: `/Users/dkwasniak/Workspace/as_plugin`.
-- Behavioral ADB reference, read-only: `https://github.com/classops/ADBHelper`.
-- ADBHelper has no declared license: use it only for behavioral understanding; copy no code, parser,
-  names, strings, or UI.
+- Behavioral/ddmlib reference: local Git-ignored checkout `references/ADBHelper`, pinned and
+  bootstrapped through [`references/README.md`](../references/README.md). Its upstream is
+  `https://github.com/classops/ADBHelper`.
+- ADBHelper has no declared license. Follow
+  [the clean-room routing guide](../.claude/skills/adb-development/references/adbhelper.md): inspect it
+  only for the mapped tasks and copy no code, parser, names, strings, resources, or UI.
 - The design in `design/` is final. Tasks 010–041 build neutral functional UI and presentation state;
   tasks 042–049 apply the supplied visuals. No task may invent visual rules or copy `as_plugin` UI.
 - The handoff specifies the Settings destination and fields, Wi-Fi pairing entry point, and scrcpy
@@ -44,6 +47,24 @@ before implementation. Do not start a dependent task early or bundle the next ta
 | Settings/pairing/scrcpy options | IA Settings entry; README entry points/state model; IMPLEMENTATION command/settings notes; native IntelliJ UI |
 | Design primitives/assets | Design System and Icons prototypes; `tokens.json`; `design/icons/`; README Design tokens & Assets |
 | Accessibility/responsive/release evidence | README Responsive/Keyboard/Interactions; IA degradation; IMPLEMENTATION §5 |
+
+## ADBHelper reference routing
+
+ADBHelper is mandatory supporting inspection only where it has a real counterpart. It is not a
+product specification and never overrides this plan, ADRs, design, tests, or public platform docs.
+
+| Tasks | Reference value |
+|---|---|
+| 003, 005 | ddmlib bridge, device shell execution, and streamed receiver flow |
+| 007 | action context and IntelliJ disposal comparison |
+| 008, 009, 011 | device listeners, state display, exact-serial persistence, and picker behavior |
+| 015 | small ddmlib-backed device-facts subset |
+| 021, 022 | user-package parsing and selection preservation |
+| 023 | default-activity resolution and launch behavior only |
+| 024 | clear-data command/response behavior only |
+
+There is no corresponding ADBHelper implementation for tasks covering binary ADB, scrcpy/capture,
+display, network/proxy, logcat, uninstall, Wi-Fi pairing, or final ToolWindow visuals.
 
 ## Foundation and dependency path
 

@@ -9,6 +9,8 @@ Implement the Android Studio/ddmlib side of the normalized ADB gateway.
 - [003 — ADB contracts](003-adb-contracts-command-model.md)
 - ddmlib preference/fallback guidance in `design/IMPLEMENTATION.md` §2; repository ADRs remain
   authoritative for boundaries, cancellation, and normalized results.
+- Before implementation, inspect the ADBHelper files routed for task 005 in
+  `.claude/skills/adb-development/references/adbhelper.md`, including the listed receiver defects.
 
 ## Scope
 

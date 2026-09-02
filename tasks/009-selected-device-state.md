@@ -9,6 +9,8 @@ Own one explicit selected-device context per project and prevent commands agains
 - [008 — Device discovery](008-device-discovery.md)
 - Global device scoping, persistence, disabled behavior, and runtime states in `design/README.md`
   Interactions and State model.
+- Inspect the task-009 ADBHelper serial-persistence/chooser comparison through
+  `.claude/skills/adb-development/references/adbhelper.md`; explicitly reject implicit first-device selection.
 
 ## Scope
 

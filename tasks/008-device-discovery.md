@@ -11,6 +11,8 @@ Observe and parse all ADB-visible devices, including online, unauthorized, offli
 - [007 — IntelliJ lifecycle](007-intellij-composition-lifecycle.md)
 - Device states/copy in `design/README.md` §1 and discovery command/model fields in
   `design/IMPLEMENTATION.md` §4.
+- Before implementation, inspect the ADBHelper device-listener files routed for task 008 in
+  `.claude/skills/adb-development/references/adbhelper.md`; its discovery model is not authoritative.
 
 ## Scope
 

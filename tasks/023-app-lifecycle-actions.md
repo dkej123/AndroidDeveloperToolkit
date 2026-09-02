@@ -11,6 +11,8 @@ Implement the three reversible app lifecycle actions for the exact selected devi
 - [022 — Apps selection/search](022-apps-selection-search.md)
 - Restart/force-stop/launch behavior and copy in `design/README.md` §4; command references in
   `design/IMPLEMENTATION.md` §4; restart/forceStop action SVGs.
+- Inspect only the task-023 ADBHelper launch/default-activity behavior routed in
+  `.claude/skills/adb-development/references/adbhelper.md`; ADBHelper has no force-stop/restart workflow.
 
 ## Scope
 

@@ -8,6 +8,13 @@ description: Rules for any ADB, device, logcat, proxy, package-manager, display,
 Apply whenever a task touches ADB, device selection, logcat, proxying, package management,
 display, or capture functionality.
 
+## Read-only implementation reference
+
+For tasks 003, 005, 007–009, 011, 015, and 021–024, read the task-specific routing and clean-room
+rules in `references/adbhelper.md`, then inspect only the listed files in the local
+`references/ADBHelper` checkout. The checkout is a pinned, Git-ignored convenience reference, not a
+dependency or source donor. Do not use ADBHelper as a reference for feature areas it does not contain.
+
 ## Rules
 
 - Never assume a single connected device — always target an explicitly selected device serial.

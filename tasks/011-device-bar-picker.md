@@ -8,6 +8,8 @@ Expose the selected-device state and keyboard-accessible selection/refresh behav
 
 - [009 — Selected-device state](009-selected-device-state.md)
 - [010 — UI host infrastructure](010-ui-host-infrastructure.md)
+- Inspect the task-011 ADBHelper picker interactions through
+  `.claude/skills/adb-development/references/adbhelper.md`; do not reuse its UI or modal architecture.
 - `design/README.md` §1 Device bar, the device-state controls in
   `design/designs/ADB Toolbox Plugin.dc.html`, IA device-context region, and refresh/authorize assets
   under `design/icons/actions/`.

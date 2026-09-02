@@ -26,7 +26,8 @@ None.
 - Record that Settings, Wi-Fi pairing, and scrcpy options have entry points/semantics but no complete
   bespoke screen layouts in the handoff; use native IntelliJ patterns and supplied primitives without
   inventing a separate visual language.
-- Record clean-room use of the unlicensed ADBHelper reference and read-only use of `as_plugin`.
+- Record clean-room use of the unlicensed, local Git-ignored ADBHelper reference pinned by
+  `references/README.md`, its limited task routing, and read-only use of `as_plugin`.
 
 ## Out of scope
 

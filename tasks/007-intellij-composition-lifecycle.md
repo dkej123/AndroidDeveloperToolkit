@@ -9,6 +9,8 @@ the IntelliJ layer.
 
 - [001 — Project bootstrap](001-project-bootstrap-quality.md)
 - [006 — Binary ADB transport](006-binary-adb-transport.md)
+- Inspect the task-007 ADBHelper action/disposal comparison through
+  `.claude/skills/adb-development/references/adbhelper.md`; do not inherit its layer coupling.
 - ToolWindow/plugin.xml and component mappings in `design/IMPLEMENTATION.md` §§2–3; use the native
   title actions required there instead of reproducing the prototype's browser title bar.
 

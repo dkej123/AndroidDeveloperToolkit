@@ -10,6 +10,8 @@ Add the clear-data destructive workflow as one isolated, explicitly confirmed co
 - [023 — App lifecycle actions](023-app-lifecycle-actions.md)
 - Clear-data confirmation copy/default-focus requirements in `design/README.md` §4; command reference
   in `design/IMPLEMENTATION.md` §4; clearData SVG variants.
+- Inspect the task-024 ADBHelper `pm clear` behavior through
+  `.claude/skills/adb-development/references/adbhelper.md`; do not inherit its missing pre-command confirmation.
 
 ## Scope
 
