@@ -21,6 +21,7 @@ repositories {
 }
 
 dependencies {
+    implementation(project(":domain"))
     implementation(project(":application"))
     implementation(project(":adapters-jvm"))
     implementation(project(":adapters-adb"))
@@ -87,6 +88,10 @@ kotlin {
 // Build with JDK 21 but emit Java 17 bytecode for the IntelliJ Platform 242+ baseline (docs/adr/0003).
 tasks.withType<KotlinCompile>().configureEach {
     compilerOptions.jvmTarget.set(JvmTarget.JVM_17)
+}
+
+tasks.withType<JavaCompile>().configureEach {
+    options.release.set(17)
 }
 
 tasks.test {

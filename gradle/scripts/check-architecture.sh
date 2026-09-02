@@ -94,6 +94,8 @@ reject_dependency adapters-adb 'project\(":(application|intellij)"\)' \
 require_dependency adapters-adb 'project\(":adapters-jvm"\)' \
     ":adapters-adb must depend on :adapters-jvm for its process-execution-backed binary path"
 
+require_dependency intellij 'project\(":domain"\)' \
+    ":intellij must depend on :domain"
 require_dependency intellij 'project\(":application"\)' \
     ":intellij must depend on :application"
 require_dependency intellij 'project\(":adapters-jvm"\)' \
