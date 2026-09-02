@@ -7,6 +7,8 @@ Create one non-modal feedback channel for command progress, success, failure, fi
 ## Dependencies
 
 - [010 — UI host infrastructure](010-ui-host-infrastructure.md)
+- Toast/status requirements in `design/README.md` Global layout, §8, Interactions, and State model;
+  timing/stack limits in `design/tokens/tokens.json`; overlay mapping in `design/IMPLEMENTATION.md` §3.
 
 ## Scope
 

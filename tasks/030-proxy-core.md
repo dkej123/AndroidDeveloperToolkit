@@ -9,6 +9,8 @@ Validate, read, enable, read back, and reset the selected device's global HTTP p
 - [003 — ADB contracts](003-adb-contracts-command-model.md)
 - [009 — Selected-device state](009-selected-device-state.md)
 - [014 — Device-context policies](014-device-context-policies.md)
+- Proxy validation/off/active/readback/reset requirements in `design/README.md` §6 and command notes
+  in `design/IMPLEMENTATION.md` §4.
 
 ## Scope
 

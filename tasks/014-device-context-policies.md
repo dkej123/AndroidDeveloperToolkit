@@ -9,6 +9,8 @@ Stabilize shared enablement, badge, running-process, and override-summary contra
 - [009 — Selected-device state](009-selected-device-state.md)
 - [012 — Navigation routing](012-navigation-routing.md)
 - [013 — Feedback/status](013-feedback-status.md)
+- Disabled-by-context, device disconnect, derived overrides, and shared-selection rules in
+  `design/README.md` Interactions and State model.
 
 ## Scope
 

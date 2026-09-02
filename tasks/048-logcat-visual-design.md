@@ -8,6 +8,9 @@ Apply the delivered Logcat design to toolbar, filters, virtualized rows, paused/
 
 - Tasks 033–037 complete.
 - [042 — Final design system/assets](042-final-design-system-assets.md)
+- `design/README.md` §7 Logcat; Logcat states in `design/designs/ADB Toolbox Plugin.dc.html`;
+  Logcat specimens in the Design System; severity/search values in `design/tokens/tokens.json`;
+  pause/resume/autoscroll/wrap/filter/search SVG variants.
 
 ## Scope
 

@@ -7,6 +7,8 @@ Own one explicit selected-device context per project and prevent commands agains
 ## Dependencies
 
 - [008 — Device discovery](008-device-discovery.md)
+- Global device scoping, persistence, disabled behavior, and runtime states in `design/README.md`
+  Interactions and State model.
 
 ## Scope
 

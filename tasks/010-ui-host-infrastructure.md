@@ -9,6 +9,8 @@ do not create or anticipate the final design system.
 
 - [007 — IntelliJ lifecycle](007-intellij-composition-lifecycle.md)
 - [009 — Selected-device state](009-selected-device-state.md)
+- Technical host mapping in `design/IMPLEMENTATION.md` §§2–3 and region/state requirements in
+  `design/README.md` Global layout and State model. Visual values are applied later in task 043.
 
 ## Scope
 

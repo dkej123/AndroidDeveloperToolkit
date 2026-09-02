@@ -7,6 +7,8 @@ Add the uninstall destructive workflow and reconcile the package list after conf
 ## Dependencies
 
 - [024 — Clear data](024-app-clear-data.md)
+- Uninstall confirmation copy/default-focus and list behavior in `design/README.md` §4; command
+  reference in `design/IMPLEMENTATION.md` §4; uninstall SVG variants.
 
 ## Scope
 

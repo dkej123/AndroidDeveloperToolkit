@@ -10,6 +10,8 @@ Implement one cancellable mirroring session per explicit device serial, independ
 - [004 — Tool discovery](004-tool-discovery.md)
 - [009 — Selected-device state](009-selected-device-state.md)
 - [014 — Device-context policies](014-device-context-policies.md)
+- Mirroring states/options semantics in `design/README.md` §3 and State model; scrcpy arguments,
+  discovery, and lifecycle guidance in `design/IMPLEMENTATION.md` §4.
 
 ## Scope
 

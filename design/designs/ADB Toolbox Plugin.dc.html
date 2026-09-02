@@ -1,0 +1,1098 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #101114; }
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-thumb { background: rgba(128,128,128,0.35); border-radius: 4px; }
+  @keyframes adb-spin { to { transform: rotate(360deg); } }
+  @keyframes adb-pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
+</style>
+</helmet>
+
+<div style="{{ pageStyle }}">
+
+  <div style="{{ switcherStyle }}">
+    <div style="{{ switcherGroupStyle }}">
+      <div style="{{ pillDark }}" onClick="{{ setDark }}">Dark</div>
+      <div style="{{ pillLight }}" onClick="{{ setLight }}">Light</div>
+    </div>
+    <div style="{{ switcherGroupStyle }}">
+      <div style="{{ pillWide }}" onClick="{{ setWide }}">Wide 560</div>
+      <div style="{{ pillDock }}" onClick="{{ setDock }}">Dock 380</div>
+      <div style="{{ pillNarrow }}" onClick="{{ setNarrow }}">Narrow 300</div>
+    </div>
+    <div style="{{ switcherGroupStyle }}">
+      <sc-for list="{{ viewPills }}" as="p" hint-placeholder-count="5">
+        <div style="{{ p.style }}" onClick="{{ p.onClick }}">{{ p.label }}</div>
+      </sc-for>
+    </div>
+    <div style="{{ switcherGroupStyle }}">
+      <sc-for list="{{ statePills }}" as="p" hint-placeholder-count="4">
+        <div style="{{ p.style }}" onClick="{{ p.onClick }}">{{ p.label }}</div>
+      </sc-for>
+    </div>
+    <div style="{{ switcherGroupStyle }}">
+      <div style="{{ pillMirror }}" onClick="{{ toggleMirroring }}">{{ mirrorPillLabel }}</div>
+      <div style="{{ pillRecord }}" onClick="{{ toggleRecording }}">{{ recordPillLabel }}</div>
+      <div style="{{ pillSkeleton }}" onClick="{{ toggleSkeleton }}">{{ skeletonPillLabel }}</div>
+    </div>
+  </div>
+
+  <div style="{{ frameStyle }}" ref="{{ frameRef }}">
+
+    <!-- title bar -->
+    <div style="{{ titleBarStyle }}">
+      <div style="{{ brandMarkStyle }}"></div>
+      <div style="{{ pluginTitleStyle }}">ADB Toolbox</div>
+      <div style="{{ spacerStyle }}"></div>
+      <div style="{{ headerIconBtnStyle }}" style-hover="{{ hoverStyle }}" title="Settings"><div style="{{ gearIconStyle }}"></div></div>
+      <div style="{{ headerIconBtnStyle }}" style-hover="{{ hoverStyle }}" title="More actions"><div style="{{ moreIconStyle }}"></div></div>
+      <div style="{{ headerIconBtnStyle }}" style-hover="{{ hoverStyle }}" title="Hide"><div style="{{ minimizeIconStyle }}"></div></div>
+    </div>
+
+    <!-- device bar -->
+    <div style="{{ deviceBarStyle }}">
+      <sc-if value="{{ isDeviceLoading }}" hint-placeholder-val="{{ false }}">
+        <div style="{{ spinnerStyle }}"></div>
+        <div style="{{ deviceLoadingTextStyle }}">Querying adb devices…</div>
+      </sc-if>
+      <sc-if value="{{ isDeviceConnected }}" hint-placeholder-val="{{ true }}">
+        <div style="{{ deviceSelectorStyle }}" style-hover="{{ hoverStyle }}" onClick="{{ togglePicker }}" title="{{ deviceTooltip }}">
+          <div style="{{ statusDotStyle }}"></div>
+          <div style="{{ deviceNameStyle }}">{{ deviceName }}</div>
+          <sc-if value="{{ showSerial }}" hint-placeholder-val="{{ true }}">
+            <div style="{{ deviceSerialStyle }}">{{ deviceSerial }}</div>
+          </sc-if>
+          <div style="{{ connChipStyle }}">{{ deviceConn }}</div>
+          <div style="{{ caretIconStyle }}"></div>
+        </div>
+        <div style="{{ spacerStyle }}"></div>
+        <div style="{{ deviceCountStyle }}">{{ deviceCountLabel }}</div>
+        <div style="{{ iconBtnStyle }}" style-hover="{{ hoverStyle }}" onClick="{{ onRefresh }}" title="Refresh device list  ⌘⇧D"><div style="{{ refreshIconStyle }}"></div></div>
+      </sc-if>
+      <sc-if value="{{ isDeviceUnauthorized }}" hint-placeholder-val="{{ false }}">
+        <div style="{{ warnDotStyle }}"></div>
+        <div style="{{ unauthorizedTextStyle }}">Pixel 8 Pro — unauthorized</div>
+        <div style="{{ spacerStyle }}"></div>
+        <div style="{{ linkStyle }}" onClick="{{ onRefresh }}">Retry</div>
+      </sc-if>
+      <sc-if value="{{ isDeviceNone }}" hint-placeholder-val="{{ false }}">
+        <div style="{{ offDotStyle }}"></div>
+        <div style="{{ noDeviceTextStyle }}">No device connected</div>
+        <div style="{{ spacerStyle }}"></div>
+        <div style="{{ iconBtnStyle }}" style-hover="{{ hoverStyle }}" onClick="{{ onRefresh }}" title="Refresh device list  ⌘⇧D"><div style="{{ refreshIconStyle }}"></div></div>
+      </sc-if>
+    </div>
+
+    <sc-if value="{{ isUnauthorizedHintVisible }}" hint-placeholder-val="{{ false }}">
+      <div style="{{ warnBannerStyle }}">Accept the “Allow USB debugging” prompt on the device, then retry.</div>
+    </sc-if>
+
+    <!-- device picker popup -->
+    <sc-if value="{{ pickerOpen }}" hint-placeholder-val="{{ false }}">
+      <div style="{{ pickerScrimStyle }}" onClick="{{ closePicker }}"></div>
+      <div style="{{ pickerPopupStyle }}">
+        <div style="{{ pickerHeaderStyle }}">Connected devices</div>
+        <sc-for list="{{ pickerRows }}" as="d" hint-placeholder-count="3">
+          <div style="{{ d.rowStyle }}" style-hover="{{ d.hoverStyle }}" onClick="{{ d.onClick }}">
+            <div style="{{ d.dotStyle }}"></div>
+            <div style="{{ d.nameStyle }}">{{ d.name }}</div>
+            <div style="{{ d.serialStyle }}">{{ d.serial }}</div>
+            <div style="{{ d.connStyle }}">{{ d.conn }}</div>
+          </div>
+        </sc-for>
+        <div style="{{ pickerFooterStyle }}">
+          <div style="{{ linkStyle }}" onClick="{{ closePicker }}">Pair device over Wi-Fi…</div>
+          <div style="{{ spacerStyle }}"></div>
+          <div style="{{ pickerHintStyle }}">↑↓ to select · ⏎ to apply</div>
+        </div>
+      </div>
+    </sc-if>
+
+    <div style="{{ bodyRowStyle }}">
+
+      <!-- rail -->
+      <div style="{{ railStyle }}">
+        <sc-for list="{{ railItems }}" as="r" hint-placeholder-count="5">
+          <div style="{{ r.btnStyle }}" style-hover="{{ r.hoverStyle }}" onClick="{{ r.onClick }}" title="{{ r.tooltip }}">
+            <div style="{{ r.iconWrapStyle }}">{{ r.icon }}</div>
+            <sc-if value="{{ r.hasBadge }}" hint-placeholder-val="{{ false }}">
+              <div style="{{ r.badgeStyle }}"></div>
+            </sc-if>
+          </div>
+        </sc-for>
+        <div style="{{ spacerStyle }}"></div>
+        <div style="{{ railSettingsStyle }}" style-hover="{{ hoverStyle }}" title="Settings — adb &amp; scrcpy paths"><div style="{{ gearIconStyle }}"></div></div>
+      </div>
+
+      <!-- view column -->
+      <div style="{{ viewColStyle }}">
+
+        <!-- ============ DEVICE ============ -->
+        <sc-if value="{{ isDeviceView }}" hint-placeholder-val="{{ true }}">
+          <div style="{{ viewScrollStyle }}">
+            <sc-if value="{{ showNoDeviceEmpty }}" hint-placeholder-val="{{ false }}">
+              <div style="{{ emptyWrapStyle }}">
+                <div style="{{ emptyIconStyle }}"></div>
+                <div style="{{ emptyTitleStyle }}">No device connected</div>
+                <div style="{{ emptyBodyStyle }}">Connect over USB with USB debugging enabled, or pair wirelessly. Actions stay disabled until a device is online.</div>
+                <div style="{{ emptyActionsStyle }}">
+                  <div style="{{ primaryBtnStyle }}" style-hover="{{ primaryHoverStyle }}" onClick="{{ onRefresh }}">Refresh</div>
+                  <div style="{{ secondaryBtnStyle }}" style-hover="{{ hoverStyle }}">Pair over Wi-Fi…</div>
+                </div>
+                <div style="{{ emptyFootStyle }}">adb 35.0.2 · /opt/homebrew/bin/adb</div>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ showSkeleton }}" hint-placeholder-val="{{ false }}">
+              <div style="{{ skeletonWrapStyle }}">
+                <sc-for list="{{ skeletonRows }}" as="row" hint-placeholder-count="6">
+                  <div style="{{ row }}"></div>
+                </sc-for>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ showDeviceContent }}" hint-placeholder-val="{{ true }}">
+              <div style="{{ sectionStyle }}">
+                <div style="{{ sectionHeaderStyle }}">
+                  <div style="{{ sectionTitleStyle }}">Mirroring</div>
+                  <div style="{{ sectionMetaStyle }}">scrcpy 2.7</div>
+                </div>
+                <sc-if value="{{ isMirroring }}" hint-placeholder-val="{{ false }}">
+                  <div style="{{ runningRowStyle }}">
+                    <div style="{{ liveDotStyle }}"></div>
+                    <div style="{{ runningLabelStyle }}">Mirroring · 1080×2400 @ 60 fps</div>
+                    <div style="{{ spacerStyle }}"></div>
+                    <div style="{{ dangerGhostBtnStyle }}" style-hover="{{ hoverStyle }}" onClick="{{ toggleMirroring }}">Stop</div>
+                  </div>
+                  <div style="{{ helpTextStyle }}">Window is open on your desktop. Closing it also stops this session.</div>
+                </sc-if>
+                <sc-if value="{{ isNotMirroring }}" hint-placeholder-val="{{ true }}">
+                  <div style="{{ actionRowStyle }}">
+                    <div style="{{ primaryBtnStyle }}" style-hover="{{ primaryHoverStyle }}" onClick="{{ onStartMirroring }}" title="Start scrcpy for the selected device  ⇧⌘M">Start mirroring</div>
+                    <div style="{{ iconBtnStyle }}" style-hover="{{ hoverStyle }}" title="Mirroring options — bitrate, resolution, stay awake"><div style="{{ slidersIconStyle }}"></div></div>
+                  </div>
+                  <div style="{{ helpTextStyle }}">Launches Genymobile scrcpy. Turn on “stay awake” and “show touches” in options.</div>
+                </sc-if>
+              </div>
+
+              <div style="{{ sectionStyle }}">
+                <div style="{{ sectionHeaderStyle }}">
+                  <div style="{{ sectionTitleStyle }}">Capture</div>
+                  <div style="{{ sectionMetaStyle }}">~/Desktop</div>
+                </div>
+                <sc-if value="{{ isRecording }}" hint-placeholder-val="{{ false }}">
+                  <div style="{{ recordingRowStyle }}">
+                    <div style="{{ recDotStyle }}"></div>
+                    <div style="{{ recLabelStyle }}">Recording · 00:42</div>
+                    <div style="{{ spacerStyle }}"></div>
+                    <div style="{{ dangerGhostBtnStyle }}" style-hover="{{ hoverStyle }}" onClick="{{ toggleRecording }}">Stop &amp; save</div>
+                  </div>
+                </sc-if>
+                <sc-if value="{{ isNotRecording }}" hint-placeholder-val="{{ true }}">
+                  <div style="{{ actionRowStyle }}">
+                    <div style="{{ secondaryBtnStyle }}" style-hover="{{ hoverStyle }}" onClick="{{ onScreenshot }}" title="Save a PNG to ~/Desktop">Screenshot</div>
+                    <div style="{{ secondaryBtnStyle }}" style-hover="{{ hoverStyle }}" onClick="{{ toggleRecording }}" title="Record the screen — max 3 minutes per adb">Record</div>
+                  </div>
+                </sc-if>
+              </div>
+
+              <div style="{{ sectionStyle }}">
+                <div style="{{ sectionHeaderStyle }}">
+                  <div style="{{ sectionTitleStyle }}">Device</div>
+                  <div style="{{ linkStyle }}">Copy report</div>
+                </div>
+                <div style="{{ factsGridStyle }}">
+                  <sc-for list="{{ deviceFacts }}" as="f" hint-placeholder-count="6">
+                    <div style="{{ f.wrapStyle }}">
+                      <div style="{{ f.keyStyle }}">{{ f.key }}</div>
+                      <div style="{{ f.valStyle }}">{{ f.value }}</div>
+                    </div>
+                  </sc-for>
+                </div>
+                <div style="{{ actionRowStyle }}">
+                  <div style="{{ secondaryBtnStyle }}" style-hover="{{ hoverStyle }}">Reboot</div>
+                  <div style="{{ secondaryBtnStyle }}" style-hover="{{ hoverStyle }}">Open shell</div>
+                  <div style="{{ secondaryBtnStyle }}" style-hover="{{ hoverStyle }}">Wake</div>
+                </div>
+              </div>
+            </sc-if>
+          </div>
+        </sc-if>
+
+        <!-- ============ APPS ============ -->
+        <sc-if value="{{ isAppsView }}" hint-placeholder-val="{{ false }}">
+          <div style="{{ appsToolbarStyle }}">
+            <div style="{{ searchWrapStyle }}">
+              <div style="{{ searchIconStyle }}"></div>
+              <input style="{{ searchInputStyle }}" placeholder="Filter packages…" value="{{ appQuery }}" onInput="{{ onAppQueryInput }}" />
+              <sc-if value="{{ hasAppQuery }}" hint-placeholder-val="{{ false }}">
+                <div style="{{ clearBtnStyle }}" onClick="{{ clearAppQuery }}">×</div>
+              </sc-if>
+            </div>
+            <div style="{{ iconBtnStyle }}" style-hover="{{ hoverStyle }}" title="Show system packages"><div style="{{ eyeIconStyle }}"></div></div>
+          </div>
+          <div style="{{ appListStyle }}">
+            <sc-for list="{{ appRows }}" as="a" hint-placeholder-count="6">
+              <div style="{{ a.rowStyle }}" style-hover="{{ a.hoverStyle }}" onClick="{{ a.onClick }}" title="{{ a.pkg }}">
+                <div style="{{ a.iconStyle }}"></div>
+                <div style="{{ a.textWrapStyle }}">
+                  <div style="{{ a.labelStyle }}">{{ a.label }}</div>
+                  <div style="{{ a.pkgStyle }}">{{ a.pkg }}</div>
+                </div>
+                <sc-if value="{{ a.isDebuggable }}" hint-placeholder-val="{{ false }}">
+                  <div style="{{ a.tagStyle }}">debug</div>
+                </sc-if>
+              </div>
+            </sc-for>
+            <sc-if value="{{ isAppListEmpty }}" hint-placeholder-val="{{ false }}">
+              <div style="{{ emptyWrapStyle }}">
+                <div style="{{ emptyTitleStyle }}">No packages match “{{ appQuery }}”</div>
+                <div style="{{ emptyBodyStyle }}">Search matches package name and app label.</div>
+                <div style="{{ linkStyle }}" onClick="{{ clearAppQuery }}">Clear filter</div>
+              </div>
+            </sc-if>
+          </div>
+          <div style="{{ appActionsStyle }}">
+            <div style="{{ selectedAppRowStyle }}">
+              <div style="{{ selectedAppLabelStyle }}">{{ selectedAppLabel }}</div>
+              <div style="{{ selectedAppPkgStyle }}">{{ selectedAppPkg }}</div>
+            </div>
+            <div style="{{ actionRowStyle }}">
+              <div style="{{ primaryBtnStyle }}" style-hover="{{ primaryHoverStyle }}" onClick="{{ onRestartApp }}" title="Force-stop, then launch the main activity  ⇧⌘R">Restart</div>
+              <div style="{{ secondaryBtnStyle }}" style-hover="{{ hoverStyle }}" onClick="{{ onForceStop }}" title="am force-stop — leaves data intact">Force-stop</div>
+              <div style="{{ secondaryBtnStyle }}" style-hover="{{ hoverStyle }}" onClick="{{ onLaunchApp }}" title="monkey launch of the main activity">Launch</div>
+            </div>
+            <div style="{{ dangerZoneStyle }}">
+              <div style="{{ dangerLabelStyle }}">Destructive</div>
+              <div style="{{ dangerBtnStyle }}" style-hover="{{ dangerHoverStyle }}" onClick="{{ onClearData }}" title="Deletes databases, prefs and caches. Cannot be undone.">Clear data</div>
+              <div style="{{ dangerBtnStyle }}" style-hover="{{ dangerHoverStyle }}" onClick="{{ onUninstall }}" title="Removes the app and all its data. Cannot be undone.">Uninstall</div>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- ============ DISPLAY ============ -->
+        <sc-if value="{{ isDisplayView }}" hint-placeholder-val="{{ false }}">
+          <div style="{{ viewScrollStyle }}">
+            <div style="{{ sectionStyle }}">
+              <div style="{{ sectionHeaderStyle }}">
+                <div style="{{ sectionTitleStyle }}">Font scale</div>
+                <div style="{{ fontStateStyle }}">{{ fontStateLabel }}</div>
+              </div>
+              <div style="{{ chipRowStyle }}">
+                <sc-for list="{{ fontChips }}" as="c" hint-placeholder-count="7">
+                  <div style="{{ c.style }}" style-hover="{{ c.hoverStyle }}" onClick="{{ c.onClick }}" title="{{ c.tooltip }}">{{ c.label }}</div>
+                </sc-for>
+              </div>
+              <sc-if value="{{ fontCustomOpen }}" hint-placeholder-val="{{ false }}">
+                <div style="{{ customRowStyle }}">
+                  <input style="{{ customFieldStyle }}" value="{{ fontCustomValue }}" onInput="{{ onFontCustomInput }}" />
+                  <div style="{{ customUnitStyle }}">×</div>
+                  <div style="{{ secondaryBtnStyle }}" style-hover="{{ hoverStyle }}" onClick="{{ applyFontCustom }}">Apply</div>
+                  <sc-if value="{{ fontCustomInvalid }}" hint-placeholder-val="{{ false }}">
+                    <div style="{{ errorTextStyle }}">0.25–5.0</div>
+                  </sc-if>
+                </div>
+              </sc-if>
+              <sc-if value="{{ fontOverridden }}" hint-placeholder-val="{{ false }}">
+                <div style="{{ resetRowStyle }}">
+                  <div style="{{ overrideNoteStyle }}">Overriding device default (1×)</div>
+                  <div style="{{ linkStyle }}" onClick="{{ resetFont }}">Reset</div>
+                </div>
+              </sc-if>
+            </div>
+
+            <div style="{{ sectionStyle }}">
+              <div style="{{ sectionHeaderStyle }}">
+                <div style="{{ sectionTitleStyle }}">Display scale</div>
+                <div style="{{ densityStateStyle }}">{{ densityStateLabel }}</div>
+              </div>
+              <div style="{{ chipRowStyle }}">
+                <sc-for list="{{ densityChips }}" as="c" hint-placeholder-count="7">
+                  <div style="{{ c.style }}" style-hover="{{ c.hoverStyle }}" onClick="{{ c.onClick }}" title="{{ c.tooltip }}">{{ c.label }}</div>
+                </sc-for>
+              </div>
+              <sc-if value="{{ densityCustomOpen }}" hint-placeholder-val="{{ false }}">
+                <div style="{{ customRowStyle }}">
+                  <input style="{{ customFieldStyle }}" value="{{ densityCustomValue }}" onInput="{{ onDensityCustomInput }}" />
+                  <div style="{{ customUnitStyle }}">dpi</div>
+                  <div style="{{ secondaryBtnStyle }}" style-hover="{{ hoverStyle }}" onClick="{{ applyDensityCustom }}">Apply</div>
+                </div>
+              </sc-if>
+              <div style="{{ helpTextStyle }}">Percentages are relative to the physical density (428 dpi). Values outside 60–200% can make the UI unusable.</div>
+              <sc-if value="{{ densityOverridden }}" hint-placeholder-val="{{ false }}">
+                <div style="{{ resetRowStyle }}">
+                  <div style="{{ overrideNoteStyle }}">Physical density is 428 dpi</div>
+                  <div style="{{ linkStyle }}" onClick="{{ resetDensity }}">Reset to physical</div>
+                </div>
+              </sc-if>
+            </div>
+
+            <div style="{{ sectionStyle }}">
+              <div style="{{ sectionHeaderStyle }}">
+                <div style="{{ sectionTitleStyle }}">Quick toggles</div>
+              </div>
+              <sc-for list="{{ displayToggles }}" as="t" hint-placeholder-count="3">
+                <div style="{{ t.rowStyle }}" style-hover="{{ hoverStyle }}" onClick="{{ t.onClick }}" title="{{ t.tooltip }}">
+                  <div style="{{ t.trackStyle }}"><div style="{{ t.knobStyle }}"></div></div>
+                  <div style="{{ t.labelStyle }}">{{ t.label }}</div>
+                  <div style="{{ spacerStyle }}"></div>
+                  <div style="{{ t.valueStyle }}">{{ t.value }}</div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- ============ NETWORK ============ -->
+        <sc-if value="{{ isNetworkView }}" hint-placeholder-val="{{ false }}">
+          <div style="{{ viewScrollStyle }}">
+            <div style="{{ sectionStyle }}">
+              <div style="{{ sectionHeaderStyle }}">
+                <div style="{{ sectionTitleStyle }}">Global HTTP proxy</div>
+                <div style="{{ proxyStateStyle }}">{{ proxyStateLabel }}</div>
+              </div>
+              <div style="{{ proxyFieldRowStyle }}">
+                <input style="{{ hostFieldStyle }}" value="{{ proxyHost }}" placeholder="host or IP" onInput="{{ onHostInput }}" />
+                <div style="{{ colonStyle }}">:</div>
+                <input style="{{ portFieldStyle }}" value="{{ proxyPort }}" placeholder="port" onInput="{{ onPortInput }}" />
+              </div>
+              <sc-if value="{{ portInvalid }}" hint-placeholder-val="{{ false }}">
+                <div style="{{ fieldErrorStyle }}">Port must be 1–65535</div>
+              </sc-if>
+              <div style="{{ actionRowStyle }}">
+                <div style="{{ linkStyle }}" onClick="{{ useMyIp }}" title="Fills your machine's LAN address — 10.0.4.117 on en0">Use my computer IP</div>
+                <div style="{{ spacerStyle }}"></div>
+                <div style="{{ proxyPrimaryStyle }}" style-hover="{{ primaryHoverStyle }}" onClick="{{ toggleProxy }}">{{ proxyPrimaryLabel }}</div>
+              </div>
+              <sc-if value="{{ proxyEnabled }}" hint-placeholder-val="{{ false }}">
+                <div style="{{ proxyActiveBannerStyle }}">
+                  <div style="{{ liveDotStyle }}"></div>
+                  <div style="{{ proxyActiveTextStyle }}">All traffic routed through {{ proxyTarget }}</div>
+                  <div style="{{ spacerStyle }}"></div>
+                  <div style="{{ linkStyle }}" onClick="{{ resetProxy }}">Reset</div>
+                </div>
+                <div style="{{ helpTextStyle }}">Survives reboot until reset. Some apps pin certificates and will still fail.</div>
+              </sc-if>
+              <sc-if value="{{ proxyDisabled }}" hint-placeholder-val="{{ true }}">
+                <div style="{{ helpTextStyle }}">Sets <span style="{{ inlineMonoStyle }}">settings put global http_proxy</span>. Recent targets are remembered per project.</div>
+              </sc-if>
+            </div>
+
+            <div style="{{ sectionStyle }}">
+              <div style="{{ sectionHeaderStyle }}">
+                <div style="{{ sectionTitleStyle }}">Recent</div>
+              </div>
+              <sc-for list="{{ recentProxies }}" as="r" hint-placeholder-count="3">
+                <div style="{{ r.rowStyle }}" style-hover="{{ hoverStyle }}" onClick="{{ r.onClick }}">
+                  <div style="{{ r.targetStyle }}">{{ r.target }}</div>
+                  <div style="{{ spacerStyle }}"></div>
+                  <div style="{{ r.noteStyle }}">{{ r.note }}</div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- ============ LOGCAT ============ -->
+        <sc-if value="{{ isLogcatView }}" hint-placeholder-val="{{ false }}">
+          <div style="{{ logToolbarStyle }}">
+            <div style="{{ searchWrapStyle }}">
+              <div style="{{ searchIconStyle }}"></div>
+              <input style="{{ searchInputStyle }}" placeholder="Search log…  ⌘F" value="{{ logQuery }}" onInput="{{ onLogQueryInput }}" />
+              <sc-if value="{{ hasLogQuery }}" hint-placeholder-val="{{ false }}">
+                <div style="{{ clearBtnStyle }}" onClick="{{ clearLogQuery }}">×</div>
+              </sc-if>
+            </div>
+            <div style="{{ logToolbarBtnsStyle }}">
+              <div style="{{ pauseBtnStyle }}" style-hover="{{ hoverStyle }}" onClick="{{ togglePause }}" title="{{ pauseTooltip }}"><div style="{{ pauseIconStyle }}"></div></div>
+              <div style="{{ autoscrollBtnStyle }}" style-hover="{{ hoverStyle }}" onClick="{{ toggleAutoscroll }}" title="{{ autoscrollTooltip }}"><div style="{{ autoscrollIconStyle }}"></div></div>
+              <div style="{{ wrapBtnStyle }}" style-hover="{{ hoverStyle }}" onClick="{{ toggleWrap }}" title="Wrap long lines"><div style="{{ wrapIconStyle }}"></div></div>
+              <div style="{{ dividerStyle }}"></div>
+              <div style="{{ iconBtnStyle }}" style-hover="{{ hoverStyle }}" onClick="{{ clearLog }}" title="Clear the buffer — does not clear the device log"><div style="{{ trashIconStyle }}"></div></div>
+            </div>
+          </div>
+          <div style="{{ logFilterRowStyle }}">
+            <sc-for list="{{ levelChips }}" as="c" hint-placeholder-count="5">
+              <div style="{{ c.style }}" style-hover="{{ c.hoverStyle }}" onClick="{{ c.onClick }}" title="{{ c.tooltip }}">{{ c.label }}</div>
+            </sc-for>
+            <div style="{{ spacerStyle }}"></div>
+            <div style="{{ pkgFilterStyle }}" style-hover="{{ hoverStyle }}" onClick="{{ togglePkgFilter }}" title="Limit to the app selected in Apps">{{ pkgFilterLabel }}</div>
+          </div>
+          <div style="{{ logBodyStyle }}">
+            <sc-for list="{{ logRows }}" as="l" hint-placeholder-count="14">
+              <div style="{{ l.rowStyle }}">
+                <div style="{{ l.levelStyle }}">{{ l.level }}</div>
+                <sc-if value="{{ l.showTime }}" hint-placeholder-val="{{ true }}">
+                  <div style="{{ l.timeStyle }}">{{ l.time }}</div>
+                </sc-if>
+                <sc-if value="{{ l.showTag }}" hint-placeholder-val="{{ false }}">
+                  <div style="{{ l.tagStyle }}">{{ l.tag }}</div>
+                </sc-if>
+                <div style="{{ l.msgStyle }}">{{ l.msg }}</div>
+              </div>
+            </sc-for>
+            <sc-if value="{{ isLogEmpty }}" hint-placeholder-val="{{ false }}">
+              <div style="{{ emptyWrapStyle }}">
+                <div style="{{ emptyTitleStyle }}">{{ logEmptyTitle }}</div>
+                <div style="{{ emptyBodyStyle }}">{{ logEmptyBody }}</div>
+                <div style="{{ linkStyle }}" onClick="{{ resetLogFilters }}">Reset filters</div>
+              </div>
+            </sc-if>
+          </div>
+          <sc-if value="{{ showPausedPill }}" hint-placeholder-val="{{ false }}">
+            <div style="{{ pausedPillWrapStyle }}">
+              <div style="{{ pausedPillStyle }}" onClick="{{ jumpToLatest }}">
+                <div style="{{ pausedDotStyle }}"></div>
+                <div style="{{ pausedTextStyle }}">{{ pausedLabel }}</div>
+                <div style="{{ pausedActionStyle }}">Jump to latest</div>
+              </div>
+            </div>
+          </sc-if>
+          <div style="{{ logFooterStyle }}">
+            <div style="{{ logFooterTextStyle }}">{{ logCountLabel }}</div>
+            <div style="{{ spacerStyle }}"></div>
+            <div style="{{ logFooterTextStyle }}">buffer 16 MB</div>
+          </div>
+        </sc-if>
+
+      </div>
+    </div>
+
+    <!-- status bar -->
+    <div style="{{ statusBarStyle }}">
+      <sc-if value="{{ hasRunningChip }}" hint-placeholder-val="{{ false }}">
+        <div style="{{ runningChipStyle }}" title="Click to focus the process">
+          <div style="{{ runningChipDotStyle }}"></div>
+          <div style="{{ runningChipLabelStyle }}">{{ runningChipLabel }}</div>
+        </div>
+      </sc-if>
+      <div style="{{ statusMsgStyle }}">{{ statusMessage }}</div>
+      <div style="{{ spacerStyle }}"></div>
+      <sc-if value="{{ hasOverrides }}" hint-placeholder-val="{{ false }}">
+        <div style="{{ overrideChipStyle }}" style-hover="{{ hoverStyle }}" onClick="{{ resetAllOverrides }}" title="Revert font scale, density and proxy on this device">{{ overrideChipLabel }}</div>
+      </sc-if>
+      <div style="{{ statusVersionStyle }}">adb 35.0.2</div>
+    </div>
+
+    <!-- toast -->
+    <sc-if value="{{ toastVisible }}" hint-placeholder-val="{{ false }}">
+      <div style="{{ toastWrapStyle }}">
+        <div style="{{ toastStyle }}">
+          <div style="{{ toastGlyphStyle }}">{{ toastGlyph }}</div>
+          <div style="{{ toastTextStyle }}">{{ toastText }}</div>
+          <sc-if value="{{ toastHasAction }}" hint-placeholder-val="{{ false }}">
+            <div style="{{ toastActionStyle }}" onClick="{{ dismissToast }}">{{ toastActionLabel }}</div>
+          </sc-if>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- confirm -->
+    <sc-if value="{{ confirmOpen }}" hint-placeholder-val="{{ false }}">
+      <div style="{{ scrimStyle }}" onClick="{{ cancelConfirm }}">
+        <div style="{{ confirmStyle }}" onClick="{{ stopProp }}">
+          <div style="{{ confirmTitleStyle }}">{{ confirmTitle }}</div>
+          <div style="{{ confirmBodyStyle }}">{{ confirmBody }}</div>
+          <div style="{{ confirmActionsStyle }}">
+            <div style="{{ confirmCancelStyle }}" style-hover="{{ hoverStyle }}" onClick="{{ cancelConfirm }}">Cancel</div>
+            <div style="{{ confirmOkStyle }}" onClick="{{ acceptConfirm }}">{{ confirmOkLabel }}</div>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+  </div>
+
+  <div style="{{ captionStyle }}">{{ frameCaption }}</div>
+
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const UI = '"Segoe UI", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif';
+const MONO = 'ui-monospace, "JetBrains Mono", Consolas, Menlo, monospace';
+const BRAND = '#16a79b';
+
+function theme(mode) {
+  if (mode === 'light') return {
+    mode: 'light', backdrop: '#dde1e6',
+    bg: '#f7f8fa', panel: '#ffffff', header: '#f2f3f5', field: '#ffffff',
+    border: '#e1e3e8', borderStrong: '#cfd2d8',
+    text: '#1e1f22', textDim: '#63666b', textFaint: '#93969b',
+    accent: '#3574f0', accentBg: 'rgba(53,116,240,0.10)', accentBorder: 'rgba(53,116,240,0.5)',
+    brand: '#0e8a80', brandBg: 'rgba(14,138,128,0.10)', brandBorder: 'rgba(14,138,128,0.45)',
+    green: '#2f8f52', greenBg: 'rgba(47,143,82,0.10)',
+    amber: '#a9761f', amberBg: 'rgba(169,118,31,0.10)',
+    red: '#c9424a', redBg: 'rgba(201,66,74,0.09)', redBorder: 'rgba(201,66,74,0.5)',
+    hover: { background: 'rgba(0,0,0,0.045)' },
+    shadow: '0 18px 44px rgba(20,20,30,0.18), 0 0 0 1px rgba(0,0,0,0.06)',
+    scrim: 'rgba(30,32,36,0.28)',
+    logDim: '#93969b', logD: '#2d5fb0', logDMsg: '#4c5461', logI: '#2f8f52', logW: '#a9761f', logWMsg: '#8a6417',
+    logE: '#c9424a', logEMsg: '#a8323a', logA: '#96222a', hl: 'rgba(169,118,31,0.3)',
+  };
+  return {
+    mode: 'dark', backdrop: '#101114',
+    bg: '#1e1f22', panel: '#242629', header: '#2b2d30', field: '#1e1f22',
+    border: 'rgba(255,255,255,0.08)', borderStrong: 'rgba(255,255,255,0.15)',
+    text: '#dfe1e5', textDim: '#8a8d93', textFaint: '#6b6e74',
+    accent: '#548af7', accentBg: 'rgba(84,138,247,0.16)', accentBorder: 'rgba(84,138,247,0.5)',
+    brand: BRAND, brandBg: 'rgba(22,167,155,0.16)', brandBorder: 'rgba(22,167,155,0.5)',
+    green: '#66b578', greenBg: 'rgba(102,181,120,0.14)',
+    amber: '#d9a441', amberBg: 'rgba(217,164,65,0.14)',
+    red: '#e0656b', redBg: 'rgba(224,101,107,0.14)', redBorder: 'rgba(224,101,107,0.5)',
+    hover: { background: 'rgba(255,255,255,0.055)' },
+    shadow: '0 20px 50px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.06)',
+    scrim: 'rgba(8,9,11,0.55)',
+    logDim: '#6b6e74', logD: '#8fb7f5', logDMsg: '#b6c3d1', logI: '#66b578', logW: '#d9a441', logWMsg: '#e6c584',
+    logE: '#e0656b', logEMsg: '#f0999d', logA: '#ff8f95', hl: 'rgba(217,164,65,0.35)',
+  };
+}
+
+const DEVICES = [
+  { id: 'd1', name: 'Pixel 8 Pro', serial: '1A2B3C4D', conn: 'USB', state: 'online' },
+  { id: 'd2', name: 'Pixel Tablet', serial: '10.0.4.91:5555', conn: 'Wi-Fi', state: 'online' },
+  { id: 'd3', name: 'Galaxy S23', serial: 'R5CT90XKPQZ', conn: 'USB', state: 'unauthorized' },
+];
+
+const APPS = [
+  { pkg: 'com.acme.shop', label: 'Acme Shop', debuggable: true },
+  { pkg: 'com.acme.shop.debug', label: 'Acme Shop (debug)', debuggable: true },
+  { pkg: 'com.acme.driver', label: 'Acme Driver', debuggable: true },
+  { pkg: 'com.google.android.apps.maps', label: 'Maps', debuggable: false },
+  { pkg: 'com.android.chrome', label: 'Chrome', debuggable: false },
+  { pkg: 'com.slack', label: 'Slack', debuggable: false },
+];
+
+const LOG = [
+  { level: 'D', time: '12:04:18', tag: 'CartRepo', pkg: 'com.acme.shop', msg: 'loadCart(userId=8812) hit cache' },
+  { level: 'I', time: '12:04:18', tag: 'Checkout', pkg: 'com.acme.shop', msg: 'checkout session started sid=9f21' },
+  { level: 'V', time: '12:04:19', tag: 'Choreographer', pkg: 'com.acme.shop', msg: 'skipped 3 frames, main thread busy' },
+  { level: 'D', time: '12:04:19', tag: 'CartRepo', pkg: 'com.acme.shop', msg: 'applying coupon SAVE20' },
+  { level: 'W', time: '12:04:20', tag: 'OkHttp', pkg: 'com.acme.shop', msg: 'retrying POST /v2/cart (attempt 2)' },
+  { level: 'I', time: '12:04:20', tag: 'Analytics', pkg: 'com.acme.shop', msg: 'event coupon_applied queued' },
+  { level: 'E', time: '12:04:21', tag: 'OkHttp', pkg: 'com.acme.shop', msg: 'SocketTimeoutException: connect timed out after 10000ms' },
+  { level: 'D', time: '12:04:21', tag: 'Retry', pkg: 'com.acme.shop', msg: 'backoff 2s then attempt 3' },
+  { level: 'A', time: '12:04:22', tag: 'AndroidRuntime', pkg: 'com.acme.shop', msg: 'FATAL EXCEPTION: main' },
+  { level: 'E', time: '12:04:22', tag: 'AndroidRuntime', pkg: 'com.acme.shop', msg: 'java.lang.IllegalStateException: cart total is null' },
+  { level: 'E', time: '12:04:22', tag: 'AndroidRuntime', pkg: 'com.acme.shop', msg: '  at com.acme.shop.checkout.TotalsView.bind(TotalsView.kt:64)' },
+  { level: 'I', time: '12:04:23', tag: 'ActivityManager', pkg: 'system', msg: 'Process com.acme.shop died (pid 8104)' },
+  { level: 'I', time: '12:04:24', tag: 'ActivityManager', pkg: 'system', msg: 'Start proc 8155:com.acme.shop/u0a412' },
+  { level: 'D', time: '12:04:24', tag: 'CartRepo', pkg: 'com.acme.shop', msg: 'cold start, coupon cleared' },
+];
+
+const FONT_PRESETS = [0.85, 1, 1.15, 1.3, 1.5, 2];
+const DENSITY_PRESETS = [80, 90, 100, 110, 125, 150];
+const LEVELS = ['V', 'D', 'I', 'W', 'E'];
+
+class Component extends DCLogic {
+  frameRef = React.createRef();
+
+  state = {
+    theme: 'dark', width: 380, height: 720,
+    view: 'device', deviceState: 'connected', selectedDeviceId: 'd1', pickerOpen: false,
+    skeleton: false, mirroring: false, recording: false,
+    appQuery: '', selectedPkg: 'com.acme.shop',
+    fontScale: 1, fontCustomOpen: false, fontCustomValue: '1.75', fontCustomInvalid: false,
+    density: 100, densityCustomOpen: false, densityCustomValue: '380',
+    darkMode: true, animations: true, showTouches: false,
+    proxyHost: '10.0.4.117', proxyPort: '8888', proxyEnabled: false,
+    logQuery: '', minLevel: 'V', pkgFilterOn: true, paused: false, autoscroll: true, wrap: false, logCleared: false,
+    toast: null, confirm: null, statusMessage: 'Ready',
+  };
+
+  componentDidMount() {
+    if (!this.frameRef.current || typeof ResizeObserver === 'undefined') return;
+    this._ro = new ResizeObserver((e) => {
+      const r = e[0].contentRect;
+      this.setState({ width: Math.round(r.width), height: Math.round(r.height) });
+    });
+    this._ro.observe(this.frameRef.current);
+  }
+  componentWillUnmount() { if (this._ro) this._ro.disconnect(); clearTimeout(this._t); }
+
+  flash(text, kind, actionLabel) {
+    this.setState({ toast: { text, kind: kind || 'ok', actionLabel: actionLabel || null }, statusMessage: text });
+    clearTimeout(this._t);
+    if (kind !== 'error') this._t = setTimeout(() => this.setState({ toast: null }), 4000);
+  }
+  dismissToast() { clearTimeout(this._t); this.setState({ toast: null }); }
+
+  setSize(w, h) { this.setState({ width: w, height: h, pickerOpen: false }); }
+  askConfirm(kind) { this.setState({ confirm: kind }); }
+  cancelConfirm() { this.setState({ confirm: null }); }
+  acceptConfirm() {
+    const kind = this.state.confirm;
+    this.setState({ confirm: null });
+    if (kind === 'uninstall') this.flash('Uninstalled ' + this.state.selectedPkg, 'ok');
+    if (kind === 'clear') this.flash('Data cleared for ' + this.state.selectedPkg, 'ok');
+  }
+
+  renderVals() {
+    const s = this.state, th = theme(s.theme);
+    const W = s.width;
+    const compact = W < 340, wide = W >= 470;
+    const connected = s.deviceState === 'connected';
+    const dis = !connected;
+    const dev = DEVICES.find(d => d.id === s.selectedDeviceId) || DEVICES[0];
+    const fontOverridden = s.fontScale !== 1;
+    const densityOverridden = s.density !== 100;
+    const overrideCount = (fontOverridden ? 1 : 0) + (densityOverridden ? 1 : 0) + (s.proxyEnabled ? 1 : 0);
+    const portInvalid = s.proxyPort !== '' && !(Number(s.proxyPort) >= 1 && Number(s.proxyPort) <= 65535);
+
+    const pill = (active) => ({ padding: '5px 10px', borderRadius: 999, fontSize: 11, fontWeight: 600, cursor: 'pointer', fontFamily: UI, whiteSpace: 'nowrap', color: active ? '#0b0c0e' : '#c7cad0', background: active ? '#e7e9ee' : 'rgba(255,255,255,0.08)' });
+
+    const gate = (style, disabled) => disabled ? { ...style, opacity: 0.45, cursor: 'default' } : style;
+    const primaryBtn = { height: 26, padding: '0 12px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', borderRadius: 5, fontSize: 11.5, fontWeight: 600, background: th.accent, color: '#fff', cursor: 'pointer', flexShrink: 0, fontFamily: UI };
+    const secondaryBtn = { height: 26, padding: '0 10px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', borderRadius: 5, fontSize: 11.5, border: `1px solid ${th.borderStrong}`, color: th.text, cursor: 'pointer', flexShrink: 0, fontFamily: UI };
+    const dangerBtn = { height: 24, padding: '0 9px', display: 'inline-flex', alignItems: 'center', borderRadius: 5, fontSize: 11, fontWeight: 600, border: `1px solid ${th.redBorder}`, color: th.red, cursor: 'pointer', flexShrink: 0, fontFamily: UI };
+    const iconBtn = { width: 22, height: 22, borderRadius: 5, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0, color: th.textDim };
+    const iconBtnActive = { ...iconBtn, background: th.accentBg, border: `1px solid ${th.accentBorder}`, color: th.accent };
+    const field = { height: 24, borderRadius: 4, border: `1px solid ${th.borderStrong}`, background: th.field, color: th.text, fontFamily: MONO, fontSize: 11, padding: '0 7px', outline: 'none', minWidth: 0 };
+    const sectionTitle = { fontSize: 12.5, fontWeight: 700, color: th.text };
+    const link = { fontSize: 11, fontWeight: 600, color: th.accent, cursor: 'pointer', flexShrink: 0 };
+    const helpText = { fontSize: 10.5, lineHeight: 1.45, color: th.textFaint, padding: '0 10px 2px' };
+
+    // ---- rail ----
+    const icon = (paths, color) => React.createElement('svg', { width: 16, height: 16, viewBox: '0 0 16 16', fill: 'none' },
+      paths.map((p, i) => React.createElement('path', { key: i, d: p, stroke: color, strokeWidth: 1.35, strokeLinecap: 'round', strokeLinejoin: 'round' })));
+    const RAIL = [
+      { id: 'device', label: 'Device', tip: 'Device — mirroring, capture, facts', d: ['M5.2 2.4h5.6a1.4 1.4 0 0 1 1.4 1.4v8.4a1.4 1.4 0 0 1-1.4 1.4H5.2a1.4 1.4 0 0 1-1.4-1.4V3.8a1.4 1.4 0 0 1 1.4-1.4Z', 'M6.9 11.9h2.2'] },
+      { id: 'apps', label: 'Apps', tip: 'Apps — restart, clear data, uninstall', d: ['M2.7 2.7h4v4h-4z', 'M9.3 2.7h4v4h-4z', 'M2.7 9.3h4v4h-4z', 'M9.3 9.3h4v4h-4z'] },
+      { id: 'display', label: 'Display', tip: 'Display — font scale and density', d: ['M2 3.6h12v7H2z', 'M5.6 13.4h4.8'] },
+      { id: 'network', label: 'Network', tip: 'Network — global proxy', d: ['M8 2.6a5.4 5.4 0 1 0 0 10.8A5.4 5.4 0 0 0 8 2.6Z', 'M2.7 8h10.6', 'M8 2.6c1.6 1.7 1.6 9.1 0 10.8', 'M8 2.6C6.4 4.3 6.4 11.7 8 13.4'] },
+      { id: 'logcat', label: 'Logcat', tip: 'Logcat — severity, filters, search', d: ['M2.7 4.2h10.6', 'M2.7 8h7.2', 'M2.7 11.8h9'] },
+    ];
+    const railItems = RAIL.map(r => {
+      const active = s.view === r.id;
+      const badgeAmber = (r.id === 'display' && (fontOverridden || densityOverridden)) || (r.id === 'network' && s.proxyEnabled);
+      const badgeRed = r.id === 'logcat' && connected && !s.logCleared;
+      return {
+        tooltip: r.tip, onClick: () => this.setState({ view: r.id, pickerOpen: false }),
+        btnStyle: { position: 'relative', width: 26, height: 26, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0, background: active ? th.accentBg : 'transparent', border: `1px solid ${active ? th.accentBorder : 'transparent'}` },
+        hoverStyle: active ? {} : th.hover,
+        iconWrapStyle: { display: 'flex', width: 16, height: 16 },
+        icon: icon(r.d, active ? th.accent : th.textDim),
+        hasBadge: badgeAmber || badgeRed,
+        badgeStyle: { position: 'absolute', top: 2, right: 2, width: 5, height: 5, borderRadius: '50%', background: badgeRed ? th.red : th.amber },
+      };
+    });
+
+    // ---- device facts ----
+    const facts = [['Android', '15 · API 35'], ['Resolution', '1080×2400'], ['Density', densityOverridden ? Math.round(428 * s.density / 100) + ' dpi' : '428 dpi'], ['Battery', '72% · charging'], ['ABI', 'arm64-v8a'], ['Uptime', '4h 12m']];
+    const deviceFacts = facts.map(([k, v]) => ({
+      key: k, value: v,
+      wrapStyle: { display: 'flex', flexDirection: 'column', gap: 1, minWidth: 0 },
+      keyStyle: { fontSize: 9.5, fontWeight: 700, letterSpacing: 0.4, textTransform: 'uppercase', color: th.textFaint },
+      valStyle: { fontFamily: MONO, fontSize: 11, color: th.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
+    }));
+
+    // ---- apps ----
+    const q = s.appQuery.trim().toLowerCase();
+    const visibleApps = APPS.filter(a => !q || a.pkg.toLowerCase().includes(q) || a.label.toLowerCase().includes(q));
+    const appRows = visibleApps.map(a => {
+      const sel = a.pkg === s.selectedPkg;
+      return {
+        pkg: a.pkg, label: a.label, isDebuggable: a.debuggable,
+        onClick: () => this.setState({ selectedPkg: a.pkg }),
+        rowStyle: { display: 'flex', alignItems: 'center', gap: 7, height: 34, padding: '0 8px', cursor: 'pointer', borderRadius: 5, background: sel ? th.accentBg : 'transparent', border: `1px solid ${sel ? th.accentBorder : 'transparent'}` },
+        hoverStyle: sel ? {} : th.hover,
+        iconStyle: { width: 16, height: 16, borderRadius: 4, flexShrink: 0, background: a.debuggable ? th.brandBg : th.header, border: `1px solid ${a.debuggable ? th.brandBorder : th.border}` },
+        textWrapStyle: { display: 'flex', flexDirection: 'column', gap: 0, minWidth: 0, flex: 1 },
+        labelStyle: { fontSize: 11.5, fontWeight: sel ? 700 : 500, color: th.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
+        pkgStyle: { fontFamily: MONO, fontSize: 9.5, color: th.textFaint, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
+        tagStyle: { fontSize: 9, fontWeight: 700, color: th.brand, background: th.brandBg, border: `1px solid ${th.brandBorder}`, borderRadius: 3, padding: '1px 4px', flexShrink: 0 },
+      };
+    });
+    const selApp = APPS.find(a => a.pkg === s.selectedPkg) || APPS[0];
+
+    // ---- presets ----
+    const chipStyle = (active, override) => ({
+      height: 22, padding: '0 9px', display: 'inline-flex', alignItems: 'center', borderRadius: 5, fontSize: 11, cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: UI,
+      fontWeight: active ? 700 : 400,
+      color: active ? (override ? th.amber : th.text) : th.textDim,
+      background: active && override ? th.amberBg : 'transparent',
+      border: `1px solid ${active ? (override ? th.amber : th.borderStrong) : th.border}`,
+    });
+    const fontChips = FONT_PRESETS.map(v => ({
+      label: v === 1 ? '1×' : v + '×', tooltip: v === 1 ? 'Device default' : 'settings put system font_scale ' + v,
+      style: gate(chipStyle(!s.fontCustomOpen && s.fontScale === v, v !== 1), dis),
+      hoverStyle: dis ? {} : th.hover,
+      onClick: dis ? () => {} : () => { this.setState({ fontScale: v, fontCustomOpen: false }); this.flash(v === 1 ? 'Font scale reset to 1×' : 'Font scale set to ' + v + '×'); },
+    })).concat([{
+      label: 'Custom…', tooltip: 'Enter any scale between 0.25 and 5',
+      style: gate({ ...chipStyle(s.fontCustomOpen, false), borderStyle: 'dashed' }, dis),
+      hoverStyle: dis ? {} : th.hover,
+      onClick: dis ? () => {} : () => this.setState({ fontCustomOpen: !s.fontCustomOpen }),
+    }]);
+    const densityChips = DENSITY_PRESETS.map(v => ({
+      label: v + '%', tooltip: v === 100 ? 'Physical density — 428 dpi' : Math.round(428 * v / 100) + ' dpi',
+      style: gate(chipStyle(!s.densityCustomOpen && s.density === v, v !== 100), dis),
+      hoverStyle: dis ? {} : th.hover,
+      onClick: dis ? () => {} : () => { this.setState({ density: v, densityCustomOpen: false }); this.flash(v === 100 ? 'Density reset to physical (428 dpi)' : 'Density set to ' + Math.round(428 * v / 100) + ' dpi'); },
+    })).concat([{
+      label: 'Custom…', tooltip: 'Enter an absolute dpi value',
+      style: gate({ ...chipStyle(s.densityCustomOpen, false), borderStyle: 'dashed' }, dis),
+      hoverStyle: dis ? {} : th.hover,
+      onClick: dis ? () => {} : () => this.setState({ densityCustomOpen: !s.densityCustomOpen }),
+    }]);
+
+    const toggleRow = (on, label, value, tooltip, onClick) => ({
+      label, value, tooltip, onClick: dis ? () => {} : onClick,
+      rowStyle: gate({ display: 'flex', alignItems: 'center', gap: 8, height: 28, padding: '0 10px', borderRadius: 5, cursor: 'pointer' }, dis),
+      trackStyle: { width: 24, height: 13, borderRadius: 999, background: on ? th.accent : th.borderStrong, position: 'relative', flexShrink: 0 },
+      knobStyle: { position: 'absolute', top: 1.5, left: on ? 12 : 1.5, width: 10, height: 10, borderRadius: '50%', background: '#fff', transition: 'left 0.15s' },
+      labelStyle: { fontSize: 11.5, color: th.text },
+      valueStyle: { fontFamily: MONO, fontSize: 10, color: th.textFaint },
+    });
+    const displayToggles = [
+      toggleRow(s.darkMode, 'Dark theme', s.darkMode ? 'yes' : 'no', 'cmd uimode night yes|no', () => { this.setState({ darkMode: !s.darkMode }); this.flash('Dark theme ' + (!s.darkMode ? 'on' : 'off')); }),
+      toggleRow(!s.animations, 'Animations off', s.animations ? '1×' : '0×', 'Sets window, transition and animator scales to 0', () => { this.setState({ animations: !s.animations }); this.flash('Animations ' + (s.animations ? 'disabled' : 'restored')); }),
+      toggleRow(s.showTouches, 'Show touches', s.showTouches ? 'on' : 'off', 'Useful while recording', () => this.setState({ showTouches: !s.showTouches })),
+    ];
+
+    // ---- logcat ----
+    const lq = s.logQuery.trim().toLowerCase();
+    const minIdx = LEVELS.indexOf(s.minLevel);
+    const rank = { V: 0, D: 1, I: 2, W: 3, E: 4, A: 5 };
+    let logLines = s.logCleared ? [] : LOG.filter(l =>
+      rank[l.level] >= minIdx &&
+      (!s.pkgFilterOn || l.pkg === s.selectedPkg || l.pkg === 'system') &&
+      (!lq || l.msg.toLowerCase().includes(lq) || l.tag.toLowerCase().includes(lq))
+    );
+    if (!connected) logLines = [];
+    const colorFor = (lv) => lv === 'A' ? th.logA : lv === 'E' ? th.logE : lv === 'W' ? th.logW : lv === 'I' ? th.logI : lv === 'D' ? th.logD : th.logDim;
+    const msgColorFor = (lv) => lv === 'A' ? th.logA : lv === 'E' ? th.logEMsg : lv === 'W' ? th.logWMsg : lv === 'I' ? th.text : lv === 'D' ? th.logDMsg : th.logDim;
+    const logRows = logLines.map(l => ({
+      level: l.level, time: l.time, tag: l.tag, msg: l.msg,
+      showTime: W >= 340, showTag: wide,
+      rowStyle: { display: 'flex', gap: 7, padding: '0 8px', background: l.level === 'A' ? th.redBg : 'transparent', alignItems: s.wrap ? 'flex-start' : 'center' },
+      levelStyle: { fontFamily: MONO, fontSize: 11, lineHeight: '16px', width: 7, flexShrink: 0, fontWeight: l.level === 'A' ? 700 : 400, color: colorFor(l.level) },
+      timeStyle: { fontFamily: MONO, fontSize: 11, lineHeight: '16px', color: th.logDim, flexShrink: 0 },
+      tagStyle: { fontFamily: MONO, fontSize: 11, lineHeight: '16px', color: th.textDim, width: 104, flexShrink: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
+      msgStyle: { fontFamily: MONO, fontSize: 11, lineHeight: '16px', color: msgColorFor(l.level), fontWeight: l.level === 'A' ? 700 : 400, flex: 1, minWidth: 0, whiteSpace: s.wrap ? 'pre-wrap' : 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
+    }));
+    const levelChips = LEVELS.map((lv, i) => {
+      const active = s.minLevel === lv;
+      return {
+        label: lv, tooltip: lv + ' and above',
+        style: { width: 20, height: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 4, fontFamily: MONO, fontSize: 11, fontWeight: active ? 700 : 400, cursor: 'pointer', color: active ? colorFor(lv) : th.textFaint, background: active ? th.accentBg : 'transparent', border: `1px solid ${active ? th.accentBorder : 'transparent'}` },
+        hoverStyle: active ? {} : th.hover,
+        onClick: () => this.setState({ minLevel: lv }),
+      };
+    });
+
+    const logEmptyByFilter = !s.logCleared && connected;
+    const toast = s.toast;
+
+    return {
+      hoverStyle: th.hover, spacerStyle: { flex: 1 },
+      pageStyle: { minHeight: '100vh', background: th.backdrop, display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '200px 24px 60px', fontFamily: UI },
+      switcherStyle: { position: 'fixed', top: 12, left: '50%', transform: 'translateX(-50%)', zIndex: 60, display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center', maxWidth: 940 },
+      switcherGroupStyle: { display: 'flex', gap: 4, padding: 5, borderRadius: 999, background: 'rgba(20,21,24,0.9)', backdropFilter: 'blur(12px)' },
+      pillDark: pill(s.theme === 'dark'), pillLight: pill(s.theme === 'light'),
+      setDark: () => this.setState({ theme: 'dark' }), setLight: () => this.setState({ theme: 'light' }),
+      pillWide: pill(W >= 470), pillDock: pill(W >= 340 && W < 470), pillNarrow: pill(W < 340),
+      setWide: () => this.setSize(560, 700), setDock: () => this.setSize(380, 720), setNarrow: () => this.setSize(300, 720),
+      viewPills: RAIL.map(r => ({ label: r.label, style: pill(s.view === r.id), onClick: () => this.setState({ view: r.id }) })),
+      statePills: [
+        { id: 'connected', label: 'Connected' }, { id: 'none', label: 'No device' },
+        { id: 'loading', label: 'Loading' }, { id: 'unauthorized', label: 'Unauthorized' },
+      ].map(p => ({ label: p.label, style: pill(s.deviceState === p.id), onClick: () => this.setState({ deviceState: p.id, pickerOpen: false }) })),
+      pillMirror: pill(s.mirroring), mirrorPillLabel: 'Mirroring: ' + (s.mirroring ? 'on' : 'off'),
+      pillRecord: pill(s.recording), recordPillLabel: 'Recording: ' + (s.recording ? 'on' : 'off'),
+      pillSkeleton: pill(s.skeleton), skeletonPillLabel: 'Skeleton: ' + (s.skeleton ? 'on' : 'off'),
+      toggleSkeleton: () => this.setState({ skeleton: !s.skeleton }),
+
+      frameRef: this.frameRef,
+      frameStyle: { width: W, height: s.height, minWidth: 260, minHeight: 460, maxWidth: 900, maxHeight: 1100, resize: 'both', overflow: 'hidden', position: 'relative', borderRadius: 6, background: th.bg, color: th.text, display: 'flex', flexDirection: 'column', boxShadow: th.shadow, border: `1px solid ${th.border}` },
+      captionStyle: { marginTop: 12, fontFamily: MONO, fontSize: 10, color: 'rgba(255,255,255,0.35)' },
+      frameCaption: W + '×' + s.height + ' · ' + (wide ? 'wide dock' : compact ? 'narrow dock' : 'right dock') + ' · drag the frame corner to resize',
+
+      titleBarStyle: { height: 32, flexShrink: 0, display: 'flex', alignItems: 'center', gap: 6, padding: '0 4px 0 10px', background: th.bg, borderBottom: `1px solid ${th.border}` },
+      brandMarkStyle: { width: 14, height: 14, borderRadius: 4, background: th.brand, flexShrink: 0 },
+      pluginTitleStyle: { fontSize: 12.5, fontWeight: 600 },
+      headerIconBtnStyle: { width: 22, height: 22, borderRadius: 5, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 },
+      gearIconStyle: { width: 10, height: 10, borderRadius: '50%', border: `1.6px solid ${th.textDim}`, boxShadow: `0 -5px 0 -3.6px ${th.textDim}, 0 5px 0 -3.6px ${th.textDim}, -5px 0 0 -3.6px ${th.textDim}, 5px 0 0 -3.6px ${th.textDim}` },
+      moreIconStyle: { width: 3, height: 3, borderRadius: '50%', background: th.textDim, boxShadow: `0 -5px 0 ${th.textDim}, 0 5px 0 ${th.textDim}` },
+      minimizeIconStyle: { width: 10, height: 1.6, background: th.textDim },
+
+      deviceBarStyle: { minHeight: 30, flexShrink: 0, display: 'flex', alignItems: 'center', gap: 6, padding: '0 4px 0 8px', background: th.header, borderBottom: `1px solid ${th.border}`, position: 'relative', zIndex: 20 },
+      isDeviceLoading: s.deviceState === 'loading', isDeviceConnected: connected,
+      isDeviceUnauthorized: s.deviceState === 'unauthorized', isDeviceNone: s.deviceState === 'none',
+      isUnauthorizedHintVisible: s.deviceState === 'unauthorized',
+      spinnerStyle: { width: 10, height: 10, borderRadius: '50%', border: `1.5px solid ${th.brand}`, borderTopColor: 'transparent', animation: 'adb-spin 0.7s linear infinite', flexShrink: 0 },
+      deviceLoadingTextStyle: { fontSize: 11.5, color: th.textDim },
+      deviceSelectorStyle: { display: 'flex', alignItems: 'center', gap: 6, height: 24, padding: '0 6px', borderRadius: 5, cursor: 'pointer', minWidth: 0 },
+      deviceTooltip: DEVICES.length + ' devices — click to switch',
+      statusDotStyle: { width: 7, height: 7, borderRadius: '50%', background: th.green, flexShrink: 0 },
+      warnDotStyle: { width: 7, height: 7, borderRadius: '50%', background: th.amber, flexShrink: 0, marginLeft: 4 },
+      offDotStyle: { width: 7, height: 7, borderRadius: '50%', border: `1.5px solid ${th.textFaint}`, flexShrink: 0, marginLeft: 4 },
+      deviceNameStyle: { fontSize: 11.5, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
+      showSerial: !compact, deviceName: dev.name, deviceSerial: dev.serial, deviceConn: dev.conn,
+      deviceSerialStyle: { fontFamily: MONO, fontSize: 9.5, color: th.textFaint, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
+      connChipStyle: { fontSize: 9, fontWeight: 700, color: th.textDim, border: `1px solid ${th.border}`, borderRadius: 3, padding: '1px 4px', flexShrink: 0 },
+      caretIconStyle: { width: 5, height: 5, borderRight: `1.3px solid ${th.textDim}`, borderBottom: `1.3px solid ${th.textDim}`, transform: 'rotate(45deg)', marginTop: -3, flexShrink: 0 },
+      deviceCountStyle: { fontFamily: MONO, fontSize: 9.5, color: th.textFaint, flexShrink: 0 },
+      deviceCountLabel: compact ? '3' : '3 online',
+      unauthorizedTextStyle: { fontSize: 11.5, fontWeight: 600, color: th.amber },
+      noDeviceTextStyle: { fontSize: 11.5, color: th.textDim },
+      warnBannerStyle: { flexShrink: 0, fontSize: 10.5, lineHeight: 1.4, color: th.amber, background: th.amberBg, borderBottom: `1px solid ${th.border}`, padding: '6px 10px' },
+      iconBtnStyle: iconBtn,
+      refreshIconStyle: { width: 11, height: 11, borderRadius: '50%', border: `1.6px solid ${th.textDim}`, borderRightColor: 'transparent' },
+      onRefresh: () => { this.setState({ deviceState: 'loading' }); setTimeout(() => this.setState({ deviceState: 'connected' }), 700); },
+      linkStyle: link,
+
+      pickerOpen: s.pickerOpen && connected, togglePicker: () => this.setState({ pickerOpen: !s.pickerOpen }), closePicker: () => this.setState({ pickerOpen: false }),
+      pickerScrimStyle: { position: 'absolute', inset: 0, zIndex: 24 },
+      pickerPopupStyle: { position: 'absolute', top: 62, left: 8, right: 8, zIndex: 25, background: th.panel, border: `1px solid ${th.borderStrong}`, borderRadius: 8, boxShadow: th.shadow, overflow: 'hidden' },
+      pickerHeaderStyle: { fontSize: 9.5, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase', color: th.textFaint, padding: '7px 10px 4px' },
+      pickerRows: DEVICES.map(d => ({
+        name: d.name, serial: d.serial, conn: d.conn,
+        onClick: () => this.setState({ selectedDeviceId: d.id, pickerOpen: false, deviceState: d.state === 'online' ? 'connected' : 'unauthorized' }),
+        rowStyle: { display: 'flex', alignItems: 'center', gap: 7, height: 28, padding: '0 10px', cursor: 'pointer', background: d.id === s.selectedDeviceId ? th.accentBg : 'transparent' },
+        hoverStyle: th.hover,
+        dotStyle: { width: 7, height: 7, borderRadius: '50%', flexShrink: 0, background: d.state === 'online' ? th.green : th.amber },
+        nameStyle: { fontSize: 11.5, fontWeight: d.id === s.selectedDeviceId ? 700 : 500, whiteSpace: 'nowrap' },
+        serialStyle: { fontFamily: MONO, fontSize: 9.5, color: th.textFaint, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
+        connStyle: { fontSize: 9, fontWeight: 700, color: d.state === 'online' ? th.textDim : th.amber, border: `1px solid ${d.state === 'online' ? th.border : th.amber}`, borderRadius: 3, padding: '1px 4px', flexShrink: 0 },
+      })),
+      pickerFooterStyle: { display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px', borderTop: `1px solid ${th.border}`, background: th.header },
+      pickerHintStyle: { fontFamily: MONO, fontSize: 9, color: th.textFaint },
+
+      bodyRowStyle: { flex: 1, display: 'flex', overflow: 'hidden', minHeight: 0 },
+      railStyle: { width: 34, flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, padding: '4px 0 6px', background: th.panel, borderRight: `1px solid ${th.border}` },
+      railItems,
+      railSettingsStyle: { width: 26, height: 26, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 },
+      viewColStyle: { flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0, position: 'relative' },
+      viewScrollStyle: { flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column' },
+
+      isDeviceView: s.view === 'device', isAppsView: s.view === 'apps', isDisplayView: s.view === 'display',
+      isNetworkView: s.view === 'network', isLogcatView: s.view === 'logcat',
+
+      showNoDeviceEmpty: !connected && s.deviceState !== 'loading' && !s.skeleton,
+      showSkeleton: s.skeleton || s.deviceState === 'loading',
+      showDeviceContent: connected && !s.skeleton,
+      skeletonWrapStyle: { display: 'flex', flexDirection: 'column', gap: 8, padding: 12 },
+      skeletonRows: [62, 88, 40, 74, 54, 82].map(w => ({ height: 10, width: w + '%', borderRadius: 3, background: th.mode === 'dark' ? 'rgba(255,255,255,0.055)' : 'rgba(0,0,0,0.05)', animation: 'adb-pulse 1.4s ease-in-out infinite', flexShrink: 0 })),
+
+      emptyWrapStyle: { display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: 6, padding: '34px 16px 16px' },
+      emptyIconStyle: { width: 26, height: 34, borderRadius: 5, border: `1.6px solid ${th.borderStrong}`, marginBottom: 2 },
+      emptyTitleStyle: { fontSize: 12.5, fontWeight: 700 },
+      emptyBodyStyle: { fontSize: 11, lineHeight: 1.45, color: th.textDim, maxWidth: 250 },
+      emptyActionsStyle: { display: 'flex', gap: 6, marginTop: 4 },
+      emptyFootStyle: { fontFamily: MONO, fontSize: 9.5, color: th.textFaint, marginTop: 8 },
+
+      sectionStyle: { display: 'flex', flexDirection: 'column', gap: 6, padding: '10px 0 12px', borderBottom: `1px solid ${th.border}`, flexShrink: 0 },
+      sectionHeaderStyle: { display: 'flex', alignItems: 'baseline', gap: 8, padding: '0 10px' },
+      sectionTitleStyle: sectionTitle,
+      sectionMetaStyle: { fontFamily: MONO, fontSize: 9.5, color: th.textFaint, marginLeft: 'auto' },
+      actionRowStyle: { display: 'flex', alignItems: 'center', gap: 6, padding: '0 10px', flexWrap: 'wrap' },
+      helpTextStyle: helpText,
+      primaryBtnStyle: gate(primaryBtn, dis), primaryHoverStyle: dis ? {} : { filter: 'brightness(1.08)' },
+      secondaryBtnStyle: gate(secondaryBtn, dis),
+      dangerGhostBtnStyle: { ...dangerBtn },
+      slidersIconStyle: { width: 12, height: 10, borderTop: `1.4px solid ${th.textDim}`, borderBottom: `1.4px solid ${th.textDim}`, position: 'relative' },
+
+      isMirroring: connected && s.mirroring, isNotMirroring: !(connected && s.mirroring),
+      toggleMirroring: () => { const on = !s.mirroring; this.setState({ mirroring: on }); this.flash(on ? 'scrcpy started for ' + dev.name : 'Mirroring stopped'); },
+      onStartMirroring: () => { if (dis) return; this.setState({ mirroring: true }); this.flash('scrcpy started for ' + dev.name); },
+      runningRowStyle: { display: 'flex', alignItems: 'center', gap: 7, margin: '0 10px', padding: '6px 8px', borderRadius: 5, background: th.brandBg, border: `1px solid ${th.brandBorder}` },
+      liveDotStyle: { width: 7, height: 7, borderRadius: '50%', background: th.brand, animation: 'adb-pulse 1.6s ease-in-out infinite', flexShrink: 0 },
+      runningLabelStyle: { fontSize: 11.5, fontWeight: 600, color: th.brand },
+
+      isRecording: connected && s.recording, isNotRecording: !(connected && s.recording),
+      toggleRecording: () => { const on = !s.recording; this.setState({ recording: on }); this.flash(on ? 'Recording started' : 'Saved screen-2026-09-01.mp4', 'ok', on ? null : 'Reveal'); },
+      onScreenshot: () => { if (dis) return; this.flash('Saved screen-2026-09-01.png', 'ok', 'Reveal'); },
+      recordingRowStyle: { display: 'flex', alignItems: 'center', gap: 7, margin: '0 10px', padding: '6px 8px', borderRadius: 5, background: th.redBg, border: `1px solid ${th.redBorder}` },
+      recDotStyle: { width: 7, height: 7, borderRadius: '50%', background: th.red, animation: 'adb-pulse 1.2s ease-in-out infinite', flexShrink: 0 },
+      recLabelStyle: { fontFamily: MONO, fontSize: 11, fontWeight: 700, color: th.red },
+
+      deviceFacts,
+      factsGridStyle: { display: 'grid', gridTemplateColumns: compact ? '1fr 1fr' : 'repeat(3, 1fr)', gap: 8, padding: '2px 10px 6px' },
+
+      appsToolbarStyle: { display: 'flex', alignItems: 'center', gap: 6, padding: '6px 8px', flexShrink: 0, borderBottom: `1px solid ${th.border}` },
+      searchWrapStyle: { flex: 1, display: 'flex', alignItems: 'center', gap: 6, height: 24, padding: '0 7px', borderRadius: 4, background: th.field, border: `1px solid ${th.borderStrong}`, minWidth: 0 },
+      searchIconStyle: { width: 9, height: 9, borderRadius: '50%', border: `1.4px solid ${th.textFaint}`, flexShrink: 0 },
+      searchInputStyle: { flex: 1, border: 'none', outline: 'none', background: 'transparent', fontSize: 11, color: th.text, fontFamily: UI, minWidth: 0 },
+      clearBtnStyle: { fontSize: 12, color: th.textFaint, cursor: 'pointer', flexShrink: 0 },
+      eyeIconStyle: { width: 12, height: 8, borderRadius: '50%', border: `1.4px solid ${th.textDim}` },
+      appQuery: s.appQuery, hasAppQuery: !!s.appQuery,
+      onAppQueryInput: (e) => this.setState({ appQuery: e.target.value }),
+      clearAppQuery: () => this.setState({ appQuery: '' }),
+      appListStyle: { flex: 1, overflowY: 'auto', padding: '4px 6px', display: 'flex', flexDirection: 'column', gap: 1, opacity: dis ? 0.45 : 1 },
+      appRows: dis ? [] : appRows, isAppListEmpty: !dis && appRows.length === 0,
+      appActionsStyle: { flexShrink: 0, borderTop: `1px solid ${th.border}`, background: th.panel, padding: '8px 0 10px', display: 'flex', flexDirection: 'column', gap: 8 },
+      selectedAppRowStyle: { display: 'flex', flexDirection: 'column', gap: 1, padding: '0 10px' },
+      selectedAppLabelStyle: { fontSize: 12, fontWeight: 700, color: dis ? th.textFaint : th.text },
+      selectedAppPkgStyle: { fontFamily: MONO, fontSize: 9.5, color: th.textFaint },
+      selectedAppLabel: dis ? 'No app selected' : selApp.label,
+      selectedAppPkg: dis ? 'connect a device to manage apps' : selApp.pkg,
+      onRestartApp: () => { if (dis) return; this.flash('Restarted ' + selApp.pkg); },
+      onForceStop: () => { if (dis) return; this.flash('Force-stopped ' + selApp.pkg); },
+      onLaunchApp: () => { if (dis) return; this.flash('Launched ' + selApp.pkg); },
+      dangerZoneStyle: { display: 'flex', alignItems: 'center', gap: 6, padding: '8px 10px 0', margin: '0 10px', borderTop: `1px dashed ${th.border}`, flexWrap: 'wrap' },
+      dangerLabelStyle: { fontSize: 9.5, fontWeight: 700, letterSpacing: 0.4, textTransform: 'uppercase', color: th.textFaint, marginRight: 'auto' },
+      dangerBtnStyle: gate(dangerBtn, dis), dangerHoverStyle: dis ? {} : { background: th.redBg },
+      onClearData: () => { if (dis) return; this.askConfirm('clear'); },
+      onUninstall: () => { if (dis) return; this.askConfirm('uninstall'); },
+
+      fontChips, densityChips,
+      chipRowStyle: { display: 'flex', gap: 4, flexWrap: 'wrap', padding: '0 10px' },
+      fontStateStyle: { fontFamily: MONO, fontSize: 10, color: fontOverridden ? th.amber : th.textFaint, marginLeft: 'auto' },
+      fontStateLabel: dis ? '—' : (fontOverridden ? s.fontScale + '× applied' : 'default'),
+      densityStateStyle: { fontFamily: MONO, fontSize: 10, color: densityOverridden ? th.amber : th.textFaint, marginLeft: 'auto' },
+      densityStateLabel: dis ? '—' : (densityOverridden ? Math.round(428 * s.density / 100) + ' dpi' : '428 dpi'),
+      fontCustomOpen: s.fontCustomOpen, densityCustomOpen: s.densityCustomOpen,
+      customRowStyle: { display: 'flex', alignItems: 'center', gap: 6, padding: '2px 10px 0' },
+      customFieldStyle: { ...field, width: 64 },
+      customUnitStyle: { fontFamily: MONO, fontSize: 11, color: th.textFaint },
+      fontCustomValue: s.fontCustomValue, densityCustomValue: s.densityCustomValue,
+      onFontCustomInput: (e) => this.setState({ fontCustomValue: e.target.value, fontCustomInvalid: false }),
+      onDensityCustomInput: (e) => this.setState({ densityCustomValue: e.target.value }),
+      fontCustomInvalid: s.fontCustomInvalid,
+      errorTextStyle: { fontSize: 10.5, color: th.red },
+      applyFontCustom: () => {
+        const v = Number(s.fontCustomValue);
+        if (!(v >= 0.25 && v <= 5)) { this.setState({ fontCustomInvalid: true }); return; }
+        this.setState({ fontScale: v, fontCustomOpen: false, fontCustomInvalid: false });
+        this.flash('Font scale set to ' + v + '×');
+      },
+      applyDensityCustom: () => { this.flash('Density set to ' + s.densityCustomValue + ' dpi'); this.setState({ density: 125, densityCustomOpen: false }); },
+      fontOverridden: fontOverridden && connected, densityOverridden: densityOverridden && connected,
+      resetRowStyle: { display: 'flex', alignItems: 'center', gap: 8, padding: '2px 10px 0' },
+      overrideNoteStyle: { fontSize: 10.5, color: th.textFaint, marginRight: 'auto' },
+      resetFont: () => { this.setState({ fontScale: 1, fontCustomOpen: false }); this.flash('Font scale reset to 1×'); },
+      resetDensity: () => { this.setState({ density: 100, densityCustomOpen: false }); this.flash('Density reset to physical (428 dpi)'); },
+      displayToggles,
+
+      proxyHost: s.proxyHost, proxyPort: s.proxyPort,
+      onHostInput: (e) => this.setState({ proxyHost: e.target.value }),
+      onPortInput: (e) => this.setState({ proxyPort: e.target.value }),
+      proxyFieldRowStyle: { display: 'flex', alignItems: 'center', gap: 5, padding: '0 10px', opacity: dis ? 0.45 : 1 },
+      hostFieldStyle: { ...field, flex: 1 },
+      portFieldStyle: { ...field, width: 66, borderColor: portInvalid ? th.red : th.borderStrong, color: portInvalid ? th.red : th.text },
+      colonStyle: { fontFamily: MONO, fontSize: 12, color: th.textFaint },
+      portInvalid, fieldErrorStyle: { fontSize: 10.5, color: th.red, padding: '0 10px' },
+      proxyStateStyle: { fontSize: 10, fontWeight: 700, marginLeft: 'auto', color: s.proxyEnabled ? th.amber : th.textFaint },
+      proxyStateLabel: dis ? '—' : (s.proxyEnabled ? 'active' : 'off'),
+      useMyIp: () => { if (dis) return; this.setState({ proxyHost: '10.0.4.117' }); this.flash('Filled 10.0.4.117 (en0)'); },
+      proxyPrimaryStyle: gate(s.proxyEnabled ? { ...secondaryBtn } : primaryBtn, dis || portInvalid),
+      proxyPrimaryLabel: s.proxyEnabled ? 'Disable' : 'Enable proxy',
+      toggleProxy: () => { if (dis || portInvalid) return; const on = !s.proxyEnabled; this.setState({ proxyEnabled: on }); this.flash(on ? 'Proxy set to ' + s.proxyHost + ':' + s.proxyPort : 'Proxy disabled'); },
+      proxyEnabled: s.proxyEnabled && connected, proxyDisabled: !(s.proxyEnabled && connected),
+      proxyTarget: s.proxyHost + ':' + s.proxyPort,
+      proxyActiveBannerStyle: { display: 'flex', alignItems: 'center', gap: 7, margin: '2px 10px 0', padding: '6px 8px', borderRadius: 5, background: th.amberBg, border: `1px solid ${th.amber}` },
+      proxyActiveTextStyle: { fontSize: 11, fontWeight: 600, color: th.amber, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
+      resetProxy: () => { this.setState({ proxyEnabled: false }); this.flash('Proxy reset'); },
+      inlineMonoStyle: { fontFamily: MONO, fontSize: 10, color: th.textDim },
+      recentProxies: [
+        { target: '10.0.4.117:8888', note: 'mitmproxy' },
+        { target: '10.0.4.117:8080', note: 'Charles' },
+        { target: 'proxy.acme.dev:3128', note: 'staging' },
+      ].map(r => ({
+        target: r.target, note: r.note, onClick: () => { const [h, p] = r.target.split(':'); this.setState({ proxyHost: h, proxyPort: p }); },
+        rowStyle: { display: 'flex', alignItems: 'center', gap: 8, height: 26, padding: '0 10px', cursor: 'pointer', borderRadius: 4 },
+        targetStyle: { fontFamily: MONO, fontSize: 11, color: th.text },
+        noteStyle: { fontSize: 10.5, color: th.textFaint },
+      })),
+
+      logToolbarStyle: { display: 'flex', alignItems: 'center', gap: 6, padding: '6px 6px 6px 8px', flexShrink: 0, borderBottom: `1px solid ${th.border}` },
+      logToolbarBtnsStyle: { display: 'flex', alignItems: 'center', gap: 2, flexShrink: 0 },
+      logQuery: s.logQuery, hasLogQuery: !!s.logQuery,
+      onLogQueryInput: (e) => this.setState({ logQuery: e.target.value }),
+      clearLogQuery: () => this.setState({ logQuery: '' }),
+      pauseBtnStyle: s.paused ? iconBtnActive : iconBtn,
+      pauseIconStyle: s.paused
+        ? { width: 0, height: 0, borderTop: '4px solid transparent', borderBottom: '4px solid transparent', borderLeft: `7px solid ${th.accent}`, marginLeft: 2 }
+        : { width: 8, height: 10, borderLeft: `2.5px solid ${th.textDim}`, borderRight: `2.5px solid ${th.textDim}` },
+      pauseTooltip: s.paused ? 'Resume the stream  Space' : 'Pause the stream  Space',
+      togglePause: () => { const p = !s.paused; this.setState({ paused: p, autoscroll: p ? false : true }); },
+      autoscrollBtnStyle: s.autoscroll ? iconBtnActive : iconBtn,
+      autoscrollIconStyle: { width: 10, height: 10, borderLeft: `1.5px solid ${s.autoscroll ? th.accent : th.textDim}`, borderBottom: `1.5px solid ${s.autoscroll ? th.accent : th.textDim}`, position: 'relative' },
+      autoscrollTooltip: s.autoscroll ? 'Autoscroll on — following the newest line' : 'Autoscroll paused — End to resume',
+      toggleAutoscroll: () => this.setState({ autoscroll: !s.autoscroll }),
+      wrapBtnStyle: s.wrap ? iconBtnActive : iconBtn,
+      wrapIconStyle: { width: 11, height: 8, borderTop: `1.5px solid ${s.wrap ? th.accent : th.textDim}`, borderBottom: `1.5px solid ${s.wrap ? th.accent : th.textDim}` },
+      toggleWrap: () => this.setState({ wrap: !s.wrap }),
+      dividerStyle: { width: 1, height: 14, background: th.border, margin: '0 2px' },
+      trashIconStyle: { width: 9, height: 10, borderRadius: '0 0 2px 2px', border: `1.4px solid ${th.textDim}`, borderTop: `2.4px solid ${th.textDim}` },
+      clearLog: () => { this.setState({ logCleared: true }); this.flash('Buffer cleared'); },
+      logFilterRowStyle: { display: 'flex', alignItems: 'center', gap: 3, padding: '0 8px 6px', flexShrink: 0, borderBottom: `1px solid ${th.border}` },
+      levelChips,
+      pkgFilterStyle: { display: 'flex', alignItems: 'center', height: 20, padding: '0 7px', borderRadius: 4, fontFamily: MONO, fontSize: 10, cursor: 'pointer', maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: s.pkgFilterOn ? th.accent : th.textFaint, background: s.pkgFilterOn ? th.accentBg : 'transparent', border: `1px solid ${s.pkgFilterOn ? th.accentBorder : th.border}` },
+      pkgFilterLabel: s.pkgFilterOn ? selApp.pkg : 'all packages',
+      togglePkgFilter: () => this.setState({ pkgFilterOn: !s.pkgFilterOn }),
+      logBodyStyle: { flex: 1, overflowY: 'auto', padding: '4px 0 6px', background: th.bg, minHeight: 0 },
+      logRows,
+      isLogEmpty: logRows.length === 0,
+      logEmptyTitle: !connected ? 'No device connected' : s.logCleared ? 'Buffer cleared' : 'Nothing matches these filters',
+      logEmptyBody: !connected ? 'Logcat attaches automatically when a device comes online.' : s.logCleared ? 'New lines will appear as the device emits them.' : 'Level is ' + s.minLevel + ' and above' + (s.pkgFilterOn ? ', limited to ' + selApp.pkg : '') + (s.logQuery ? ', matching “' + s.logQuery + '”' : '') + '.',
+      resetLogFilters: () => this.setState({ minLevel: 'V', pkgFilterOn: false, logQuery: '', logCleared: false }),
+      showPausedPill: connected && (s.paused || !s.autoscroll),
+      pausedPillWrapStyle: { position: 'absolute', bottom: 34, left: 0, right: 0, display: 'flex', justifyContent: 'center', pointerEvents: 'none' },
+      pausedPillStyle: { display: 'flex', alignItems: 'center', gap: 7, padding: '4px 8px 4px 7px', borderRadius: 999, background: th.panel, border: `1px solid ${th.amber}`, boxShadow: th.shadow, cursor: 'pointer', pointerEvents: 'auto' },
+      pausedDotStyle: { width: 6, height: 6, borderRadius: '50%', background: th.amber, flexShrink: 0 },
+      pausedTextStyle: { fontSize: 10.5, fontWeight: 600, color: th.amber },
+      pausedLabel: s.paused ? 'Paused · 234 new lines' : '234 new lines below',
+      pausedActionStyle: { fontSize: 10.5, fontWeight: 700, color: th.accent },
+      jumpToLatest: () => this.setState({ paused: false, autoscroll: true }),
+      logFooterStyle: { height: 22, flexShrink: 0, display: 'flex', alignItems: 'center', gap: 8, padding: '0 8px', borderTop: `1px solid ${th.border}`, background: th.header },
+      logFooterTextStyle: { fontFamily: MONO, fontSize: 9.5, color: th.textFaint },
+      logCountLabel: logRows.length + ' of 1 482 lines' + (logEmptyByFilter ? '' : ''),
+
+      statusBarStyle: { height: 22, flexShrink: 0, display: 'flex', alignItems: 'center', gap: 8, padding: '0 8px', background: th.header, borderTop: `1px solid ${th.border}` },
+      hasRunningChip: connected && (s.mirroring || s.recording),
+      runningChipStyle: { display: 'flex', alignItems: 'center', gap: 5, padding: '1px 6px', borderRadius: 4, background: s.recording ? th.redBg : th.brandBg, border: `1px solid ${s.recording ? th.redBorder : th.brandBorder}`, flexShrink: 0 },
+      runningChipDotStyle: { width: 5, height: 5, borderRadius: '50%', background: s.recording ? th.red : th.brand, animation: 'adb-pulse 1.4s ease-in-out infinite' },
+      runningChipLabelStyle: { fontFamily: MONO, fontSize: 9, fontWeight: 700, color: s.recording ? th.red : th.brand },
+      runningChipLabel: s.recording ? 'REC 00:42' : 'scrcpy',
+      statusMsgStyle: { fontSize: 9.5, color: th.textDim, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
+      statusMessage: s.statusMessage,
+      hasOverrides: connected && overrideCount > 0,
+      overrideChipStyle: { fontSize: 9, fontWeight: 700, color: th.amber, border: `1px solid ${th.amber}`, borderRadius: 3, padding: '1px 5px', cursor: 'pointer', flexShrink: 0 },
+      overrideChipLabel: overrideCount + ' override' + (overrideCount === 1 ? '' : 's') + ' · reset all',
+      resetAllOverrides: () => { this.setState({ fontScale: 1, density: 100, proxyEnabled: false }); this.flash('All overrides reverted on ' + dev.name); },
+      statusVersionStyle: { fontFamily: MONO, fontSize: 9, color: th.textFaint, flexShrink: 0 },
+
+      toastVisible: !!toast,
+      toastWrapStyle: { position: 'absolute', bottom: 30, left: 8, right: 8, display: 'flex', zIndex: 40, pointerEvents: 'none' },
+      toastStyle: { display: 'flex', alignItems: 'center', gap: 7, padding: '6px 9px', borderRadius: 5, maxWidth: '100%', background: th.panel, border: `1px solid ${toast && toast.kind === 'error' ? th.redBorder : th.border}`, borderLeft: `3px solid ${toast && toast.kind === 'error' ? th.red : th.green}`, boxShadow: th.shadow, pointerEvents: 'auto' },
+      toastGlyphStyle: { fontSize: 11, fontWeight: 700, color: toast && toast.kind === 'error' ? th.red : th.green, flexShrink: 0 },
+      toastGlyph: toast && toast.kind === 'error' ? '✕' : '✓',
+      toastTextStyle: { fontSize: 11, color: th.text, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
+      toastText: toast ? toast.text : '',
+      toastHasAction: !!(toast && toast.actionLabel), toastActionLabel: toast && toast.actionLabel,
+      toastActionStyle: { fontSize: 11, fontWeight: 700, color: th.accent, cursor: 'pointer', flexShrink: 0 },
+      dismissToast: () => this.dismissToast(),
+
+      confirmOpen: !!s.confirm, stopProp: (e) => e.stopPropagation(),
+      scrimStyle: { position: 'absolute', inset: 0, zIndex: 50, background: th.scrim, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 },
+      confirmStyle: { width: '100%', maxWidth: 300, borderRadius: 8, background: th.panel, border: `1px solid ${th.borderStrong}`, boxShadow: th.shadow, padding: 14 },
+      confirmTitleStyle: { fontSize: 12.5, fontWeight: 700, marginBottom: 5 },
+      confirmBodyStyle: { fontSize: 11, lineHeight: 1.45, color: th.textDim },
+      confirmTitle: s.confirm === 'uninstall' ? 'Uninstall ' + selApp.pkg + '?' : 'Clear data for ' + selApp.pkg + '?',
+      confirmBody: s.confirm === 'uninstall'
+        ? 'Removes the app and all of its data from ' + dev.name + '. This cannot be undone.'
+        : 'Deletes databases, preferences and caches on ' + dev.name + ', and signs the user out. This cannot be undone.',
+      confirmOkLabel: s.confirm === 'uninstall' ? 'Uninstall' : 'Clear data',
+      confirmActionsStyle: { display: 'flex', justifyContent: 'flex-end', gap: 6, marginTop: 14 },
+      confirmCancelStyle: { height: 24, padding: '0 10px', display: 'inline-flex', alignItems: 'center', borderRadius: 5, fontSize: 11, fontWeight: 600, border: `1px solid ${th.accent}`, color: th.text, cursor: 'pointer' },
+      confirmOkStyle: { height: 24, padding: '0 10px', display: 'inline-flex', alignItems: 'center', borderRadius: 5, fontSize: 11, fontWeight: 700, background: th.red, color: '#fff', cursor: 'pointer' },
+      cancelConfirm: () => this.cancelConfirm(), acceptConfirm: () => this.acceptConfirm(),
+    };
+  }
+}
+
+</script>
+</body>
+</html>

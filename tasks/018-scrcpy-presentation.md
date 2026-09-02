@@ -11,6 +11,8 @@ Expose mirroring state/actions in the Device feature and global shortcut without
 - [012 — Navigation](012-navigation-routing.md)
 - [013 — Feedback/status](013-feedback-status.md)
 - [014 — Device-context policies](014-device-context-policies.md)
+- Mirroring idle/running states, copy, feedback, and shortcut in `design/README.md` §3 and Interactions;
+  interactive state target in `design/designs/ADB Toolbox Plugin.dc.html`; mirror/options SVGs.
 
 ## Scope
 

@@ -9,6 +9,8 @@ Apply the delivered Network design to proxy editing, validation, active state, h
 - Tasks 030–032 complete.
 - [041 — Override reconciliation](041-override-reconciliation.md)
 - [042 — Final design system/assets](042-final-design-system-assets.md)
+- `design/README.md` §6 Network; Network states in `design/designs/ADB Toolbox Plugin.dc.html`;
+  field/banner/link specimens; proxy SVG variants.
 
 ## Scope
 

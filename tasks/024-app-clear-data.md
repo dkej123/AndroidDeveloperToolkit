@@ -8,6 +8,8 @@ Add the clear-data destructive workflow as one isolated, explicitly confirmed co
 
 - [022 — Apps selection/search](022-apps-selection-search.md)
 - [023 — App lifecycle actions](023-app-lifecycle-actions.md)
+- Clear-data confirmation copy/default-focus requirements in `design/README.md` §4; command reference
+  in `design/IMPLEMENTATION.md` §4; clearData SVG variants.
 
 ## Scope
 

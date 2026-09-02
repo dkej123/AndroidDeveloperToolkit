@@ -13,6 +13,8 @@ Bind font scale, density, and quick toggles into one functional Display view and
 - [026 — Font scale](026-font-scale.md)
 - [027 — Density](027-display-density.md)
 - [028 — Quick toggles](028-display-quick-toggles.md)
+- Display presentation states in `design/README.md` §5 and the Display target in
+  `design/designs/ADB Toolbox Plugin.dc.html`; fontScale/density action SVGs.
 
 ## Scope
 

@@ -9,6 +9,8 @@ Capture one binary-safe PNG for the selected device and save/reveal it through p
 - [004 — Tool discovery](004-tool-discovery.md)
 - [006 — Binary ADB transport](006-binary-adb-transport.md)
 - [014 — Device-context policies](014-device-context-policies.md)
+- Capture idle/feedback requirements in `design/README.md` §3; screenshot command/correctness mapping
+  in `design/IMPLEMENTATION.md` §4; `design/icons/actions/screenshot*.svg`.
 
 ## Scope
 

@@ -7,6 +7,8 @@ Record, stop, pull, clean up, save, and reveal one screen recording with truthfu
 ## Dependencies
 
 - [019 — Screenshot capture](019-screenshot-capture.md)
+- Recording states, elapsed/status chip, copy and Reveal behavior in `design/README.md` §3 and §8;
+  recording/pull/cleanup commands in `design/IMPLEMENTATION.md` §4; record SVG assets.
 
 ## Scope
 

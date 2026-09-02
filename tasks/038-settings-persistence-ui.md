@@ -10,6 +10,9 @@ Persist and edit approved adb/scrcpy paths, capture directory, Logcat buffer siz
 - [007 — IntelliJ lifecycle](007-intellij-composition-lifecycle.md)
 - [010 — UI host](010-ui-host-infrastructure.md)
 - [013 — Feedback/status](013-feedback-status.md)
+- Settings fields in `design/designs/ADB Toolbox IA.dc.html`, persisted fields in
+  `design/README.md` State model, and path/discovery/settings notes in `design/IMPLEMENTATION.md`.
+  No bespoke Settings layout is supplied; use native IntelliJ `Configurable` structure.
 
 ## Scope
 

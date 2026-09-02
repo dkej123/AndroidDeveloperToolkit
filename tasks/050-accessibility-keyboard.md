@@ -7,6 +7,8 @@ Complete keyboard-only operation, assistive metadata, focus behavior, and disabl
 ## Dependencies
 
 - Tasks 043–049 complete.
+- Keyboard/region model in `design/README.md` Interactions and
+  `design/designs/ADB Toolbox IA.dc.html`, plus tooltips/copy in the relevant screen sections.
 
 ## Scope
 

@@ -9,6 +9,8 @@ Read, validate, apply, read back, and reset font scale for one selected device.
 - [003 — ADB contracts](003-adb-contracts-command-model.md)
 - [009 — Selected-device state](009-selected-device-state.md)
 - [014 — Device-context policies](014-device-context-policies.md)
+- Font presets/range/reset/readback states in `design/README.md` §5 and
+  `design/tokens/tokens.json`; command/correctness notes in `design/IMPLEMENTATION.md` §4.
 
 ## Scope
 

@@ -21,8 +21,11 @@ None.
 - Decide project/application persistence ownership and feature-local state-component policy.
 - Decide application-label resolution, Open-shell platform behavior, and whether mirroring and screen
   recording may coexist so later tasks do not invent those product/adapter rules.
-- Record that all colors, typography, spacing, iconography, branding, breakpoints, and final layouts
-  remain blocked until the separately delivered final design is available.
+- Treat `design/README.md`, `design/tokens/tokens.json`, the four prototypes under `design/designs/`,
+  and `design/icons/` as the final design sources; `design/IMPLEMENTATION.md` is the platform mapping.
+- Record that Settings, Wi-Fi pairing, and scrcpy options have entry points/semantics but no complete
+  bespoke screen layouts in the handoff; use native IntelliJ patterns and supplied primitives without
+  inventing a separate visual language.
 - Record clean-room use of the unlicensed ADBHelper reference and read-only use of `as_plugin`.
 
 ## Out of scope
@@ -39,9 +42,10 @@ Documentation-only task; no production behavior is introduced. Validate ADR link
 - Shared layers have no IntelliJ, Swing, ToolWindow, process, filesystem, or JVM-networking types.
 - A future standalone frontend can reuse domain/application behavior through platform ports.
 - Later tasks do not need to guess state, lifecycle, adapter, or module ownership.
-- Feature tasks do not need to guess label/shell/process-coexistence behavior or visual requirements.
+- Feature tasks do not need to guess label/shell/process-coexistence behavior or design-source priority.
 
 ## Validation
 
 - Review every ADR against `AGENTS.md` and the five applicable repository skills.
-- Verify all deferred visual decisions explicitly wait for the final supplied design.
+- Verify every visual decision routes to a concrete file under `design/` or an approved native
+  IntelliJ treatment for an explicitly uncovered secondary-flow gap.

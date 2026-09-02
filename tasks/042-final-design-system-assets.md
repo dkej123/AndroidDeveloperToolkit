@@ -2,7 +2,7 @@
 
 ## Goal
 
-Translate the separately delivered design tokens and production assets into IntelliJ/Swing primitives
+Translate the repository-owned design tokens and production assets into IntelliJ/Swing primitives
 without applying every feature layout in one mixed commit.
 
 ## Dependencies
@@ -10,11 +10,14 @@ without applying every feature layout in one mixed commit.
 - [010 — UI host](010-ui-host-infrastructure.md)
 - [013 — Feedback/status](013-feedback-status.md)
 - [014 — Shared policies](014-device-context-policies.md)
-- The complete final design system and assets have been delivered.
+- `design/tokens/tokens.json`, `design/designs/ADB Toolbox Design System.dc.html`,
+  `design/designs/ADB Toolbox Icons.dc.html`, `design/icons/`, and the Design tokens/Assets sections
+  of `design/README.md`.
 
 ## Scope
 
-- Map only supplied colors/theme keys, typography, spacing, dimensions, radii, motion, icons, and branding.
+- Map only values supplied by `design/tokens/tokens.json` through `JBColor`, IntelliJ font APIs, and
+  `JBUI.scale`, following `design/IMPLEMENTATION.md` §3.
 - Import supplied production assets and add resource/package tests for variants and loading.
 - Implement only supplied reusable visual primitives with focused APIs; avoid a generic UI utility layer.
 - Document native IntelliJ substitutions/deviations with direct design references.

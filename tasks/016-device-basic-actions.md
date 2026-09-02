@@ -8,6 +8,8 @@ Implement Reboot, Wake, and Open shell as explicit-serial actions with truthful 
 
 - [014 — Device-context policies](014-device-context-policies.md)
 - [015 — Device facts](015-device-facts-report.md)
+- Reboot/Open shell/Wake requirements in `design/README.md` §3 and Device prototype state in
+  `design/designs/ADB Toolbox Plugin.dc.html`; ADB/platform mapping in `design/IMPLEMENTATION.md`.
 
 ## Scope
 

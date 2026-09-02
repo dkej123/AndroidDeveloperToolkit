@@ -7,6 +7,7 @@ Produce and verify a reproducible release-candidate artifact without feature or 
 ## Dependencies
 
 - [052 — Cross-feature integration](052-cross-feature-integration.md)
+- `design/IMPLEMENTATION.md` §5 Definition of Done and the complete source routing in `tasks/README.md`.
 
 ## Scope
 

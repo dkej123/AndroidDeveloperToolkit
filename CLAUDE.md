@@ -21,8 +21,11 @@ These rules apply to every session in this repository.
 - Avoid giant managers/ViewModels/utility classes — keep code feature-local and modular.
 
 ## Design
-- The final visual design system and plugin UI design will be supplied separately. Do not invent
-  or copy visual design (including from the `as_plugin` reference repo) ahead of that.
+- The final visual design system and plugin UI design are versioned under `design/`. Read
+  `design/README.md` and the task-specific references before UI work; use `design/tokens/tokens.json`,
+  the prototypes under `design/designs/`, and production assets under `design/icons/` as specified.
+- Do not invent visual rules or copy visual design from `as_plugin`. `design/designs/support.js` is
+  prototype runtime only and must not be ported or packaged.
 
 ## Reference repository
 - `/Users/dkwasniak/Workspace/as_plugin` is READ-ONLY. Use it only as a technical reference for

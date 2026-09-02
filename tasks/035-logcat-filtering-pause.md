@@ -9,6 +9,8 @@ Provide client-side level/search/package filtering and deterministic unseen-line
 - [021 — Package discovery](021-package-discovery.md)
 - [022 — Apps selection/search](022-apps-selection-search.md)
 - [034 — Logcat buffer/session](034-logcat-buffer-session.md)
+- Level/search/package/pause/unseen semantics in `design/README.md` §7 and Interactions; PID command
+  and restart re-resolution note in `design/IMPLEMENTATION.md` §4.
 
 ## Scope
 

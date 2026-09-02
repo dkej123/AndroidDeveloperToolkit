@@ -13,6 +13,8 @@ Coordinate font, density, and proxy overrides per serial without moving feature 
 - [029 — Display presentation](029-display-presentation.md)
 - [030 — Proxy core](030-proxy-core.md)
 - [032 — Network presentation](032-network-presentation-recents.md)
+- Override count/reset-all, device reconnect/re-apply, and truth/readback rules in
+  `design/README.md` §8, Interactions, and State model; correctness notes in `design/IMPLEMENTATION.md` §4.
 
 ## Scope
 

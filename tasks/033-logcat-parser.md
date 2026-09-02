@@ -8,6 +8,8 @@ Incrementally decode and parse Logcat threadtime records into platform-neutral e
 
 - [002 — Process execution](002-process-execution.md)
 - [003 — ADB contracts](003-adb-contracts-command-model.md)
+- Threadtime fields/severity requirements in `design/README.md` §7 and command reference in
+  `design/IMPLEMENTATION.md` §4; severity values in `design/tokens/tokens.json` inform presentation only.
 
 ## Scope
 

@@ -7,6 +7,8 @@ Prove shared state and lifecycle behavior across otherwise isolated feature pack
 ## Dependencies
 
 - [051 — Responsive/scaling](051-responsive-scaling-verification.md)
+- Shared-state and interaction contracts in `design/README.md` Interactions/State model and the ten
+  Definition-of-Done items in `design/IMPLEMENTATION.md` §5.
 
 ## Scope
 

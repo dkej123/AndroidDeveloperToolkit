@@ -7,6 +7,8 @@ Resolve a usable development-machine LAN IPv4 through an isolated JVM adapter an
 ## Dependencies
 
 - [001 — Project bootstrap](001-project-bootstrap-quality.md)
+- “Use my computer IP” behavior in `design/README.md` §6 and JVM-not-adb requirement in
+  `design/IMPLEMENTATION.md` §4.
 
 ## Scope
 

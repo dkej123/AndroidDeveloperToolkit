@@ -11,6 +11,9 @@ Pair/connect a wireless ADB endpoint safely and refresh device discovery without
 - [013 — Feedback/status](013-feedback-status.md)
 - [014 — Device-context policies](014-device-context-policies.md)
 - [038 — Settings](038-settings-persistence-ui.md)
+- Pair entry point in `design/README.md` §1 and Plugin prototype, pair/connect commands in
+  `design/IMPLEMENTATION.md` §4, and authorize SVG variants. No dedicated pairing layout is supplied;
+  use a native IntelliJ nonblocking flow.
 
 ## Scope
 

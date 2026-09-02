@@ -9,6 +9,9 @@ Apply the delivered Display design to font, density, toggles, validation, overri
 - Tasks 026–029 complete.
 - [041 — Override reconciliation](041-override-reconciliation.md)
 - [042 — Final design system/assets](042-final-design-system-assets.md)
+- `design/README.md` §5 Display; Display states in `design/designs/ADB Toolbox Plugin.dc.html`;
+  preset/toggle/validation specimens; presets and metrics in `design/tokens/tokens.json`;
+  fontScale/density SVG variants.
 
 ## Scope
 

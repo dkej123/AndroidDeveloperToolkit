@@ -10,6 +10,7 @@ Implement binary adb execution plus a side-effect-safe selector between ddmlib a
 - [003 — ADB contracts](003-adb-contracts-command-model.md)
 - [004 — Tool discovery](004-tool-discovery.md)
 - [005 — ddmlib transport](005-ddmlib-transport.md)
+- Serial-scoped command families and streaming/binary needs in `design/IMPLEMENTATION.md` §4.
 
 ## Scope
 

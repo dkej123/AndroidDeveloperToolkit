@@ -9,6 +9,8 @@ single shared command manager.
 
 - [001 — Project bootstrap](001-project-bootstrap-quality.md)
 - [002 — Process execution](002-process-execution.md)
+- Required operation/result shapes in `design/IMPLEMENTATION.md` §4 and state/error expectations in
+  `design/README.md`; command examples are behavioral references, not permission to bypass typed ports.
 
 ## Scope
 

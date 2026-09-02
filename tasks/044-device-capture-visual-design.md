@@ -8,6 +8,9 @@ Apply the delivered Device-area design to facts/actions, scrcpy, screenshot, and
 
 - Tasks 015–020 complete.
 - [042 — Final design system/assets](042-final-design-system-assets.md)
+- `design/README.md` §3 Device view; Device/mirroring/recording/loading states in
+  `design/designs/ADB Toolbox Plugin.dc.html`; Device-related specimens in the Design System;
+  mirror/options/screenshot/record SVG variants.
 
 ## Scope
 

@@ -28,4 +28,7 @@ final UI design is supplied separately.
   `domain`.
 - UI layer consumes state and emits actions/intents; it must not contain business logic.
 - Respect the project's selected MVVM/MVI architecture for the UI layer.
-- Final visual/UI design will be supplied separately — do not invent or copy design now.
+- The final visual/UI design is under `design/`. For UI tasks, read `design/README.md` and the exact
+  task-routed files before implementation. Use `design/IMPLEMENTATION.md` as platform mapping, not as
+  authority to collapse Clean Architecture boundaries. Never invent missing visual rules or copy
+  `as_plugin` design; `design/designs/support.js` is prototype runtime only.

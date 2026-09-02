@@ -9,6 +9,8 @@ Read physical/effective density, calculate presets, apply/read back custom DPI, 
 - [003 — ADB contracts](003-adb-contracts-command-model.md)
 - [009 — Selected-device state](009-selected-device-state.md)
 - [014 — Device-context policies](014-device-context-policies.md)
+- Density presets/safe range/readback/reset requirements in `design/README.md` §5 and
+  `design/tokens/tokens.json`; command/correctness notes in `design/IMPLEMENTATION.md` §4.
 
 ## Scope
 

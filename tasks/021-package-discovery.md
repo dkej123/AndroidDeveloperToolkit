@@ -8,6 +8,8 @@ Load user/system packages plus label/debuggable metadata for one selected serial
 
 - [003 — ADB contracts](003-adb-contracts-command-model.md)
 - [009 — Selected-device state](009-selected-device-state.md)
+- Package/metadata requirements in `design/README.md` §4 and command references in
+  `design/IMPLEMENTATION.md` §4. The package label note requires the task-000 approved strategy.
 
 ## Scope
 

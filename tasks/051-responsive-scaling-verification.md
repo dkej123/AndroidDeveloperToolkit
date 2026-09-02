@@ -7,6 +7,9 @@ Apply and verify only the responsive breakpoints/scaling behavior supplied by th
 ## Dependencies
 
 - [050 — Accessibility/keyboard](050-accessibility-keyboard.md)
+- Responsive table in `design/README.md`, degradation ladder in
+  `design/designs/ADB Toolbox IA.dc.html`, interactive width/theme states in
+  `design/designs/ADB Toolbox Plugin.dc.html`, and breakpoints in `design/tokens/tokens.json`.
 
 ## Scope
 

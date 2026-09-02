@@ -9,6 +9,8 @@ Observe and parse all ADB-visible devices, including online, unauthorized, offli
 - [005 — ddmlib transport](005-ddmlib-transport.md)
 - [006 — Binary ADB transport](006-binary-adb-transport.md)
 - [007 — IntelliJ lifecycle](007-intellij-composition-lifecycle.md)
+- Device states/copy in `design/README.md` §1 and discovery command/model fields in
+  `design/IMPLEMENTATION.md` §4.
 
 ## Scope
 

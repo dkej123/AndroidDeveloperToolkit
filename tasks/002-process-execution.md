@@ -7,6 +7,8 @@ Provide the only raw JVM process boundary, supporting bounded text, streaming te
 ## Dependencies
 
 - [001 — Project bootstrap](001-project-bootstrap-quality.md)
+- Streaming/binary/lifecycle consumers in `design/IMPLEMENTATION.md` §§3–4: scrcpy, screenshot,
+  recording, and Logcat. These define required capabilities, not platform types in shared contracts.
 
 ## Scope
 

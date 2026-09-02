@@ -12,6 +12,8 @@ Bind proxy behavior and host-IP fill into a functional Network view with per-pro
 - [014 — Device-context policies](014-device-context-policies.md)
 - [030 — Proxy core](030-proxy-core.md)
 - [031 — Host IP](031-host-ip-discovery.md)
+- Network form/banner/recents/error states in `design/README.md` §6 and the Network target in
+  `design/designs/ADB Toolbox Plugin.dc.html`; proxy SVG variants.
 
 ## Scope
 

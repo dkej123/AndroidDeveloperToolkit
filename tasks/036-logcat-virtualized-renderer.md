@@ -8,6 +8,8 @@ Render 10k+ Logcat entries with bounded, coalesced EDT updates and stable row id
 
 - [010 — UI host](010-ui-host-infrastructure.md)
 - [034 — Logcat buffer/session](034-logcat-buffer-session.md)
+- Virtualization/column/wrap requirements in `design/README.md` §7 and platform choices in
+  `design/IMPLEMENTATION.md` §3.
 
 ## Scope
 

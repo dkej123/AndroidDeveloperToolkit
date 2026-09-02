@@ -8,6 +8,8 @@ enforced 80% coverage floor before feature implementation.
 ## Dependencies
 
 - [000 — Architecture decisions](000-architecture-decisions.md)
+- Platform target and plugin metadata essentials in `design/IMPLEMENTATION.md` §§1–2; its suggested
+  source tree does not override the ADR-selected Clean Architecture module graph.
 
 ## Scope
 

@@ -8,6 +8,8 @@ Resolve configured adb/scrcpy paths and Android SDK platform-tools through isola
 
 - [001 — Project bootstrap](001-project-bootstrap-quality.md)
 - [002 — Process execution](002-process-execution.md)
+- Discovery order and missing-tool recovery in `design/IMPLEMENTATION.md` §4; persisted paths in
+  `design/README.md` State model and Settings entry in the IA prototype.
 
 ## Scope
 

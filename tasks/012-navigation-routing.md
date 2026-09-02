@@ -7,6 +7,8 @@ Provide persistent routing among Device, Apps, Display, Network, Logcat, and Set
 ## Dependencies
 
 - [010 — UI host infrastructure](010-ui-host-infrastructure.md)
+- `design/README.md` §2 Rail and State model (`lastView`), plus navigation/keyboard/degradation in
+  `design/designs/ADB Toolbox IA.dc.html`.
 
 ## Scope
 

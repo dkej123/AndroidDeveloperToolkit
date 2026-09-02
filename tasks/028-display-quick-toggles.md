@@ -9,6 +9,8 @@ Implement dark-theme, animations-off, and show-touches read/write/readback behav
 - [003 — ADB contracts](003-adb-contracts-command-model.md)
 - [009 — Selected-device state](009-selected-device-state.md)
 - [014 — Device-context policies](014-device-context-policies.md)
+- Quick-toggle semantics/states in `design/README.md` §5 and command references in
+  `design/IMPLEMENTATION.md` §4.
 
 ## Scope
 

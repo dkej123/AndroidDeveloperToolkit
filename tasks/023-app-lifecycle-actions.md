@@ -9,6 +9,8 @@ Implement the three reversible app lifecycle actions for the exact selected devi
 - [013 — Feedback/status](013-feedback-status.md)
 - [014 — Device-context policies](014-device-context-policies.md)
 - [022 — Apps selection/search](022-apps-selection-search.md)
+- Restart/force-stop/launch behavior and copy in `design/README.md` §4; command references in
+  `design/IMPLEMENTATION.md` §4; restart/forceStop action SVGs.
 
 ## Scope
 

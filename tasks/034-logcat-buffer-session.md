@@ -9,6 +9,8 @@ Own exactly one cancellable Logcat stream and a bounded history for the selected
 - [006 — Binary ADB transport](006-binary-adb-transport.md)
 - [009 — Selected-device state](009-selected-device-state.md)
 - [033 — Logcat parser](033-logcat-parser.md)
+- 16 MB/local-clear/stream lifecycle requirements in `design/README.md` §7 and
+  `design/IMPLEMENTATION.md` §§3–4.
 
 ## Scope
 

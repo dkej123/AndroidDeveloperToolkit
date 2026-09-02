@@ -11,6 +11,9 @@ Apply the supplied final layout and visual states to the root host, device bar, 
 - [013 — Feedback/status](013-feedback-status.md)
 - [014 — Shared policies](014-device-context-policies.md)
 - [042 — Final design system/assets](042-final-design-system-assets.md)
+- `design/README.md` Global layout, §§1–2, §8, Interactions; global states in
+  `design/designs/ADB Toolbox Plugin.dc.html`; navigation/keyboard/degradation in the IA prototype;
+  `design/tokens/tokens.json`; global/action SVGs under `design/icons/`.
 
 ## Scope
 

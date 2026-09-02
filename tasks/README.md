@@ -7,14 +7,43 @@ before implementation. Do not start a dependent task early or bundle the next ta
 ## Sources and constraints
 
 - Repository rules: `AGENTS.md` (symlink to `CLAUDE.md`).
+- Final product, interaction, copy, state, and visual specification: [`design/README.md`](../design/README.md).
+- IntelliJ component mapping, command reference, and Definition of Done:
+  [`design/IMPLEMENTATION.md`](../design/IMPLEMENTATION.md). Its module tree is a non-binding
+  suggestion; repository ADRs and Clean Architecture rules take precedence.
+- Interactive implementation target: [`design/designs/ADB Toolbox Plugin.dc.html`](../design/designs/ADB%20Toolbox%20Plugin.dc.html).
+- Design-system specimen: [`design/designs/ADB Toolbox Design System.dc.html`](../design/designs/ADB%20Toolbox%20Design%20System.dc.html).
+- Information architecture, keyboard model, and degradation ladder:
+  [`design/designs/ADB Toolbox IA.dc.html`](../design/designs/ADB%20Toolbox%20IA.dc.html).
+- Icon rules/specimens: [`design/designs/ADB Toolbox Icons.dc.html`](../design/designs/ADB%20Toolbox%20Icons.dc.html).
+- Machine-readable values: [`design/tokens/tokens.json`](../design/tokens/tokens.json); production
+  assets: [`design/icons/`](../design/icons/).
+- `design/designs/support.js` is prototype runtime only and must never be ported or packaged.
 - Technical IntelliJ reference, read-only: `/Users/dkwasniak/Workspace/as_plugin`.
 - Behavioral ADB reference, read-only: `https://github.com/classops/ADBHelper`.
 - ADBHelper has no declared license: use it only for behavioral understanding; copy no code, parser,
   names, strings, or UI.
-- The complete design system and final visual design are a separate future input. Tasks 010–041 may
-  build neutral functional platform UI and presentation state, but must not invent colors, typography,
-  spacing, iconography, branding, custom visual components, breakpoints, or final layouts. Tasks 042–049
-  are blocked until the final design/assets are delivered and are the only tasks that apply them.
+- The design in `design/` is final. Tasks 010–041 build neutral functional UI and presentation state;
+  tasks 042–049 apply the supplied visuals. No task may invent visual rules or copy `as_plugin` UI.
+- The handoff specifies the Settings destination and fields, Wi-Fi pairing entry point, and scrcpy
+  option semantics, but not complete bespoke layouts for those secondary flows. Tasks 000 and 049
+  must use native IntelliJ patterns plus supplied tokens/components rather than inventing new screens.
+
+## Design reference routing
+
+| Area | Primary references |
+|---|---|
+| Architecture/platform boundary | `design/IMPLEMENTATION.md` §§1–3, subject to task 000 ADRs |
+| ADB/scrcpy behavior | `design/IMPLEMENTATION.md` §4; `design/README.md` Interactions & State model |
+| Global host/device bar/rail/status/feedback | `design/README.md` Global layout, §§1–2, §8, Interactions; Plugin and IA prototypes |
+| Device/mirroring/capture/facts | `design/README.md` §3; Plugin prototype; matching action SVGs |
+| Apps | `design/README.md` §4; Plugin prototype; Apps action SVGs |
+| Display | `design/README.md` §5; Plugin prototype; `tokens.json` presets; Display action SVGs |
+| Network | `design/README.md` §6; Plugin prototype; proxy SVG |
+| Logcat | `design/README.md` §7; Plugin prototype; `tokens.json` severity values; Logcat SVGs |
+| Settings/pairing/scrcpy options | IA Settings entry; README entry points/state model; IMPLEMENTATION command/settings notes; native IntelliJ UI |
+| Design primitives/assets | Design System and Icons prototypes; `tokens.json`; `design/icons/`; README Design tokens & Assets |
+| Accessibility/responsive/release evidence | README Responsive/Keyboard/Interactions; IA degradation; IMPLEMENTATION §5 |
 
 ## Foundation and dependency path
 
@@ -31,7 +60,7 @@ The final convergence path is:
 
 ```text
 feature lanes -> 041 (override convergence where applicable)
-042 (supplied design primitives) -> 043–049 visual lanes -> 050 -> 051 -> 052 -> 053
+042 (repo design primitives) -> 043–049 visual lanes -> 050 -> 051 -> 052 -> 053
 ```
 
 ## Parallel feature lanes

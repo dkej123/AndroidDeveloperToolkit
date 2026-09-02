@@ -8,6 +8,8 @@ Apply the delivered Apps design to discovery, list/search, actions, and destruct
 
 - Tasks 021–025 complete.
 - [042 — Final design system/assets](042-final-design-system-assets.md)
+- `design/README.md` §4 Apps; Apps states in `design/designs/ADB Toolbox Plugin.dc.html`;
+  list/search/button/dialog specimens in the Design System; restart/forceStop/clearData/uninstall SVGs.
 
 ## Scope
 

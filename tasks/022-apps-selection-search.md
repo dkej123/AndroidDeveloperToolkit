@@ -10,6 +10,8 @@ Provide searchable package presentation and a persisted selected-package contrac
 - [012 — Navigation](012-navigation-routing.md)
 - [014 — Device-context policies](014-device-context-policies.md)
 - [021 — Package discovery](021-package-discovery.md)
+- Apps list/search/selection/empty-state requirements in `design/README.md` §4, shared selection in
+  State model/Interactions, and the Apps view in `design/designs/ADB Toolbox Plugin.dc.html`.
 
 ## Scope
 

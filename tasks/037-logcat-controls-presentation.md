@@ -11,6 +11,8 @@ Bind search, severity, package filter, pause, follow/autoscroll, wrap, local cle
 - [014 — Device-context policies](014-device-context-policies.md)
 - [035 — Logcat filtering/pause](035-logcat-filtering-pause.md)
 - [036 — Logcat renderer](036-logcat-virtualized-renderer.md)
+- Toolbar/filter/footer/empty/paused states in `design/README.md` §7, interactive Logcat target in
+  `design/designs/ADB Toolbox Plugin.dc.html`, and matching SVGs under `design/icons/actions/`.
 
 ## Scope
 

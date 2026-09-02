@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #16171a; }
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-thumb { background: rgba(128,128,128,0.35); border-radius: 4px; }
+  a { color: #548af7; text-decoration: none; }
+  a:hover { color: #3574f0; text-decoration: underline; }
+</style>
+</helmet>
+
+<div style="min-height: 100vh; background: #16171a; color: #dfe1e5; font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif; padding: 40px 32px 90px;">
+<div style="max-width: 1060px; margin: 0 auto;">
+
+  <div style="display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 18px;">
+    <div>
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <div style="width: 20px; height: 20px; border-radius: 5px; background: #16a79b;"></div>
+        <div style="font-family: ui-monospace, monospace; font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: #8a8d93;">Deliverable 02 / 04</div>
+      </div>
+      <h1 style="margin: 10px 0 6px; font-size: 30px; font-weight: 600; letter-spacing: -0.02em;">Information architecture &amp; UX rationale</h1>
+      <p style="margin: 0; font-size: 13px; line-height: 1.5; color: #8a8d93; max-width: 660px; text-wrap: pretty;">One tool window, 380px wide, docked right. Five views on a rail, a device selector that never scrolls away, and every device-mutating action one click deep.</p>
+    </div>
+    <div style="display: grid; gap: 3px; font-size: 10px; font-family: ui-monospace, monospace; color: #6b6e74; text-align: right; flex: none;">
+      <div>5 views + settings</div>
+      <div>0 nested navigation</div>
+      <div>2 confirmations total</div>
+    </div>
+  </div>
+
+  <!-- STRUCTURE MAP -->
+  <div style="margin-top: 36px;">
+    <div style="display: flex; align-items: baseline; gap: 10px; margin-bottom: 14px;">
+      <span style="font-family: ui-monospace, monospace; font-size: 10px; color: #16a79b;">01</span>
+      <h2 style="margin: 0; font-size: 17px; font-weight: 600;">Structure</h2>
+      <span style="font-size: 11.5px; color: #8a8d93;">Three fixed regions; only the middle one changes.</span>
+    </div>
+
+    <div style="background: #242629; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 14px;">
+      <div style="display: grid; gap: 8px;">
+        <div style="display: flex; align-items: center; gap: 10px; padding: 9px 12px; background: #2b2d30; border: 1px solid rgba(255,255,255,0.1); border-radius: 6px;">
+          <span style="font-family: ui-monospace, monospace; font-size: 9.5px; color: #16a79b; width: 74px; flex: none;">GLOBAL</span>
+          <span style="font-size: 12px; font-weight: 600; flex: none;">Device bar</span>
+          <span style="font-size: 11px; color: #8a8d93;">status dot · model · serial · connection type · refresh · picker — pinned, always visible</span>
+        </div>
+        <div style="display: flex; gap: 8px; align-items: stretch;">
+          <div style="width: 74px; flex: none; display: flex; align-items: center; padding-left: 12px; font-family: ui-monospace, monospace; font-size: 9.5px; color: #16a79b;">RAIL</div>
+          <div style="flex: 1; display: grid; gap: 6px;">
+            <div style="display: flex; align-items: center; gap: 10px; padding: 8px 11px; background: rgba(84,138,247,0.16); border: 1px solid rgba(84,138,247,0.5); border-radius: 6px;">
+              <span style="font-size: 11.5px; font-weight: 700; width: 66px; flex: none;">Device</span>
+              <span style="font-size: 11px; color: #b6c3d1;">mirroring, capture, device facts, reboot — the landing view</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px; padding: 8px 11px; background: #2b2d30; border: 1px solid rgba(255,255,255,0.08); border-radius: 6px;">
+              <span style="font-size: 11.5px; font-weight: 700; width: 66px; flex: none;">Apps</span>
+              <span style="font-size: 11px; color: #8a8d93;">package search, restart, clear data, uninstall, launch</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px; padding: 8px 11px; background: #2b2d30; border: 1px solid rgba(255,255,255,0.08); border-radius: 6px;">
+              <span style="font-size: 11.5px; font-weight: 700; width: 66px; flex: none;">Display</span>
+              <span style="font-size: 11px; color: #8a8d93;">font scale, density, dark mode, animations — presets first</span>
+              <span style="margin-left: auto; font-size: 9.5px; color: #d9a441; border: 1px solid #d9a441; border-radius: 3px; padding: 1px 5px; flex: none;">override badge</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px; padding: 8px 11px; background: #2b2d30; border: 1px solid rgba(255,255,255,0.08); border-radius: 6px;">
+              <span style="font-size: 11.5px; font-weight: 700; width: 66px; flex: none;">Network</span>
+              <span style="font-size: 11px; color: #8a8d93;">global proxy host/port, use my computer IP, enable, reset</span>
+              <span style="margin-left: auto; font-size: 9.5px; color: #d9a441; border: 1px solid #d9a441; border-radius: 3px; padding: 1px 5px; flex: none;">override badge</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px; padding: 8px 11px; background: #2b2d30; border: 1px solid rgba(255,255,255,0.08); border-radius: 6px;">
+              <span style="font-size: 11.5px; font-weight: 700; width: 66px; flex: none;">Logcat</span>
+              <span style="font-size: 11px; color: #8a8d93;">severity, search, package/tag filters, pause, autoscroll, wrap</span>
+              <span style="margin-left: auto; font-size: 9.5px; color: #e0656b; border: 1px solid #e0656b; border-radius: 3px; padding: 1px 5px; flex: none;">error count</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px; padding: 8px 11px; background: #2b2d30; border: 1px dashed rgba(255,255,255,0.12); border-radius: 6px;">
+              <span style="font-size: 11.5px; font-weight: 600; width: 66px; flex: none; color: #8a8d93;">Settings</span>
+              <span style="font-size: 11px; color: #6b6e74;">adb &amp; scrcpy paths, capture folder, buffer size — pinned to rail bottom</span>
+            </div>
+          </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px; padding: 9px 12px; background: #2b2d30; border: 1px solid rgba(255,255,255,0.1); border-radius: 6px;">
+          <span style="font-family: ui-monospace, monospace; font-size: 9.5px; color: #16a79b; width: 74px; flex: none;">GLOBAL</span>
+          <span style="font-size: 12px; font-weight: 600; flex: none;">Status bar</span>
+          <span style="font-size: 11px; color: #8a8d93;">last command, running-process chip (mirroring / recording), adb version — pinned</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- WHY -->
+  <div style="margin-top: 34px;">
+    <div style="display: flex; align-items: baseline; gap: 10px; margin-bottom: 14px;">
+      <span style="font-family: ui-monospace, monospace; font-size: 10px; color: #16a79b;">02</span>
+      <h2 style="margin: 0; font-size: 17px; font-weight: 600;">Six decisions</h2>
+      <span style="font-size: 11.5px; color: #8a8d93;">The ones that shaped everything else.</span>
+    </div>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+      <div style="background: #242629; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 14px;">
+        <div style="font-size: 12px; font-weight: 700; margin-bottom: 6px;">The device is context, not content</div>
+        <div style="font-size: 11.5px; line-height: 1.5; color: #a9adb4;">Every action in the plugin targets one device, so the selector lives in a 30px pinned bar rather than a Device view. When a second device appears it becomes a popup list; with one device the bar is a read-only summary. Serial is always shown in mono because two Pixel 8 Pros are indistinguishable by name.</div>
+      </div>
+      <div style="background: #242629; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 14px;">
+        <div style="font-size: 12px; font-weight: 700; margin-bottom: 6px;">A rail, not tabs</div>
+        <div style="font-size: 11.5px; line-height: 1.5; color: #a9adb4;">Five labels would eat the full width of a 380px dock and clip. The 34px rail matches New UI tool window switching, keeps view names in tooltips, and gives each view a badge slot — the amber dot that says "this device has an override applied" is what makes overrides discoverable at all.</div>
+      </div>
+      <div style="background: #242629; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 14px;">
+        <div style="font-size: 12px; font-weight: 700; margin-bottom: 6px;">Presets are the interface; values are the escape hatch</div>
+        <div style="font-size: 11.5px; line-height: 1.5; color: #a9adb4;">Font scale and density are one-click chip rows. The custom field is collapsed behind "Custom…", and every row carries Reset. Density presets are relative percentages of the device's physical density, so 125% is meaningful across a tablet and a phone; the resolved dpi is shown in mono beside it.</div>
+      </div>
+      <div style="background: #242629; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 14px;">
+        <div style="font-size: 12px; font-weight: 700; margin-bottom: 6px;">Destructive actions look different before they are pressed</div>
+        <div style="font-size: 11.5px; line-height: 1.5; color: #a9adb4;">Clear data and Uninstall sit in a separate row from Restart and Launch, outlined in red, and are the only two actions that confirm. Both confirmations name the package and the device. Everything else is reversible and gives a toast instead of a dialog.</div>
+      </div>
+      <div style="background: #242629; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 14px;">
+        <div style="font-size: 12px; font-weight: 700; margin-bottom: 6px;">Logcat gets the whole viewport</div>
+        <div style="font-size: 11.5px; line-height: 1.5; color: #a9adb4;">It is the one view users leave open for hours, so it is the only view where the device bar collapses to a single line and filters live in a 26px toolbar. Paused autoscroll is stated twice — a toggled toolbar button and a floating "234 new lines · Jump to latest" pill — because silently frozen logs are the classic logcat bug.</div>
+      </div>
+      <div style="background: #242629; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 14px;">
+        <div style="font-size: 12px; font-weight: 700; margin-bottom: 6px;">Capture is deliberately quiet</div>
+        <div style="font-size: 11.5px; line-height: 1.5; color: #a9adb4;">Android Studio already ships screenshot and recording, so capture is two icon buttons in the Device toolbar rather than its own view. Recording promotes itself to a status-bar chip with elapsed time and Stop while it runs, and the finished file appears as a toast with Reveal.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FLOWS -->
+  <div style="margin-top: 34px;">
+    <div style="display: flex; align-items: baseline; gap: 10px; margin-bottom: 14px;">
+      <span style="font-family: ui-monospace, monospace; font-size: 10px; color: #16a79b;">03</span>
+      <h2 style="margin: 0; font-size: 17px; font-weight: 600;">Frequent workflows</h2>
+      <span style="font-size: 11.5px; color: #8a8d93;">Click cost from a cold tool window.</span>
+    </div>
+    <div style="background: #242629; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; overflow: hidden;">
+      <div style="display: grid; grid-template-columns: 1.5fr 2.4fr 52px 92px; padding: 7px 12px; background: #2b2d30; border-bottom: 1px solid rgba(255,255,255,0.08); font-size: 9.5px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #6b6e74;">
+        <div>Task</div><div>Path</div><div style="text-align: center;">Clicks</div><div style="text-align: right;">Shortcut</div>
+      </div>
+      <div style="display: grid; grid-template-columns: 1.5fr 2.4fr 52px 92px; align-items: center; padding: 9px 12px; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 11.5px;">
+        <div style="font-weight: 600;">Restart the app under test</div>
+        <div style="color: #8a8d93;">Apps · last package is pre-selected · Restart</div>
+        <div style="text-align: center; font-family: ui-monospace, monospace; color: #66b578;">1</div>
+        <div style="text-align: right; font-family: ui-monospace, monospace; font-size: 10px; color: #8a8d93;">⇧⌘R</div>
+      </div>
+      <div style="display: grid; grid-template-columns: 1.5fr 2.4fr 52px 92px; align-items: center; padding: 9px 12px; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 11.5px;">
+        <div style="font-weight: 600;">Mirror the device</div>
+        <div style="color: #8a8d93;">Device · Start mirroring (scrcpy)</div>
+        <div style="text-align: center; font-family: ui-monospace, monospace; color: #66b578;">1</div>
+        <div style="text-align: right; font-family: ui-monospace, monospace; font-size: 10px; color: #8a8d93;">⇧⌘M</div>
+      </div>
+      <div style="display: grid; grid-template-columns: 1.5fr 2.4fr 52px 92px; align-items: center; padding: 9px 12px; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 11.5px;">
+        <div style="font-weight: 600;">Point the device at my mitmproxy</div>
+        <div style="color: #8a8d93;">Network · Use my computer IP · port persists · Enable</div>
+        <div style="text-align: center; font-family: ui-monospace, monospace; color: #d9a441;">3</div>
+        <div style="text-align: right; font-family: ui-monospace, monospace; font-size: 10px; color: #8a8d93;">—</div>
+      </div>
+      <div style="display: grid; grid-template-columns: 1.5fr 2.4fr 52px 92px; align-items: center; padding: 9px 12px; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 11.5px;">
+        <div style="font-weight: 600;">Check large-text layout</div>
+        <div style="color: #8a8d93;">Display · 1.3× chip · amber badge appears on rail</div>
+        <div style="text-align: center; font-family: ui-monospace, monospace; color: #66b578;">2</div>
+        <div style="text-align: right; font-family: ui-monospace, monospace; font-size: 10px; color: #8a8d93;">—</div>
+      </div>
+      <div style="display: grid; grid-template-columns: 1.5fr 2.4fr 52px 92px; align-items: center; padding: 9px 12px; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 11.5px;">
+        <div style="font-weight: 600;">Revert everything I changed</div>
+        <div style="color: #8a8d93;">Status bar · "3 overrides active" · Reset all</div>
+        <div style="text-align: center; font-family: ui-monospace, monospace; color: #66b578;">2</div>
+        <div style="text-align: right; font-family: ui-monospace, monospace; font-size: 10px; color: #8a8d93;">—</div>
+      </div>
+      <div style="display: grid; grid-template-columns: 1.5fr 2.4fr 52px 92px; align-items: center; padding: 9px 12px; font-size: 11.5px;">
+        <div style="font-weight: 600;">Find the crash I just caused</div>
+        <div style="color: #8a8d93;">Logcat · E level chip · package filter is already the selected app</div>
+        <div style="text-align: center; font-family: ui-monospace, monospace; color: #66b578;">2</div>
+        <div style="text-align: right; font-family: ui-monospace, monospace; font-size: 10px; color: #8a8d93;">⇧⌘L</div>
+      </div>
+    </div>
+    <p style="margin: 9px 0 0; font-size: 11.5px; line-height: 1.5; color: #8a8d93; max-width: 800px;">Selection is shared: the package chosen in Apps is the default filter in Logcat, and the device chosen in the bar scopes all five views. Both survive IDE restarts per project.</p>
+  </div>
+
+  <!-- KEYBOARD + DEGRADE -->
+  <div style="margin-top: 34px;">
+    <div style="display: flex; align-items: baseline; gap: 10px; margin-bottom: 14px;">
+      <span style="font-family: ui-monospace, monospace; font-size: 10px; color: #16a79b;">04</span>
+      <h2 style="margin: 0; font-size: 17px; font-weight: 600;">Keyboard &amp; degradation</h2>
+      <span style="font-size: 11.5px; color: #8a8d93;">The plugin must be usable with no device and no mouse.</span>
+    </div>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+      <div style="background: #242629; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 14px;">
+        <div style="font-size: 9.5px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #6b6e74; margin-bottom: 10px;">Keyboard model</div>
+        <div style="display: grid; gap: 7px; font-size: 11.5px; color: #a9adb4;">
+          <div style="display: flex; gap: 8px;"><span style="font-family: ui-monospace, monospace; font-size: 10px; color: #dfe1e5; width: 92px; flex: none;">Tab / ⇧Tab</span><span>Moves between regions: device bar → rail → view → status bar. Never into individual chips.</span></div>
+          <div style="display: flex; gap: 8px;"><span style="font-family: ui-monospace, monospace; font-size: 10px; color: #dfe1e5; width: 92px; flex: none;">↑ ↓ ← →</span><span>Moves within a region — rail views, preset chips, app list rows, log lines.</span></div>
+          <div style="display: flex; gap: 8px;"><span style="font-family: ui-monospace, monospace; font-size: 10px; color: #dfe1e5; width: 92px; flex: none;">⌘F / Esc</span><span>Focus the Logcat search field; Esc clears the query, then blurs.</span></div>
+          <div style="display: flex; gap: 8px;"><span style="font-family: ui-monospace, monospace; font-size: 10px; color: #dfe1e5; width: 92px; flex: none;">Space</span><span>Toggles pause in Logcat, wherever focus is inside that view.</span></div>
+          <div style="display: flex; gap: 8px;"><span style="font-family: ui-monospace, monospace; font-size: 10px; color: #dfe1e5; width: 92px; flex: none;">End</span><span>Resumes autoscroll and jumps to the newest line.</span></div>
+          <div style="display: flex; gap: 8px;"><span style="font-family: ui-monospace, monospace; font-size: 10px; color: #dfe1e5; width: 92px; flex: none;">Enter</span><span>Applies a custom value; a destructive confirm still needs a second Enter on a focused Cancel-default dialog.</span></div>
+        </div>
+      </div>
+      <div style="background: #242629; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 14px;">
+        <div style="font-size: 9.5px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #6b6e74; margin-bottom: 10px;">Degradation ladder</div>
+        <div style="display: grid; gap: 7px; font-size: 11.5px; color: #a9adb4;">
+          <div style="display: flex; gap: 8px;"><span style="color: #e0656b; flex: none;">—</span><span><b style="color: #dfe1e5;">adb missing:</b> whole window becomes one empty state with a path field, not five broken views.</span></div>
+          <div style="display: flex; gap: 8px;"><span style="color: #e0656b; flex: none;">—</span><span><b style="color: #dfe1e5;">No device:</b> rail stays navigable so users can read and set up; every device-mutating control is 45% opacity with "Connect a device to use this" in the tooltip.</span></div>
+          <div style="display: flex; gap: 8px;"><span style="color: #d9a441; flex: none;">—</span><span><b style="color: #dfe1e5;">Device unauthorized / offline:</b> device bar turns amber and explains the fix; the picker keeps listing it.</span></div>
+          <div style="display: flex; gap: 8px;"><span style="color: #d9a441; flex: none;">—</span><span><b style="color: #dfe1e5;">scrcpy missing:</b> only mirroring degrades — the button stays, the failure is a toast with Set path…</span></div>
+          <div style="display: flex; gap: 8px;"><span style="color: #66b578; flex: none;">—</span><span><b style="color: #dfe1e5;">Device disconnects mid-session:</b> overrides are remembered and offered for re-application when the same serial returns.</span></div>
+          <div style="display: flex; gap: 8px;"><span style="color: #66b578; flex: none;">—</span><span><b style="color: #dfe1e5;">Below 300px:</b> device bar drops the serial, preset rows scroll horizontally instead of wrapping.</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="margin-top: 40px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: #6b6e74;">
+    <span>Next: high-fidelity screens and states.</span>
+    <span style="font-family: ui-monospace, monospace; font-size: 10px;">02 / 04</span>
+  </div>
+
+</div>
+</div>
+
+</x-dc>
+</body>
+</html>
