@@ -1,0 +1,4 @@
+<idea-plugin>
+    <!-- Loaded only when org.jetbrains.android is present. Android-plugin-specific extensions
+         (e.g. preferring ddmlib/AdbLibService per docs/adr/0005) land in a later task. -->
+</idea-plugin>

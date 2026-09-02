@@ -2,3 +2,12 @@
 
 # Local read-only technical reference. Bootstrap instructions live in CLAUDE.md.
 /references/ADBHelper/
+
+# Gradle / Kotlin / IntelliJ Platform build outputs.
+.gradle/
+.kotlin/
+.intellijPlatform/
+build/
+out/
+*.hprof
+

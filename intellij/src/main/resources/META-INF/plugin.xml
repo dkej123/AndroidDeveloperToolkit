@@ -1,0 +1,13 @@
+<idea-plugin>
+    <id>dev.acme.adbtoolbox</id>
+    <name>ADB Toolbox</name>
+    <vendor>ADB Toolbox</vendor>
+
+    <description><![CDATA[
+        Device, app, display, network, and logcat controls for Android Studio / IntelliJ IDEA,
+        without leaving the IDE. UI, tool window, and feature actions land in later tasks.
+    ]]></description>
+
+    <depends>com.intellij.modules.platform</depends>
+    <depends optional="true" config-file="adb-toolbox-android.xml">org.jetbrains.android</depends>
+</idea-plugin>

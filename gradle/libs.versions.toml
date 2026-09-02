@@ -1,0 +1,28 @@
+[versions]
+# Baseline pinned by docs/adr/0003-platform-and-toolchain-baseline.md. Bumping within the
+# major/minor lines fixed there is a routine version-catalog PR; crossing them needs a new ADR.
+kotlin = "2.2.20"
+intellij-platform-plugin = "2.17.0"
+coroutines = "1.10.2"
+datetime = "0.6.2"
+serialization = "1.7.3"
+junit = "5.11.4"
+kotest = "5.9.1"
+mockk = "1.13.13"
+kover = "0.9.1"
+
+[libraries]
+kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
+kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutines" }
+kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "datetime" }
+kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "serialization" }
+junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit" }
+junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher" }
+kotest-assertions-core = { module = "io.kotest:kotest-assertions-core", version.ref = "kotest" }
+mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
+
+[plugins]
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+intellij-platform = { id = "org.jetbrains.intellij.platform", version.ref = "intellij-platform-plugin" }
+kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
