@@ -9,6 +9,9 @@ These rules apply to every session in this repository.
 - Use TDD: write a failing test before production code, for every behavior change.
 - Minimum automated coverage: 80%. Do not write meaningless/coverage-only tests.
 - Inspect the relevant existing code before making assumptions about it.
+- Never run `./gradlew :intellij:verifyPlugin` (or any `verifyPlugin` task) — it is extremely slow
+  (downloads/unpacks a full IDE) and is not required to validate a task. Use `./gradlew build`,
+  `./gradlew test`, and the architecture/coverage gates instead.
 
 ## Architecture
 - Preserve Clean Architecture boundaries between layers.
