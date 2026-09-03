@@ -1,8 +1,11 @@
 package dev.acme.adbtoolbox.intellij.toolwindow
 
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
+import dev.acme.adbtoolbox.application.nav.NavigationViewModel
 import dev.acme.adbtoolbox.application.shell.ShellViewModel
 import dev.acme.adbtoolbox.domain.dispatch.DispatcherProvider
+import dev.acme.adbtoolbox.domain.nav.FakeNavigationPersistence
+import dev.acme.adbtoolbox.domain.nav.ViewId
 import dev.acme.adbtoolbox.intellij.dispatch.IdeDispatcherProvider
 import dev.acme.adbtoolbox.intellij.host.AdbToolboxHostPanel
 import kotlinx.coroutines.CoroutineScope
@@ -22,10 +25,20 @@ class AdbToolboxToolWindowPanelTest : BasePlatformTestCase() {
     // AdbToolboxProjectServiceTest's pattern of only touching platform services inside test bodies.
     private fun dispatchers(): DispatcherProvider = IdeDispatcherProvider()
 
+    private fun navigationViewModel(scope: CoroutineScope, dispatchers: DispatcherProvider): NavigationViewModel =
+        NavigationViewModel(scope, dispatchers, FakeNavigationPersistence(), ViewId.Device)
+
     fun `test the panel mounts a host with the named slots`() {
         val dispatchers = dispatchers()
         val scope = CoroutineScope(SupervisorJob() + dispatchers.default)
-        val panel = AdbToolboxToolWindowPanel(ShellViewModel(scope, dispatchers), dispatchers, scope)
+        val navigationScope = CoroutineScope(SupervisorJob() + dispatchers.default)
+        val panel = AdbToolboxToolWindowPanel(
+            ShellViewModel(scope, dispatchers),
+            dispatchers,
+            scope,
+            navigationViewModel(navigationScope, dispatchers),
+            navigationScope,
+        )
 
         assertNotNull(panel.host.deviceContextSlot)
         assertNotNull(panel.host.navigationSlot)
@@ -35,10 +48,34 @@ class AdbToolboxToolWindowPanelTest : BasePlatformTestCase() {
         panel.dispose()
     }
 
+    fun `test the navigation rail is mounted into the navigation slot`() {
+        val dispatchers = dispatchers()
+        val scope = CoroutineScope(SupervisorJob() + dispatchers.default)
+        val navigationScope = CoroutineScope(SupervisorJob() + dispatchers.default)
+        val panel = AdbToolboxToolWindowPanel(
+            ShellViewModel(scope, dispatchers),
+            dispatchers,
+            scope,
+            navigationViewModel(navigationScope, dispatchers),
+            navigationScope,
+        )
+
+        assertTrue(panel.host.navigationSlot.componentCount > 0)
+
+        panel.dispose()
+    }
+
     fun `test disposing the panel disposes its host too`() {
         val dispatchers = dispatchers()
         val scope = CoroutineScope(SupervisorJob() + dispatchers.default)
-        val panel = AdbToolboxToolWindowPanel(ShellViewModel(scope, dispatchers), dispatchers, scope)
+        val navigationScope = CoroutineScope(SupervisorJob() + dispatchers.default)
+        val panel = AdbToolboxToolWindowPanel(
+            ShellViewModel(scope, dispatchers),
+            dispatchers,
+            scope,
+            navigationViewModel(navigationScope, dispatchers),
+            navigationScope,
+        )
         val overlay = javax.swing.JLabel("toast")
         panel.host.overlays.show(overlay)
 
@@ -46,5 +83,6 @@ class AdbToolboxToolWindowPanelTest : BasePlatformTestCase() {
 
         assertFalse(panel.host.overlays.isShowing(overlay))
         assertFalse(scope.isActive)
+        assertFalse(navigationScope.isActive)
     }
 }

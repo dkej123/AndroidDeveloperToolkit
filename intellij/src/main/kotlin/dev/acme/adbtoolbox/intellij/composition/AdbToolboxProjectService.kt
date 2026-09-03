@@ -18,18 +18,24 @@ import dev.acme.adbtoolbox.adapters.jvm.discovery.JvmHostPlatformProvider
 import dev.acme.adbtoolbox.adapters.jvm.discovery.JvmPathEnvironmentSource
 import dev.acme.adbtoolbox.adapters.jvm.process.JvmProcessExecutor
 import dev.acme.adbtoolbox.application.device.SelectedDeviceViewModel
+import dev.acme.adbtoolbox.application.nav.NavigationViewModel
 import dev.acme.adbtoolbox.application.shell.ShellViewModel
 import dev.acme.adbtoolbox.domain.adb.AdbTransport
 import dev.acme.adbtoolbox.domain.device.DeviceRepository
 import dev.acme.adbtoolbox.domain.device.DeviceSelectionPersistence
 import dev.acme.adbtoolbox.domain.discovery.ToolLocator
 import dev.acme.adbtoolbox.domain.dispatch.DispatcherProvider
+import dev.acme.adbtoolbox.domain.nav.MutableNavigationBadges
+import dev.acme.adbtoolbox.domain.nav.NavigationBadges
+import dev.acme.adbtoolbox.domain.nav.NavigationPersistence
+import dev.acme.adbtoolbox.domain.nav.ViewId
 import dev.acme.adbtoolbox.domain.process.ProcessExecutor
 import dev.acme.adbtoolbox.intellij.adb.IdeAndroidDebugBridgeDeviceSource
 import dev.acme.adbtoolbox.intellij.discovery.AndroidStudioSdkPlatformToolsSource
 import dev.acme.adbtoolbox.intellij.dispatch.IdeDispatcherProvider
 import dev.acme.adbtoolbox.intellij.persistence.AdbToolboxProjectState
 import dev.acme.adbtoolbox.intellij.persistence.DeviceSelectionPersistenceAdapter
+import dev.acme.adbtoolbox.intellij.persistence.NavigationPersistenceAdapter
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
@@ -117,6 +123,25 @@ class AdbToolboxProjectService(private val project: Project) : Disposable {
         deviceRepository = deviceRepository,
         persistence = deviceSelectionPersistence,
     )
+
+    val navigationPersistence: NavigationPersistence =
+        NavigationPersistenceAdapter(project.service<AdbToolboxProjectState>())
+
+    val navigationViewModel: NavigationViewModel = NavigationViewModel(
+        scope = childScope(),
+        dispatchers = dispatcherProvider,
+        persistence = navigationPersistence,
+        defaultViewId = ViewId.Device,
+    )
+
+    /**
+     * The task 012 badge aggregate (`design/README.md` §2's rail badge dot): one shared instance,
+     * composed here so both the navigation rail (reads [NavigationBadges.state] — a later
+     * presentation task, 043+) and each feature's own ViewModel (writes via
+     * [MutableNavigationBadges.set] from its own file) reach the same map without either one
+     * editing this composition root again.
+     */
+    val navigationBadges: NavigationBadges = MutableNavigationBadges()
 
     /**
      * A feature-local child scope (ADR 0004): its [SupervisorJob] is a real structured-concurrency

@@ -3,9 +3,12 @@ package dev.acme.adbtoolbox.intellij.toolwindow
 import com.intellij.openapi.Disposable
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBPanel
+import dev.acme.adbtoolbox.application.nav.NavigationViewModel
 import dev.acme.adbtoolbox.application.shell.ShellViewModel
 import dev.acme.adbtoolbox.domain.dispatch.DispatcherProvider
 import dev.acme.adbtoolbox.intellij.host.AdbToolboxHostPanel
+import dev.acme.adbtoolbox.intellij.nav.NavigationRailPanel
+import dev.acme.adbtoolbox.intellij.nav.NavigationRoutingCoordinator
 import java.awt.BorderLayout
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.cancel
@@ -26,19 +29,37 @@ import kotlinx.coroutines.withContext
  * State updates arrive from [scope] (a feature-local, off-EDT-capable child scope) and are always
  * marshaled onto [dispatchers]' `main` context before touching a Swing component — collection
  * itself may run on any dispatcher, but every `statusLabel` mutation happens through `withContext`.
+ *
+ * [navigationViewModel] drives [AdbToolboxHostPanel.navigationSlot] (task 012): a
+ * [NavigationRailPanel] is mounted there and connected to
+ * [AdbToolboxHostPanel.activeViewHost] via [NavigationRoutingCoordinator], on its own
+ * [navigationScope] child scope so navigation's lifecycle never depends on the shell status line's.
  */
 class AdbToolboxToolWindowPanel(
     viewModel: ShellViewModel,
     dispatchers: DispatcherProvider,
     private val scope: CoroutineScope,
+    navigationViewModel: NavigationViewModel,
+    private val navigationScope: CoroutineScope,
 ) : JBPanel<AdbToolboxToolWindowPanel>(BorderLayout()), Disposable {
 
     val host = AdbToolboxHostPanel()
 
     private val statusLabel = JBLabel(viewModel.state.value.statusMessage)
 
+    private val navigationRail = NavigationRailPanel()
+
+    private val navigationCoordinator = NavigationRoutingCoordinator(
+        host = host,
+        rail = navigationRail,
+        viewModel = navigationViewModel,
+        scope = navigationScope,
+        dispatchers = dispatchers,
+    )
+
     init {
         host.feedbackSlot.add(statusLabel, BorderLayout.CENTER)
+        host.navigationSlot.add(navigationRail, BorderLayout.CENTER)
         add(host, BorderLayout.CENTER)
 
         viewModel.state
@@ -51,6 +72,7 @@ class AdbToolboxToolWindowPanel(
     }
 
     override fun dispose() {
+        navigationCoordinator.dispose()
         scope.cancel()
         host.dispose()
     }
