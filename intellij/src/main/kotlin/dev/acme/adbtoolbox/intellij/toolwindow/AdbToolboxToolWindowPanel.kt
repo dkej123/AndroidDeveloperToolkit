@@ -5,6 +5,7 @@ import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBPanel
 import dev.acme.adbtoolbox.application.shell.ShellViewModel
 import dev.acme.adbtoolbox.domain.dispatch.DispatcherProvider
+import dev.acme.adbtoolbox.intellij.host.AdbToolboxHostPanel
 import java.awt.BorderLayout
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.cancel
@@ -14,10 +15,13 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /**
- * The neutral tool-window content itself (task 007's scope — no real feature UI, styling, icons,
- * or branding; those land in later feature/design tasks). Renders [ShellViewModel.state] and
- * nothing else: no ADB/process call and no branching business logic lives here, only rendering and
- * intent dispatch, per architecture-guardrails and ADR 0004.
+ * The tool-window content root. Mounts [host] — task 010's neutral [AdbToolboxHostPanel] with its
+ * named slots for device context, navigation, active view, and feedback — replacing task 007's
+ * bare placeholder. No real feature view is registered into [AdbToolboxHostPanel.activeViewHost]
+ * yet (that seam is for tasks 011+); [ShellViewModel.state] is rendered into the host's
+ * [AdbToolboxHostPanel.feedbackSlot] as a stand-in status line, matching `design/README.md`'s
+ * status-bar region until a real feedback feature lands. No styling, icons, or branding here —
+ * those land in later feature/design tasks.
  *
  * State updates arrive from [scope] (a feature-local, off-EDT-capable child scope) and are always
  * marshaled onto [dispatchers]' `main` context before touching a Swing component — collection
@@ -29,10 +33,13 @@ class AdbToolboxToolWindowPanel(
     private val scope: CoroutineScope,
 ) : JBPanel<AdbToolboxToolWindowPanel>(BorderLayout()), Disposable {
 
+    val host = AdbToolboxHostPanel()
+
     private val statusLabel = JBLabel(viewModel.state.value.statusMessage)
 
     init {
-        add(statusLabel, BorderLayout.CENTER)
+        host.feedbackSlot.add(statusLabel, BorderLayout.CENTER)
+        add(host, BorderLayout.CENTER)
 
         viewModel.state
             .onEach { state -> withContext(dispatchers.main) { statusLabel.text = state.statusMessage } }
@@ -45,5 +52,6 @@ class AdbToolboxToolWindowPanel(
 
     override fun dispose() {
         scope.cancel()
+        host.dispose()
     }
 }
