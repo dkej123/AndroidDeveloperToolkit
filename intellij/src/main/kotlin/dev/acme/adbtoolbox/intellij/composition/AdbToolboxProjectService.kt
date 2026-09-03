@@ -3,10 +3,13 @@ package dev.acme.adbtoolbox.intellij.composition
 import com.intellij.ide.plugins.PluginManagerCore
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.components.Service
+import com.intellij.openapi.components.service
 import com.intellij.openapi.extensions.PluginId
 import com.intellij.openapi.project.Project
 import dev.acme.adbtoolbox.adapters.adb.binary.BinaryAdbTransport
 import dev.acme.adbtoolbox.adapters.adb.ddmlib.DdmlibAdbTransport
+import dev.acme.adbtoolbox.adapters.adb.device.AdbDeviceRepository
+import dev.acme.adbtoolbox.adapters.adb.device.DdmlibDeviceChangeListenerSource
 import dev.acme.adbtoolbox.adapters.adb.discovery.DefaultToolLocator
 import dev.acme.adbtoolbox.adapters.jvm.discovery.EnvironmentAndroidSdkPlatformToolsSource
 import dev.acme.adbtoolbox.adapters.jvm.discovery.InMemoryConfiguredToolPathSource
@@ -14,18 +17,24 @@ import dev.acme.adbtoolbox.adapters.jvm.discovery.JvmExecutableFileProbe
 import dev.acme.adbtoolbox.adapters.jvm.discovery.JvmHostPlatformProvider
 import dev.acme.adbtoolbox.adapters.jvm.discovery.JvmPathEnvironmentSource
 import dev.acme.adbtoolbox.adapters.jvm.process.JvmProcessExecutor
+import dev.acme.adbtoolbox.application.device.SelectedDeviceViewModel
 import dev.acme.adbtoolbox.application.shell.ShellViewModel
 import dev.acme.adbtoolbox.domain.adb.AdbTransport
+import dev.acme.adbtoolbox.domain.device.DeviceRepository
+import dev.acme.adbtoolbox.domain.device.DeviceSelectionPersistence
 import dev.acme.adbtoolbox.domain.discovery.ToolLocator
 import dev.acme.adbtoolbox.domain.dispatch.DispatcherProvider
 import dev.acme.adbtoolbox.domain.process.ProcessExecutor
 import dev.acme.adbtoolbox.intellij.adb.IdeAndroidDebugBridgeDeviceSource
 import dev.acme.adbtoolbox.intellij.discovery.AndroidStudioSdkPlatformToolsSource
 import dev.acme.adbtoolbox.intellij.dispatch.IdeDispatcherProvider
+import dev.acme.adbtoolbox.intellij.persistence.AdbToolboxProjectState
+import dev.acme.adbtoolbox.intellij.persistence.DeviceSelectionPersistenceAdapter
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.isActive
 
 private val ANDROID_PLUGIN_ID = PluginId.getId("org.jetbrains.android")
@@ -88,6 +97,26 @@ class AdbToolboxProjectService(private val project: Project) : Disposable {
     }
 
     val shellViewModel: ShellViewModel = ShellViewModel(scope = childScope(), dispatchers = dispatcherProvider)
+
+    // Static/global ddmlib hotplug listener (docs/adr/0005) — only ever registered when the
+    // Android plugin (the sole provider of ddmlib's classes) is present, same guard as adbTransport
+    // above. Absent it, AdbDeviceRepository still discovers devices via its own poll ticker alone.
+    val deviceRepository: DeviceRepository = AdbDeviceRepository(
+        scope = childScope(),
+        dispatchers = dispatcherProvider,
+        binaryTransport = binaryTransport,
+        changeSignals = if (androidPluginPresent) DdmlibDeviceChangeListenerSource().events() else emptyFlow(),
+    )
+
+    val deviceSelectionPersistence: DeviceSelectionPersistence =
+        DeviceSelectionPersistenceAdapter(project.service<AdbToolboxProjectState>())
+
+    val selectedDeviceViewModel: SelectedDeviceViewModel = SelectedDeviceViewModel(
+        scope = childScope(),
+        dispatchers = dispatcherProvider,
+        deviceRepository = deviceRepository,
+        persistence = deviceSelectionPersistence,
+    )
 
     /**
      * A feature-local child scope (ADR 0004): its [SupervisorJob] is a real structured-concurrency
