@@ -1,0 +1,3 @@
+09-02 12:39:00.001   123   456 I 日本語タグ: こんにちは世界 😀 emoji and japanese text
+09-02 12:39:00.002   123   456 I PolskiTag: Zażółć gęślą jaźń — polskie znaki diakrytyczne
+09-02 12:39:00.003   123   456 I EmojiTag: rocket 🚀 fire 🔥 sparkles ✨

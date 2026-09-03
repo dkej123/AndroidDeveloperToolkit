@@ -1,0 +1,6 @@
+09-02 12:35:00.001   789   789 E AndroidRuntime: FATAL EXCEPTION: main
+09-02 12:35:00.001   789   789 E AndroidRuntime: Process: dev.acme.sample, PID: 789
+09-02 12:35:00.001   789   789 E AndroidRuntime: java.lang.RuntimeException: sample failure
+09-02 12:35:00.001   789   789 E AndroidRuntime: 	at dev.acme.sample.MainActivity.onCreate(MainActivity.kt:42)
+09-02 12:35:00.001   789   789 E AndroidRuntime: 	at android.app.Activity.performCreate(Activity.java:8000)
+09-02 12:35:00.010   123   456 I MyApp   : back to a normal record after the stack trace

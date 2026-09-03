@@ -1,0 +1,5 @@
+99-99 99:99:99.999   123   456 I MyApp   : timestamp fields all out of range
+09-02 12:38:00.001   abc   456 I MyApp   : pid is not an integer
+09-02 1234:56.789   123   456 I MyApp   : truncated timestamp prefix that looks like a header
+this is a plain continuation line with no header at all
+09-02 12:38:00.002   123   456 I MyApp   : a normal record right after the malformed ones

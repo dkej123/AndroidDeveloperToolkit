@@ -1,0 +1,6 @@
+--------- beginning of main
+09-02 12:36:00.100   123   456 I MyApp   : first line of the main buffer
+--------- beginning of system
+09-02 12:36:00.200   111   111 I SystemServer: first line of the system buffer
+--------- beginning of crash
+09-02 12:36:00.300   222   222 E AndroidRuntime: first line of the crash buffer

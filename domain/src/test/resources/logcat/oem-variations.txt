@@ -1,0 +1,4 @@
+09-02 12:37:00.001  1234  5678 I VendorTag:message with no space after the colon
+09-02 12:37:00.002     7     8 D shorttag: padded pid and tid columns
+09-02 12:37:00.003  9999  9999 W tag-with-dashes: message from a hyphenated tag
+09-02 12:37:00.004  4242  4242 I EmptyMsg:
