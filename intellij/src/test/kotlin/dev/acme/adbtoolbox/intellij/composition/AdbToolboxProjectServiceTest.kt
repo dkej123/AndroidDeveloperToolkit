@@ -3,6 +3,9 @@ package dev.acme.adbtoolbox.intellij.composition
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.service
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
+import dev.acme.adbtoolbox.application.feedback.FeedbackIntent
+import dev.acme.adbtoolbox.domain.feedback.FeedbackMessage
+import dev.acme.adbtoolbox.domain.feedback.FeedbackSeverity
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.runBlocking
 
@@ -26,6 +29,7 @@ class AdbToolboxProjectServiceTest : BasePlatformTestCase() {
         assertNotNull(service.navigationPersistence)
         assertNotNull(service.navigationViewModel)
         assertNotNull(service.navigationBadges)
+        assertNotNull(service.feedbackViewModel)
     }
 
     fun `test the project service is a singleton per project`() {
@@ -90,5 +94,17 @@ class AdbToolboxProjectServiceTest : BasePlatformTestCase() {
 
         service.dispose()
         service.dispose()
+    }
+
+    fun `test disposing the project service also rejects further feedback posts as a safe no-op`() {
+        val service = AdbToolboxProjectService(project)
+        val stateBefore = service.feedbackViewModel.state.value
+
+        service.dispose()
+        service.feedbackViewModel.handle(
+            FeedbackIntent.Post(FeedbackMessage("x", "x", FeedbackSeverity.Info)),
+        )
+
+        assertEquals(stateBefore, service.feedbackViewModel.state.value)
     }
 }

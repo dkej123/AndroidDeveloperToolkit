@@ -18,6 +18,7 @@ import dev.acme.adbtoolbox.adapters.jvm.discovery.JvmHostPlatformProvider
 import dev.acme.adbtoolbox.adapters.jvm.discovery.JvmPathEnvironmentSource
 import dev.acme.adbtoolbox.adapters.jvm.process.JvmProcessExecutor
 import dev.acme.adbtoolbox.application.device.SelectedDeviceViewModel
+import dev.acme.adbtoolbox.application.feedback.FeedbackViewModel
 import dev.acme.adbtoolbox.application.nav.NavigationViewModel
 import dev.acme.adbtoolbox.application.shell.ShellViewModel
 import dev.acme.adbtoolbox.domain.adb.AdbTransport
@@ -143,6 +144,9 @@ class AdbToolboxProjectService(private val project: Project) : Disposable {
      */
     val navigationBadges: NavigationBadges = MutableNavigationBadges()
 
+    /** The task 013 non-modal feedback/status/toast channel — one instance shared by every feature. */
+    val feedbackViewModel: FeedbackViewModel = FeedbackViewModel(scope = childScope(), dispatchers = dispatcherProvider)
+
     /**
      * A feature-local child scope (ADR 0004): its [SupervisorJob] is a real structured-concurrency
      * child of [projectScope]'s job (not merely a fresh, detached one — `parentScope +
@@ -155,6 +159,10 @@ class AdbToolboxProjectService(private val project: Project) : Disposable {
         CoroutineScope(projectScope.coroutineContext + SupervisorJob(parent = projectScope.coroutineContext[Job]))
 
     override fun dispose() {
+        // feedbackViewModel.dispose() is distinct from cancelling projectScope (ADR 0004's scope
+        // ownership alone does not reject an in-flight handle() call — see FeedbackViewModel's
+        // class doc), so it is disposed explicitly here alongside the scope it is scoped under.
+        feedbackViewModel.dispose()
         // CoroutineScope.cancel() throws if already cancelled, which would make a second dispose
         // (project close after an earlier explicit dispose, or IntelliJ's own double-dispose
         // guards firing) blow up instead of being a safe no-op.

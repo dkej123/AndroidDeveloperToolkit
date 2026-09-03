@@ -1,6 +1,7 @@
 package dev.acme.adbtoolbox.intellij.toolwindow
 
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
+import dev.acme.adbtoolbox.application.feedback.FeedbackViewModel
 import dev.acme.adbtoolbox.application.nav.NavigationViewModel
 import dev.acme.adbtoolbox.application.shell.ShellViewModel
 import dev.acme.adbtoolbox.domain.dispatch.DispatcherProvider
@@ -15,7 +16,9 @@ import kotlinx.coroutines.isActive
 /**
  * Task 010 wires the neutral [AdbToolboxHostPanel] (named slots for device context, navigation,
  * active view, and feedback) into the ToolWindow content this panel mounts, replacing the bare
- * placeholder from task 007. Kept as a [BasePlatformTestCase] like every other test in this module.
+ * placeholder from task 007. Task 013 replaces the feedback slot's `ShellViewModel` status-text
+ * stand-in with the real [FeedbackViewModel]-driven feedback/status/toast infrastructure. Kept as
+ * a [BasePlatformTestCase] like every other test in this module.
  */
 class AdbToolboxToolWindowPanelTest : BasePlatformTestCase() {
 
@@ -28,17 +31,27 @@ class AdbToolboxToolWindowPanelTest : BasePlatformTestCase() {
     private fun navigationViewModel(scope: CoroutineScope, dispatchers: DispatcherProvider): NavigationViewModel =
         NavigationViewModel(scope, dispatchers, FakeNavigationPersistence(), ViewId.Device)
 
-    fun `test the panel mounts a host with the named slots`() {
-        val dispatchers = dispatchers()
+    private class Harness(dispatchers: DispatcherProvider) {
         val scope = CoroutineScope(SupervisorJob() + dispatchers.default)
         val navigationScope = CoroutineScope(SupervisorJob() + dispatchers.default)
-        val panel = AdbToolboxToolWindowPanel(
-            ShellViewModel(scope, dispatchers),
-            dispatchers,
-            scope,
-            navigationViewModel(navigationScope, dispatchers),
-            navigationScope,
+        val feedbackScope = CoroutineScope(SupervisorJob() + dispatchers.default)
+    }
+
+    private fun panel(dispatchers: DispatcherProvider, harness: Harness): AdbToolboxToolWindowPanel =
+        AdbToolboxToolWindowPanel(
+            viewModel = ShellViewModel(harness.scope, dispatchers),
+            dispatchers = dispatchers,
+            scope = harness.scope,
+            navigationViewModel = navigationViewModel(harness.navigationScope, dispatchers),
+            navigationScope = harness.navigationScope,
+            feedbackViewModel = FeedbackViewModel(harness.feedbackScope, dispatchers),
+            feedbackScope = harness.feedbackScope,
         )
+
+    fun `test the panel mounts a host with the named slots`() {
+        val dispatchers = dispatchers()
+        val harness = Harness(dispatchers)
+        val panel = panel(dispatchers, harness)
 
         assertNotNull(panel.host.deviceContextSlot)
         assertNotNull(panel.host.navigationSlot)
@@ -50,39 +63,36 @@ class AdbToolboxToolWindowPanelTest : BasePlatformTestCase() {
 
     fun `test the navigation rail is mounted into the navigation slot`() {
         val dispatchers = dispatchers()
-        val scope = CoroutineScope(SupervisorJob() + dispatchers.default)
-        val navigationScope = CoroutineScope(SupervisorJob() + dispatchers.default)
-        val panel = AdbToolboxToolWindowPanel(
-            ShellViewModel(scope, dispatchers),
-            dispatchers,
-            scope,
-            navigationViewModel(navigationScope, dispatchers),
-            navigationScope,
-        )
+        val harness = Harness(dispatchers)
+        val panel = panel(dispatchers, harness)
 
         assertTrue(panel.host.navigationSlot.componentCount > 0)
 
         panel.dispose()
     }
 
-    fun `test disposing the panel disposes its host too`() {
+    fun `test the feedback status panel is mounted into the feedback slot`() {
         val dispatchers = dispatchers()
-        val scope = CoroutineScope(SupervisorJob() + dispatchers.default)
-        val navigationScope = CoroutineScope(SupervisorJob() + dispatchers.default)
-        val panel = AdbToolboxToolWindowPanel(
-            ShellViewModel(scope, dispatchers),
-            dispatchers,
-            scope,
-            navigationViewModel(navigationScope, dispatchers),
-            navigationScope,
-        )
+        val harness = Harness(dispatchers)
+        val panel = panel(dispatchers, harness)
+
+        assertTrue(panel.host.feedbackSlot.componentCount > 0)
+
+        panel.dispose()
+    }
+
+    fun `test disposing the panel disposes its host and cancels the feedback scope too`() {
+        val dispatchers = dispatchers()
+        val harness = Harness(dispatchers)
+        val panel = panel(dispatchers, harness)
         val overlay = javax.swing.JLabel("toast")
         panel.host.overlays.show(overlay)
 
         panel.dispose()
 
         assertFalse(panel.host.overlays.isShowing(overlay))
-        assertFalse(scope.isActive)
-        assertFalse(navigationScope.isActive)
+        assertFalse(harness.scope.isActive)
+        assertFalse(harness.navigationScope.isActive)
+        assertFalse(harness.feedbackScope.isActive)
     }
 }
