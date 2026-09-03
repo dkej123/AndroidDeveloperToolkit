@@ -44,3 +44,21 @@ fun SelectedDeviceState.toCommandContext(): DeviceCommandContext = when (this) {
     is SelectedDeviceState.Disconnected -> DeviceCommandContext.Disabled.DeviceStale(serial)
     is SelectedDeviceState.Error -> DeviceCommandContext.Disabled.SelectionError(message)
 }
+
+/**
+ * The [DeviceSerial] this [SelectedDeviceState] is currently associated with, if any — unlike
+ * [toCommandContext]'s [DeviceCommandContext.Eligible], this is not restricted to online devices:
+ * a device that just went offline/unauthorized/disconnected keeps its serial here, since per-serial
+ * data (task 014's override summaries, "remember applied overrides per serial and offer to re-apply
+ * when that serial returns" — `design/README.md`) is tracked independently of eligibility.
+ */
+val SelectedDeviceState.selectedSerialOrNull: DeviceSerial?
+    get() = when (this) {
+        is SelectedDeviceState.Online -> device.serial
+        is SelectedDeviceState.Unauthorized -> device.serial
+        is SelectedDeviceState.Offline -> device.serial
+        is SelectedDeviceState.Ineligible -> device.serial
+        is SelectedDeviceState.Disconnected -> serial
+        SelectedDeviceState.Loading, SelectedDeviceState.None -> null
+        is SelectedDeviceState.Error -> null
+    }
