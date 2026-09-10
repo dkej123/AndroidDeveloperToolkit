@@ -82,7 +82,7 @@ class BinaryAdbTransport(
                 ).collect { event ->
                     when (event) {
                         is ProcessEvent.StdoutText -> emit(AdbStreamEvent.Line(event.line))
-                        is ProcessEvent.StderrText -> emit(AdbStreamEvent.Line(event.line))
+                        is ProcessEvent.StderrText -> emit(AdbStreamEvent.StderrLine(event.line))
                         is ProcessEvent.StdoutBytes, is ProcessEvent.StderrBytes ->
                             error("received binary process output for a text adb stream: $event")
 

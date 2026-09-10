@@ -167,13 +167,13 @@ class BinaryAdbTransportTest {
     }
 
     @Test
-    fun `executeStream emits lines then a terminal Completed event`() {
+    fun `executeStream preserves stdout and stderr lines then emits a terminal Completed event`() {
         runBlocking {
             val locator = foundLocator()
             val executor = FakeProcessExecutor {
                 listOf(
                     ProcessEvent.StdoutText("line one"),
-                    ProcessEvent.StdoutText("line two"),
+                    ProcessEvent.StderrText("line two"),
                     ProcessEvent.Completed(ProcessOutcome.Completed(0)),
                 )
             }
@@ -186,7 +186,7 @@ class BinaryAdbTransportTest {
 
             events shouldContainExactly listOf(
                 AdbStreamEvent.Line("line one"),
-                AdbStreamEvent.Line("line two"),
+                AdbStreamEvent.StderrLine("line two"),
                 AdbStreamEvent.Completed(AdbOutcome.Completed(0)),
             )
         }
