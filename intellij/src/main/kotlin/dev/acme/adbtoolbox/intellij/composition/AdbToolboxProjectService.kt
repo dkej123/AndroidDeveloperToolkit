@@ -29,6 +29,8 @@ import dev.acme.adbtoolbox.application.deviceactions.OpenShellUseCase
 import dev.acme.adbtoolbox.application.devicefacts.DeviceFactsViewModel
 import dev.acme.adbtoolbox.application.devicefacts.LoadDeviceFactsUseCase
 import dev.acme.adbtoolbox.application.feedback.FeedbackViewModel
+import dev.acme.adbtoolbox.application.mirroring.MirroringSessionManager
+import dev.acme.adbtoolbox.application.mirroring.MirroringViewModel
 import dev.acme.adbtoolbox.application.nav.NavigationViewModel
 import dev.acme.adbtoolbox.application.shell.ShellViewModel
 import dev.acme.adbtoolbox.domain.adb.AdbTransport
@@ -241,6 +243,29 @@ class AdbToolboxProjectService(private val project: Project) : Disposable {
         deviceActionsUseCase = deviceActionsUseCase,
         openShellUseCase = openShellUseCase,
         feedback = feedbackViewModel,
+    )
+
+    /** Task 017's per-serial scrcpy mirroring session lifecycle, independent of any UI. */
+    val mirroringSessionManager: MirroringSessionManager = MirroringSessionManager(
+        scope = childScope(),
+        dispatchers = dispatcherProvider,
+        toolLocator = toolLocator,
+        processExecutor = processExecutor,
+    )
+
+    /**
+     * Task 018's Device-view mirroring binding and global-shortcut action, driven by
+     * [selectedDeviceViewModel] and [mirroringSessionManager]; missing-tool errors route to
+     * [navigationViewModel] ([ViewId.Settings]) and every other error/external-exit routes through
+     * [feedbackViewModel].
+     */
+    val mirroringViewModel: MirroringViewModel = MirroringViewModel(
+        scope = childScope(),
+        dispatchers = dispatcherProvider,
+        selectedDeviceState = selectedDeviceViewModel.state,
+        sessionManager = mirroringSessionManager,
+        feedback = feedbackViewModel,
+        navigation = navigationViewModel,
     )
 
     /**

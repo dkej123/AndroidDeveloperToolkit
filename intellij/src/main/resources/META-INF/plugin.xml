@@ -19,4 +19,19 @@
         <toolWindow id="ADB Toolbox" anchor="right" secondary="false"
                     factoryClass="dev.acme.adbtoolbox.intellij.toolwindow.AdbToolboxToolWindowFactory"/>
     </extensions>
+
+    <!-- Task 018's global mirroring shortcut — forwards to the same MirroringViewModel.handle
+         entry point the Device-view toggle button uses; design/README.md suggests shift+cmd+M. Two
+         keymap entries give the suggested Mac chord and a Ctrl-based equivalent everywhere else,
+         since IntelliJ's "meta" modifier only exists as a real key on macOS keymaps. -->
+    <actions>
+        <action id="dev.acme.adbtoolbox.ToggleMirroring"
+                class="dev.acme.adbtoolbox.intellij.mirroring.MirroringToggleAction"
+                text="Toggle Device Mirroring"
+                description="Start or stop mirroring the selected device">
+            <keyboard-shortcut keymap="$default" first-keystroke="shift control M"/>
+            <keyboard-shortcut keymap="Mac OS X" first-keystroke="shift meta M"/>
+            <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="shift meta M"/>
+        </action>
+    </actions>
 </idea-plugin>

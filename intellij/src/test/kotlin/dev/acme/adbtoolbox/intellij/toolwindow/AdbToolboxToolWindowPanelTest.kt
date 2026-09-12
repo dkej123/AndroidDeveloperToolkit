@@ -11,6 +11,8 @@ import dev.acme.adbtoolbox.application.deviceactions.OpenShellUseCase
 import dev.acme.adbtoolbox.application.devicefacts.DeviceFactsViewModel
 import dev.acme.adbtoolbox.application.devicefacts.LoadDeviceFactsUseCase
 import dev.acme.adbtoolbox.application.feedback.FeedbackViewModel
+import dev.acme.adbtoolbox.application.mirroring.MirroringSessionManager
+import dev.acme.adbtoolbox.application.mirroring.MirroringViewModel
 import dev.acme.adbtoolbox.application.nav.NavigationViewModel
 import dev.acme.adbtoolbox.application.shell.ShellViewModel
 import dev.acme.adbtoolbox.domain.dispatch.DispatcherProvider
@@ -30,6 +32,7 @@ import dev.acme.adbtoolbox.domain.discovery.FakeToolLocator
 import dev.acme.adbtoolbox.domain.discovery.ToolId
 import dev.acme.adbtoolbox.domain.nav.FakeNavigationPersistence
 import dev.acme.adbtoolbox.domain.nav.ViewId
+import dev.acme.adbtoolbox.domain.process.FakeProcessExecutor
 import dev.acme.adbtoolbox.intellij.devicefacts.DeviceFactsPanel
 import dev.acme.adbtoolbox.intellij.dispatch.IdeDispatcherProvider
 import dev.acme.adbtoolbox.intellij.host.AdbToolboxHostPanel
@@ -65,6 +68,7 @@ class AdbToolboxToolWindowPanelTest : BasePlatformTestCase() {
         val deviceBarScope = CoroutineScope(SupervisorJob() + dispatchers.default)
         val captureScope = CoroutineScope(SupervisorJob() + dispatchers.default)
         val deviceActionsScope = CoroutineScope(SupervisorJob() + dispatchers.default)
+        val mirroringScope = CoroutineScope(SupervisorJob() + dispatchers.default)
     }
 
     private fun captureViewModel(scope: CoroutineScope, dispatchers: DispatcherProvider, feedback: FeedbackViewModel): CaptureViewModel =
@@ -94,6 +98,28 @@ class AdbToolboxToolWindowPanelTest : BasePlatformTestCase() {
             feedback = feedback,
         )
 
+    private fun mirroringViewModel(
+        scope: CoroutineScope,
+        dispatchers: DispatcherProvider,
+        feedback: FeedbackViewModel,
+        navigation: NavigationViewModel,
+    ): MirroringViewModel {
+        val sessionManager = MirroringSessionManager(
+            scope = scope,
+            dispatchers = dispatchers,
+            toolLocator = FakeToolLocator { DiscoveryOutcome.Failed(DiscoveryError.ToolNotFound(ToolId.Scrcpy, emptyList())) },
+            processExecutor = FakeProcessExecutor { emptyList() },
+        )
+        return MirroringViewModel(
+            scope = scope,
+            dispatchers = dispatchers,
+            selectedDeviceState = MutableStateFlow<SelectedDeviceState>(SelectedDeviceState.None),
+            sessionManager = sessionManager,
+            feedback = feedback,
+            navigation = navigation,
+        )
+    }
+
     private fun deviceBarViewModel(scope: CoroutineScope, dispatchers: DispatcherProvider): DeviceBarViewModel {
         val repository = FakeDeviceRepository()
         val selectedDeviceViewModel = SelectedDeviceViewModel(
@@ -113,11 +139,12 @@ class AdbToolboxToolWindowPanelTest : BasePlatformTestCase() {
 
     private fun panel(dispatchers: DispatcherProvider, harness: Harness): AdbToolboxToolWindowPanel {
         val feedbackViewModel = FeedbackViewModel(harness.feedbackScope, dispatchers)
+        val navigationVm = navigationViewModel(harness.navigationScope, dispatchers)
         return AdbToolboxToolWindowPanel(
             viewModel = ShellViewModel(harness.scope, dispatchers),
             dispatchers = dispatchers,
             scope = harness.scope,
-            navigationViewModel = navigationViewModel(harness.navigationScope, dispatchers),
+            navigationViewModel = navigationVm,
             navigationScope = harness.navigationScope,
             feedbackViewModel = feedbackViewModel,
             feedbackScope = harness.feedbackScope,
@@ -135,6 +162,8 @@ class AdbToolboxToolWindowPanelTest : BasePlatformTestCase() {
             captureScope = harness.captureScope,
             deviceActionsViewModel = deviceActionsViewModel(harness.deviceActionsScope, dispatchers, feedbackViewModel),
             deviceActionsScope = harness.deviceActionsScope,
+            mirroringViewModel = mirroringViewModel(harness.mirroringScope, dispatchers, feedbackViewModel, navigationVm),
+            mirroringScope = harness.mirroringScope,
         )
     }
 
@@ -198,6 +227,7 @@ class AdbToolboxToolWindowPanelTest : BasePlatformTestCase() {
         assertFalse(harness.deviceBarScope.isActive)
         assertFalse(harness.captureScope.isActive)
         assertFalse(harness.deviceActionsScope.isActive)
+        assertFalse(harness.mirroringScope.isActive)
     }
 
     fun `test the screenshot control is mounted into the Device view alongside device facts`() {
@@ -222,6 +252,19 @@ class AdbToolboxToolWindowPanelTest : BasePlatformTestCase() {
         assertTrue(deviceView is DeviceFactsPanel)
         val actionsRow = (deviceView as DeviceFactsPanel).actionsRow
         assertTrue(actionsRow.componentCount > 2)
+
+        panel.dispose()
+    }
+
+    fun `test the mirroring control is mounted into the Device view alongside the other action-row controls`() {
+        val dispatchers = dispatchers()
+        val harness = Harness(dispatchers)
+        val panel = panel(dispatchers, harness)
+
+        val deviceView = panel.host.activeViewHost.componentFor(ViewId.Device.routeKey)
+        assertTrue(deviceView is DeviceFactsPanel)
+        val actionsRow = (deviceView as DeviceFactsPanel).actionsRow
+        assertTrue(actionsRow.componentCount > 3)
 
         panel.dispose()
     }

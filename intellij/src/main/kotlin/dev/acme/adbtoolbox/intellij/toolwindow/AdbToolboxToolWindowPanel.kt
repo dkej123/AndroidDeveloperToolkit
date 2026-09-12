@@ -7,6 +7,7 @@ import dev.acme.adbtoolbox.application.devicebar.DeviceBarViewModel
 import dev.acme.adbtoolbox.application.deviceactions.DeviceActionsViewModel
 import dev.acme.adbtoolbox.application.devicefacts.DeviceFactsViewModel
 import dev.acme.adbtoolbox.application.feedback.FeedbackViewModel
+import dev.acme.adbtoolbox.application.mirroring.MirroringViewModel
 import dev.acme.adbtoolbox.application.nav.NavigationViewModel
 import dev.acme.adbtoolbox.application.shell.ShellViewModel
 import dev.acme.adbtoolbox.domain.dispatch.DispatcherProvider
@@ -16,6 +17,7 @@ import dev.acme.adbtoolbox.intellij.devicebar.DeviceContextBarCoordinator
 import dev.acme.adbtoolbox.intellij.devicefacts.DeviceFactsCoordinator
 import dev.acme.adbtoolbox.intellij.feedback.FeedbackOverlayCoordinator
 import dev.acme.adbtoolbox.intellij.host.AdbToolboxHostPanel
+import dev.acme.adbtoolbox.intellij.mirroring.MirroringCoordinator
 import dev.acme.adbtoolbox.intellij.nav.NavigationRailPanel
 import dev.acme.adbtoolbox.intellij.nav.NavigationRoutingCoordinator
 import java.awt.BorderLayout
@@ -57,6 +59,10 @@ import kotlinx.coroutines.launch
  * [deviceActionsViewModel] drives task 016's Device-view Reboot/Open-shell/Wake controls via
  * [DeviceActionsCoordinator], on its own [deviceActionsScope] child scope. It is constructed after
  * [captureCoordinator] for the same "mounts into an already-registered panel" reason.
+ *
+ * [mirroringViewModel] drives task 018's Device-view mirroring toggle via [MirroringCoordinator],
+ * on its own [mirroringScope] child scope. It is constructed after [deviceActionsCoordinator] for
+ * the same "mounts into an already-registered panel" reason.
  */
 class AdbToolboxToolWindowPanel(
     viewModel: ShellViewModel,
@@ -74,6 +80,8 @@ class AdbToolboxToolWindowPanel(
     private val captureScope: CoroutineScope,
     deviceActionsViewModel: DeviceActionsViewModel,
     private val deviceActionsScope: CoroutineScope,
+    mirroringViewModel: MirroringViewModel,
+    private val mirroringScope: CoroutineScope,
 ) : JBPanel<AdbToolboxToolWindowPanel>(BorderLayout()), Disposable {
 
     val host = AdbToolboxHostPanel()
@@ -112,6 +120,14 @@ class AdbToolboxToolWindowPanel(
         dispatchers = dispatchers,
     )
 
+    // Mounted after deviceActionsCoordinator, into the same already-registered actionsRow.
+    private val mirroringCoordinator = MirroringCoordinator(
+        deviceFactsPanel = deviceFactsCoordinator.panel,
+        viewModel = mirroringViewModel,
+        scope = mirroringScope,
+        dispatchers = dispatchers,
+    )
+
     private val navigationCoordinator = NavigationRoutingCoordinator(
         host = host,
         rail = navigationRail,
@@ -139,6 +155,7 @@ class AdbToolboxToolWindowPanel(
     override fun dispose() {
         navigationCoordinator.dispose()
         feedbackCoordinator.dispose()
+        mirroringCoordinator.dispose()
         deviceActionsCoordinator.dispose()
         captureCoordinator.dispose()
         deviceFactsCoordinator.dispose()
