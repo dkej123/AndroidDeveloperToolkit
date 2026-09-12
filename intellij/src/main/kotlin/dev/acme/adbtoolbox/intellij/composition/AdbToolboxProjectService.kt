@@ -32,6 +32,8 @@ import dev.acme.adbtoolbox.application.feedback.FeedbackViewModel
 import dev.acme.adbtoolbox.application.mirroring.MirroringSessionManager
 import dev.acme.adbtoolbox.application.mirroring.MirroringViewModel
 import dev.acme.adbtoolbox.application.nav.NavigationViewModel
+import dev.acme.adbtoolbox.application.recording.RecordingSessionManager
+import dev.acme.adbtoolbox.application.recording.RecordingViewModel
 import dev.acme.adbtoolbox.application.shell.ShellViewModel
 import dev.acme.adbtoolbox.domain.adb.AdbTransport
 import dev.acme.adbtoolbox.domain.capture.CaptureDestination
@@ -50,6 +52,7 @@ import dev.acme.adbtoolbox.domain.nav.NavigationBadges
 import dev.acme.adbtoolbox.domain.nav.NavigationPersistence
 import dev.acme.adbtoolbox.domain.nav.ViewId
 import dev.acme.adbtoolbox.domain.process.ProcessExecutor
+import dev.acme.adbtoolbox.domain.time.SystemMonotonicClock
 import dev.acme.adbtoolbox.intellij.adb.IdeAndroidDebugBridgeDeviceSource
 import dev.acme.adbtoolbox.intellij.clipboard.ClipboardPortAdapter
 import dev.acme.adbtoolbox.intellij.discovery.AndroidStudioSdkPlatformToolsSource
@@ -266,6 +269,38 @@ class AdbToolboxProjectService(private val project: Project) : Disposable {
         sessionManager = mirroringSessionManager,
         feedback = feedbackViewModel,
         navigation = navigationViewModel,
+    )
+
+    /**
+     * Task 020's per-serial remote `screenrecord` session lifecycle, independent of any UI. Reuses
+     * task 019's [captureDestination] platform port verbatim (the same local-save destination
+     * screenshots commit to) and a second, MP4-suffixed [TimestampFileNamePolicy] instance — the same
+     * `screen-<ts>` naming scheme, just `extension = "mp4"` — rather than duplicating either port.
+     */
+    private val recordingFileNamePolicy: FileNamePolicy = TimestampFileNamePolicy(extension = "mp4")
+
+    val recordingSessionManager: RecordingSessionManager = RecordingSessionManager(
+        scope = childScope(),
+        dispatchers = dispatcherProvider,
+        adbTransport = adbTransport,
+        captureDestination = captureDestination,
+        fileNamePolicy = recordingFileNamePolicy,
+        monotonicClock = SystemMonotonicClock,
+    )
+
+    /**
+     * Task 020's Device-view recording toggle, driven by [selectedDeviceViewModel] and
+     * [recordingSessionManager]; every error/save routes through [feedbackViewModel] (task 013), the
+     * same channel [captureViewModel]/[mirroringViewModel] already use.
+     */
+    val recordingViewModel: RecordingViewModel = RecordingViewModel(
+        scope = childScope(),
+        dispatchers = dispatcherProvider,
+        selectedDeviceState = selectedDeviceViewModel.state,
+        sessionManager = recordingSessionManager,
+        revealInFileManager = revealInFileManager,
+        feedback = feedbackViewModel,
+        monotonicClock = SystemMonotonicClock,
     )
 
     /**

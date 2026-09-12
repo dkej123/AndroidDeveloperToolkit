@@ -9,6 +9,7 @@ import dev.acme.adbtoolbox.application.devicefacts.DeviceFactsViewModel
 import dev.acme.adbtoolbox.application.feedback.FeedbackViewModel
 import dev.acme.adbtoolbox.application.mirroring.MirroringViewModel
 import dev.acme.adbtoolbox.application.nav.NavigationViewModel
+import dev.acme.adbtoolbox.application.recording.RecordingViewModel
 import dev.acme.adbtoolbox.application.shell.ShellViewModel
 import dev.acme.adbtoolbox.domain.dispatch.DispatcherProvider
 import dev.acme.adbtoolbox.intellij.capture.CaptureCoordinator
@@ -20,6 +21,7 @@ import dev.acme.adbtoolbox.intellij.host.AdbToolboxHostPanel
 import dev.acme.adbtoolbox.intellij.mirroring.MirroringCoordinator
 import dev.acme.adbtoolbox.intellij.nav.NavigationRailPanel
 import dev.acme.adbtoolbox.intellij.nav.NavigationRoutingCoordinator
+import dev.acme.adbtoolbox.intellij.recording.RecordingCoordinator
 import java.awt.BorderLayout
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.cancel
@@ -63,6 +65,10 @@ import kotlinx.coroutines.launch
  * [mirroringViewModel] drives task 018's Device-view mirroring toggle via [MirroringCoordinator],
  * on its own [mirroringScope] child scope. It is constructed after [deviceActionsCoordinator] for
  * the same "mounts into an already-registered panel" reason.
+ *
+ * [recordingViewModel] drives task 020's Device-view recording toggle via [RecordingCoordinator],
+ * on its own [recordingScope] child scope. It is constructed after [mirroringCoordinator] for the
+ * same "mounts into an already-registered panel" reason.
  */
 class AdbToolboxToolWindowPanel(
     viewModel: ShellViewModel,
@@ -82,6 +88,8 @@ class AdbToolboxToolWindowPanel(
     private val deviceActionsScope: CoroutineScope,
     mirroringViewModel: MirroringViewModel,
     private val mirroringScope: CoroutineScope,
+    recordingViewModel: RecordingViewModel,
+    private val recordingScope: CoroutineScope,
 ) : JBPanel<AdbToolboxToolWindowPanel>(BorderLayout()), Disposable {
 
     val host = AdbToolboxHostPanel()
@@ -128,6 +136,14 @@ class AdbToolboxToolWindowPanel(
         dispatchers = dispatchers,
     )
 
+    // Mounted after mirroringCoordinator, into the same already-registered actionsRow.
+    private val recordingCoordinator = RecordingCoordinator(
+        deviceFactsPanel = deviceFactsCoordinator.panel,
+        viewModel = recordingViewModel,
+        scope = recordingScope,
+        dispatchers = dispatchers,
+    )
+
     private val navigationCoordinator = NavigationRoutingCoordinator(
         host = host,
         rail = navigationRail,
@@ -155,6 +171,7 @@ class AdbToolboxToolWindowPanel(
     override fun dispose() {
         navigationCoordinator.dispose()
         feedbackCoordinator.dispose()
+        recordingCoordinator.dispose()
         mirroringCoordinator.dispose()
         deviceActionsCoordinator.dispose()
         captureCoordinator.dispose()

@@ -14,12 +14,15 @@ import dev.acme.adbtoolbox.application.feedback.FeedbackViewModel
 import dev.acme.adbtoolbox.application.mirroring.MirroringSessionManager
 import dev.acme.adbtoolbox.application.mirroring.MirroringViewModel
 import dev.acme.adbtoolbox.application.nav.NavigationViewModel
+import dev.acme.adbtoolbox.application.recording.RecordingSessionManager
+import dev.acme.adbtoolbox.application.recording.RecordingViewModel
 import dev.acme.adbtoolbox.application.shell.ShellViewModel
 import dev.acme.adbtoolbox.domain.dispatch.DispatcherProvider
 import dev.acme.adbtoolbox.domain.adb.FakeAdbTransport
 import dev.acme.adbtoolbox.domain.capture.FakeCaptureDestination
 import dev.acme.adbtoolbox.domain.capture.FileNamePolicy
 import dev.acme.adbtoolbox.domain.capture.RevealInFileManager
+import dev.acme.adbtoolbox.domain.time.FakeMonotonicClock
 import dev.acme.adbtoolbox.domain.device.FakeDeviceListRefresher
 import dev.acme.adbtoolbox.domain.device.FakeDeviceRepository
 import dev.acme.adbtoolbox.domain.device.FakeDeviceSelectionPersistence
@@ -69,6 +72,7 @@ class AdbToolboxToolWindowPanelTest : BasePlatformTestCase() {
         val captureScope = CoroutineScope(SupervisorJob() + dispatchers.default)
         val deviceActionsScope = CoroutineScope(SupervisorJob() + dispatchers.default)
         val mirroringScope = CoroutineScope(SupervisorJob() + dispatchers.default)
+        val recordingScope = CoroutineScope(SupervisorJob() + dispatchers.default)
     }
 
     private fun captureViewModel(scope: CoroutineScope, dispatchers: DispatcherProvider, feedback: FeedbackViewModel): CaptureViewModel =
@@ -120,6 +124,25 @@ class AdbToolboxToolWindowPanelTest : BasePlatformTestCase() {
         )
     }
 
+    private fun recordingViewModel(scope: CoroutineScope, dispatchers: DispatcherProvider, feedback: FeedbackViewModel): RecordingViewModel {
+        val sessionManager = RecordingSessionManager(
+            scope = scope,
+            dispatchers = dispatchers,
+            adbTransport = FakeAdbTransport(),
+            captureDestination = FakeCaptureDestination(),
+            fileNamePolicy = FileNamePolicy { "screen.mp4" },
+            monotonicClock = FakeMonotonicClock(),
+        )
+        return RecordingViewModel(
+            scope = scope,
+            dispatchers = dispatchers,
+            selectedDeviceState = MutableStateFlow<SelectedDeviceState>(SelectedDeviceState.None),
+            sessionManager = sessionManager,
+            revealInFileManager = RevealInFileManager {},
+            feedback = feedback,
+        )
+    }
+
     private fun deviceBarViewModel(scope: CoroutineScope, dispatchers: DispatcherProvider): DeviceBarViewModel {
         val repository = FakeDeviceRepository()
         val selectedDeviceViewModel = SelectedDeviceViewModel(
@@ -164,6 +187,8 @@ class AdbToolboxToolWindowPanelTest : BasePlatformTestCase() {
             deviceActionsScope = harness.deviceActionsScope,
             mirroringViewModel = mirroringViewModel(harness.mirroringScope, dispatchers, feedbackViewModel, navigationVm),
             mirroringScope = harness.mirroringScope,
+            recordingViewModel = recordingViewModel(harness.recordingScope, dispatchers, feedbackViewModel),
+            recordingScope = harness.recordingScope,
         )
     }
 
@@ -228,6 +253,7 @@ class AdbToolboxToolWindowPanelTest : BasePlatformTestCase() {
         assertFalse(harness.captureScope.isActive)
         assertFalse(harness.deviceActionsScope.isActive)
         assertFalse(harness.mirroringScope.isActive)
+        assertFalse(harness.recordingScope.isActive)
     }
 
     fun `test the screenshot control is mounted into the Device view alongside device facts`() {
@@ -265,6 +291,19 @@ class AdbToolboxToolWindowPanelTest : BasePlatformTestCase() {
         assertTrue(deviceView is DeviceFactsPanel)
         val actionsRow = (deviceView as DeviceFactsPanel).actionsRow
         assertTrue(actionsRow.componentCount > 3)
+
+        panel.dispose()
+    }
+
+    fun `test the recording control is mounted into the Device view alongside the other action-row controls`() {
+        val dispatchers = dispatchers()
+        val harness = Harness(dispatchers)
+        val panel = panel(dispatchers, harness)
+
+        val deviceView = panel.host.activeViewHost.componentFor(ViewId.Device.routeKey)
+        assertTrue(deviceView is DeviceFactsPanel)
+        val actionsRow = (deviceView as DeviceFactsPanel).actionsRow
+        assertTrue(actionsRow.componentCount > 4)
 
         panel.dispose()
     }

@@ -28,4 +28,13 @@ class TimestampFileNamePolicyTest {
         first shouldBe "screen-20260902-101530.png"
         second shouldBe "screen-20260902-101531.png"
     }
+
+    @Test
+    fun `a caller-supplied extension overrides the PNG default, for task 020's mp4 recordings`() {
+        val policy = TimestampFileNamePolicy(zone = utc, extension = "mp4")
+
+        val name = policy.baseFileName(Instant.parse("2026-01-05T03:07:09Z"))
+
+        name shouldBe "screen-20260105-030709.mp4"
+    }
 }
