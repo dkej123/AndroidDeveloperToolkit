@@ -19,6 +19,9 @@ import dev.acme.adbtoolbox.adapters.jvm.discovery.JvmExecutableFileProbe
 import dev.acme.adbtoolbox.adapters.jvm.discovery.JvmHostPlatformProvider
 import dev.acme.adbtoolbox.adapters.jvm.discovery.JvmPathEnvironmentSource
 import dev.acme.adbtoolbox.adapters.jvm.process.JvmProcessExecutor
+import dev.acme.adbtoolbox.application.apps.AppLifecycleUseCase
+import dev.acme.adbtoolbox.application.apps.AppLifecycleViewModel
+import dev.acme.adbtoolbox.application.apps.SelectedPackageViewModel
 import dev.acme.adbtoolbox.application.capture.CaptureScreenshotUseCase
 import dev.acme.adbtoolbox.application.capture.CaptureViewModel
 import dev.acme.adbtoolbox.application.device.SelectedDeviceViewModel
@@ -36,6 +39,7 @@ import dev.acme.adbtoolbox.application.recording.RecordingSessionManager
 import dev.acme.adbtoolbox.application.recording.RecordingViewModel
 import dev.acme.adbtoolbox.application.shell.ShellViewModel
 import dev.acme.adbtoolbox.domain.adb.AdbTransport
+import dev.acme.adbtoolbox.domain.apps.SelectedPackagePersistence
 import dev.acme.adbtoolbox.domain.capture.CaptureDestination
 import dev.acme.adbtoolbox.domain.capture.FileNamePolicy
 import dev.acme.adbtoolbox.domain.capture.RevealInFileManager
@@ -58,6 +62,7 @@ import dev.acme.adbtoolbox.intellij.clipboard.ClipboardPortAdapter
 import dev.acme.adbtoolbox.intellij.discovery.AndroidStudioSdkPlatformToolsSource
 import dev.acme.adbtoolbox.intellij.dispatch.IdeDispatcherProvider
 import dev.acme.adbtoolbox.intellij.persistence.AdbToolboxProjectState
+import dev.acme.adbtoolbox.intellij.persistence.AppsSelectionPersistenceAdapter
 import dev.acme.adbtoolbox.intellij.persistence.DeviceSelectionPersistenceAdapter
 import dev.acme.adbtoolbox.intellij.persistence.NavigationPersistenceAdapter
 import dev.acme.adbtoolbox.intellij.terminal.TerminalLauncherAdapter
@@ -301,6 +306,35 @@ class AdbToolboxProjectService(private val project: Project) : Disposable {
         revealInFileManager = revealInFileManager,
         feedback = feedbackViewModel,
         monotonicClock = SystemMonotonicClock,
+    )
+
+    /** Task 022's persisted selected-package contract adapter — the same `AppsSelectionState` slice `:intellij`'s Apps feature reads/writes. */
+    val selectedPackagePersistence: SelectedPackagePersistence =
+        AppsSelectionPersistenceAdapter(project.service<AdbToolboxProjectState>())
+
+    /** Task 022's shared selected-package contract, consumed by [appLifecycleViewModel] and (once wired) the Apps view/Logcat's default package filter. */
+    val selectedPackageViewModel: SelectedPackageViewModel = SelectedPackageViewModel(
+        scope = childScope(),
+        dispatchers = dispatcherProvider,
+        persistence = selectedPackagePersistence,
+    )
+
+    private val appLifecycleUseCase = AppLifecycleUseCase(adbTransport)
+
+    /**
+     * Task 023's Force-stop/Launch/Restart binding, driven by [selectedDeviceViewModel] and
+     * [selectedPackageViewModel]: both [dev.acme.adbtoolbox.intellij.apps.AppsCoordinator]'s panel
+     * buttons and [dev.acme.adbtoolbox.intellij.apps.RestartAppAction]'s global shortcut forward to
+     * this exact same shared instance, so they can never diverge into two different restart code
+     * paths.
+     */
+    val appLifecycleViewModel: AppLifecycleViewModel = AppLifecycleViewModel(
+        scope = childScope(),
+        dispatchers = dispatcherProvider,
+        selectedDeviceState = selectedDeviceViewModel.state,
+        selectedPackageState = selectedPackageViewModel.state,
+        appLifecycleUseCase = appLifecycleUseCase,
+        feedback = feedbackViewModel,
     )
 
     /**

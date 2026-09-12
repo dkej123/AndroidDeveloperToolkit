@@ -3,18 +3,25 @@
 package dev.acme.adbtoolbox.intellij.apps
 
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
+import dev.acme.adbtoolbox.application.apps.AppLifecycleUseCase
+import dev.acme.adbtoolbox.application.apps.AppLifecycleViewModel
+import dev.acme.adbtoolbox.application.apps.AppLifecycleViewState
 import dev.acme.adbtoolbox.application.apps.AppsIntent
 import dev.acme.adbtoolbox.application.apps.AppsViewModel
 import dev.acme.adbtoolbox.application.apps.AppsViewState
 import dev.acme.adbtoolbox.application.apps.SelectedPackageViewModel
-import dev.acme.adbtoolbox.application.device.SelectedDeviceIntent
 import dev.acme.adbtoolbox.application.device.SelectedDeviceViewModel
+import dev.acme.adbtoolbox.domain.adb.AdbOutcome
+import dev.acme.adbtoolbox.domain.adb.AdbTextResult
 import dev.acme.adbtoolbox.domain.adb.DeviceSerial
+import dev.acme.adbtoolbox.domain.adb.FakeAdbTransport
 import dev.acme.adbtoolbox.domain.apps.FakeSelectedPackagePersistence
+import dev.acme.adbtoolbox.domain.apps.SelectedPackage
 import dev.acme.adbtoolbox.domain.device.Device
 import dev.acme.adbtoolbox.domain.device.DeviceConnectionState
 import dev.acme.adbtoolbox.domain.device.FakeDeviceRepository
 import dev.acme.adbtoolbox.domain.device.FakeDeviceSelectionPersistence
+import dev.acme.adbtoolbox.domain.devicecontext.ControlPolicy
 import dev.acme.adbtoolbox.domain.dispatch.DispatcherProvider
 import dev.acme.adbtoolbox.domain.packages.FakePackageRepository
 import dev.acme.adbtoolbox.domain.packages.PackageEntry
@@ -30,11 +37,11 @@ import kotlinx.coroutines.runBlocking
 private val serialA = DeviceSerial.of("AAAA111")
 
 /**
- * Connects task 022's [AppsViewModel] to [AppsPanel], mirroring
- * [dev.acme.adbtoolbox.intellij.devicebar.DeviceContextBarCoordinator]'s established shape: [scope]
- * is owned by the caller, state is marshaled onto [dispatchers]' `main` context before touching
- * Swing, and [AppsCoordinator.render] is directly unit-testable against a constructed
- * [AppsViewState] without a real coroutine round trip.
+ * Connects task 022's [AppsViewModel] and task 023's [AppLifecycleViewModel] to [AppsPanel],
+ * mirroring [dev.acme.adbtoolbox.intellij.devicebar.DeviceContextBarCoordinator]'s established
+ * shape: [scope] is owned by the caller, state is marshaled onto [dispatchers]' `main` context
+ * before touching Swing, and [AppsCoordinator.render]/[AppsCoordinator.renderLifecycle] are
+ * directly unit-testable against constructed view-state values without a real coroutine round trip.
  */
 class AppsCoordinatorTest : BasePlatformTestCase() {
 
@@ -44,7 +51,21 @@ class AppsCoordinatorTest : BasePlatformTestCase() {
         override val main = Dispatchers.Default
     }
 
-    private fun viewModel(dispatchers: DispatcherProvider, scope: CoroutineScope): AppsViewModel {
+    private class Fixture(
+        val dispatchers: DispatcherProvider,
+        val scope: CoroutineScope,
+        val selectedDeviceViewModel: SelectedDeviceViewModel,
+        val selectedPackageViewModel: SelectedPackageViewModel,
+        val appsViewModel: AppsViewModel,
+        val appLifecycleViewModel: AppLifecycleViewModel,
+        val feedback: dev.acme.adbtoolbox.application.feedback.FeedbackViewModel,
+    )
+
+    private fun fixture(
+        dispatchers: DispatcherProvider = TestDispatchers(),
+        scope: CoroutineScope = CoroutineScope(SupervisorJob() + dispatchers.default),
+        transport: FakeAdbTransport = FakeAdbTransport(textScript = { AdbTextResult(AdbOutcome.Completed(0), "", "") }),
+    ): Fixture {
         val deviceRepository = FakeDeviceRepository(listOf(Device(serialA, DeviceConnectionState.Online)))
         val selectedDeviceViewModel = SelectedDeviceViewModel(
             scope = scope,
@@ -57,55 +78,59 @@ class AppsCoordinatorTest : BasePlatformTestCase() {
             dispatchers = dispatchers,
             persistence = FakeSelectedPackagePersistence(),
         )
-        return AppsViewModel(
+        val appsViewModel = AppsViewModel(
             scope = scope,
             dispatchers = dispatchers,
             packageRepository = FakePackageRepository(),
             selectedDeviceViewModel = selectedDeviceViewModel,
             selectedPackageViewModel = selectedPackageViewModel,
         )
+        val feedback = dev.acme.adbtoolbox.application.feedback.FeedbackViewModel(scope = scope, dispatchers = dispatchers)
+        val appLifecycleViewModel = AppLifecycleViewModel(
+            scope = scope,
+            dispatchers = dispatchers,
+            selectedDeviceState = selectedDeviceViewModel.state,
+            selectedPackageState = selectedPackageViewModel.state,
+            appLifecycleUseCase = AppLifecycleUseCase(transport),
+            feedback = feedback,
+        )
+        return Fixture(dispatchers, scope, selectedDeviceViewModel, selectedPackageViewModel, appsViewModel, appLifecycleViewModel, feedback)
     }
 
-    fun `test the coordinator wires up against a real view model without a construction-time crash`() {
-        val dispatchers = TestDispatchers()
-        val scope = CoroutineScope(SupervisorJob() + dispatchers.default)
+    fun `test the coordinator wires up against real view models without a construction-time crash`() {
+        val f = fixture()
 
-        val coordinator = AppsCoordinator(viewModel(dispatchers, scope), scope, dispatchers)
+        val coordinator = AppsCoordinator(f.appsViewModel, f.appLifecycleViewModel, f.scope, f.dispatchers)
 
         assertNotNull(coordinator.panel)
         coordinator.dispose()
     }
 
     fun `test typing in the panel's search field issues a SetQuery intent to the view model`() {
-        val dispatchers = TestDispatchers()
-        val scope = CoroutineScope(SupervisorJob() + dispatchers.default)
-        val vm = viewModel(dispatchers, scope)
-        val coordinator = AppsCoordinator(vm, scope, dispatchers)
+        val f = fixture()
+        val coordinator = AppsCoordinator(f.appsViewModel, f.appLifecycleViewModel, f.scope, f.dispatchers)
 
         coordinator.panel.searchFieldForTest.text = "shop"
 
         runBlocking { kotlinx.coroutines.delay(50) }
-        assertEquals("shop", vm.state.value.query)
+        assertEquals("shop", f.appsViewModel.state.value.query)
         coordinator.dispose()
     }
 
     fun `test clicking the system-packages toggle issues a ToggleSystemPackages intent`() {
-        val dispatchers = TestDispatchers()
-        val scope = CoroutineScope(SupervisorJob() + dispatchers.default)
-        val vm = viewModel(dispatchers, scope)
-        val coordinator = AppsCoordinator(vm, scope, dispatchers)
+        val f = fixture()
+        val coordinator = AppsCoordinator(f.appsViewModel, f.appLifecycleViewModel, f.scope, f.dispatchers)
 
         coordinator.panel.systemToggleForTest.doClick()
 
         runBlocking { kotlinx.coroutines.delay(50) }
-        assertTrue(vm.state.value.showSystemPackages)
+        assertTrue(f.appsViewModel.state.value.showSystemPackages)
         coordinator.dispose()
     }
 
     fun `test render reflects a constructed view state onto the panel directly`() {
-        val dispatchers = TestDispatchers()
-        val scope = CoroutineScope(SupervisorJob() + dispatchers.default)
-        val coordinator = AppsCoordinator(viewModel(dispatchers, scope), scope, dispatchers)
+        val f = fixture()
+        val coordinator = AppsCoordinator(f.appsViewModel, f.appLifecycleViewModel, f.scope, f.dispatchers)
 
         coordinator.render(
             AppsViewState(
@@ -123,13 +148,51 @@ class AppsCoordinatorTest : BasePlatformTestCase() {
         coordinator.dispose()
     }
 
+    fun `test renderLifecycle reflects a constructed lifecycle view state onto the panel directly`() {
+        val f = fixture()
+        val coordinator = AppsCoordinator(f.appsViewModel, f.appLifecycleViewModel, f.scope, f.dispatchers)
+
+        coordinator.renderLifecycle(
+            AppLifecycleViewState(controlPolicy = ControlPolicy.Enabled, selectedPackageName = "com.acme.wallet", busy = false),
+        )
+
+        assertTrue(coordinator.panel.restartButtonForTest.isEnabled)
+        assertTrue(coordinator.panel.forceStopButtonForTest.isEnabled)
+        assertTrue(coordinator.panel.launchButtonForTest.isEnabled)
+        coordinator.dispose()
+    }
+
+    fun `test clicking restart in the panel forwards Restart to the shared app lifecycle view model`() {
+        // Mirrors dev.acme.adbtoolbox.intellij.mirroring.MirroringToggleActionTest's established
+        // shape: with no eligible device selected, AppLifecycleViewModel.handle posts its "no
+        // eligible device" warning synchronously — no background-dispatcher round trip needed — so
+        // this proves the click reaches the exact shared view model instance without depending on
+        // this headless sandbox's Dispatchers.Default scheduling latency (see
+        // dev.acme.adbtoolbox.intellij.deviceactions.DeviceActionsCoordinatorTest and
+        // AdbToolboxProjectServiceTest's own documented dispatcher-timing caveats, neither of which
+        // asserts on a coordinator's own background state-collection job completing).
+        val f = fixture()
+        val coordinator = AppsCoordinator(f.appsViewModel, f.appLifecycleViewModel, f.scope, f.dispatchers)
+        // Swing's doClick() is a no-op on a disabled button, so enable it directly via the
+        // already-proven-synchronous renderLifecycle seam (see the dedicated renderLifecycle test
+        // above) rather than the coordinator's own background state-collection job.
+        coordinator.renderLifecycle(AppLifecycleViewState(controlPolicy = ControlPolicy.Enabled, selectedPackageName = "com.acme.wallet", busy = false))
+        val before = f.feedback.state.value.toasts.size
+
+        coordinator.panel.restartButtonForTest.doClick()
+
+        val toasts = f.feedback.state.value.toasts
+        assertEquals(before + 1, toasts.size)
+        assertEquals("No eligible device selected", toasts.last().text)
+        coordinator.dispose()
+    }
+
     fun `test disposing the coordinator cancels its scope and disposes the panel`() {
-        val dispatchers = TestDispatchers()
-        val scope = CoroutineScope(SupervisorJob() + dispatchers.default)
-        val coordinator = AppsCoordinator(viewModel(dispatchers, scope), scope, dispatchers)
+        val f = fixture()
+        val coordinator = AppsCoordinator(f.appsViewModel, f.appLifecycleViewModel, f.scope, f.dispatchers)
 
         coordinator.dispose()
 
-        assertFalse(scope.isActive)
+        assertFalse(f.scope.isActive)
     }
 }

@@ -1,8 +1,10 @@
 package dev.acme.adbtoolbox.intellij.apps
 
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
+import dev.acme.adbtoolbox.application.apps.AppLifecycleViewState
 import dev.acme.adbtoolbox.application.apps.AppsRow
 import dev.acme.adbtoolbox.application.apps.AppsViewState
+import dev.acme.adbtoolbox.domain.devicecontext.ControlPolicy
 
 /**
  * [AppsPanel] is the toolbar (search + "show system packages" toggle) plus [AppsVirtualList] and an
@@ -79,5 +81,58 @@ class AppsPanelTest : BasePlatformTestCase() {
         panel.update(AppsViewState(hasDevice = true, isLoading = false, rows = listOf(row("com.acme.shop"))))
 
         panel.disposePanel()
+    }
+
+    fun `test the lifecycle action buttons start disabled`() {
+        val panel = AppsPanel(onQueryChange = {}, onToggleSystemPackages = {}, onSelect = {}, onClearFilter = {})
+
+        assertFalse(panel.restartButtonForTest.isEnabled)
+        assertFalse(panel.forceStopButtonForTest.isEnabled)
+        assertFalse(panel.launchButtonForTest.isEnabled)
+    }
+
+    fun `test updateLifecycle enables the action buttons only when actions are enabled`() {
+        val panel = AppsPanel(onQueryChange = {}, onToggleSystemPackages = {}, onSelect = {}, onClearFilter = {})
+
+        panel.updateLifecycle(AppLifecycleViewState(controlPolicy = ControlPolicy.Enabled, selectedPackageName = "com.acme.shop", busy = false))
+
+        assertTrue(panel.restartButtonForTest.isEnabled)
+        assertTrue(panel.forceStopButtonForTest.isEnabled)
+        assertTrue(panel.launchButtonForTest.isEnabled)
+    }
+
+    fun `test updateLifecycle disables the action buttons while an action is busy`() {
+        val panel = AppsPanel(onQueryChange = {}, onToggleSystemPackages = {}, onSelect = {}, onClearFilter = {})
+        panel.updateLifecycle(AppLifecycleViewState(controlPolicy = ControlPolicy.Enabled, selectedPackageName = "com.acme.shop", busy = false))
+
+        panel.updateLifecycle(AppLifecycleViewState(controlPolicy = ControlPolicy.Enabled, selectedPackageName = "com.acme.shop", busy = true))
+
+        assertFalse(panel.restartButtonForTest.isEnabled)
+        assertFalse(panel.forceStopButtonForTest.isEnabled)
+        assertFalse(panel.launchButtonForTest.isEnabled)
+    }
+
+    fun `test clicking restart, force-stop, and launch invoke their own callbacks`() {
+        var restarted = 0
+        var forceStopped = 0
+        var launched = 0
+        val panel = AppsPanel(
+            onQueryChange = {},
+            onToggleSystemPackages = {},
+            onSelect = {},
+            onClearFilter = {},
+            onRestart = { restarted++ },
+            onForceStop = { forceStopped++ },
+            onLaunch = { launched++ },
+        )
+        panel.updateLifecycle(AppLifecycleViewState(controlPolicy = ControlPolicy.Enabled, selectedPackageName = "com.acme.shop", busy = false))
+
+        panel.restartButtonForTest.doClick()
+        panel.forceStopButtonForTest.doClick()
+        panel.launchButtonForTest.doClick()
+
+        assertEquals(1, restarted)
+        assertEquals(1, forceStopped)
+        assertEquals(1, launched)
     }
 }

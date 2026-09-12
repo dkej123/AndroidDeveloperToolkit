@@ -33,5 +33,17 @@
             <keyboard-shortcut keymap="Mac OS X" first-keystroke="shift meta M"/>
             <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="shift meta M"/>
         </action>
+
+        <!-- Task 023's global restart shortcut — forwards to the same AppLifecycleViewModel.handle
+             entry point the Apps-view Restart button uses; design/README.md's Restart tooltip and
+             design/IMPLEMENTATION.md's example plugin.xml both name shift+cmd+R / this action id. -->
+        <action id="AdbToolbox.RestartApp"
+                class="dev.acme.adbtoolbox.intellij.apps.RestartAppAction"
+                text="Restart App"
+                description="Force-stop, then launch the selected app's main activity">
+            <keyboard-shortcut keymap="$default" first-keystroke="shift control R"/>
+            <keyboard-shortcut keymap="Mac OS X" first-keystroke="shift meta R"/>
+            <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="shift meta R"/>
+        </action>
     </actions>
 </idea-plugin>
