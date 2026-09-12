@@ -116,6 +116,22 @@ class LogcatBufferTest {
     }
 
     @Test
+    fun `delta exposes the oldest retained sequence when eviction happened before a valid cursor`() = runTest {
+        val entry = malformed("same-size")
+        val capacity = entry.estimatedSizeBytes() * 2
+        val buffer = LogcatBuffer(capacityBytes = capacity, entryCeilingBytes = capacity)
+        buffer.append(entry)
+        buffer.append(entry)
+        val cursor = buffer.snapshot().cursor
+
+        buffer.append(entry)
+        val delta = buffer.deltaAfter(cursor)
+
+        delta.resetRequired shouldBe false
+        delta.oldestRetainedSequence shouldBe 2L
+    }
+
+    @Test
     fun `record continuation list is defensively copied on append`() = runTest {
         val continuations = mutableListOf("first frame")
         val entry = record("message", continuations)

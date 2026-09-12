@@ -24,6 +24,7 @@ data class LogcatBufferDelta(
     val entries: List<SequencedLogcatEntry>,
     val cursor: LogcatBufferCursor,
     val resetRequired: Boolean,
+    val oldestRetainedSequence: Long? = null,
 )
 
 sealed interface LogcatAppendResult {
@@ -83,7 +84,7 @@ class LogcatBuffer(
         } else {
             entries.filter { it.sequence > cursor.sequence }
         }
-        LogcatBufferDelta(deltaEntries, currentCursor, resetRequired)
+        LogcatBufferDelta(deltaEntries, currentCursor, resetRequired, oldestSequence)
     }
 
     suspend fun clear(): LogcatBufferSnapshot = mutex.withLock {
