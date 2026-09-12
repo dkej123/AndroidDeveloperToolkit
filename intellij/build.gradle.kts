@@ -73,6 +73,16 @@ dependencies {
         // fine via the binary-adb fallback (ADR 0005).
         plugin("org.jetbrains.android", "242.26775.15")
 
+        // Terminal (org.jetbrains.plugins.terminal) is bundled with this module's IntelliJ Platform
+        // baseline itself (unlike the Android plugin, it ships inside every IntelliJ IDEA Community/
+        // Ultimate and Android Studio install, so `bundledPlugin` rather than `plugin(id, version)` —
+        // no separate pinned build to track). Task 016/ADR 0007's Open-shell adapter
+        // (`intellij/terminal/TerminalLauncherAdapter`) needs its `TerminalToolWindowManager`/
+        // `ShellTerminalWidget` classes at compile time; a user can still disable a bundled plugin,
+        // so the adapter also checks `PluginManagerCore` at runtime (the same guard
+        // `AdbToolboxProjectService.androidPluginPresent` already uses) rather than assuming presence.
+        bundledPlugin("org.jetbrains.plugins.terminal")
+
         testFramework(TestFrameworkType.Platform)
 
         pluginVerifier()

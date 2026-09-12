@@ -1,0 +1,5 @@
+<idea-plugin>
+    <!-- Loaded only when org.jetbrains.plugins.terminal is present and enabled (task 016, ADR 0007).
+         No extensions registered here: TerminalLauncherAdapter calls the Terminal plugin's public
+         TerminalToolWindowManager API directly rather than contributing an extension point. -->
+</idea-plugin>

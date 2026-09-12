@@ -23,6 +23,9 @@ import dev.acme.adbtoolbox.application.capture.CaptureScreenshotUseCase
 import dev.acme.adbtoolbox.application.capture.CaptureViewModel
 import dev.acme.adbtoolbox.application.device.SelectedDeviceViewModel
 import dev.acme.adbtoolbox.application.devicebar.DeviceBarViewModel
+import dev.acme.adbtoolbox.application.deviceactions.DeviceActionsUseCase
+import dev.acme.adbtoolbox.application.deviceactions.DeviceActionsViewModel
+import dev.acme.adbtoolbox.application.deviceactions.OpenShellUseCase
 import dev.acme.adbtoolbox.application.devicefacts.DeviceFactsViewModel
 import dev.acme.adbtoolbox.application.devicefacts.LoadDeviceFactsUseCase
 import dev.acme.adbtoolbox.application.feedback.FeedbackViewModel
@@ -36,6 +39,7 @@ import dev.acme.adbtoolbox.domain.capture.TimestampFileNamePolicy
 import dev.acme.adbtoolbox.domain.device.DeviceListRefresher
 import dev.acme.adbtoolbox.domain.device.DeviceRepository
 import dev.acme.adbtoolbox.domain.device.DeviceSelectionPersistence
+import dev.acme.adbtoolbox.domain.deviceactions.TerminalLauncher
 import dev.acme.adbtoolbox.domain.devicefacts.ClipboardPort
 import dev.acme.adbtoolbox.domain.discovery.ToolLocator
 import dev.acme.adbtoolbox.domain.dispatch.DispatcherProvider
@@ -51,6 +55,7 @@ import dev.acme.adbtoolbox.intellij.dispatch.IdeDispatcherProvider
 import dev.acme.adbtoolbox.intellij.persistence.AdbToolboxProjectState
 import dev.acme.adbtoolbox.intellij.persistence.DeviceSelectionPersistenceAdapter
 import dev.acme.adbtoolbox.intellij.persistence.NavigationPersistenceAdapter
+import dev.acme.adbtoolbox.intellij.terminal.TerminalLauncherAdapter
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
@@ -59,6 +64,7 @@ import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.isActive
 
 private val ANDROID_PLUGIN_ID = PluginId.getId("org.jetbrains.android")
+private val TERMINAL_PLUGIN_ID = PluginId.getId("org.jetbrains.plugins.terminal")
 
 /**
  * The `:intellij` composition root (task 007, ADR 0001): the one place `:application` use cases
@@ -206,6 +212,34 @@ class AdbToolboxProjectService(private val project: Project) : Disposable {
         selectedDeviceState = selectedDeviceViewModel.state,
         captureScreenshotUseCase = captureScreenshotUseCase,
         revealInFileManager = revealInFileManager,
+        feedback = feedbackViewModel,
+    )
+
+    /**
+     * Whether the Terminal plugin is both installed and enabled — checked once here at
+     * composition, per ADR 0007, never per Open-shell call. Terminal is bundled with every
+     * IntelliJ Platform install this module targets (unlike the optional Android plugin above),
+     * but a user can still disable it, so [terminalLauncher] must not assume presence.
+     */
+    val terminalPluginPresent: Boolean = PluginManagerCore.getPlugin(TERMINAL_PLUGIN_ID)?.isEnabled == true
+
+    /** Task 016/ADR 0007's Open-shell platform adapter. */
+    val terminalLauncher: TerminalLauncher = TerminalLauncherAdapter(
+        project = project,
+        dispatchers = dispatcherProvider,
+        terminalPluginPresent = terminalPluginPresent,
+    )
+
+    private val deviceActionsUseCase = DeviceActionsUseCase(adbTransport)
+    private val openShellUseCase = OpenShellUseCase(toolLocator, terminalLauncher)
+
+    /** Task 016's minimal Device-view Reboot/Open-shell/Wake binding, driven by [selectedDeviceViewModel]. */
+    val deviceActionsViewModel: DeviceActionsViewModel = DeviceActionsViewModel(
+        scope = childScope(),
+        dispatchers = dispatcherProvider,
+        selectedDeviceState = selectedDeviceViewModel.state,
+        deviceActionsUseCase = deviceActionsUseCase,
+        openShellUseCase = openShellUseCase,
         feedback = feedbackViewModel,
     )
 

@@ -4,12 +4,14 @@ import com.intellij.openapi.Disposable
 import com.intellij.ui.components.JBPanel
 import dev.acme.adbtoolbox.application.capture.CaptureViewModel
 import dev.acme.adbtoolbox.application.devicebar.DeviceBarViewModel
+import dev.acme.adbtoolbox.application.deviceactions.DeviceActionsViewModel
 import dev.acme.adbtoolbox.application.devicefacts.DeviceFactsViewModel
 import dev.acme.adbtoolbox.application.feedback.FeedbackViewModel
 import dev.acme.adbtoolbox.application.nav.NavigationViewModel
 import dev.acme.adbtoolbox.application.shell.ShellViewModel
 import dev.acme.adbtoolbox.domain.dispatch.DispatcherProvider
 import dev.acme.adbtoolbox.intellij.capture.CaptureCoordinator
+import dev.acme.adbtoolbox.intellij.deviceactions.DeviceActionsCoordinator
 import dev.acme.adbtoolbox.intellij.devicebar.DeviceContextBarCoordinator
 import dev.acme.adbtoolbox.intellij.devicefacts.DeviceFactsCoordinator
 import dev.acme.adbtoolbox.intellij.feedback.FeedbackOverlayCoordinator
@@ -51,6 +53,10 @@ import kotlinx.coroutines.launch
  * on its own [captureScope] child scope. It is constructed after [deviceFactsCoordinator] because it
  * mounts into [deviceFactsCoordinator]'s already-registered panel rather than registering its own
  * [dev.acme.adbtoolbox.intellij.host.FeatureViewHost] route (see [CaptureCoordinator]'s class doc).
+ *
+ * [deviceActionsViewModel] drives task 016's Device-view Reboot/Open-shell/Wake controls via
+ * [DeviceActionsCoordinator], on its own [deviceActionsScope] child scope. It is constructed after
+ * [captureCoordinator] for the same "mounts into an already-registered panel" reason.
  */
 class AdbToolboxToolWindowPanel(
     viewModel: ShellViewModel,
@@ -66,6 +72,8 @@ class AdbToolboxToolWindowPanel(
     private val deviceBarScope: CoroutineScope,
     captureViewModel: CaptureViewModel,
     private val captureScope: CoroutineScope,
+    deviceActionsViewModel: DeviceActionsViewModel,
+    private val deviceActionsScope: CoroutineScope,
 ) : JBPanel<AdbToolboxToolWindowPanel>(BorderLayout()), Disposable {
 
     val host = AdbToolboxHostPanel()
@@ -96,6 +104,14 @@ class AdbToolboxToolWindowPanel(
         dispatchers = dispatchers,
     )
 
+    // Mounted after captureCoordinator, into the same already-registered actionsRow.
+    private val deviceActionsCoordinator = DeviceActionsCoordinator(
+        deviceFactsPanel = deviceFactsCoordinator.panel,
+        viewModel = deviceActionsViewModel,
+        scope = deviceActionsScope,
+        dispatchers = dispatchers,
+    )
+
     private val navigationCoordinator = NavigationRoutingCoordinator(
         host = host,
         rail = navigationRail,
@@ -123,6 +139,7 @@ class AdbToolboxToolWindowPanel(
     override fun dispose() {
         navigationCoordinator.dispose()
         feedbackCoordinator.dispose()
+        deviceActionsCoordinator.dispose()
         captureCoordinator.dispose()
         deviceFactsCoordinator.dispose()
         deviceContextBarCoordinator.dispose()
