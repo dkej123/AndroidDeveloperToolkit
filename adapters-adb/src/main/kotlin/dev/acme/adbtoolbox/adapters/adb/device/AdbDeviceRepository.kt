@@ -7,11 +7,13 @@ import dev.acme.adbtoolbox.domain.adb.AdbServerRequest
 import dev.acme.adbtoolbox.domain.adb.AdbTransport
 import dev.acme.adbtoolbox.domain.device.Device
 import dev.acme.adbtoolbox.domain.device.DeviceListParser
+import dev.acme.adbtoolbox.domain.device.DeviceListRefresher
 import dev.acme.adbtoolbox.domain.device.DeviceRepository
 import dev.acme.adbtoolbox.domain.dispatch.DispatcherProvider
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -64,21 +66,33 @@ class AdbDeviceRepository(
     changeSignals: Flow<Unit> = emptyFlow(),
     pollInterval: Duration = DEFAULT_POLL_INTERVAL,
     coalesceWindow: Duration = DEFAULT_COALESCE_WINDOW,
-) : DeviceRepository {
+) : DeviceRepository, DeviceListRefresher {
 
     private val _devices = MutableStateFlow<List<Device>>(emptyList())
     override val devices: StateFlow<List<Device>> = _devices.asStateFlow()
 
+    private val manualRefreshRequests = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+
     init {
         scope.launch(dispatchers.io) {
-            merge(tickerFlow(pollInterval), changeSignals)
+            merge(tickerFlow(pollInterval), changeSignals, manualRefreshRequests)
                 .onStart { emit(Unit) }
                 .debounce(coalesceWindow)
-                .collectLatest { refresh() }
+                .collectLatest { performRefresh() }
         }
     }
 
-    private suspend fun refresh() {
+    /**
+     * [DeviceListRefresher]'s manual "refresh now" trigger (task 011's device-bar refresh
+     * control): merely feeds [manualRefreshRequests] into the same coalesced/debounced pipeline
+     * every other refresh trigger goes through, rather than calling [performRefresh] directly, so
+     * a manual refresh racing a hotplug/poll tick is coalesced exactly like any other burst.
+     */
+    override suspend fun refresh() {
+        manualRefreshRequests.emit(Unit)
+    }
+
+    private suspend fun performRefresh() {
         val result = binaryTransport.executeText(AdbServerRequest(arguments = DEVICES_LIST_ARGUMENTS))
         val outcome = result.outcome
         if (outcome is AdbOutcome.Completed && (outcome.exitCode == null || outcome.exitCode == 0)) {

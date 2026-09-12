@@ -205,6 +205,28 @@ class AdbDeviceRepositoryTest {
     }
 
     @Test
+    fun `an explicit manual refresh call triggers an immediate refresh outside the poll cadence`() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        var stdout = ""
+        val transport = FakeAdbTransport(textScript = { textResult(stdout) })
+        val repository = AdbDeviceRepository(
+            scope = backgroundScope,
+            dispatchers = TestDispatcherProviderFixture(dispatcher),
+            binaryTransport = transport,
+            pollInterval = 1.hours,
+            coalesceWindow = 10.milliseconds,
+        )
+        settle(20.milliseconds)
+        repository.devices.value shouldBe emptyList()
+
+        stdout = ONLINE_DEVICE_OUTPUT
+        launch { repository.refresh() }
+        settle(20.milliseconds)
+
+        repository.devices.value.map { it.serial } shouldBe listOf(DeviceSerial.of("R58N90ABCDE"))
+    }
+
+    @Test
     fun `cancelling the owning scope tears down the refresh loop`() = runTest {
         val dispatcher = StandardTestDispatcher(testScheduler)
         val childScope = CoroutineScope(dispatcher)

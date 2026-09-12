@@ -18,10 +18,12 @@ import dev.acme.adbtoolbox.adapters.jvm.discovery.JvmHostPlatformProvider
 import dev.acme.adbtoolbox.adapters.jvm.discovery.JvmPathEnvironmentSource
 import dev.acme.adbtoolbox.adapters.jvm.process.JvmProcessExecutor
 import dev.acme.adbtoolbox.application.device.SelectedDeviceViewModel
+import dev.acme.adbtoolbox.application.devicebar.DeviceBarViewModel
 import dev.acme.adbtoolbox.application.feedback.FeedbackViewModel
 import dev.acme.adbtoolbox.application.nav.NavigationViewModel
 import dev.acme.adbtoolbox.application.shell.ShellViewModel
 import dev.acme.adbtoolbox.domain.adb.AdbTransport
+import dev.acme.adbtoolbox.domain.device.DeviceListRefresher
 import dev.acme.adbtoolbox.domain.device.DeviceRepository
 import dev.acme.adbtoolbox.domain.device.DeviceSelectionPersistence
 import dev.acme.adbtoolbox.domain.discovery.ToolLocator
@@ -108,12 +110,16 @@ class AdbToolboxProjectService(private val project: Project) : Disposable {
     // Static/global ddmlib hotplug listener (docs/adr/0005) — only ever registered when the
     // Android plugin (the sole provider of ddmlib's classes) is present, same guard as adbTransport
     // above. Absent it, AdbDeviceRepository still discovers devices via its own poll ticker alone.
-    val deviceRepository: DeviceRepository = AdbDeviceRepository(
+    private val adbDeviceRepository: AdbDeviceRepository = AdbDeviceRepository(
         scope = childScope(),
         dispatchers = dispatcherProvider,
         binaryTransport = binaryTransport,
         changeSignals = if (androidPluginPresent) DdmlibDeviceChangeListenerSource().events() else emptyFlow(),
     )
+    val deviceRepository: DeviceRepository = adbDeviceRepository
+
+    /** Task 011's manual "refresh now" trigger — [adbDeviceRepository] itself implements it (ADR 0005). */
+    val deviceListRefresher: DeviceListRefresher = adbDeviceRepository
 
     val deviceSelectionPersistence: DeviceSelectionPersistence =
         DeviceSelectionPersistenceAdapter(project.service<AdbToolboxProjectState>())
@@ -123,6 +129,15 @@ class AdbToolboxProjectService(private val project: Project) : Disposable {
         dispatchers = dispatcherProvider,
         deviceRepository = deviceRepository,
         persistence = deviceSelectionPersistence,
+    )
+
+    /** Task 011's device bar and picker presenter — reads/writes selection via [selectedDeviceViewModel]. */
+    val deviceBarViewModel: DeviceBarViewModel = DeviceBarViewModel(
+        scope = childScope(),
+        dispatchers = dispatcherProvider,
+        deviceRepository = deviceRepository,
+        selectedDeviceViewModel = selectedDeviceViewModel,
+        refresher = deviceListRefresher,
     )
 
     val navigationPersistence: NavigationPersistence =

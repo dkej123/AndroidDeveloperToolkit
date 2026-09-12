@@ -2,10 +2,12 @@ package dev.acme.adbtoolbox.intellij.toolwindow
 
 import com.intellij.openapi.Disposable
 import com.intellij.ui.components.JBPanel
+import dev.acme.adbtoolbox.application.devicebar.DeviceBarViewModel
 import dev.acme.adbtoolbox.application.feedback.FeedbackViewModel
 import dev.acme.adbtoolbox.application.nav.NavigationViewModel
 import dev.acme.adbtoolbox.application.shell.ShellViewModel
 import dev.acme.adbtoolbox.domain.dispatch.DispatcherProvider
+import dev.acme.adbtoolbox.intellij.devicebar.DeviceContextBarCoordinator
 import dev.acme.adbtoolbox.intellij.feedback.FeedbackOverlayCoordinator
 import dev.acme.adbtoolbox.intellij.host.AdbToolboxHostPanel
 import dev.acme.adbtoolbox.intellij.nav.NavigationRailPanel
@@ -18,8 +20,7 @@ import kotlinx.coroutines.launch
 /**
  * The tool-window content root. Mounts [host] — task 010's neutral [AdbToolboxHostPanel] with its
  * named slots for device context, navigation, active view, and feedback — replacing task 007's
- * bare placeholder. No real feature view is registered into [AdbToolboxHostPanel.activeViewHost]
- * yet (that seam is for tasks 011+).
+ * bare placeholder.
  *
  * [feedbackViewModel] drives [AdbToolboxHostPanel.feedbackSlot] and its toast overlay (task 013)
  * via [FeedbackOverlayCoordinator], on its own [feedbackScope] child scope — replacing task 007's
@@ -31,6 +32,10 @@ import kotlinx.coroutines.launch
  * [NavigationRailPanel] is mounted there and connected to
  * [AdbToolboxHostPanel.activeViewHost] via [NavigationRoutingCoordinator], on its own
  * [navigationScope] child scope so navigation's lifecycle never depends on the feedback channel's.
+ *
+ * [deviceBarViewModel] drives [AdbToolboxHostPanel.deviceContextSlot] and its picker overlay
+ * (task 011) via [DeviceContextBarCoordinator], on its own [deviceBarScope] child scope so the
+ * device bar's lifecycle never depends on navigation/feedback's.
  */
 class AdbToolboxToolWindowPanel(
     viewModel: ShellViewModel,
@@ -40,11 +45,20 @@ class AdbToolboxToolWindowPanel(
     private val navigationScope: CoroutineScope,
     feedbackViewModel: FeedbackViewModel,
     private val feedbackScope: CoroutineScope,
+    deviceBarViewModel: DeviceBarViewModel,
+    private val deviceBarScope: CoroutineScope,
 ) : JBPanel<AdbToolboxToolWindowPanel>(BorderLayout()), Disposable {
 
     val host = AdbToolboxHostPanel()
 
     private val navigationRail = NavigationRailPanel()
+
+    private val deviceContextBarCoordinator = DeviceContextBarCoordinator(
+        host = host,
+        viewModel = deviceBarViewModel,
+        scope = deviceBarScope,
+        dispatchers = dispatchers,
+    )
 
     private val navigationCoordinator = NavigationRoutingCoordinator(
         host = host,
@@ -73,6 +87,7 @@ class AdbToolboxToolWindowPanel(
     override fun dispose() {
         navigationCoordinator.dispose()
         feedbackCoordinator.dispose()
+        deviceContextBarCoordinator.dispose()
         scope.cancel()
         host.dispose()
     }
