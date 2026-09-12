@@ -19,6 +19,8 @@ import dev.acme.adbtoolbox.adapters.jvm.discovery.JvmPathEnvironmentSource
 import dev.acme.adbtoolbox.adapters.jvm.process.JvmProcessExecutor
 import dev.acme.adbtoolbox.application.device.SelectedDeviceViewModel
 import dev.acme.adbtoolbox.application.devicebar.DeviceBarViewModel
+import dev.acme.adbtoolbox.application.devicefacts.DeviceFactsViewModel
+import dev.acme.adbtoolbox.application.devicefacts.LoadDeviceFactsUseCase
 import dev.acme.adbtoolbox.application.feedback.FeedbackViewModel
 import dev.acme.adbtoolbox.application.nav.NavigationViewModel
 import dev.acme.adbtoolbox.application.shell.ShellViewModel
@@ -26,6 +28,7 @@ import dev.acme.adbtoolbox.domain.adb.AdbTransport
 import dev.acme.adbtoolbox.domain.device.DeviceListRefresher
 import dev.acme.adbtoolbox.domain.device.DeviceRepository
 import dev.acme.adbtoolbox.domain.device.DeviceSelectionPersistence
+import dev.acme.adbtoolbox.domain.devicefacts.ClipboardPort
 import dev.acme.adbtoolbox.domain.discovery.ToolLocator
 import dev.acme.adbtoolbox.domain.dispatch.DispatcherProvider
 import dev.acme.adbtoolbox.domain.nav.MutableNavigationBadges
@@ -34,6 +37,7 @@ import dev.acme.adbtoolbox.domain.nav.NavigationPersistence
 import dev.acme.adbtoolbox.domain.nav.ViewId
 import dev.acme.adbtoolbox.domain.process.ProcessExecutor
 import dev.acme.adbtoolbox.intellij.adb.IdeAndroidDebugBridgeDeviceSource
+import dev.acme.adbtoolbox.intellij.clipboard.ClipboardPortAdapter
 import dev.acme.adbtoolbox.intellij.discovery.AndroidStudioSdkPlatformToolsSource
 import dev.acme.adbtoolbox.intellij.dispatch.IdeDispatcherProvider
 import dev.acme.adbtoolbox.intellij.persistence.AdbToolboxProjectState
@@ -161,6 +165,20 @@ class AdbToolboxProjectService(private val project: Project) : Disposable {
 
     /** The task 013 non-modal feedback/status/toast channel — one instance shared by every feature. */
     val feedbackViewModel: FeedbackViewModel = FeedbackViewModel(scope = childScope(), dispatchers = dispatcherProvider)
+
+    /** Task 015's clipboard port adapter (`com.intellij.openapi.ide.CopyPasteManager`) — the "Copy report" action's platform seam. */
+    val clipboardPort: ClipboardPort = ClipboardPortAdapter()
+
+    private val loadDeviceFactsUseCase = LoadDeviceFactsUseCase(adbTransport)
+
+    /** Task 015's Device-view facts section: android/resolution/density/battery/abi/uptime, driven by [selectedDeviceViewModel]. */
+    val deviceFactsViewModel: DeviceFactsViewModel = DeviceFactsViewModel(
+        scope = childScope(),
+        dispatchers = dispatcherProvider,
+        selectedDeviceState = selectedDeviceViewModel.state,
+        loadDeviceFacts = loadDeviceFactsUseCase,
+        clipboard = clipboardPort,
+    )
 
     /**
      * A feature-local child scope (ADR 0004): its [SupervisorJob] is a real structured-concurrency

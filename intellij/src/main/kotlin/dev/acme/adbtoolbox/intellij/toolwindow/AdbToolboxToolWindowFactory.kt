@@ -25,6 +25,8 @@ class AdbToolboxToolWindowFactory : ToolWindowFactory {
             navigationScope = composition.childScope(),
             feedbackViewModel = composition.feedbackViewModel,
             feedbackScope = composition.childScope(),
+            deviceFactsViewModel = composition.deviceFactsViewModel,
+            deviceFactsScope = composition.childScope(),
             deviceBarViewModel = composition.deviceBarViewModel,
             deviceBarScope = composition.childScope(),
         )

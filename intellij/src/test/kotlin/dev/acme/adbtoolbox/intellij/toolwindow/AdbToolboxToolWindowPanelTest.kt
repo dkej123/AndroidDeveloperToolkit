@@ -3,19 +3,25 @@ package dev.acme.adbtoolbox.intellij.toolwindow
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import dev.acme.adbtoolbox.application.device.SelectedDeviceViewModel
 import dev.acme.adbtoolbox.application.devicebar.DeviceBarViewModel
+import dev.acme.adbtoolbox.application.devicefacts.DeviceFactsViewModel
+import dev.acme.adbtoolbox.application.devicefacts.LoadDeviceFactsUseCase
 import dev.acme.adbtoolbox.application.feedback.FeedbackViewModel
 import dev.acme.adbtoolbox.application.nav.NavigationViewModel
 import dev.acme.adbtoolbox.application.shell.ShellViewModel
 import dev.acme.adbtoolbox.domain.dispatch.DispatcherProvider
+import dev.acme.adbtoolbox.domain.adb.FakeAdbTransport
 import dev.acme.adbtoolbox.domain.device.FakeDeviceListRefresher
 import dev.acme.adbtoolbox.domain.device.FakeDeviceRepository
 import dev.acme.adbtoolbox.domain.device.FakeDeviceSelectionPersistence
+import dev.acme.adbtoolbox.domain.device.SelectedDeviceState
+import dev.acme.adbtoolbox.domain.devicefacts.FakeClipboardPort
 import dev.acme.adbtoolbox.domain.nav.FakeNavigationPersistence
 import dev.acme.adbtoolbox.domain.nav.ViewId
 import dev.acme.adbtoolbox.intellij.dispatch.IdeDispatcherProvider
 import dev.acme.adbtoolbox.intellij.host.AdbToolboxHostPanel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.isActive
 
 /**
@@ -41,6 +47,7 @@ class AdbToolboxToolWindowPanelTest : BasePlatformTestCase() {
         val scope = CoroutineScope(SupervisorJob() + dispatchers.default)
         val navigationScope = CoroutineScope(SupervisorJob() + dispatchers.default)
         val feedbackScope = CoroutineScope(SupervisorJob() + dispatchers.default)
+        val deviceFactsScope = CoroutineScope(SupervisorJob() + dispatchers.default)
         val deviceBarScope = CoroutineScope(SupervisorJob() + dispatchers.default)
     }
 
@@ -70,6 +77,14 @@ class AdbToolboxToolWindowPanelTest : BasePlatformTestCase() {
             navigationScope = harness.navigationScope,
             feedbackViewModel = FeedbackViewModel(harness.feedbackScope, dispatchers),
             feedbackScope = harness.feedbackScope,
+            deviceFactsViewModel = DeviceFactsViewModel(
+                scope = harness.deviceFactsScope,
+                dispatchers = dispatchers,
+                selectedDeviceState = MutableStateFlow<SelectedDeviceState>(SelectedDeviceState.None),
+                loadDeviceFacts = LoadDeviceFactsUseCase(FakeAdbTransport()),
+                clipboard = FakeClipboardPort(),
+            ),
+            deviceFactsScope = harness.deviceFactsScope,
             deviceBarViewModel = deviceBarViewModel(harness.deviceBarScope, dispatchers),
             deviceBarScope = harness.deviceBarScope,
         )
@@ -130,6 +145,7 @@ class AdbToolboxToolWindowPanelTest : BasePlatformTestCase() {
         assertFalse(harness.scope.isActive)
         assertFalse(harness.navigationScope.isActive)
         assertFalse(harness.feedbackScope.isActive)
+        assertFalse(harness.deviceFactsScope.isActive)
         assertFalse(harness.deviceBarScope.isActive)
     }
 }
