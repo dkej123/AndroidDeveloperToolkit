@@ -1,6 +1,8 @@
 package dev.acme.adbtoolbox.intellij.toolwindow
 
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
+import dev.acme.adbtoolbox.application.capture.CaptureScreenshotUseCase
+import dev.acme.adbtoolbox.application.capture.CaptureViewModel
 import dev.acme.adbtoolbox.application.device.SelectedDeviceViewModel
 import dev.acme.adbtoolbox.application.devicebar.DeviceBarViewModel
 import dev.acme.adbtoolbox.application.devicefacts.DeviceFactsViewModel
@@ -10,6 +12,9 @@ import dev.acme.adbtoolbox.application.nav.NavigationViewModel
 import dev.acme.adbtoolbox.application.shell.ShellViewModel
 import dev.acme.adbtoolbox.domain.dispatch.DispatcherProvider
 import dev.acme.adbtoolbox.domain.adb.FakeAdbTransport
+import dev.acme.adbtoolbox.domain.capture.FakeCaptureDestination
+import dev.acme.adbtoolbox.domain.capture.FileNamePolicy
+import dev.acme.adbtoolbox.domain.capture.RevealInFileManager
 import dev.acme.adbtoolbox.domain.device.FakeDeviceListRefresher
 import dev.acme.adbtoolbox.domain.device.FakeDeviceRepository
 import dev.acme.adbtoolbox.domain.device.FakeDeviceSelectionPersistence
@@ -17,6 +22,7 @@ import dev.acme.adbtoolbox.domain.device.SelectedDeviceState
 import dev.acme.adbtoolbox.domain.devicefacts.FakeClipboardPort
 import dev.acme.adbtoolbox.domain.nav.FakeNavigationPersistence
 import dev.acme.adbtoolbox.domain.nav.ViewId
+import dev.acme.adbtoolbox.intellij.devicefacts.DeviceFactsPanel
 import dev.acme.adbtoolbox.intellij.dispatch.IdeDispatcherProvider
 import dev.acme.adbtoolbox.intellij.host.AdbToolboxHostPanel
 import kotlinx.coroutines.CoroutineScope
@@ -49,7 +55,22 @@ class AdbToolboxToolWindowPanelTest : BasePlatformTestCase() {
         val feedbackScope = CoroutineScope(SupervisorJob() + dispatchers.default)
         val deviceFactsScope = CoroutineScope(SupervisorJob() + dispatchers.default)
         val deviceBarScope = CoroutineScope(SupervisorJob() + dispatchers.default)
+        val captureScope = CoroutineScope(SupervisorJob() + dispatchers.default)
     }
+
+    private fun captureViewModel(scope: CoroutineScope, dispatchers: DispatcherProvider, feedback: FeedbackViewModel): CaptureViewModel =
+        CaptureViewModel(
+            scope = scope,
+            dispatchers = dispatchers,
+            selectedDeviceState = MutableStateFlow<SelectedDeviceState>(SelectedDeviceState.None),
+            captureScreenshotUseCase = CaptureScreenshotUseCase(
+                adbTransport = FakeAdbTransport(),
+                captureDestination = FakeCaptureDestination(),
+                fileNamePolicy = FileNamePolicy { "screen.png" },
+            ),
+            revealInFileManager = RevealInFileManager {},
+            feedback = feedback,
+        )
 
     private fun deviceBarViewModel(scope: CoroutineScope, dispatchers: DispatcherProvider): DeviceBarViewModel {
         val repository = FakeDeviceRepository()
@@ -68,14 +89,15 @@ class AdbToolboxToolWindowPanelTest : BasePlatformTestCase() {
         )
     }
 
-    private fun panel(dispatchers: DispatcherProvider, harness: Harness): AdbToolboxToolWindowPanel =
-        AdbToolboxToolWindowPanel(
+    private fun panel(dispatchers: DispatcherProvider, harness: Harness): AdbToolboxToolWindowPanel {
+        val feedbackViewModel = FeedbackViewModel(harness.feedbackScope, dispatchers)
+        return AdbToolboxToolWindowPanel(
             viewModel = ShellViewModel(harness.scope, dispatchers),
             dispatchers = dispatchers,
             scope = harness.scope,
             navigationViewModel = navigationViewModel(harness.navigationScope, dispatchers),
             navigationScope = harness.navigationScope,
-            feedbackViewModel = FeedbackViewModel(harness.feedbackScope, dispatchers),
+            feedbackViewModel = feedbackViewModel,
             feedbackScope = harness.feedbackScope,
             deviceFactsViewModel = DeviceFactsViewModel(
                 scope = harness.deviceFactsScope,
@@ -87,7 +109,10 @@ class AdbToolboxToolWindowPanelTest : BasePlatformTestCase() {
             deviceFactsScope = harness.deviceFactsScope,
             deviceBarViewModel = deviceBarViewModel(harness.deviceBarScope, dispatchers),
             deviceBarScope = harness.deviceBarScope,
+            captureViewModel = captureViewModel(harness.captureScope, dispatchers, feedbackViewModel),
+            captureScope = harness.captureScope,
         )
+    }
 
     fun `test the panel mounts a host with the named slots`() {
         val dispatchers = dispatchers()
@@ -147,5 +172,19 @@ class AdbToolboxToolWindowPanelTest : BasePlatformTestCase() {
         assertFalse(harness.feedbackScope.isActive)
         assertFalse(harness.deviceFactsScope.isActive)
         assertFalse(harness.deviceBarScope.isActive)
+        assertFalse(harness.captureScope.isActive)
+    }
+
+    fun `test the screenshot control is mounted into the Device view alongside device facts`() {
+        val dispatchers = dispatchers()
+        val harness = Harness(dispatchers)
+        val panel = panel(dispatchers, harness)
+
+        val deviceView = panel.host.activeViewHost.componentFor(ViewId.Device.routeKey)
+        assertTrue(deviceView is DeviceFactsPanel)
+        val actionsRow = (deviceView as DeviceFactsPanel).actionsRow
+        assertTrue(actionsRow.componentCount > 1)
+
+        panel.dispose()
     }
 }

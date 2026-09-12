@@ -11,12 +11,16 @@ import dev.acme.adbtoolbox.adapters.adb.ddmlib.DdmlibAdbTransport
 import dev.acme.adbtoolbox.adapters.adb.device.AdbDeviceRepository
 import dev.acme.adbtoolbox.adapters.adb.device.DdmlibDeviceChangeListenerSource
 import dev.acme.adbtoolbox.adapters.adb.discovery.DefaultToolLocator
+import dev.acme.adbtoolbox.adapters.jvm.capture.DesktopRevealInFileManager
+import dev.acme.adbtoolbox.adapters.jvm.capture.JvmCaptureDestination
 import dev.acme.adbtoolbox.adapters.jvm.discovery.EnvironmentAndroidSdkPlatformToolsSource
 import dev.acme.adbtoolbox.adapters.jvm.discovery.InMemoryConfiguredToolPathSource
 import dev.acme.adbtoolbox.adapters.jvm.discovery.JvmExecutableFileProbe
 import dev.acme.adbtoolbox.adapters.jvm.discovery.JvmHostPlatformProvider
 import dev.acme.adbtoolbox.adapters.jvm.discovery.JvmPathEnvironmentSource
 import dev.acme.adbtoolbox.adapters.jvm.process.JvmProcessExecutor
+import dev.acme.adbtoolbox.application.capture.CaptureScreenshotUseCase
+import dev.acme.adbtoolbox.application.capture.CaptureViewModel
 import dev.acme.adbtoolbox.application.device.SelectedDeviceViewModel
 import dev.acme.adbtoolbox.application.devicebar.DeviceBarViewModel
 import dev.acme.adbtoolbox.application.devicefacts.DeviceFactsViewModel
@@ -25,6 +29,10 @@ import dev.acme.adbtoolbox.application.feedback.FeedbackViewModel
 import dev.acme.adbtoolbox.application.nav.NavigationViewModel
 import dev.acme.adbtoolbox.application.shell.ShellViewModel
 import dev.acme.adbtoolbox.domain.adb.AdbTransport
+import dev.acme.adbtoolbox.domain.capture.CaptureDestination
+import dev.acme.adbtoolbox.domain.capture.FileNamePolicy
+import dev.acme.adbtoolbox.domain.capture.RevealInFileManager
+import dev.acme.adbtoolbox.domain.capture.TimestampFileNamePolicy
 import dev.acme.adbtoolbox.domain.device.DeviceListRefresher
 import dev.acme.adbtoolbox.domain.device.DeviceRepository
 import dev.acme.adbtoolbox.domain.device.DeviceSelectionPersistence
@@ -178,6 +186,27 @@ class AdbToolboxProjectService(private val project: Project) : Disposable {
         selectedDeviceState = selectedDeviceViewModel.state,
         loadDeviceFacts = loadDeviceFactsUseCase,
         clipboard = clipboardPort,
+    )
+
+    /** Task 019's platform ports: a JVM filesystem capture destination and a Desktop Reveal action. */
+    val captureDestination: CaptureDestination = JvmCaptureDestination()
+    val revealInFileManager: RevealInFileManager = DesktopRevealInFileManager()
+    private val fileNamePolicy: FileNamePolicy = TimestampFileNamePolicy()
+
+    private val captureScreenshotUseCase = CaptureScreenshotUseCase(
+        adbTransport = adbTransport,
+        captureDestination = captureDestination,
+        fileNamePolicy = fileNamePolicy,
+    )
+
+    /** Task 019's minimal Device-view screenshot binding, driven by [selectedDeviceViewModel]. */
+    val captureViewModel: CaptureViewModel = CaptureViewModel(
+        scope = childScope(),
+        dispatchers = dispatcherProvider,
+        selectedDeviceState = selectedDeviceViewModel.state,
+        captureScreenshotUseCase = captureScreenshotUseCase,
+        revealInFileManager = revealInFileManager,
+        feedback = feedbackViewModel,
     )
 
     /**

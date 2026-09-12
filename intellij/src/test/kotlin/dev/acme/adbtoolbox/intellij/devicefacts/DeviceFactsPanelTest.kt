@@ -34,6 +34,12 @@ class DeviceFactsPanelTest : BasePlatformTestCase() {
         assertTrue(copyClicked)
     }
 
+    fun `test copyReportButton lives in the actionsRow so later Device-view features can append beside it`() {
+        val panel = DeviceFactsPanel(onCopyReport = {})
+
+        assertTrue(panel.actionsRow.components.contains(panel.copyReportButton))
+    }
+
     fun `test rendering a Connected snapshot never fails even when one fact is Unavailable`() {
         val panel = DeviceFactsPanel(onCopyReport = {})
         val snapshot = DeviceFactsSnapshot(

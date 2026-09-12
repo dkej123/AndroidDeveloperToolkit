@@ -7,6 +7,7 @@ import dev.acme.adbtoolbox.domain.devicefacts.DeviceFactId
 import dev.acme.adbtoolbox.domain.devicefacts.DeviceFactState
 import dev.acme.adbtoolbox.domain.devicefacts.DeviceFactValue
 import java.awt.BorderLayout
+import java.awt.FlowLayout
 import java.awt.GridLayout
 import javax.swing.JButton
 
@@ -44,6 +45,13 @@ private fun valueText(value: DeviceFactValue): String = when (value) {
  * (`onCopyReport`). [update] is the only mutation entry point, driven by
  * [dev.acme.adbtoolbox.application.devicefacts.DeviceFactsViewModel.state] via
  * [DeviceFactsCoordinator].
+ *
+ * [actionsRow] is the SOUTH region's action strip: it starts out holding only [copyReportButton],
+ * but is exposed publicly so a later feature bound to the same Device view — task 019's screenshot
+ * control, via `dev.acme.adbtoolbox.intellij.capture.CaptureCoordinator` — can append its own
+ * control alongside it without this class growing a hardcoded list of every Device-view feature
+ * (mirrors [dev.acme.adbtoolbox.intellij.host.FeatureViewHost]'s own "later features register
+ * themselves" seam, one level down).
  */
 class DeviceFactsPanel(private val onCopyReport: () -> Unit) : JBPanel<DeviceFactsPanel>(BorderLayout()) {
 
@@ -57,6 +65,10 @@ class DeviceFactsPanel(private val onCopyReport: () -> Unit) : JBPanel<DeviceFac
         addActionListener { onCopyReport() }
     }
 
+    val actionsRow: JBPanel<Nothing> = JBPanel<Nothing>(FlowLayout(FlowLayout.LEFT, 4, 0)).apply {
+        add(copyReportButton)
+    }
+
     init {
         val factsGrid = JBPanel<Nothing>(GridLayout(DeviceFactId.entries.size, 2, 4, 2))
         DeviceFactId.entries.forEach { factId ->
@@ -66,7 +78,7 @@ class DeviceFactsPanel(private val onCopyReport: () -> Unit) : JBPanel<DeviceFac
 
         add(statusLabel, BorderLayout.NORTH)
         add(factsGrid, BorderLayout.CENTER)
-        add(copyReportButton, BorderLayout.SOUTH)
+        add(actionsRow, BorderLayout.SOUTH)
     }
 
     fun update(state: DeviceFactsViewState) {

@@ -29,6 +29,8 @@ class AdbToolboxToolWindowFactory : ToolWindowFactory {
             deviceFactsScope = composition.childScope(),
             deviceBarViewModel = composition.deviceBarViewModel,
             deviceBarScope = composition.childScope(),
+            captureViewModel = composition.captureViewModel,
+            captureScope = composition.childScope(),
         )
         val content = ContentFactory.getInstance().createContent(panel, "", false)
         content.setDisposer(panel)

@@ -2,12 +2,14 @@ package dev.acme.adbtoolbox.intellij.toolwindow
 
 import com.intellij.openapi.Disposable
 import com.intellij.ui.components.JBPanel
+import dev.acme.adbtoolbox.application.capture.CaptureViewModel
 import dev.acme.adbtoolbox.application.devicebar.DeviceBarViewModel
 import dev.acme.adbtoolbox.application.devicefacts.DeviceFactsViewModel
 import dev.acme.adbtoolbox.application.feedback.FeedbackViewModel
 import dev.acme.adbtoolbox.application.nav.NavigationViewModel
 import dev.acme.adbtoolbox.application.shell.ShellViewModel
 import dev.acme.adbtoolbox.domain.dispatch.DispatcherProvider
+import dev.acme.adbtoolbox.intellij.capture.CaptureCoordinator
 import dev.acme.adbtoolbox.intellij.devicebar.DeviceContextBarCoordinator
 import dev.acme.adbtoolbox.intellij.devicefacts.DeviceFactsCoordinator
 import dev.acme.adbtoolbox.intellij.feedback.FeedbackOverlayCoordinator
@@ -44,6 +46,11 @@ import kotlinx.coroutines.launch
  * [deviceBarViewModel] drives [AdbToolboxHostPanel.deviceContextSlot] and its picker overlay
  * (task 011) via [DeviceContextBarCoordinator], on its own [deviceBarScope] child scope so the
  * device bar's lifecycle never depends on navigation/feedback/device-facts'.
+ *
+ * [captureViewModel] drives task 019's Device-view "Screenshot" control via [CaptureCoordinator],
+ * on its own [captureScope] child scope. It is constructed after [deviceFactsCoordinator] because it
+ * mounts into [deviceFactsCoordinator]'s already-registered panel rather than registering its own
+ * [dev.acme.adbtoolbox.intellij.host.FeatureViewHost] route (see [CaptureCoordinator]'s class doc).
  */
 class AdbToolboxToolWindowPanel(
     viewModel: ShellViewModel,
@@ -57,6 +64,8 @@ class AdbToolboxToolWindowPanel(
     private val deviceFactsScope: CoroutineScope,
     deviceBarViewModel: DeviceBarViewModel,
     private val deviceBarScope: CoroutineScope,
+    captureViewModel: CaptureViewModel,
+    private val captureScope: CoroutineScope,
 ) : JBPanel<AdbToolboxToolWindowPanel>(BorderLayout()), Disposable {
 
     val host = AdbToolboxHostPanel()
@@ -76,6 +85,14 @@ class AdbToolboxToolWindowPanel(
         host = host,
         viewModel = deviceBarViewModel,
         scope = deviceBarScope,
+        dispatchers = dispatchers,
+    )
+
+    // Mounted after deviceFactsCoordinator so its actionsRow already exists to append into.
+    private val captureCoordinator = CaptureCoordinator(
+        deviceFactsPanel = deviceFactsCoordinator.panel,
+        viewModel = captureViewModel,
+        scope = captureScope,
         dispatchers = dispatchers,
     )
 
@@ -106,6 +123,7 @@ class AdbToolboxToolWindowPanel(
     override fun dispose() {
         navigationCoordinator.dispose()
         feedbackCoordinator.dispose()
+        captureCoordinator.dispose()
         deviceFactsCoordinator.dispose()
         deviceContextBarCoordinator.dispose()
         scope.cancel()
