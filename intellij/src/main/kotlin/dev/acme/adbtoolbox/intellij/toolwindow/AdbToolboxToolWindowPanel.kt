@@ -5,6 +5,7 @@ import com.intellij.ui.components.JBPanel
 import dev.acme.adbtoolbox.application.apps.AppLifecycleViewModel
 import dev.acme.adbtoolbox.application.apps.AppsViewModel
 import dev.acme.adbtoolbox.application.apps.ClearDataViewModel
+import dev.acme.adbtoolbox.application.apps.UninstallViewModel
 import dev.acme.adbtoolbox.application.capture.CaptureViewModel
 import dev.acme.adbtoolbox.application.devicebar.DeviceBarViewModel
 import dev.acme.adbtoolbox.application.deviceactions.DeviceActionsViewModel
@@ -98,6 +99,7 @@ class AdbToolboxToolWindowPanel(
     appsViewModel: AppsViewModel,
     appLifecycleViewModel: AppLifecycleViewModel,
     clearDataViewModel: ClearDataViewModel,
+    uninstallViewModel: UninstallViewModel,
     private val appsScope: CoroutineScope,
     openSettings: () -> Unit = {},
 ) : JBPanel<AdbToolboxToolWindowPanel>(BorderLayout()), Disposable {
@@ -158,6 +160,7 @@ class AdbToolboxToolWindowPanel(
         viewModel = appsViewModel,
         appLifecycleViewModel = appLifecycleViewModel,
         clearDataViewModel = clearDataViewModel,
+        uninstallViewModel = uninstallViewModel,
         scope = appsScope,
         dispatchers = dispatchers,
     )

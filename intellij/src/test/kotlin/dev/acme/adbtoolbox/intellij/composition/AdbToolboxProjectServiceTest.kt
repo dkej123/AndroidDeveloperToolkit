@@ -45,6 +45,7 @@ class AdbToolboxProjectServiceTest : BasePlatformTestCase() {
         assertNotNull(service.appsViewModel)
         assertNotNull(service.appLifecycleViewModel)
         assertNotNull(service.clearDataViewModel)
+        assertNotNull(service.uninstallViewModel)
         assertNotNull(service.settingsRepository)
         assertNotNull(service.settingsViewModel)
     }

@@ -5,6 +5,7 @@ import dev.acme.adbtoolbox.application.apps.AppLifecycleViewState
 import dev.acme.adbtoolbox.application.apps.AppsRow
 import dev.acme.adbtoolbox.application.apps.AppsViewState
 import dev.acme.adbtoolbox.application.apps.ClearDataViewState
+import dev.acme.adbtoolbox.application.apps.UninstallViewState
 import dev.acme.adbtoolbox.domain.devicecontext.ControlPolicy
 
 /**
@@ -181,5 +182,51 @@ class AppsPanelTest : BasePlatformTestCase() {
         panel.clearDataButtonForTest.doClick()
 
         assertEquals(1, clearDataRequests)
+    }
+
+    fun `test Uninstall starts disabled and follows its own view state`() {
+        val panel = AppsPanel(onQueryChange = {}, onToggleSystemPackages = {}, onSelect = {}, onClearFilter = {})
+
+        assertFalse(panel.uninstallButtonForTest.isEnabled)
+
+        panel.updateUninstall(
+            UninstallViewState(
+                controlPolicy = ControlPolicy.Enabled,
+                selectedPackageName = "com.acme.shop",
+                busy = false,
+            ),
+        )
+        assertTrue(panel.uninstallButtonForTest.isEnabled)
+
+        panel.updateUninstall(
+            UninstallViewState(
+                controlPolicy = ControlPolicy.Enabled,
+                selectedPackageName = "com.acme.shop",
+                busy = true,
+            ),
+        )
+        assertFalse(panel.uninstallButtonForTest.isEnabled)
+    }
+
+    fun `test clicking Uninstall invokes only its callback`() {
+        var uninstallRequests = 0
+        val panel = AppsPanel(
+            onQueryChange = {},
+            onToggleSystemPackages = {},
+            onSelect = {},
+            onClearFilter = {},
+            onUninstall = { uninstallRequests++ },
+        )
+        panel.updateUninstall(
+            UninstallViewState(
+                controlPolicy = ControlPolicy.Enabled,
+                selectedPackageName = "com.acme.shop",
+                busy = false,
+            ),
+        )
+
+        panel.uninstallButtonForTest.doClick()
+
+        assertEquals(1, uninstallRequests)
     }
 }

@@ -6,6 +6,7 @@ import com.intellij.ui.components.JBTextField
 import dev.acme.adbtoolbox.application.apps.AppLifecycleViewState
 import dev.acme.adbtoolbox.application.apps.AppsViewState
 import dev.acme.adbtoolbox.application.apps.ClearDataViewState
+import dev.acme.adbtoolbox.application.apps.UninstallViewState
 import java.awt.BorderLayout
 import java.awt.FlowLayout
 import javax.swing.JButton
@@ -25,10 +26,9 @@ import javax.swing.event.DocumentListener
  * per [dev.acme.adbtoolbox.application.apps.AppsViewModel]), [onToggleSystemPackages] is the "Show
  * system packages" control, [onSelect] carries the exact clicked row's package name,
  * [onClearFilter] backs both the toolbar's "×" and the empty-state's "Clear filter" link, and
- * [onForceStop]/[onLaunch]/[onRestart] back task 023's action-footer buttons — scoped to whichever
- * package [update]/[updateLifecycle] most recently reflected as selected, never constructing a
- * command themselves (all ADB logic lives in
- * [dev.acme.adbtoolbox.application.apps.AppLifecycleUseCase]).
+ * [onForceStop]/[onLaunch]/[onRestart] back task 023's action-footer buttons, while [onClearData]
+ * and [onUninstall] back the destructive workflows — scoped to whichever package the application
+ * state most recently reflected as selected, never constructing a command themselves.
  */
 class AppsPanel(
     onQueryChange: (String) -> Unit,
@@ -39,6 +39,7 @@ class AppsPanel(
     onLaunch: () -> Unit = {},
     onRestart: () -> Unit = {},
     onClearData: () -> Unit = {},
+    onUninstall: () -> Unit = {},
 ) : JBPanel<AppsPanel>(BorderLayout()) {
 
     private val searchField = JBTextField().apply {
@@ -91,11 +92,16 @@ class AppsPanel(
         addActionListener { onClearData() }
         isEnabled = false
     }
+    private val uninstallButton = JButton("Uninstall").apply {
+        addActionListener { onUninstall() }
+        isEnabled = false
+    }
     private val actionFooterPanel = JPanel(FlowLayout(FlowLayout.LEFT)).apply {
         add(restartButton)
         add(forceStopButton)
         add(launchButton)
         add(clearDataButton)
+        add(uninstallButton)
     }
 
     private val southContainer = JPanel(BorderLayout()).apply {
@@ -119,6 +125,7 @@ class AppsPanel(
     internal val forceStopButtonForTest: JButton get() = forceStopButton
     internal val launchButtonForTest: JButton get() = launchButton
     internal val clearDataButtonForTest: JButton get() = clearDataButton
+    internal val uninstallButtonForTest: JButton get() = uninstallButton
 
     fun update(state: AppsViewState) {
         if (searchField.text != state.query) searchField.text = state.query
@@ -153,6 +160,11 @@ class AppsPanel(
     /** Reflects the independent confirm-before-command workflow onto its destructive control. */
     fun updateClearData(state: ClearDataViewState) {
         clearDataButton.isEnabled = state.actionEnabled
+    }
+
+    /** Reflects task 025's independent confirm-before-command workflow onto its destructive control. */
+    fun updateUninstall(state: UninstallViewState) {
+        uninstallButton.isEnabled = state.actionEnabled
     }
 
     /** Test/disposal seam: releases [list]'s own listeners. Coordinators call this from their own `dispose()`. */

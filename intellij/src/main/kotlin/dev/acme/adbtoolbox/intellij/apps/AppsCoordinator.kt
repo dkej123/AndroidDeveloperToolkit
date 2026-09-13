@@ -10,6 +10,9 @@ import dev.acme.adbtoolbox.application.apps.AppsViewState
 import dev.acme.adbtoolbox.application.apps.ClearDataIntent
 import dev.acme.adbtoolbox.application.apps.ClearDataViewModel
 import dev.acme.adbtoolbox.application.apps.ClearDataViewState
+import dev.acme.adbtoolbox.application.apps.UninstallIntent
+import dev.acme.adbtoolbox.application.apps.UninstallViewModel
+import dev.acme.adbtoolbox.application.apps.UninstallViewState
 import dev.acme.adbtoolbox.domain.dispatch.DispatcherProvider
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.cancel
@@ -18,7 +21,7 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.withContext
 
 /**
- * Connects task 022's [AppsViewModel] and task 023's [AppLifecycleViewModel] to [AppsPanel],
+ * Connects the Apps feature view models to [AppsPanel],
  * following [dev.acme.adbtoolbox.intellij.devicebar.DeviceContextBarCoordinator]'s established
  * shape: [scope] is owned by the caller (never created here), state is collected and marshaled onto
  * [dispatchers]' `main` context before touching Swing, and [render]/[renderLifecycle] are
@@ -35,6 +38,7 @@ class AppsCoordinator(
     private val viewModel: AppsViewModel,
     private val appLifecycleViewModel: AppLifecycleViewModel,
     private val clearDataViewModel: ClearDataViewModel,
+    private val uninstallViewModel: UninstallViewModel,
     private val scope: CoroutineScope,
     private val dispatchers: DispatcherProvider,
 ) : Disposable {
@@ -48,6 +52,7 @@ class AppsCoordinator(
         onLaunch = { appLifecycleViewModel.handle(AppLifecycleIntent.Launch) },
         onRestart = { appLifecycleViewModel.handle(AppLifecycleIntent.Restart) },
         onClearData = { clearDataViewModel.handle(ClearDataIntent.ClearData) },
+        onUninstall = { uninstallViewModel.handle(UninstallIntent.Uninstall) },
     )
 
     init {
@@ -59,6 +64,9 @@ class AppsCoordinator(
             .launchIn(scope)
         clearDataViewModel.state
             .onEach { state -> withContext(dispatchers.main) { renderClearData(state) } }
+            .launchIn(scope)
+        uninstallViewModel.state
+            .onEach { state -> withContext(dispatchers.main) { renderUninstall(state) } }
             .launchIn(scope)
     }
 
@@ -75,6 +83,11 @@ class AppsCoordinator(
     /** Production code always reaches this already marshaled onto [dispatchers]' `main` context. */
     internal fun renderClearData(state: ClearDataViewState) {
         panel.updateClearData(state)
+    }
+
+    /** Production code always reaches this already marshaled onto [dispatchers]' `main` context. */
+    internal fun renderUninstall(state: UninstallViewState) {
+        panel.updateUninstall(state)
     }
 
     override fun dispose() {

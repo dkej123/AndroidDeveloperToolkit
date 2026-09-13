@@ -34,12 +34,14 @@ import kotlinx.coroutines.flow.flow
  * Mirrors [dev.acme.adbtoolbox.adapters.adb.ddmlib.DdmlibAdbTransport]'s request-shape contract so
  * the two adapters agree on which [AdbRequest]/[AdbOperation] combinations each entry point
  * supports, which the fallback selector (ADR 0005) relies on: [executeText]/[executeStream] only
- * support [AdbOperation.Shell] (plus [AdbServerRequest]); [executeBinary] only supports
- * [AdbOperation.Exec]. An unsupported combination is reported as [AdbOutcome.Unsupported] before
- * any process is started — never a partial or ambiguous attempt — so it is always safe to retry
- * that class of failure on a different transport. Never selects/falls back to another transport
- * itself — that choice is made once, at the `:intellij` composition root (task 007), or generically
- * by [dev.acme.adbtoolbox.adapters.adb.selector.FallbackAdbTransport].
+ * support [AdbOperation.Shell] (plus [AdbServerRequest]), while one-shot [executeText] also
+ * supports device-scoped [AdbOperation.Host] argv such as `uninstall`; [executeBinary] only
+ * supports [AdbOperation.Exec]. An unsupported combination is reported as
+ * [AdbOutcome.Unsupported] before any process is started — never a partial or ambiguous attempt —
+ * so it is always safe to retry that class of failure on a different transport. Never
+ * selects/falls back to another transport itself — that choice is made once, at the `:intellij`
+ * composition root (task 007), or generically by
+ * [dev.acme.adbtoolbox.adapters.adb.selector.FallbackAdbTransport].
  */
 class BinaryAdbTransport(
     private val toolLocator: ToolLocator,
@@ -47,7 +49,7 @@ class BinaryAdbTransport(
 ) : AdbTransport {
 
     override suspend fun executeText(request: AdbRequest): AdbTextResult =
-        when (val resolution = resolveShellCapableCommand(request)) {
+        when (val resolution = resolveTextCommand(request)) {
             is CommandResolution.Unsupported -> AdbTextResult(AdbOutcome.Unsupported(resolution.reason), "", "")
             is CommandResolution.Failure -> AdbTextResult(AdbOutcome.TransportFailure(resolution.reason), "", "")
             is CommandResolution.Ready -> {
@@ -63,7 +65,7 @@ class BinaryAdbTransport(
         }
 
     override fun executeStream(request: AdbRequest): Flow<AdbStreamEvent> = flow {
-        when (val resolution = resolveShellCapableCommand(request)) {
+        when (val resolution = resolveStreamCommand(request)) {
             is CommandResolution.Unsupported ->
                 emit(AdbStreamEvent.Completed(AdbOutcome.Unsupported(resolution.reason)))
 
@@ -108,14 +110,28 @@ class BinaryAdbTransport(
             ).toAdbOutcome()
         }
 
-    private suspend fun resolveShellCapableCommand(request: AdbRequest): CommandResolution = when (request) {
+    private suspend fun resolveTextCommand(request: AdbRequest): CommandResolution = when (request) {
         is AdbServerRequest -> resolveCommand(request.arguments)
-        is AdbDeviceRequest -> {
-            val operation = request.operation
-            if (operation !is AdbOperation.Shell) {
-                CommandResolution.Unsupported("binary adb text/stream execution only supports shell operations")
-            } else {
+        is AdbDeviceRequest -> when (val operation = request.operation) {
+            is AdbOperation.Shell ->
                 resolveCommand(listOf("-s", request.serial.toString(), "shell", operation.command.render()))
+
+            is AdbOperation.Host ->
+                resolveCommand(listOf("-s", request.serial.toString()) + operation.arguments)
+
+            is AdbOperation.Exec ->
+                CommandResolution.Unsupported("binary adb text execution does not support exec operations")
+        }
+    }
+
+    private suspend fun resolveStreamCommand(request: AdbRequest): CommandResolution = when (request) {
+        is AdbServerRequest -> resolveCommand(request.arguments)
+        is AdbDeviceRequest -> when (val operation = request.operation) {
+            is AdbOperation.Shell ->
+                resolveCommand(listOf("-s", request.serial.toString(), "shell", operation.command.render()))
+
+            is AdbOperation.Host, is AdbOperation.Exec -> {
+                CommandResolution.Unsupported("binary adb streaming only supports shell operations")
             }
         }
     }

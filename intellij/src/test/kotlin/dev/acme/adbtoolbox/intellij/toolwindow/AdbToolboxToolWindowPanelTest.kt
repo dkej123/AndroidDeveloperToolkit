@@ -6,6 +6,8 @@ import dev.acme.adbtoolbox.application.apps.AppLifecycleViewModel
 import dev.acme.adbtoolbox.application.apps.AppsViewModel
 import dev.acme.adbtoolbox.application.apps.ClearDataUseCase
 import dev.acme.adbtoolbox.application.apps.ClearDataViewModel
+import dev.acme.adbtoolbox.application.apps.UninstallUseCase
+import dev.acme.adbtoolbox.application.apps.UninstallViewModel
 import dev.acme.adbtoolbox.application.apps.SelectedPackageViewModel
 import dev.acme.adbtoolbox.application.capture.CaptureScreenshotUseCase
 import dev.acme.adbtoolbox.application.capture.CaptureViewModel
@@ -35,6 +37,7 @@ import dev.acme.adbtoolbox.domain.device.FakeDeviceSelectionPersistence
 import dev.acme.adbtoolbox.domain.device.SelectedDeviceState
 import dev.acme.adbtoolbox.domain.deviceactions.FakeTerminalLauncher
 import dev.acme.adbtoolbox.domain.apps.FakeClearDataConfirmationPort
+import dev.acme.adbtoolbox.domain.apps.FakeUninstallConfirmationPort
 import dev.acme.adbtoolbox.domain.apps.FakeSelectedPackagePersistence
 import dev.acme.adbtoolbox.domain.devicefacts.FakeClipboardPort
 import dev.acme.adbtoolbox.domain.discovery.DiscoveryError
@@ -89,6 +92,7 @@ class AdbToolboxToolWindowPanelTest : BasePlatformTestCase() {
         val apps: AppsViewModel,
         val lifecycle: AppLifecycleViewModel,
         val clearData: ClearDataViewModel,
+        val uninstall: UninstallViewModel,
     )
 
     private fun appsModels(
@@ -130,6 +134,18 @@ class AdbToolboxToolWindowPanelTest : BasePlatformTestCase() {
                 clearDataUseCase = ClearDataUseCase(transport),
                 confirmationPort = FakeClearDataConfirmationPort(),
                 packageRepository = packageRepository,
+                feedback = feedback,
+            ),
+            uninstall = UninstallViewModel(
+                scope = scope,
+                dispatchers = dispatchers,
+                selectedDeviceState = selectedDevice.state,
+                selectedPackageState = selectedPackage.state,
+                currentPackageScope = appsViewModel.currentPackageScope,
+                uninstallUseCase = UninstallUseCase(transport),
+                confirmationPort = FakeUninstallConfirmationPort(),
+                packageRepository = packageRepository,
+                selectedPackageViewModel = selectedPackage,
                 feedback = feedback,
             ),
         )
@@ -257,6 +273,7 @@ class AdbToolboxToolWindowPanelTest : BasePlatformTestCase() {
             appsViewModel = appsModels.apps,
             appLifecycleViewModel = appsModels.lifecycle,
             clearDataViewModel = appsModels.clearData,
+            uninstallViewModel = appsModels.uninstall,
             appsScope = harness.appsScope,
             openSettings = openSettings,
         )

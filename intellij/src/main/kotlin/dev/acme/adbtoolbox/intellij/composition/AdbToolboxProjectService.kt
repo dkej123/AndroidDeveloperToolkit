@@ -27,6 +27,8 @@ import dev.acme.adbtoolbox.application.apps.AppsViewModel
 import dev.acme.adbtoolbox.application.apps.ClearDataUseCase
 import dev.acme.adbtoolbox.application.apps.ClearDataViewModel
 import dev.acme.adbtoolbox.application.apps.SelectedPackageViewModel
+import dev.acme.adbtoolbox.application.apps.UninstallUseCase
+import dev.acme.adbtoolbox.application.apps.UninstallViewModel
 import dev.acme.adbtoolbox.application.capture.CaptureScreenshotUseCase
 import dev.acme.adbtoolbox.application.capture.CaptureViewModel
 import dev.acme.adbtoolbox.application.device.SelectedDeviceViewModel
@@ -71,6 +73,7 @@ import dev.acme.adbtoolbox.domain.settings.SettingsInvalidationPort
 import dev.acme.adbtoolbox.domain.settings.SettingsRepository
 import dev.acme.adbtoolbox.intellij.adb.IdeAndroidDebugBridgeDeviceSource
 import dev.acme.adbtoolbox.intellij.apps.ClearDataConfirmationPresenter
+import dev.acme.adbtoolbox.intellij.apps.UninstallConfirmationPresenter
 import dev.acme.adbtoolbox.intellij.clipboard.ClipboardPortAdapter
 import dev.acme.adbtoolbox.intellij.discovery.AndroidStudioSdkPlatformToolsSource
 import dev.acme.adbtoolbox.intellij.dispatch.IdeDispatcherProvider
@@ -405,6 +408,23 @@ class AdbToolboxProjectService(private val project: Project) : Disposable {
         clearDataUseCase = clearDataUseCase,
         confirmationPort = clearDataConfirmation,
         packageRepository = packageRepository,
+        feedback = feedbackViewModel,
+    )
+
+    private val uninstallConfirmation = UninstallConfirmationPresenter(project, dispatcherProvider)
+    private val uninstallUseCase = UninstallUseCase(adbTransport)
+
+    /** Task 025's stale-context-safe, confirm-before-command uninstall workflow. */
+    val uninstallViewModel: UninstallViewModel = UninstallViewModel(
+        scope = childScope(),
+        dispatchers = dispatcherProvider,
+        selectedDeviceState = selectedDeviceViewModel.state,
+        selectedPackageState = selectedPackageViewModel.state,
+        currentPackageScope = appsViewModel.currentPackageScope,
+        uninstallUseCase = uninstallUseCase,
+        confirmationPort = uninstallConfirmation,
+        packageRepository = packageRepository,
+        selectedPackageViewModel = selectedPackageViewModel,
         feedback = feedbackViewModel,
     )
 

@@ -59,6 +59,27 @@ class FallbackAdbTransportTest {
     }
 
     @Test
+    fun `unsupported device host operation falls back with the exact request`() {
+        runBlocking {
+            val hostRequest = AdbDeviceRequest(
+                serial = serial,
+                operation = AdbOperation.Host(listOf("uninstall", "com.acme.shop")),
+            )
+            val primary = FakeAdbTransport(
+                textScript = { AdbTextResult(AdbOutcome.Unsupported("host operations unavailable"), "", "") },
+            )
+            val fallbackResult = AdbTextResult(AdbOutcome.Completed(0), stdout = "Success", stderr = "")
+            val fallback = FakeAdbTransport(textScript = { fallbackResult })
+
+            val result = FallbackAdbTransport(primary, fallback).executeText(hostRequest)
+
+            result shouldBe fallbackResult
+            primary.textRequests shouldContainExactly listOf(hostRequest)
+            fallback.textRequests shouldContainExactly listOf(hostRequest)
+        }
+    }
+
+    @Test
     fun `ambiguous mutation TransportFailure is surfaced honestly and never retried on the fallback`() {
         runBlocking {
             val ambiguous = AdbTextResult(AdbOutcome.TransportFailure("connection reset mid-command"), "", "")

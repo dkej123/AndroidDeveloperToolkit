@@ -84,6 +84,25 @@ class BinaryAdbTransportTest {
     }
 
     @Test
+    fun `device host request adds exactly one serial and does not insert shell or exec-out`() {
+        runBlocking {
+            val locator = foundLocator()
+            val executor = FakeProcessExecutor {
+                listOf(ProcessEvent.Completed(ProcessOutcome.Completed(0)))
+            }
+            val request = AdbDeviceRequest(
+                serial = serial,
+                operation = AdbOperation.Host(listOf("uninstall", "com.acme.shop")),
+            )
+
+            transport(locator, executor).executeText(request)
+
+            executor.requests.single().command.arguments shouldContainExactly
+                listOf("-s", serial.toString(), "uninstall", "com.acme.shop")
+        }
+    }
+
+    @Test
     fun `server request carries no serial argument`() {
         runBlocking {
             val locator = foundLocator()

@@ -13,6 +13,9 @@ import dev.acme.adbtoolbox.application.apps.ClearDataUseCase
 import dev.acme.adbtoolbox.application.apps.ClearDataViewModel
 import dev.acme.adbtoolbox.application.apps.ClearDataViewState
 import dev.acme.adbtoolbox.application.apps.SelectedPackageViewModel
+import dev.acme.adbtoolbox.application.apps.UninstallUseCase
+import dev.acme.adbtoolbox.application.apps.UninstallViewModel
+import dev.acme.adbtoolbox.application.apps.UninstallViewState
 import dev.acme.adbtoolbox.application.device.SelectedDeviceViewModel
 import dev.acme.adbtoolbox.domain.adb.AdbOutcome
 import dev.acme.adbtoolbox.domain.adb.AdbTextResult
@@ -20,6 +23,7 @@ import dev.acme.adbtoolbox.domain.adb.DeviceSerial
 import dev.acme.adbtoolbox.domain.adb.FakeAdbTransport
 import dev.acme.adbtoolbox.domain.apps.FakeSelectedPackagePersistence
 import dev.acme.adbtoolbox.domain.apps.FakeClearDataConfirmationPort
+import dev.acme.adbtoolbox.domain.apps.FakeUninstallConfirmationPort
 import dev.acme.adbtoolbox.domain.apps.SelectedPackage
 import dev.acme.adbtoolbox.domain.device.Device
 import dev.acme.adbtoolbox.domain.device.DeviceConnectionState
@@ -63,6 +67,7 @@ class AppsCoordinatorTest : BasePlatformTestCase() {
         val appsViewModel: AppsViewModel,
         val appLifecycleViewModel: AppLifecycleViewModel,
         val clearDataViewModel: ClearDataViewModel,
+        val uninstallViewModel: UninstallViewModel,
         val feedback: dev.acme.adbtoolbox.application.feedback.FeedbackViewModel,
     )
 
@@ -111,6 +116,18 @@ class AppsCoordinatorTest : BasePlatformTestCase() {
             packageRepository = packageRepository,
             feedback = feedback,
         )
+        val uninstallViewModel = UninstallViewModel(
+            scope = scope,
+            dispatchers = dispatchers,
+            selectedDeviceState = selectedDeviceViewModel.state,
+            selectedPackageState = selectedPackageViewModel.state,
+            currentPackageScope = appsViewModel.currentPackageScope,
+            uninstallUseCase = UninstallUseCase(transport),
+            confirmationPort = FakeUninstallConfirmationPort(),
+            packageRepository = packageRepository,
+            selectedPackageViewModel = selectedPackageViewModel,
+            feedback = feedback,
+        )
         return Fixture(
             dispatchers,
             scope,
@@ -119,14 +136,24 @@ class AppsCoordinatorTest : BasePlatformTestCase() {
             appsViewModel,
             appLifecycleViewModel,
             clearDataViewModel,
+            uninstallViewModel,
             feedback,
         )
     }
 
+    private fun coordinator(f: Fixture) = AppsCoordinator(
+        viewModel = f.appsViewModel,
+        appLifecycleViewModel = f.appLifecycleViewModel,
+        clearDataViewModel = f.clearDataViewModel,
+        uninstallViewModel = f.uninstallViewModel,
+        scope = f.scope,
+        dispatchers = f.dispatchers,
+    )
+
     fun `test the coordinator wires up against real view models without a construction-time crash`() {
         val f = fixture()
 
-        val coordinator = AppsCoordinator(f.appsViewModel, f.appLifecycleViewModel, f.clearDataViewModel, f.scope, f.dispatchers)
+        val coordinator = coordinator(f)
 
         assertNotNull(coordinator.panel)
         coordinator.dispose()
@@ -134,7 +161,7 @@ class AppsCoordinatorTest : BasePlatformTestCase() {
 
     fun `test typing in the panel's search field issues a SetQuery intent to the view model`() {
         val f = fixture()
-        val coordinator = AppsCoordinator(f.appsViewModel, f.appLifecycleViewModel, f.clearDataViewModel, f.scope, f.dispatchers)
+        val coordinator = coordinator(f)
 
         coordinator.panel.searchFieldForTest.text = "shop"
 
@@ -145,7 +172,7 @@ class AppsCoordinatorTest : BasePlatformTestCase() {
 
     fun `test clicking the system-packages toggle issues a ToggleSystemPackages intent`() {
         val f = fixture()
-        val coordinator = AppsCoordinator(f.appsViewModel, f.appLifecycleViewModel, f.clearDataViewModel, f.scope, f.dispatchers)
+        val coordinator = coordinator(f)
 
         coordinator.panel.systemToggleForTest.doClick()
 
@@ -156,7 +183,7 @@ class AppsCoordinatorTest : BasePlatformTestCase() {
 
     fun `test render reflects a constructed view state onto the panel directly`() {
         val f = fixture()
-        val coordinator = AppsCoordinator(f.appsViewModel, f.appLifecycleViewModel, f.clearDataViewModel, f.scope, f.dispatchers)
+        val coordinator = coordinator(f)
 
         coordinator.render(
             AppsViewState(
@@ -176,7 +203,7 @@ class AppsCoordinatorTest : BasePlatformTestCase() {
 
     fun `test renderLifecycle reflects a constructed lifecycle view state onto the panel directly`() {
         val f = fixture()
-        val coordinator = AppsCoordinator(f.appsViewModel, f.appLifecycleViewModel, f.clearDataViewModel, f.scope, f.dispatchers)
+        val coordinator = coordinator(f)
 
         coordinator.renderLifecycle(
             AppLifecycleViewState(controlPolicy = ControlPolicy.Enabled, selectedPackageName = "com.acme.wallet", busy = false),
@@ -198,7 +225,7 @@ class AppsCoordinatorTest : BasePlatformTestCase() {
         // AdbToolboxProjectServiceTest's own documented dispatcher-timing caveats, neither of which
         // asserts on a coordinator's own background state-collection job completing).
         val f = fixture()
-        val coordinator = AppsCoordinator(f.appsViewModel, f.appLifecycleViewModel, f.clearDataViewModel, f.scope, f.dispatchers)
+        val coordinator = coordinator(f)
         // Swing's doClick() is a no-op on a disabled button, so enable it directly via the
         // already-proven-synchronous renderLifecycle seam (see the dedicated renderLifecycle test
         // above) rather than the coordinator's own background state-collection job.
@@ -215,7 +242,7 @@ class AppsCoordinatorTest : BasePlatformTestCase() {
 
     fun `test disposing the coordinator cancels its scope and disposes the panel`() {
         val f = fixture()
-        val coordinator = AppsCoordinator(f.appsViewModel, f.appLifecycleViewModel, f.clearDataViewModel, f.scope, f.dispatchers)
+        val coordinator = coordinator(f)
 
         coordinator.dispose()
 
@@ -224,13 +251,7 @@ class AppsCoordinatorTest : BasePlatformTestCase() {
 
     fun `test renderClearData reflects the destructive action state`() {
         val f = fixture()
-        val coordinator = AppsCoordinator(
-            f.appsViewModel,
-            f.appLifecycleViewModel,
-            f.clearDataViewModel,
-            f.scope,
-            f.dispatchers,
-        )
+        val coordinator = coordinator(f)
 
         coordinator.renderClearData(
             ClearDataViewState(ControlPolicy.Enabled, selectedPackageName = "com.acme.shop", busy = false),
@@ -242,19 +263,40 @@ class AppsCoordinatorTest : BasePlatformTestCase() {
 
     fun `test clicking Clear data forwards to the shared clear-data view model`() {
         val f = fixture()
-        val coordinator = AppsCoordinator(
-            f.appsViewModel,
-            f.appLifecycleViewModel,
-            f.clearDataViewModel,
-            f.scope,
-            f.dispatchers,
-        )
+        val coordinator = coordinator(f)
         coordinator.renderClearData(
             ClearDataViewState(ControlPolicy.Enabled, selectedPackageName = "com.acme.shop", busy = false),
         )
         val before = f.feedback.state.value.toasts.size
 
         coordinator.panel.clearDataButtonForTest.doClick()
+
+        assertEquals(before + 1, f.feedback.state.value.toasts.size)
+        assertEquals("No eligible device selected", f.feedback.state.value.toasts.last().text)
+        coordinator.dispose()
+    }
+
+    fun `test renderUninstall reflects the destructive action state`() {
+        val f = fixture()
+        val coordinator = coordinator(f)
+
+        coordinator.renderUninstall(
+            UninstallViewState(ControlPolicy.Enabled, selectedPackageName = "com.acme.shop", busy = false),
+        )
+
+        assertTrue(coordinator.panel.uninstallButtonForTest.isEnabled)
+        coordinator.dispose()
+    }
+
+    fun `test clicking Uninstall forwards to the shared uninstall view model`() {
+        val f = fixture()
+        val coordinator = coordinator(f)
+        coordinator.renderUninstall(
+            UninstallViewState(ControlPolicy.Enabled, selectedPackageName = "com.acme.shop", busy = false),
+        )
+        val before = f.feedback.state.value.toasts.size
+
+        coordinator.panel.uninstallButtonForTest.doClick()
 
         assertEquals(before + 1, f.feedback.state.value.toasts.size)
         assertEquals("No eligible device selected", f.feedback.state.value.toasts.last().text)

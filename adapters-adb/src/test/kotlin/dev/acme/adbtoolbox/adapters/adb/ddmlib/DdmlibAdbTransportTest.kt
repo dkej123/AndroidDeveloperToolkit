@@ -63,6 +63,30 @@ class DdmlibAdbTransportTest {
         }
     }
 
+    @Test
+    fun `device host operation is unsupported without invoking a ddmlib shell call`() {
+        runBlocking {
+            val device = mockDevice()
+            val request = AdbDeviceRequest(
+                serial = serial,
+                operation = AdbOperation.Host(listOf("uninstall", "com.acme.shop")),
+            )
+
+            val result = transport(device).executeText(request)
+
+            result.outcome.shouldBeInstanceOf<AdbOutcome.Unsupported>()
+            verify(exactly = 0) {
+                device.executeShellCommand(
+                    any<String>(),
+                    any<IShellOutputReceiver>(),
+                    any<Long>(),
+                    any<TimeUnit>(),
+                    any<java.io.InputStream>(),
+                )
+            }
+        }
+    }
+
     // --- serial lookup and device state --------------------------------------------------------
 
     @Test

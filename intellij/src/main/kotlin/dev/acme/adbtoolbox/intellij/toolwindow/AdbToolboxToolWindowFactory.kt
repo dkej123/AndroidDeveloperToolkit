@@ -42,6 +42,7 @@ class AdbToolboxToolWindowFactory : ToolWindowFactory {
             appsViewModel = composition.appsViewModel,
             appLifecycleViewModel = composition.appLifecycleViewModel,
             clearDataViewModel = composition.clearDataViewModel,
+            uninstallViewModel = composition.uninstallViewModel,
             appsScope = composition.childScope(),
             openSettings = { AdbToolboxSettingsOpener.open(project) },
         )
