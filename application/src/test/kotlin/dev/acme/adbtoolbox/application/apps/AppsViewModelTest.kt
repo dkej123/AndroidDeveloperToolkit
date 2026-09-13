@@ -230,11 +230,13 @@ class AppsViewModelTest {
         h.settle()
 
         h.viewModel.handle(AppsIntent.ToggleSystemPackages)
+        h.viewModel.currentPackageScope.value shouldBe PackageListScope.All
         h.settle()
         h.packageRepository.refreshRequests.last() shouldBe (serialA to PackageListScope.All)
         h.viewModel.state.value.showSystemPackages shouldBe true
 
         h.viewModel.handle(AppsIntent.ToggleSystemPackages)
+        h.viewModel.currentPackageScope.value shouldBe PackageListScope.User
         h.settle()
         h.packageRepository.refreshRequests.last() shouldBe (serialA to PackageListScope.User)
         h.viewModel.state.value.showSystemPackages shouldBe false

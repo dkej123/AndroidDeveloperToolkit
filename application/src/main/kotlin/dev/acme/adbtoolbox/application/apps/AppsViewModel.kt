@@ -13,6 +13,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.stateIn
@@ -46,21 +47,24 @@ class AppsViewModel(
     private val selectedPackageViewModel: SelectedPackageViewModel,
 ) {
     private val _query = MutableStateFlow("")
-    private val _showSystemPackages = MutableStateFlow(false)
+    private val _currentPackageScope = MutableStateFlow(PackageListScope.User)
+
+    /** The scope selected by the Apps toggle, updated synchronously when its intent is handled. */
+    val currentPackageScope: StateFlow<PackageListScope> = _currentPackageScope.asStateFlow()
 
     val state: StateFlow<AppsViewState> = combine(
         selectedDeviceViewModel.state,
         packageRepository.state,
         selectedPackageViewModel.state,
         _query,
-        _showSystemPackages,
+        _currentPackageScope,
         ::reduce,
     ).stateIn(scope, SharingStarted.Eagerly, AppsViewState())
 
     init {
         scope.launch(dispatchers.default) {
-            combine(selectedDeviceViewModel.state, _showSystemPackages) { deviceState, showSystem ->
-                serialOf(deviceState) to scopeFor(showSystem)
+            combine(selectedDeviceViewModel.state, _currentPackageScope) { deviceState, packageScope ->
+                serialOf(deviceState) to packageScope
             }
                 .distinctUntilChanged()
                 .collect { (serial, packageScope) ->
@@ -83,7 +87,10 @@ class AppsViewModel(
         when (intent) {
             is AppsIntent.SetQuery -> _query.value = intent.query
             AppsIntent.ClearFilter -> _query.value = ""
-            AppsIntent.ToggleSystemPackages -> _showSystemPackages.value = !_showSystemPackages.value
+            AppsIntent.ToggleSystemPackages -> _currentPackageScope.value = when (_currentPackageScope.value) {
+                PackageListScope.User -> PackageListScope.All
+                PackageListScope.All -> PackageListScope.User
+            }
             is AppsIntent.SelectPackage -> selectPackage(intent.packageName)
             AppsIntent.Refresh -> refresh()
         }
@@ -100,7 +107,7 @@ class AppsViewModel(
 
     private fun refresh() {
         val serial = serialOf(selectedDeviceViewModel.state.value) ?: return
-        packageRepository.refresh(serial, scopeFor(_showSystemPackages.value))
+        packageRepository.refresh(serial, _currentPackageScope.value)
     }
 
     private fun revalidate(serial: DeviceSerial?, packageState: PackageListState, selectionState: SelectedPackageState) {
@@ -116,8 +123,9 @@ class AppsViewModel(
         packageState: PackageListState,
         selectionState: SelectedPackageState,
         query: String,
-        showSystemPackages: Boolean,
+        packageScope: PackageListScope,
     ): AppsViewState {
+        val showSystemPackages = packageScope == PackageListScope.All
         val serial = serialOf(deviceState)
         val selectedPackageName = (selectionState as? SelectedPackageState.Selected)
             ?.selection
@@ -183,9 +191,6 @@ class AppsViewModel(
         if (query.isBlank()) return true
         return entry.label.contains(query, ignoreCase = true) || entry.packageName.contains(query, ignoreCase = true)
     }
-
-    private fun scopeFor(showSystemPackages: Boolean): PackageListScope =
-        if (showSystemPackages) PackageListScope.All else PackageListScope.User
 
     private fun serialOf(state: SelectedDeviceState): DeviceSerial? = when (state) {
         is SelectedDeviceState.Online -> state.device.serial

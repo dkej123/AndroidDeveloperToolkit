@@ -9,6 +9,9 @@ import dev.acme.adbtoolbox.application.apps.AppLifecycleViewState
 import dev.acme.adbtoolbox.application.apps.AppsIntent
 import dev.acme.adbtoolbox.application.apps.AppsViewModel
 import dev.acme.adbtoolbox.application.apps.AppsViewState
+import dev.acme.adbtoolbox.application.apps.ClearDataUseCase
+import dev.acme.adbtoolbox.application.apps.ClearDataViewModel
+import dev.acme.adbtoolbox.application.apps.ClearDataViewState
 import dev.acme.adbtoolbox.application.apps.SelectedPackageViewModel
 import dev.acme.adbtoolbox.application.device.SelectedDeviceViewModel
 import dev.acme.adbtoolbox.domain.adb.AdbOutcome
@@ -16,6 +19,7 @@ import dev.acme.adbtoolbox.domain.adb.AdbTextResult
 import dev.acme.adbtoolbox.domain.adb.DeviceSerial
 import dev.acme.adbtoolbox.domain.adb.FakeAdbTransport
 import dev.acme.adbtoolbox.domain.apps.FakeSelectedPackagePersistence
+import dev.acme.adbtoolbox.domain.apps.FakeClearDataConfirmationPort
 import dev.acme.adbtoolbox.domain.apps.SelectedPackage
 import dev.acme.adbtoolbox.domain.device.Device
 import dev.acme.adbtoolbox.domain.device.DeviceConnectionState
@@ -58,6 +62,7 @@ class AppsCoordinatorTest : BasePlatformTestCase() {
         val selectedPackageViewModel: SelectedPackageViewModel,
         val appsViewModel: AppsViewModel,
         val appLifecycleViewModel: AppLifecycleViewModel,
+        val clearDataViewModel: ClearDataViewModel,
         val feedback: dev.acme.adbtoolbox.application.feedback.FeedbackViewModel,
     )
 
@@ -78,10 +83,11 @@ class AppsCoordinatorTest : BasePlatformTestCase() {
             dispatchers = dispatchers,
             persistence = FakeSelectedPackagePersistence(),
         )
+        val packageRepository = FakePackageRepository()
         val appsViewModel = AppsViewModel(
             scope = scope,
             dispatchers = dispatchers,
-            packageRepository = FakePackageRepository(),
+            packageRepository = packageRepository,
             selectedDeviceViewModel = selectedDeviceViewModel,
             selectedPackageViewModel = selectedPackageViewModel,
         )
@@ -94,13 +100,33 @@ class AppsCoordinatorTest : BasePlatformTestCase() {
             appLifecycleUseCase = AppLifecycleUseCase(transport),
             feedback = feedback,
         )
-        return Fixture(dispatchers, scope, selectedDeviceViewModel, selectedPackageViewModel, appsViewModel, appLifecycleViewModel, feedback)
+        val clearDataViewModel = ClearDataViewModel(
+            scope = scope,
+            dispatchers = dispatchers,
+            selectedDeviceState = selectedDeviceViewModel.state,
+            selectedPackageState = selectedPackageViewModel.state,
+            currentPackageScope = appsViewModel.currentPackageScope,
+            clearDataUseCase = ClearDataUseCase(transport),
+            confirmationPort = FakeClearDataConfirmationPort(),
+            packageRepository = packageRepository,
+            feedback = feedback,
+        )
+        return Fixture(
+            dispatchers,
+            scope,
+            selectedDeviceViewModel,
+            selectedPackageViewModel,
+            appsViewModel,
+            appLifecycleViewModel,
+            clearDataViewModel,
+            feedback,
+        )
     }
 
     fun `test the coordinator wires up against real view models without a construction-time crash`() {
         val f = fixture()
 
-        val coordinator = AppsCoordinator(f.appsViewModel, f.appLifecycleViewModel, f.scope, f.dispatchers)
+        val coordinator = AppsCoordinator(f.appsViewModel, f.appLifecycleViewModel, f.clearDataViewModel, f.scope, f.dispatchers)
 
         assertNotNull(coordinator.panel)
         coordinator.dispose()
@@ -108,7 +134,7 @@ class AppsCoordinatorTest : BasePlatformTestCase() {
 
     fun `test typing in the panel's search field issues a SetQuery intent to the view model`() {
         val f = fixture()
-        val coordinator = AppsCoordinator(f.appsViewModel, f.appLifecycleViewModel, f.scope, f.dispatchers)
+        val coordinator = AppsCoordinator(f.appsViewModel, f.appLifecycleViewModel, f.clearDataViewModel, f.scope, f.dispatchers)
 
         coordinator.panel.searchFieldForTest.text = "shop"
 
@@ -119,7 +145,7 @@ class AppsCoordinatorTest : BasePlatformTestCase() {
 
     fun `test clicking the system-packages toggle issues a ToggleSystemPackages intent`() {
         val f = fixture()
-        val coordinator = AppsCoordinator(f.appsViewModel, f.appLifecycleViewModel, f.scope, f.dispatchers)
+        val coordinator = AppsCoordinator(f.appsViewModel, f.appLifecycleViewModel, f.clearDataViewModel, f.scope, f.dispatchers)
 
         coordinator.panel.systemToggleForTest.doClick()
 
@@ -130,7 +156,7 @@ class AppsCoordinatorTest : BasePlatformTestCase() {
 
     fun `test render reflects a constructed view state onto the panel directly`() {
         val f = fixture()
-        val coordinator = AppsCoordinator(f.appsViewModel, f.appLifecycleViewModel, f.scope, f.dispatchers)
+        val coordinator = AppsCoordinator(f.appsViewModel, f.appLifecycleViewModel, f.clearDataViewModel, f.scope, f.dispatchers)
 
         coordinator.render(
             AppsViewState(
@@ -150,7 +176,7 @@ class AppsCoordinatorTest : BasePlatformTestCase() {
 
     fun `test renderLifecycle reflects a constructed lifecycle view state onto the panel directly`() {
         val f = fixture()
-        val coordinator = AppsCoordinator(f.appsViewModel, f.appLifecycleViewModel, f.scope, f.dispatchers)
+        val coordinator = AppsCoordinator(f.appsViewModel, f.appLifecycleViewModel, f.clearDataViewModel, f.scope, f.dispatchers)
 
         coordinator.renderLifecycle(
             AppLifecycleViewState(controlPolicy = ControlPolicy.Enabled, selectedPackageName = "com.acme.wallet", busy = false),
@@ -172,7 +198,7 @@ class AppsCoordinatorTest : BasePlatformTestCase() {
         // AdbToolboxProjectServiceTest's own documented dispatcher-timing caveats, neither of which
         // asserts on a coordinator's own background state-collection job completing).
         val f = fixture()
-        val coordinator = AppsCoordinator(f.appsViewModel, f.appLifecycleViewModel, f.scope, f.dispatchers)
+        val coordinator = AppsCoordinator(f.appsViewModel, f.appLifecycleViewModel, f.clearDataViewModel, f.scope, f.dispatchers)
         // Swing's doClick() is a no-op on a disabled button, so enable it directly via the
         // already-proven-synchronous renderLifecycle seam (see the dedicated renderLifecycle test
         // above) rather than the coordinator's own background state-collection job.
@@ -189,10 +215,49 @@ class AppsCoordinatorTest : BasePlatformTestCase() {
 
     fun `test disposing the coordinator cancels its scope and disposes the panel`() {
         val f = fixture()
-        val coordinator = AppsCoordinator(f.appsViewModel, f.appLifecycleViewModel, f.scope, f.dispatchers)
+        val coordinator = AppsCoordinator(f.appsViewModel, f.appLifecycleViewModel, f.clearDataViewModel, f.scope, f.dispatchers)
 
         coordinator.dispose()
 
         assertFalse(f.scope.isActive)
+    }
+
+    fun `test renderClearData reflects the destructive action state`() {
+        val f = fixture()
+        val coordinator = AppsCoordinator(
+            f.appsViewModel,
+            f.appLifecycleViewModel,
+            f.clearDataViewModel,
+            f.scope,
+            f.dispatchers,
+        )
+
+        coordinator.renderClearData(
+            ClearDataViewState(ControlPolicy.Enabled, selectedPackageName = "com.acme.shop", busy = false),
+        )
+
+        assertTrue(coordinator.panel.clearDataButtonForTest.isEnabled)
+        coordinator.dispose()
+    }
+
+    fun `test clicking Clear data forwards to the shared clear-data view model`() {
+        val f = fixture()
+        val coordinator = AppsCoordinator(
+            f.appsViewModel,
+            f.appLifecycleViewModel,
+            f.clearDataViewModel,
+            f.scope,
+            f.dispatchers,
+        )
+        coordinator.renderClearData(
+            ClearDataViewState(ControlPolicy.Enabled, selectedPackageName = "com.acme.shop", busy = false),
+        )
+        val before = f.feedback.state.value.toasts.size
+
+        coordinator.panel.clearDataButtonForTest.doClick()
+
+        assertEquals(before + 1, f.feedback.state.value.toasts.size)
+        assertEquals("No eligible device selected", f.feedback.state.value.toasts.last().text)
+        coordinator.dispose()
     }
 }

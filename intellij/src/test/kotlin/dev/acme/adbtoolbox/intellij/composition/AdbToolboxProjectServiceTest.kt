@@ -41,7 +41,10 @@ class AdbToolboxProjectServiceTest : BasePlatformTestCase() {
         assertNotNull(service.recordingViewModel)
         assertNotNull(service.selectedPackagePersistence)
         assertNotNull(service.selectedPackageViewModel)
+        assertNotNull(service.packageRepository)
+        assertNotNull(service.appsViewModel)
         assertNotNull(service.appLifecycleViewModel)
+        assertNotNull(service.clearDataViewModel)
     }
 
     fun `test the project service is a singleton per project`() {

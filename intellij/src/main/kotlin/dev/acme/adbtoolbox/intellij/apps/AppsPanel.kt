@@ -5,6 +5,7 @@ import com.intellij.ui.components.JBPanel
 import com.intellij.ui.components.JBTextField
 import dev.acme.adbtoolbox.application.apps.AppLifecycleViewState
 import dev.acme.adbtoolbox.application.apps.AppsViewState
+import dev.acme.adbtoolbox.application.apps.ClearDataViewState
 import java.awt.BorderLayout
 import java.awt.FlowLayout
 import javax.swing.JButton
@@ -37,6 +38,7 @@ class AppsPanel(
     onForceStop: () -> Unit = {},
     onLaunch: () -> Unit = {},
     onRestart: () -> Unit = {},
+    onClearData: () -> Unit = {},
 ) : JBPanel<AppsPanel>(BorderLayout()) {
 
     private val searchField = JBTextField().apply {
@@ -85,10 +87,15 @@ class AppsPanel(
         addActionListener { onLaunch() }
         isEnabled = false
     }
+    private val clearDataButton = JButton("Clear data").apply {
+        addActionListener { onClearData() }
+        isEnabled = false
+    }
     private val actionFooterPanel = JPanel(FlowLayout(FlowLayout.LEFT)).apply {
         add(restartButton)
         add(forceStopButton)
         add(launchButton)
+        add(clearDataButton)
     }
 
     private val southContainer = JPanel(BorderLayout()).apply {
@@ -111,6 +118,7 @@ class AppsPanel(
     internal val restartButtonForTest: JButton get() = restartButton
     internal val forceStopButtonForTest: JButton get() = forceStopButton
     internal val launchButtonForTest: JButton get() = launchButton
+    internal val clearDataButtonForTest: JButton get() = clearDataButton
 
     fun update(state: AppsViewState) {
         if (searchField.text != state.query) searchField.text = state.query
@@ -140,6 +148,11 @@ class AppsPanel(
         restartButton.isEnabled = enabled
         forceStopButton.isEnabled = enabled
         launchButton.isEnabled = enabled
+    }
+
+    /** Reflects the independent confirm-before-command workflow onto its destructive control. */
+    fun updateClearData(state: ClearDataViewState) {
+        clearDataButton.isEnabled = state.actionEnabled
     }
 
     /** Test/disposal seam: releases [list]'s own listeners. Coordinators call this from their own `dispose()`. */

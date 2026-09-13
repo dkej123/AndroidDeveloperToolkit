@@ -10,6 +10,7 @@ import dev.acme.adbtoolbox.adapters.adb.binary.BinaryAdbTransport
 import dev.acme.adbtoolbox.adapters.adb.ddmlib.DdmlibAdbTransport
 import dev.acme.adbtoolbox.adapters.adb.device.AdbDeviceRepository
 import dev.acme.adbtoolbox.adapters.adb.device.DdmlibDeviceChangeListenerSource
+import dev.acme.adbtoolbox.adapters.adb.packages.AdbPackageRepository
 import dev.acme.adbtoolbox.adapters.adb.discovery.DefaultToolLocator
 import dev.acme.adbtoolbox.adapters.jvm.capture.DesktopRevealInFileManager
 import dev.acme.adbtoolbox.adapters.jvm.capture.JvmCaptureDestination
@@ -21,6 +22,9 @@ import dev.acme.adbtoolbox.adapters.jvm.discovery.JvmPathEnvironmentSource
 import dev.acme.adbtoolbox.adapters.jvm.process.JvmProcessExecutor
 import dev.acme.adbtoolbox.application.apps.AppLifecycleUseCase
 import dev.acme.adbtoolbox.application.apps.AppLifecycleViewModel
+import dev.acme.adbtoolbox.application.apps.AppsViewModel
+import dev.acme.adbtoolbox.application.apps.ClearDataUseCase
+import dev.acme.adbtoolbox.application.apps.ClearDataViewModel
 import dev.acme.adbtoolbox.application.apps.SelectedPackageViewModel
 import dev.acme.adbtoolbox.application.capture.CaptureScreenshotUseCase
 import dev.acme.adbtoolbox.application.capture.CaptureViewModel
@@ -55,9 +59,11 @@ import dev.acme.adbtoolbox.domain.nav.MutableNavigationBadges
 import dev.acme.adbtoolbox.domain.nav.NavigationBadges
 import dev.acme.adbtoolbox.domain.nav.NavigationPersistence
 import dev.acme.adbtoolbox.domain.nav.ViewId
+import dev.acme.adbtoolbox.domain.packages.PackageRepository
 import dev.acme.adbtoolbox.domain.process.ProcessExecutor
 import dev.acme.adbtoolbox.domain.time.SystemMonotonicClock
 import dev.acme.adbtoolbox.intellij.adb.IdeAndroidDebugBridgeDeviceSource
+import dev.acme.adbtoolbox.intellij.apps.ClearDataConfirmationPresenter
 import dev.acme.adbtoolbox.intellij.clipboard.ClipboardPortAdapter
 import dev.acme.adbtoolbox.intellij.discovery.AndroidStudioSdkPlatformToolsSource
 import dev.acme.adbtoolbox.intellij.dispatch.IdeDispatcherProvider
@@ -319,6 +325,22 @@ class AdbToolboxProjectService(private val project: Project) : Disposable {
         persistence = selectedPackagePersistence,
     )
 
+    /** Task 021's serial-scoped package repository, shared by Apps and post-action refreshes. */
+    val packageRepository: PackageRepository = AdbPackageRepository(
+        scope = childScope(),
+        dispatchers = dispatcherProvider,
+        transport = adbTransport,
+    )
+
+    /** Task 022's searchable package presentation, composed once per project. */
+    val appsViewModel: AppsViewModel = AppsViewModel(
+        scope = childScope(),
+        dispatchers = dispatcherProvider,
+        packageRepository = packageRepository,
+        selectedDeviceViewModel = selectedDeviceViewModel,
+        selectedPackageViewModel = selectedPackageViewModel,
+    )
+
     private val appLifecycleUseCase = AppLifecycleUseCase(adbTransport)
 
     /**
@@ -334,6 +356,22 @@ class AdbToolboxProjectService(private val project: Project) : Disposable {
         selectedDeviceState = selectedDeviceViewModel.state,
         selectedPackageState = selectedPackageViewModel.state,
         appLifecycleUseCase = appLifecycleUseCase,
+        feedback = feedbackViewModel,
+    )
+
+    private val clearDataConfirmation = ClearDataConfirmationPresenter(project, dispatcherProvider)
+    private val clearDataUseCase = ClearDataUseCase(adbTransport)
+
+    /** Task 024's single confirm-before-command Clear-data workflow. */
+    val clearDataViewModel: ClearDataViewModel = ClearDataViewModel(
+        scope = childScope(),
+        dispatchers = dispatcherProvider,
+        selectedDeviceState = selectedDeviceViewModel.state,
+        selectedPackageState = selectedPackageViewModel.state,
+        currentPackageScope = appsViewModel.currentPackageScope,
+        clearDataUseCase = clearDataUseCase,
+        confirmationPort = clearDataConfirmation,
+        packageRepository = packageRepository,
         feedback = feedbackViewModel,
     )
 

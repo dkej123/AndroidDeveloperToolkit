@@ -1,6 +1,12 @@
 package dev.acme.adbtoolbox.intellij.toolwindow
 
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
+import dev.acme.adbtoolbox.application.apps.AppLifecycleUseCase
+import dev.acme.adbtoolbox.application.apps.AppLifecycleViewModel
+import dev.acme.adbtoolbox.application.apps.AppsViewModel
+import dev.acme.adbtoolbox.application.apps.ClearDataUseCase
+import dev.acme.adbtoolbox.application.apps.ClearDataViewModel
+import dev.acme.adbtoolbox.application.apps.SelectedPackageViewModel
 import dev.acme.adbtoolbox.application.capture.CaptureScreenshotUseCase
 import dev.acme.adbtoolbox.application.capture.CaptureViewModel
 import dev.acme.adbtoolbox.application.device.SelectedDeviceViewModel
@@ -28,6 +34,8 @@ import dev.acme.adbtoolbox.domain.device.FakeDeviceRepository
 import dev.acme.adbtoolbox.domain.device.FakeDeviceSelectionPersistence
 import dev.acme.adbtoolbox.domain.device.SelectedDeviceState
 import dev.acme.adbtoolbox.domain.deviceactions.FakeTerminalLauncher
+import dev.acme.adbtoolbox.domain.apps.FakeClearDataConfirmationPort
+import dev.acme.adbtoolbox.domain.apps.FakeSelectedPackagePersistence
 import dev.acme.adbtoolbox.domain.devicefacts.FakeClipboardPort
 import dev.acme.adbtoolbox.domain.discovery.DiscoveryError
 import dev.acme.adbtoolbox.domain.discovery.DiscoveryOutcome
@@ -36,6 +44,7 @@ import dev.acme.adbtoolbox.domain.discovery.ToolId
 import dev.acme.adbtoolbox.domain.nav.FakeNavigationPersistence
 import dev.acme.adbtoolbox.domain.nav.ViewId
 import dev.acme.adbtoolbox.domain.process.FakeProcessExecutor
+import dev.acme.adbtoolbox.domain.packages.FakePackageRepository
 import dev.acme.adbtoolbox.intellij.devicefacts.DeviceFactsPanel
 import dev.acme.adbtoolbox.intellij.dispatch.IdeDispatcherProvider
 import dev.acme.adbtoolbox.intellij.host.AdbToolboxHostPanel
@@ -73,6 +82,57 @@ class AdbToolboxToolWindowPanelTest : BasePlatformTestCase() {
         val deviceActionsScope = CoroutineScope(SupervisorJob() + dispatchers.default)
         val mirroringScope = CoroutineScope(SupervisorJob() + dispatchers.default)
         val recordingScope = CoroutineScope(SupervisorJob() + dispatchers.default)
+        val appsScope = CoroutineScope(SupervisorJob() + dispatchers.default)
+    }
+
+    private data class AppsModels(
+        val apps: AppsViewModel,
+        val lifecycle: AppLifecycleViewModel,
+        val clearData: ClearDataViewModel,
+    )
+
+    private fun appsModels(
+        scope: CoroutineScope,
+        dispatchers: DispatcherProvider,
+        feedback: FeedbackViewModel,
+    ): AppsModels {
+        val transport = FakeAdbTransport()
+        val deviceRepository = FakeDeviceRepository()
+        val selectedDevice = SelectedDeviceViewModel(
+            scope = scope,
+            dispatchers = dispatchers,
+            deviceRepository = deviceRepository,
+            persistence = FakeDeviceSelectionPersistence(),
+        )
+        val selectedPackage = SelectedPackageViewModel(
+            scope = scope,
+            dispatchers = dispatchers,
+            persistence = FakeSelectedPackagePersistence(),
+        )
+        val packageRepository = FakePackageRepository()
+        val appsViewModel = AppsViewModel(scope, dispatchers, packageRepository, selectedDevice, selectedPackage)
+        return AppsModels(
+            apps = appsViewModel,
+            lifecycle = AppLifecycleViewModel(
+                scope,
+                dispatchers,
+                selectedDevice.state,
+                selectedPackage.state,
+                AppLifecycleUseCase(transport),
+                feedback,
+            ),
+            clearData = ClearDataViewModel(
+                scope = scope,
+                dispatchers = dispatchers,
+                selectedDeviceState = selectedDevice.state,
+                selectedPackageState = selectedPackage.state,
+                currentPackageScope = appsViewModel.currentPackageScope,
+                clearDataUseCase = ClearDataUseCase(transport),
+                confirmationPort = FakeClearDataConfirmationPort(),
+                packageRepository = packageRepository,
+                feedback = feedback,
+            ),
+        )
     }
 
     private fun captureViewModel(scope: CoroutineScope, dispatchers: DispatcherProvider, feedback: FeedbackViewModel): CaptureViewModel =
@@ -163,6 +223,7 @@ class AdbToolboxToolWindowPanelTest : BasePlatformTestCase() {
     private fun panel(dispatchers: DispatcherProvider, harness: Harness): AdbToolboxToolWindowPanel {
         val feedbackViewModel = FeedbackViewModel(harness.feedbackScope, dispatchers)
         val navigationVm = navigationViewModel(harness.navigationScope, dispatchers)
+        val appsModels = appsModels(harness.appsScope, dispatchers, feedbackViewModel)
         return AdbToolboxToolWindowPanel(
             viewModel = ShellViewModel(harness.scope, dispatchers),
             dispatchers = dispatchers,
@@ -189,6 +250,10 @@ class AdbToolboxToolWindowPanelTest : BasePlatformTestCase() {
             mirroringScope = harness.mirroringScope,
             recordingViewModel = recordingViewModel(harness.recordingScope, dispatchers, feedbackViewModel),
             recordingScope = harness.recordingScope,
+            appsViewModel = appsModels.apps,
+            appLifecycleViewModel = appsModels.lifecycle,
+            clearDataViewModel = appsModels.clearData,
+            appsScope = harness.appsScope,
         )
     }
 
@@ -201,6 +266,16 @@ class AdbToolboxToolWindowPanelTest : BasePlatformTestCase() {
         assertNotNull(panel.host.navigationSlot)
         assertNotNull(panel.host.activeViewHost)
         assertNotNull(panel.host.feedbackSlot)
+
+        panel.dispose()
+    }
+
+    fun `test the Apps view including destructive actions is registered in the feature host`() {
+        val dispatchers = dispatchers()
+        val harness = Harness(dispatchers)
+        val panel = panel(dispatchers, harness)
+
+        assertTrue(panel.host.activeViewHost.isRegistered(ViewId.Apps.routeKey))
 
         panel.dispose()
     }
@@ -254,6 +329,7 @@ class AdbToolboxToolWindowPanelTest : BasePlatformTestCase() {
         assertFalse(harness.deviceActionsScope.isActive)
         assertFalse(harness.mirroringScope.isActive)
         assertFalse(harness.recordingScope.isActive)
+        assertFalse(harness.appsScope.isActive)
     }
 
     fun `test the screenshot control is mounted into the Device view alongside device facts`() {

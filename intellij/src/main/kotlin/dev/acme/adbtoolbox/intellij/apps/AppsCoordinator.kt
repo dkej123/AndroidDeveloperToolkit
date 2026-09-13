@@ -7,6 +7,9 @@ import dev.acme.adbtoolbox.application.apps.AppLifecycleViewState
 import dev.acme.adbtoolbox.application.apps.AppsIntent
 import dev.acme.adbtoolbox.application.apps.AppsViewModel
 import dev.acme.adbtoolbox.application.apps.AppsViewState
+import dev.acme.adbtoolbox.application.apps.ClearDataIntent
+import dev.acme.adbtoolbox.application.apps.ClearDataViewModel
+import dev.acme.adbtoolbox.application.apps.ClearDataViewState
 import dev.acme.adbtoolbox.domain.dispatch.DispatcherProvider
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.cancel
@@ -31,6 +34,7 @@ import kotlinx.coroutines.withContext
 class AppsCoordinator(
     private val viewModel: AppsViewModel,
     private val appLifecycleViewModel: AppLifecycleViewModel,
+    private val clearDataViewModel: ClearDataViewModel,
     private val scope: CoroutineScope,
     private val dispatchers: DispatcherProvider,
 ) : Disposable {
@@ -43,6 +47,7 @@ class AppsCoordinator(
         onForceStop = { appLifecycleViewModel.handle(AppLifecycleIntent.ForceStop) },
         onLaunch = { appLifecycleViewModel.handle(AppLifecycleIntent.Launch) },
         onRestart = { appLifecycleViewModel.handle(AppLifecycleIntent.Restart) },
+        onClearData = { clearDataViewModel.handle(ClearDataIntent.ClearData) },
     )
 
     init {
@@ -51,6 +56,9 @@ class AppsCoordinator(
             .launchIn(scope)
         appLifecycleViewModel.state
             .onEach { state -> withContext(dispatchers.main) { renderLifecycle(state) } }
+            .launchIn(scope)
+        clearDataViewModel.state
+            .onEach { state -> withContext(dispatchers.main) { renderClearData(state) } }
             .launchIn(scope)
     }
 
@@ -62,6 +70,11 @@ class AppsCoordinator(
     /** Production code always reaches this already marshaled onto [dispatchers]' `main` context. */
     internal fun renderLifecycle(state: AppLifecycleViewState) {
         panel.updateLifecycle(state)
+    }
+
+    /** Production code always reaches this already marshaled onto [dispatchers]' `main` context. */
+    internal fun renderClearData(state: ClearDataViewState) {
+        panel.updateClearData(state)
     }
 
     override fun dispose() {

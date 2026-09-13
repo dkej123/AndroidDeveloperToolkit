@@ -4,6 +4,7 @@ import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import dev.acme.adbtoolbox.application.apps.AppLifecycleViewState
 import dev.acme.adbtoolbox.application.apps.AppsRow
 import dev.acme.adbtoolbox.application.apps.AppsViewState
+import dev.acme.adbtoolbox.application.apps.ClearDataViewState
 import dev.acme.adbtoolbox.domain.devicecontext.ControlPolicy
 
 /**
@@ -134,5 +135,51 @@ class AppsPanelTest : BasePlatformTestCase() {
         assertEquals(1, restarted)
         assertEquals(1, forceStopped)
         assertEquals(1, launched)
+    }
+
+    fun `test Clear data starts disabled and follows its own view state`() {
+        val panel = AppsPanel(onQueryChange = {}, onToggleSystemPackages = {}, onSelect = {}, onClearFilter = {})
+
+        assertFalse(panel.clearDataButtonForTest.isEnabled)
+
+        panel.updateClearData(
+            ClearDataViewState(
+                controlPolicy = ControlPolicy.Enabled,
+                selectedPackageName = "com.acme.shop",
+                busy = false,
+            ),
+        )
+        assertTrue(panel.clearDataButtonForTest.isEnabled)
+
+        panel.updateClearData(
+            ClearDataViewState(
+                controlPolicy = ControlPolicy.Enabled,
+                selectedPackageName = "com.acme.shop",
+                busy = true,
+            ),
+        )
+        assertFalse(panel.clearDataButtonForTest.isEnabled)
+    }
+
+    fun `test clicking Clear data invokes only its callback`() {
+        var clearDataRequests = 0
+        val panel = AppsPanel(
+            onQueryChange = {},
+            onToggleSystemPackages = {},
+            onSelect = {},
+            onClearFilter = {},
+            onClearData = { clearDataRequests++ },
+        )
+        panel.updateClearData(
+            ClearDataViewState(
+                controlPolicy = ControlPolicy.Enabled,
+                selectedPackageName = "com.acme.shop",
+                busy = false,
+            ),
+        )
+
+        panel.clearDataButtonForTest.doClick()
+
+        assertEquals(1, clearDataRequests)
     }
 }

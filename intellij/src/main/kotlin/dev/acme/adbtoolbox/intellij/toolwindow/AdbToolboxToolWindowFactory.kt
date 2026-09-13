@@ -37,6 +37,10 @@ class AdbToolboxToolWindowFactory : ToolWindowFactory {
             mirroringScope = composition.childScope(),
             recordingViewModel = composition.recordingViewModel,
             recordingScope = composition.childScope(),
+            appsViewModel = composition.appsViewModel,
+            appLifecycleViewModel = composition.appLifecycleViewModel,
+            clearDataViewModel = composition.clearDataViewModel,
+            appsScope = composition.childScope(),
         )
         val content = ContentFactory.getInstance().createContent(panel, "", false)
         content.setDisposer(panel)
