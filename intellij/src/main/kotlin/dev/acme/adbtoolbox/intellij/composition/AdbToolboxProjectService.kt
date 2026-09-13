@@ -87,11 +87,17 @@ import dev.acme.adbtoolbox.intellij.persistence.MirroringOptionsPersistenceAdapt
 import dev.acme.adbtoolbox.intellij.persistence.NavigationPersistenceAdapter
 import dev.acme.adbtoolbox.intellij.persistence.SettingsPersistenceAdapter
 import dev.acme.adbtoolbox.intellij.terminal.TerminalLauncherAdapter
+import dev.acme.adbtoolbox.intellij.wifi.WifiPairingInputPresenter
+import dev.acme.adbtoolbox.application.wifi.WifiPairingUseCase
+import dev.acme.adbtoolbox.application.wifi.WifiPairingViewModel
+import dev.acme.adbtoolbox.application.wifi.WifiPairingIntent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.isActive
 
 private val ANDROID_PLUGIN_ID = PluginId.getId("org.jetbrains.android")
@@ -235,6 +241,30 @@ class AdbToolboxProjectService(private val project: Project) : Disposable {
 
     /** The task 013 non-modal feedback/status/toast channel — one instance shared by every feature. */
     val feedbackViewModel: FeedbackViewModel = FeedbackViewModel(scope = childScope(), dispatchers = dispatcherProvider)
+
+    private val wifiPairingInputPresenter = WifiPairingInputPresenter(project, dispatcherProvider)
+    private val wifiPairingUseCase = WifiPairingUseCase(adbTransport, deviceListRefresher)
+
+    /**
+     * Task 039's device-bar-triggered Wi-Fi pairing flow: collects input via a native dialog
+     * ([wifiPairingInputPresenter]), pairs and connects (never targeting a selected device — ADR
+     * 0005's server-scoped request), and refreshes [deviceListRefresher] on success.
+     */
+    val wifiPairingViewModel: WifiPairingViewModel = WifiPairingViewModel(
+        scope = childScope(),
+        dispatchers = dispatcherProvider,
+        inputPort = wifiPairingInputPresenter,
+        useCase = wifiPairingUseCase,
+        feedback = feedbackViewModel,
+    )
+
+    // Task 011's "Pair device over Wi-Fi…" picker footer link only emits an event
+    // (DeviceBarViewModel.pairOverWifiRequests) — this is the one place that event is wired to
+    // actually launching task 039's flow, mirroring settingsInvalidation's plain-callback wiring
+    // above rather than a dedicated Coordinator (there is no panel for this feature to mount into).
+    private val wifiPairingLauncher = deviceBarViewModel.pairOverWifiRequests
+        .onEach { wifiPairingViewModel.handle(WifiPairingIntent.Launch) }
+        .launchIn(childScope())
 
     /** Task 015's clipboard port adapter (`com.intellij.openapi.ide.CopyPasteManager`) — the "Copy report" action's platform seam. */
     val clipboardPort: ClipboardPort = ClipboardPortAdapter()
@@ -465,6 +495,7 @@ class AdbToolboxProjectService(private val project: Project) : Disposable {
         // ownership alone does not reject an in-flight handle() call — see FeedbackViewModel's
         // class doc), so it is disposed explicitly here alongside the scope it is scoped under.
         feedbackViewModel.dispose()
+        wifiPairingViewModel.dispose()
         // CoroutineScope.cancel() throws if already cancelled, which would make a second dispose
         // (project close after an earlier explicit dispose, or IntelliJ's own double-dispose
         // guards firing) blow up instead of being a safe no-op.
