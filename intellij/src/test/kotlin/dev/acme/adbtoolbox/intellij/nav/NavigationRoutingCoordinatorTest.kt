@@ -34,11 +34,15 @@ class NavigationRoutingCoordinatorTest : BasePlatformTestCase() {
         override val main = Dispatchers.Default
     }
 
-    private fun coordinator(host: AdbToolboxHostPanel, rail: NavigationRailPanel): NavigationRoutingCoordinator {
+    private fun coordinator(
+        host: AdbToolboxHostPanel,
+        rail: NavigationRailPanel,
+        openSettings: () -> Unit = {},
+    ): NavigationRoutingCoordinator {
         val dispatchers = TestDispatchers()
         val scope = CoroutineScope(SupervisorJob() + dispatchers.default)
         val viewModel = NavigationViewModel(scope, dispatchers, FakeNavigationPersistence(), ViewId.Device)
-        return NavigationRoutingCoordinator(host, rail, viewModel, scope, dispatchers)
+        return NavigationRoutingCoordinator(host, rail, viewModel, scope, dispatchers, openSettings)
     }
 
     fun `test routing to a registered view shows it in the host and syncs the rail`() {
@@ -101,6 +105,20 @@ class NavigationRoutingCoordinatorTest : BasePlatformTestCase() {
         assertEquals(ViewId.Logcat, rail.list.selectedValue)
         assertFalse(host.activeViewHost.isRegistered(ViewId.Logcat.routeKey))
 
+        coordinator.dispose()
+    }
+
+    fun `test routing to Settings opens the native project Configurable without requiring a feature card`() {
+        val host = AdbToolboxHostPanel()
+        val rail = NavigationRailPanel()
+        var opened = 0
+        val coordinator = coordinator(host, rail, openSettings = { opened++ })
+
+        coordinator.route(NavigationState.Ready(ViewId.Settings))
+
+        assertEquals(ViewId.Settings, rail.list.selectedValue)
+        assertEquals(1, opened)
+        assertFalse(host.activeViewHost.isRegistered(ViewId.Settings.routeKey))
         coordinator.dispose()
     }
 

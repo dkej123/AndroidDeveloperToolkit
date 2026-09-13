@@ -13,13 +13,14 @@ import dev.acme.adbtoolbox.adapters.adb.device.DdmlibDeviceChangeListenerSource
 import dev.acme.adbtoolbox.adapters.adb.packages.AdbPackageRepository
 import dev.acme.adbtoolbox.adapters.adb.discovery.DefaultToolLocator
 import dev.acme.adbtoolbox.adapters.jvm.capture.DesktopRevealInFileManager
-import dev.acme.adbtoolbox.adapters.jvm.capture.JvmCaptureDestination
+import dev.acme.adbtoolbox.adapters.jvm.capture.SettingsBackedCaptureDestination
 import dev.acme.adbtoolbox.adapters.jvm.discovery.EnvironmentAndroidSdkPlatformToolsSource
-import dev.acme.adbtoolbox.adapters.jvm.discovery.InMemoryConfiguredToolPathSource
 import dev.acme.adbtoolbox.adapters.jvm.discovery.JvmExecutableFileProbe
 import dev.acme.adbtoolbox.adapters.jvm.discovery.JvmHostPlatformProvider
 import dev.acme.adbtoolbox.adapters.jvm.discovery.JvmPathEnvironmentSource
 import dev.acme.adbtoolbox.adapters.jvm.process.JvmProcessExecutor
+import dev.acme.adbtoolbox.adapters.jvm.discovery.SettingsBackedConfiguredToolPathSource
+import dev.acme.adbtoolbox.adapters.jvm.settings.JvmDirectoryProbe
 import dev.acme.adbtoolbox.application.apps.AppLifecycleUseCase
 import dev.acme.adbtoolbox.application.apps.AppLifecycleViewModel
 import dev.acme.adbtoolbox.application.apps.AppsViewModel
@@ -42,6 +43,8 @@ import dev.acme.adbtoolbox.application.nav.NavigationViewModel
 import dev.acme.adbtoolbox.application.recording.RecordingSessionManager
 import dev.acme.adbtoolbox.application.recording.RecordingViewModel
 import dev.acme.adbtoolbox.application.shell.ShellViewModel
+import dev.acme.adbtoolbox.application.settings.SettingsUseCase
+import dev.acme.adbtoolbox.application.settings.SettingsViewModel
 import dev.acme.adbtoolbox.domain.adb.AdbTransport
 import dev.acme.adbtoolbox.domain.apps.SelectedPackagePersistence
 import dev.acme.adbtoolbox.domain.capture.CaptureDestination
@@ -54,6 +57,7 @@ import dev.acme.adbtoolbox.domain.device.DeviceSelectionPersistence
 import dev.acme.adbtoolbox.domain.deviceactions.TerminalLauncher
 import dev.acme.adbtoolbox.domain.devicefacts.ClipboardPort
 import dev.acme.adbtoolbox.domain.discovery.ToolLocator
+import dev.acme.adbtoolbox.domain.discovery.ToolId
 import dev.acme.adbtoolbox.domain.dispatch.DispatcherProvider
 import dev.acme.adbtoolbox.domain.nav.MutableNavigationBadges
 import dev.acme.adbtoolbox.domain.nav.NavigationBadges
@@ -62,6 +66,9 @@ import dev.acme.adbtoolbox.domain.nav.ViewId
 import dev.acme.adbtoolbox.domain.packages.PackageRepository
 import dev.acme.adbtoolbox.domain.process.ProcessExecutor
 import dev.acme.adbtoolbox.domain.time.SystemMonotonicClock
+import dev.acme.adbtoolbox.domain.settings.SettingsDependency
+import dev.acme.adbtoolbox.domain.settings.SettingsInvalidationPort
+import dev.acme.adbtoolbox.domain.settings.SettingsRepository
 import dev.acme.adbtoolbox.intellij.adb.IdeAndroidDebugBridgeDeviceSource
 import dev.acme.adbtoolbox.intellij.apps.ClearDataConfirmationPresenter
 import dev.acme.adbtoolbox.intellij.clipboard.ClipboardPortAdapter
@@ -71,6 +78,7 @@ import dev.acme.adbtoolbox.intellij.persistence.AdbToolboxProjectState
 import dev.acme.adbtoolbox.intellij.persistence.AppsSelectionPersistenceAdapter
 import dev.acme.adbtoolbox.intellij.persistence.DeviceSelectionPersistenceAdapter
 import dev.acme.adbtoolbox.intellij.persistence.NavigationPersistenceAdapter
+import dev.acme.adbtoolbox.intellij.persistence.SettingsPersistenceAdapter
 import dev.acme.adbtoolbox.intellij.terminal.TerminalLauncherAdapter
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -102,16 +110,41 @@ class AdbToolboxProjectService(private val project: Project) : Disposable {
 
     val processExecutor: ProcessExecutor = JvmProcessExecutor()
 
+    val settingsRepository: SettingsRepository =
+        SettingsPersistenceAdapter(project.service<AdbToolboxProjectState>())
+
+    private val executableFileProbe = JvmExecutableFileProbe()
+
     val toolLocator: ToolLocator = DefaultToolLocator(
-        configuredPathSource = InMemoryConfiguredToolPathSource(),
+        configuredPathSource = SettingsBackedConfiguredToolPathSource(settingsRepository),
         androidSdkSources = listOf(
             EnvironmentAndroidSdkPlatformToolsSource(),
             AndroidStudioSdkPlatformToolsSource(),
         ),
         pathEnvironmentSource = JvmPathEnvironmentSource(),
-        executableProbe = JvmExecutableFileProbe(),
+        executableProbe = executableFileProbe,
         hostPlatformProvider = JvmHostPlatformProvider(),
         processExecutor = processExecutor,
+    )
+
+    private val settingsInvalidation = SettingsInvalidationPort { changed ->
+        if (SettingsDependency.AdbPath in changed) toolLocator.invalidate(ToolId.Adb)
+        if (SettingsDependency.ScrcpyPath in changed) toolLocator.invalidate(ToolId.Scrcpy)
+        // Capture reads the repository for each new target, so it has no cache to invalidate.
+        // The Logcat runtime is composed by its own feature task and consumes the persisted size.
+    }
+
+    internal val settingsUseCase = SettingsUseCase(
+        repository = settingsRepository,
+        executableProbe = executableFileProbe,
+        directoryProbe = JvmDirectoryProbe(),
+        invalidation = settingsInvalidation,
+    )
+
+    val settingsViewModel: SettingsViewModel = SettingsViewModel(
+        scope = childScope(),
+        dispatchers = dispatcherProvider,
+        settings = settingsUseCase,
     )
 
     /**
@@ -211,7 +244,7 @@ class AdbToolboxProjectService(private val project: Project) : Disposable {
     )
 
     /** Task 019's platform ports: a JVM filesystem capture destination and a Desktop Reveal action. */
-    val captureDestination: CaptureDestination = JvmCaptureDestination()
+    val captureDestination: CaptureDestination = SettingsBackedCaptureDestination(settingsRepository)
     val revealInFileManager: RevealInFileManager = DesktopRevealInFileManager()
     private val fileNamePolicy: FileNamePolicy = TimestampFileNamePolicy()
 

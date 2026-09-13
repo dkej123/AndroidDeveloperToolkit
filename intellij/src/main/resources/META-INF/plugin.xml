@@ -18,6 +18,10 @@
         <toolWindow id="ADB Toolbox" anchor="right" secondary="false"
                     icon="/icons/adbToolbox.svg"
                     factoryClass="dev.acme.adbtoolbox.intellij.toolwindow.AdbToolboxToolWindowFactory"/>
+        <projectConfigurable parentId="tools"
+                             instance="dev.acme.adbtoolbox.intellij.settings.AdbToolboxSettingsConfigurable"
+                             id="dev.acme.adbtoolbox.settings"
+                             displayName="ADB Toolbox"/>
     </extensions>
 
     <!-- Task 018's global mirroring shortcut — forwards to the same MirroringViewModel.handle

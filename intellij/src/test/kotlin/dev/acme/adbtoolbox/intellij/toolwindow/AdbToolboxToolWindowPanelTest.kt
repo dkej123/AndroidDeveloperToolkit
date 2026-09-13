@@ -220,7 +220,11 @@ class AdbToolboxToolWindowPanelTest : BasePlatformTestCase() {
         )
     }
 
-    private fun panel(dispatchers: DispatcherProvider, harness: Harness): AdbToolboxToolWindowPanel {
+    private fun panel(
+        dispatchers: DispatcherProvider,
+        harness: Harness,
+        openSettings: () -> Unit = {},
+    ): AdbToolboxToolWindowPanel {
         val feedbackViewModel = FeedbackViewModel(harness.feedbackScope, dispatchers)
         val navigationVm = navigationViewModel(harness.navigationScope, dispatchers)
         val appsModels = appsModels(harness.appsScope, dispatchers, feedbackViewModel)
@@ -254,6 +258,7 @@ class AdbToolboxToolWindowPanelTest : BasePlatformTestCase() {
             appLifecycleViewModel = appsModels.lifecycle,
             clearDataViewModel = appsModels.clearData,
             appsScope = harness.appsScope,
+            openSettings = openSettings,
         )
     }
 

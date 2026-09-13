@@ -5,6 +5,7 @@ import dev.acme.adbtoolbox.application.nav.NavigationIntent
 import dev.acme.adbtoolbox.application.nav.NavigationViewModel
 import dev.acme.adbtoolbox.domain.dispatch.DispatcherProvider
 import dev.acme.adbtoolbox.domain.nav.NavigationState
+import dev.acme.adbtoolbox.domain.nav.ViewId
 import dev.acme.adbtoolbox.intellij.host.AdbToolboxHostPanel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.cancel
@@ -40,6 +41,7 @@ class NavigationRoutingCoordinator(
     private val viewModel: NavigationViewModel,
     private val scope: CoroutineScope,
     private val dispatchers: DispatcherProvider,
+    private val openSettings: () -> Unit = {},
 ) : Disposable {
 
     init {
@@ -63,6 +65,10 @@ class NavigationRoutingCoordinator(
     internal fun route(state: NavigationState) {
         if (state !is NavigationState.Ready) return
         rail.setSelected(state.selected)
+        if (state.selected == ViewId.Settings) {
+            openSettings()
+            return
+        }
         val routeKey = state.selected.routeKey
         if (host.activeViewHost.isRegistered(routeKey)) {
             host.showFeatureView(routeKey)

@@ -99,6 +99,7 @@ class AdbToolboxToolWindowPanel(
     appLifecycleViewModel: AppLifecycleViewModel,
     clearDataViewModel: ClearDataViewModel,
     private val appsScope: CoroutineScope,
+    openSettings: () -> Unit = {},
 ) : JBPanel<AdbToolboxToolWindowPanel>(BorderLayout()), Disposable {
 
     val host = AdbToolboxHostPanel()
@@ -171,6 +172,7 @@ class AdbToolboxToolWindowPanel(
         viewModel = navigationViewModel,
         scope = navigationScope,
         dispatchers = dispatchers,
+        openSettings = openSettings,
     )
 
     private val feedbackCoordinator = FeedbackOverlayCoordinator(

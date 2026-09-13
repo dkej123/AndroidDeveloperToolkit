@@ -6,6 +6,8 @@ import com.intellij.openapi.wm.ToolWindow
 import com.intellij.openapi.wm.ToolWindowFactory
 import com.intellij.ui.content.ContentFactory
 import dev.acme.adbtoolbox.intellij.composition.AdbToolboxProjectService
+import dev.acme.adbtoolbox.intellij.settings.AdbToolboxSettingsOpener
+import dev.acme.adbtoolbox.intellij.settings.OpenAdbToolboxSettingsAction
 
 /**
  * Registers the plugin's project ToolWindow (`plugin.xml`) and creates its neutral placeholder
@@ -41,9 +43,11 @@ class AdbToolboxToolWindowFactory : ToolWindowFactory {
             appLifecycleViewModel = composition.appLifecycleViewModel,
             clearDataViewModel = composition.clearDataViewModel,
             appsScope = composition.childScope(),
+            openSettings = { AdbToolboxSettingsOpener.open(project) },
         )
         val content = ContentFactory.getInstance().createContent(panel, "", false)
         content.setDisposer(panel)
         toolWindow.contentManager.addContent(content)
+        toolWindow.setTitleActions(listOf(OpenAdbToolboxSettingsAction(project)))
     }
 }
