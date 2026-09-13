@@ -22,9 +22,15 @@ class MirroringCoordinator(
     viewModel: MirroringViewModel,
     scope: CoroutineScope,
     dispatchers: DispatcherProvider,
+    /** Task 040's options-icon-button action, forwarded verbatim to [MirroringView] — opens
+     * [dev.acme.adbtoolbox.intellij.ui.mirroring.MirroringOptionsDialog], never wired here directly
+     * so this coordinator (like [MirroringView]) stays free of a [com.intellij.openapi.project.Project]
+     * dependency. */
+    openOptions: () -> Unit = {},
 ) : Disposable {
 
-    val view: MirroringView = MirroringView(viewModel, scope, dispatchers).also { deviceFactsPanel.actionsRow.add(it) }
+    val view: MirroringView = MirroringView(viewModel, scope, dispatchers, openOptions)
+        .also { deviceFactsPanel.actionsRow.add(it) }
 
     override fun dispose() {
         view.dispose()

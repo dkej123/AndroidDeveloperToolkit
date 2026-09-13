@@ -8,6 +8,7 @@ import com.intellij.ui.content.ContentFactory
 import dev.acme.adbtoolbox.intellij.composition.AdbToolboxProjectService
 import dev.acme.adbtoolbox.intellij.settings.AdbToolboxSettingsOpener
 import dev.acme.adbtoolbox.intellij.settings.OpenAdbToolboxSettingsAction
+import dev.acme.adbtoolbox.intellij.ui.mirroring.MirroringOptionsDialog
 
 /**
  * Registers the plugin's project ToolWindow (`plugin.xml`) and creates its neutral placeholder
@@ -45,6 +46,7 @@ class AdbToolboxToolWindowFactory : ToolWindowFactory {
             uninstallViewModel = composition.uninstallViewModel,
             appsScope = composition.childScope(),
             openSettings = { AdbToolboxSettingsOpener.open(project) },
+            openMirroringOptions = { MirroringOptionsDialog(project).show() },
         )
         val content = ContentFactory.getInstance().createContent(panel, "", false)
         content.setDisposer(panel)

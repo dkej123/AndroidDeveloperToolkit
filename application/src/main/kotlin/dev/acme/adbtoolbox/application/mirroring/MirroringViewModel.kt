@@ -69,6 +69,15 @@ class MirroringViewModel(
     private val feedback: FeedbackViewModel,
     private val navigation: NavigationViewModel,
     private val clock: Clock = Clock.System,
+    /**
+     * Task 040's seam for reading the currently-approved [MirroringOptions] at `start()` time —
+     * always the *current* value, read fresh on every toggle, never cached at construction: a
+     * [dev.acme.adbtoolbox.application.mirroring.MirroringOptionsViewModel] applying new options
+     * between two toggles changes the very next `start()` call's arguments without this class ever
+     * needing to know that a change happened. An already-running session is never affected, since
+     * this is only ever consulted on the start branch below.
+     */
+    private val currentOptions: () -> MirroringOptions = { MirroringOptions.DEFAULT },
 ) {
     private val _state = MutableStateFlow(MirroringViewState())
     val state: StateFlow<MirroringViewState> = _state.asStateFlow()
@@ -158,7 +167,7 @@ class MirroringViewModel(
         val serial = context.serial
         when (sessionManager.stateFor(serial).value) {
             is MirroringSessionState.Starting, is MirroringSessionState.Running -> sessionManager.stop(serial)
-            else -> sessionManager.start(serial, MirroringOptions())
+            else -> sessionManager.start(serial, currentOptions())
         }
 
         // MirroringSessionManager.start()/stop() both mutate their StateFlow synchronously before

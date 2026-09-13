@@ -102,6 +102,7 @@ class AdbToolboxToolWindowPanel(
     uninstallViewModel: UninstallViewModel,
     private val appsScope: CoroutineScope,
     openSettings: () -> Unit = {},
+    openMirroringOptions: () -> Unit = {},
 ) : JBPanel<AdbToolboxToolWindowPanel>(BorderLayout()), Disposable {
 
     val host = AdbToolboxHostPanel()
@@ -146,6 +147,7 @@ class AdbToolboxToolWindowPanel(
         viewModel = mirroringViewModel,
         scope = mirroringScope,
         dispatchers = dispatchers,
+        openOptions = openMirroringOptions,
     )
 
     // Mounted after mirroringCoordinator, into the same already-registered actionsRow.

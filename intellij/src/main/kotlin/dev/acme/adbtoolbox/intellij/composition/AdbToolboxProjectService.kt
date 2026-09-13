@@ -39,6 +39,8 @@ import dev.acme.adbtoolbox.application.deviceactions.OpenShellUseCase
 import dev.acme.adbtoolbox.application.devicefacts.DeviceFactsViewModel
 import dev.acme.adbtoolbox.application.devicefacts.LoadDeviceFactsUseCase
 import dev.acme.adbtoolbox.application.feedback.FeedbackViewModel
+import dev.acme.adbtoolbox.application.mirroring.MirroringOptionsUseCase
+import dev.acme.adbtoolbox.application.mirroring.MirroringOptionsViewModel
 import dev.acme.adbtoolbox.application.mirroring.MirroringSessionManager
 import dev.acme.adbtoolbox.application.mirroring.MirroringViewModel
 import dev.acme.adbtoolbox.application.nav.NavigationViewModel
@@ -57,6 +59,7 @@ import dev.acme.adbtoolbox.domain.device.DeviceListRefresher
 import dev.acme.adbtoolbox.domain.device.DeviceRepository
 import dev.acme.adbtoolbox.domain.device.DeviceSelectionPersistence
 import dev.acme.adbtoolbox.domain.deviceactions.TerminalLauncher
+import dev.acme.adbtoolbox.domain.mirroring.MirroringOptionsRepository
 import dev.acme.adbtoolbox.domain.devicefacts.ClipboardPort
 import dev.acme.adbtoolbox.domain.discovery.ToolLocator
 import dev.acme.adbtoolbox.domain.discovery.ToolId
@@ -80,6 +83,7 @@ import dev.acme.adbtoolbox.intellij.dispatch.IdeDispatcherProvider
 import dev.acme.adbtoolbox.intellij.persistence.AdbToolboxProjectState
 import dev.acme.adbtoolbox.intellij.persistence.AppsSelectionPersistenceAdapter
 import dev.acme.adbtoolbox.intellij.persistence.DeviceSelectionPersistenceAdapter
+import dev.acme.adbtoolbox.intellij.persistence.MirroringOptionsPersistenceAdapter
 import dev.acme.adbtoolbox.intellij.persistence.NavigationPersistenceAdapter
 import dev.acme.adbtoolbox.intellij.persistence.SettingsPersistenceAdapter
 import dev.acme.adbtoolbox.intellij.terminal.TerminalLauncherAdapter
@@ -303,11 +307,27 @@ class AdbToolboxProjectService(private val project: Project) : Disposable {
         processExecutor = processExecutor,
     )
 
+    /** Task 040's persisted mirroring-options repository/use case, project-scoped (ADR 0006), matching
+     * [settingsRepository]/[settingsUseCase]'s own adapter-behind-a-port shape. */
+    val mirroringOptionsRepository: MirroringOptionsRepository =
+        MirroringOptionsPersistenceAdapter(project.service<AdbToolboxProjectState>())
+
+    internal val mirroringOptionsUseCase = MirroringOptionsUseCase(repository = mirroringOptionsRepository)
+
+    /** Task 040's native options editor state, backing [dev.acme.adbtoolbox.intellij.ui.mirroring.MirroringOptionsDialog]
+     * and the sole source [mirroringViewModel] reads from at `start()` time via [MirroringOptionsViewModel.currentOptions]. */
+    val mirroringOptionsViewModel: MirroringOptionsViewModel = MirroringOptionsViewModel(
+        scope = childScope(),
+        dispatchers = dispatcherProvider,
+        options = mirroringOptionsUseCase,
+    )
+
     /**
      * Task 018's Device-view mirroring binding and global-shortcut action, driven by
      * [selectedDeviceViewModel] and [mirroringSessionManager]; missing-tool errors route to
      * [navigationViewModel] ([ViewId.Settings]) and every other error/external-exit routes through
-     * [feedbackViewModel].
+     * [feedbackViewModel]. Task 040's [mirroringOptionsViewModel] supplies the options a fresh
+     * `start()` reads — never an already-running session's.
      */
     val mirroringViewModel: MirroringViewModel = MirroringViewModel(
         scope = childScope(),
@@ -316,6 +336,7 @@ class AdbToolboxProjectService(private val project: Project) : Disposable {
         sessionManager = mirroringSessionManager,
         feedback = feedbackViewModel,
         navigation = navigationViewModel,
+        currentOptions = { mirroringOptionsViewModel.currentOptions.value },
     )
 
     /**

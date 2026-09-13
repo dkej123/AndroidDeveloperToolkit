@@ -32,14 +32,26 @@ class MirroringView(
     private val viewModel: MirroringViewModel,
     private val scope: CoroutineScope,
     private val dispatchers: DispatcherProvider,
+    /** Task 040's "22px options icon button" (`design/README.md` §3): opens
+     * [dev.acme.adbtoolbox.intellij.ui.mirroring.MirroringOptionsDialog] directly from the Device
+     * view, independent of any session state — never itself touches [viewModel] or a running
+     * session. Injected rather than constructed here so this view stays free of a [com.intellij.openapi.project.Project]
+     * dependency and easily testable. */
+    private val openOptions: () -> Unit = {},
 ) : JBPanel<MirroringView>(FlowLayout(FlowLayout.LEFT, 4, 0)), Disposable {
 
     val toggleButton = JButton("Start mirroring").apply {
         addActionListener { viewModel.handle(MirroringIntent.Toggle) }
     }
 
+    val optionsButton = JButton("Options…").apply {
+        toolTipText = "Mirroring options — bitrate, resolution, stay awake"
+        addActionListener { openOptions() }
+    }
+
     init {
         add(toggleButton)
+        add(optionsButton)
 
         viewModel.state
             .onEach { state -> withContext(dispatchers.main) { render(state) } }
@@ -49,6 +61,7 @@ class MirroringView(
     /** Production code always reaches this already marshaled onto [dispatchers]' `main` context. */
     internal fun render(state: MirroringViewState) {
         toggleButton.isEnabled = state.controlPolicy is ControlPolicy.Enabled
+        optionsButton.isEnabled = state.controlPolicy is ControlPolicy.Enabled
         toggleButton.text = when (state.presentationState) {
             MirroringPresentationState.Running -> "Stop mirroring"
             MirroringPresentationState.Starting -> "Starting…"

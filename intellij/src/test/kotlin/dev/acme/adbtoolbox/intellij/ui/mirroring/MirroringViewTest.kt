@@ -73,10 +73,12 @@ class MirroringViewTest : BasePlatformTestCase() {
 
         view.render(MirroringViewState(controlPolicy = ControlPolicy.Disabled(DeviceCommandContext.Disabled.NoDeviceSelected), presentationState = MirroringPresentationState.Unavailable))
         assertFalse(view.toggleButton.isEnabled)
+        assertFalse(view.optionsButton.isEnabled)
         assertEquals("Start mirroring", view.toggleButton.text)
 
         view.render(MirroringViewState(controlPolicy = ControlPolicy.Enabled, presentationState = MirroringPresentationState.Idle))
         assertTrue(view.toggleButton.isEnabled)
+        assertTrue(view.optionsButton.isEnabled)
         assertEquals("Start mirroring", view.toggleButton.text)
 
         view.render(MirroringViewState(controlPolicy = ControlPolicy.Enabled, presentationState = MirroringPresentationState.Running))
@@ -100,6 +102,23 @@ class MirroringViewTest : BasePlatformTestCase() {
         view.toggleButton.doClick()
 
         assertEquals(MirroringPresentationState.Starting, vm.state.value.presentationState)
+        vmScope.cancel()
+    }
+
+    fun `test clicking the options button forwards to the injected openOptions callback without touching the view model`() {
+        val dispatchers = TestDispatchers()
+        val vmScope = CoroutineScope(SupervisorJob() + dispatchers.default)
+        val selectedDeviceState = MutableStateFlow<SelectedDeviceState>(SelectedDeviceState.Online(onlineDevice("emulator-5554")))
+        val vm = viewModel(vmScope, dispatchers, selectedDeviceState)
+        val viewScope = CoroutineScope(SupervisorJob() + dispatchers.default)
+        var openCount = 0
+        val view = MirroringView(vm, viewScope, dispatchers, openOptions = { openCount++ })
+        viewScope.cancel()
+
+        view.optionsButton.doClick()
+
+        assertEquals(1, openCount)
+        assertEquals(MirroringPresentationState.Idle, vm.state.value.presentationState)
         vmScope.cancel()
     }
 }

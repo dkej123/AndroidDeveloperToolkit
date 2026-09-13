@@ -82,6 +82,7 @@ class MirroringViewModelTest {
     private class Harness(
         toolOutcome: (ToolId) -> DiscoveryOutcome = { DiscoveryOutcome.Found(discoveredScrcpy()) },
         script: (ProcessRequest) -> Flow<ProcessEvent> = { runningForeverFlow() },
+        currentOptions: () -> dev.acme.adbtoolbox.domain.mirroring.MirroringOptions = { dev.acme.adbtoolbox.domain.mirroring.MirroringOptions.DEFAULT },
     ) {
         val scope = TestScope()
         val dispatcher = StandardTestDispatcher(scope.testScheduler)
@@ -103,6 +104,7 @@ class MirroringViewModelTest {
             sessionManager = sessionManager,
             feedback = feedback,
             navigation = navigation,
+            currentOptions = currentOptions,
         )
     }
 
@@ -187,6 +189,41 @@ class MirroringViewModelTest {
         h.scope.runCurrent()
 
         h.executor.requests.size shouldBe 0
+    }
+
+    @Test
+    fun `toggle starts a fresh session using the currently approved options, read at start time`() = runTest {
+        var approved = dev.acme.adbtoolbox.domain.mirroring.MirroringOptions(stayAwake = true, maxSize = 1920)
+        val h = Harness(currentOptions = { approved })
+        h.selectedDeviceState.value = SelectedDeviceState.Online(onlineDevice(serialA))
+        h.scope.runCurrent()
+
+        h.viewModel.handle(MirroringIntent.Toggle)
+        h.scope.advanceTimeBy(1)
+        h.scope.runCurrent()
+
+        h.executor.requests.single().command.arguments shouldBe
+            dev.acme.adbtoolbox.domain.mirroring.buildScrcpyArguments(serialA, approved)
+    }
+
+    @Test
+    fun `a currently-running session keeps its original arguments even after options are changed and re-approved`() = runTest {
+        var approved = dev.acme.adbtoolbox.domain.mirroring.MirroringOptions(maxSize = 1920)
+        val h = Harness(currentOptions = { approved })
+        h.selectedDeviceState.value = SelectedDeviceState.Online(onlineDevice(serialA))
+        h.scope.runCurrent()
+        h.viewModel.handle(MirroringIntent.Toggle)
+        h.scope.advanceTimeBy(1)
+        h.scope.runCurrent()
+        val startedWith = h.executor.requests.single().command.arguments
+
+        // Approving new options while a session is already running must never retroactively
+        // change the process that is already mirroring — only the next start() call observes it.
+        approved = dev.acme.adbtoolbox.domain.mirroring.MirroringOptions(maxSize = 1280)
+        h.scope.runCurrent()
+
+        h.executor.requests.size shouldBe 1
+        h.executor.requests.single().command.arguments shouldBe startedWith
     }
 
     @Test

@@ -26,6 +26,7 @@ class AdbToolboxProjectState : PersistentStateComponent<AdbToolboxProjectState.S
         var navigation: NavigationPersistenceState = NavigationPersistenceState()
         var settings: SettingsPersistenceState = SettingsPersistenceState()
         var apps: AppsSelectionState = AppsSelectionState()
+        var mirroringOptions: MirroringOptionsPersistenceState = MirroringOptionsPersistenceState()
     }
 
     private var state = State()

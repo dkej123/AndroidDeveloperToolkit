@@ -21,6 +21,19 @@ data class MirroringOptions(
             "videoBitRateMbps must be positive, was $videoBitRateMbps"
         }
     }
+
+    companion object {
+        /** Task 040's sane UI/persistence bounds: scrcpy itself only rejects non-positive values
+         * (enforced above), but a much larger typo'd value is still worth catching before it ever
+         * reaches a real `scrcpy` invocation or a persisted file. */
+        const val MIN_MAX_SIZE_PX: Int = 1
+        const val MAX_MAX_SIZE_PX: Int = 7680
+
+        const val MIN_VIDEO_BIT_RATE_MBPS: Int = 1
+        const val MAX_VIDEO_BIT_RATE_MBPS: Int = 999
+
+        val DEFAULT: MirroringOptions = MirroringOptions()
+    }
 }
 
 /**
