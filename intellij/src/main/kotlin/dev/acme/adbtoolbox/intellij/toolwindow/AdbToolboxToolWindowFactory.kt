@@ -45,6 +45,8 @@ class AdbToolboxToolWindowFactory : ToolWindowFactory {
             clearDataViewModel = composition.clearDataViewModel,
             uninstallViewModel = composition.uninstallViewModel,
             appsScope = composition.childScope(),
+            proxyController = composition.proxyController,
+            networkScope = composition.childScope(),
             fontScaleViewModel = composition.fontScaleViewModel,
             densityViewModel = composition.densityViewModel,
             quickTogglesViewModel = composition.quickTogglesViewModel,

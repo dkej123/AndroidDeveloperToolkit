@@ -17,6 +17,7 @@ import dev.acme.adbtoolbox.application.display.fontscale.FontScaleViewModel
 import dev.acme.adbtoolbox.application.feedback.FeedbackViewModel
 import dev.acme.adbtoolbox.application.mirroring.MirroringViewModel
 import dev.acme.adbtoolbox.application.nav.NavigationViewModel
+import dev.acme.adbtoolbox.application.network.ProxyController
 import dev.acme.adbtoolbox.application.recording.RecordingViewModel
 import dev.acme.adbtoolbox.application.shell.ShellViewModel
 import dev.acme.adbtoolbox.domain.devicecontext.OverrideSummaryContributor
@@ -33,6 +34,7 @@ import dev.acme.adbtoolbox.intellij.host.AdbToolboxHostPanel
 import dev.acme.adbtoolbox.intellij.mirroring.MirroringCoordinator
 import dev.acme.adbtoolbox.intellij.nav.NavigationRailPanel
 import dev.acme.adbtoolbox.intellij.nav.NavigationRoutingCoordinator
+import dev.acme.adbtoolbox.intellij.network.NetworkCoordinator
 import dev.acme.adbtoolbox.intellij.recording.RecordingCoordinator
 import java.awt.BorderLayout
 import kotlinx.coroutines.CoroutineScope
@@ -82,9 +84,13 @@ import kotlinx.coroutines.launch
  * on its own [recordingScope] child scope. It is constructed after [mirroringCoordinator] for the
  * same "mounts into an already-registered panel" reason.
  *
+ * [proxyController] drives task 032's Network view via [NetworkCoordinator], on its own
+ * [networkScope] child scope, registering its own [ViewId.Network] route into
+ * [AdbToolboxHostPanel.activeViewHost] the same way [appsCoordinator] registers [ViewId.Apps].
+ *
  * [fontScaleViewModel]/[densityViewModel]/[quickTogglesViewModel] drive task 029's Display view via
  * [DisplayCoordinator], on its own [displayScope] child scope, registering its own [ViewId.Display]
- * route the same way [appsCoordinator] registers [ViewId.Apps]; [deviceContextAggregator]
+ * route the same way [networkCoordinator] registers [ViewId.Network]; [deviceContextAggregator]
  * (task 014) is where it publishes its badge/override contributions.
  */
 class AdbToolboxToolWindowPanel(
@@ -112,6 +118,8 @@ class AdbToolboxToolWindowPanel(
     clearDataViewModel: ClearDataViewModel,
     uninstallViewModel: UninstallViewModel,
     private val appsScope: CoroutineScope,
+    proxyController: ProxyController,
+    private val networkScope: CoroutineScope,
     fontScaleViewModel: FontScaleViewModel,
     densityViewModel: DensityViewModel,
     quickTogglesViewModel: QuickTogglesViewModel,
@@ -188,6 +196,17 @@ class AdbToolboxToolWindowPanel(
         host.activeViewHost.registerFeatureView(ViewId.Apps.routeKey) { appsCoordinator.panel }
     }
 
+    private val networkCoordinator = NetworkCoordinator(
+        controller = proxyController,
+        aggregator = deviceContextAggregator,
+        scope = networkScope,
+        dispatchers = dispatchers,
+    )
+
+    init {
+        host.activeViewHost.registerFeatureView(ViewId.Network.routeKey) { networkCoordinator.panel }
+    }
+
     private val displayCoordinator = DisplayCoordinator(
         host = host,
         fontScaleViewModel = fontScaleViewModel,
@@ -229,6 +248,7 @@ class AdbToolboxToolWindowPanel(
         navigationCoordinator.dispose()
         feedbackCoordinator.dispose()
         displayCoordinator.dispose()
+        networkCoordinator.dispose()
         appsCoordinator.dispose()
         recordingCoordinator.dispose()
         mirroringCoordinator.dispose()

@@ -2,14 +2,15 @@
 
 package dev.acme.adbtoolbox.application.network
 
-import dev.acme.adbtoolbox.domain.adb.AdbTextResult
 import dev.acme.adbtoolbox.domain.adb.AdbOutcome
+import dev.acme.adbtoolbox.domain.adb.AdbTextResult
 import dev.acme.adbtoolbox.domain.adb.DeviceSerial
 import dev.acme.adbtoolbox.domain.adb.FakeAdbTransport
 import dev.acme.adbtoolbox.domain.device.Device
 import dev.acme.adbtoolbox.domain.device.DeviceConnectionState
 import dev.acme.adbtoolbox.domain.device.SelectedDeviceState
-import dev.acme.adbtoolbox.domain.devicecontext.OverrideSummary
+import dev.acme.adbtoolbox.domain.nav.NavigationBadge
+import dev.acme.adbtoolbox.domain.nav.ViewId
 import dev.acme.adbtoolbox.domain.network.FakeHostNetworkInfo
 import dev.acme.adbtoolbox.domain.network.FakeNetworkRecentsPersistence
 import io.kotest.matchers.shouldBe
@@ -27,8 +28,8 @@ private val serialB = DeviceSerial.of("BBBB222")
 private fun onlineState(serial: DeviceSerial) =
     SelectedDeviceState.Online(Device(serial = serial, state = DeviceConnectionState.Online))
 
-/** [ProxyOverrideSummaryContributor] publishes only the current, readback-derived active endpoint (task 014/030). */
-class ProxyOverrideSummaryContributorTest {
+/** [NetworkBadgeContributor] surfaces the Network rail badge only for the exact active serial (task 032/014). */
+class NetworkBadgeContributorTest {
 
     private fun harness(stdout: String): Pair<TestScope, ProxyController> {
         val scope = TestScope()
@@ -49,34 +50,35 @@ class ProxyOverrideSummaryContributorTest {
     }
 
     @Test
-    fun `an active proxy is reported as an override for the exact serial`() = runTest {
+    fun `an active proxy shows an attention badge on the exact serial`() = runTest {
         val (_, controller) = harness("10.0.4.117:8888")
-        val contributor = ProxyOverrideSummaryContributor(controller)
+        val contributor = NetworkBadgeContributor(controller)
 
-        contributor.overridesFor(serialA) shouldBe listOf(OverrideSummary("proxy", "Proxy: 10.0.4.117:8888"))
+        contributor.viewId shouldBe ViewId.Network
+        contributor.badgeFor(serialA) shouldBe NavigationBadge.Attention
     }
 
     @Test
-    fun `a disabled proxy reports no overrides`() = runTest {
+    fun `a disabled proxy shows no badge`() = runTest {
         val (_, controller) = harness(":0")
-        val contributor = ProxyOverrideSummaryContributor(controller)
+        val contributor = NetworkBadgeContributor(controller)
 
-        contributor.overridesFor(serialA) shouldBe emptyList()
+        contributor.badgeFor(serialA) shouldBe NavigationBadge.None
     }
 
     @Test
-    fun `an active proxy for a different serial reports no overrides, never mixing devices`() = runTest {
+    fun `an active proxy for a different serial shows no badge, never mixing devices`() = runTest {
         val (_, controller) = harness("10.0.4.117:8888")
-        val contributor = ProxyOverrideSummaryContributor(controller)
+        val contributor = NetworkBadgeContributor(controller)
 
-        contributor.overridesFor(serialB) shouldBe emptyList()
+        contributor.badgeFor(serialB) shouldBe NavigationBadge.None
     }
 
     @Test
-    fun `a null serial reports no overrides`() = runTest {
+    fun `a null serial shows no badge`() = runTest {
         val (_, controller) = harness("10.0.4.117:8888")
-        val contributor = ProxyOverrideSummaryContributor(controller)
+        val contributor = NetworkBadgeContributor(controller)
 
-        contributor.overridesFor(null) shouldBe emptyList()
+        contributor.badgeFor(null) shouldBe NavigationBadge.None
     }
 }

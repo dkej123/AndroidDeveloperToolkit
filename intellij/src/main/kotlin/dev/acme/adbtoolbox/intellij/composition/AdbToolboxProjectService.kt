@@ -20,6 +20,7 @@ import dev.acme.adbtoolbox.adapters.jvm.discovery.JvmHostPlatformProvider
 import dev.acme.adbtoolbox.adapters.jvm.discovery.JvmPathEnvironmentSource
 import dev.acme.adbtoolbox.adapters.jvm.process.JvmProcessExecutor
 import dev.acme.adbtoolbox.adapters.jvm.discovery.SettingsBackedConfiguredToolPathSource
+import dev.acme.adbtoolbox.adapters.jvm.network.JvmHostNetworkInfo
 import dev.acme.adbtoolbox.adapters.jvm.settings.JvmDirectoryProbe
 import dev.acme.adbtoolbox.application.apps.AppLifecycleUseCase
 import dev.acme.adbtoolbox.application.apps.AppLifecycleViewModel
@@ -51,6 +52,7 @@ import dev.acme.adbtoolbox.application.mirroring.MirroringOptionsViewModel
 import dev.acme.adbtoolbox.application.mirroring.MirroringSessionManager
 import dev.acme.adbtoolbox.application.mirroring.MirroringViewModel
 import dev.acme.adbtoolbox.application.nav.NavigationViewModel
+import dev.acme.adbtoolbox.application.network.ProxyController
 import dev.acme.adbtoolbox.application.recording.RecordingSessionManager
 import dev.acme.adbtoolbox.application.recording.RecordingViewModel
 import dev.acme.adbtoolbox.application.shell.ShellViewModel
@@ -76,6 +78,8 @@ import dev.acme.adbtoolbox.domain.dispatch.DispatcherProvider
 import dev.acme.adbtoolbox.domain.nav.NavigationBadges
 import dev.acme.adbtoolbox.domain.nav.NavigationPersistence
 import dev.acme.adbtoolbox.domain.nav.ViewId
+import dev.acme.adbtoolbox.domain.network.HostNetworkInfo
+import dev.acme.adbtoolbox.domain.network.NetworkRecentsPersistence
 import dev.acme.adbtoolbox.domain.packages.PackageRepository
 import dev.acme.adbtoolbox.domain.process.ProcessExecutor
 import dev.acme.adbtoolbox.domain.time.SystemMonotonicClock
@@ -93,6 +97,7 @@ import dev.acme.adbtoolbox.intellij.persistence.AppsSelectionPersistenceAdapter
 import dev.acme.adbtoolbox.intellij.persistence.DeviceSelectionPersistenceAdapter
 import dev.acme.adbtoolbox.intellij.persistence.MirroringOptionsPersistenceAdapter
 import dev.acme.adbtoolbox.intellij.persistence.NavigationPersistenceAdapter
+import dev.acme.adbtoolbox.intellij.persistence.NetworkPersistenceAdapter
 import dev.acme.adbtoolbox.intellij.persistence.SettingsPersistenceAdapter
 import dev.acme.adbtoolbox.intellij.terminal.TerminalLauncherAdapter
 import dev.acme.adbtoolbox.intellij.wifi.WifiPairingInputPresenter
@@ -536,6 +541,21 @@ class AdbToolboxProjectService(private val project: Project) : Disposable {
         dispatchers = dispatcherProvider,
         transport = adbTransport,
         selectedDeviceState = selectedDeviceViewModel.state,
+    )
+
+    /** Task 032's host-LAN-IPv4 discovery port ("Use my computer IP") and persisted MRU recents adapter. */
+    val hostNetworkInfo: HostNetworkInfo = JvmHostNetworkInfo()
+    val networkRecentsPersistence: NetworkRecentsPersistence =
+        NetworkPersistenceAdapter(project.service<AdbToolboxProjectState>())
+
+    /** Task 030/032's global-proxy presenter: reads/enables/resets and tracks live editing/recents, driven by [selectedDeviceViewModel]. */
+    val proxyController: ProxyController = ProxyController(
+        scope = childScope(),
+        dispatchers = dispatcherProvider,
+        transport = adbTransport,
+        selectedDeviceState = selectedDeviceViewModel.state,
+        hostNetworkInfo = hostNetworkInfo,
+        recentsPersistence = networkRecentsPersistence,
     )
 
     /**

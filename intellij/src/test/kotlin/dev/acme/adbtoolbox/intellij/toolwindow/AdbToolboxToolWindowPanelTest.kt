@@ -28,6 +28,7 @@ import dev.acme.adbtoolbox.application.feedback.FeedbackViewModel
 import dev.acme.adbtoolbox.application.mirroring.MirroringSessionManager
 import dev.acme.adbtoolbox.application.mirroring.MirroringViewModel
 import dev.acme.adbtoolbox.application.nav.NavigationViewModel
+import dev.acme.adbtoolbox.application.network.ProxyController
 import dev.acme.adbtoolbox.application.recording.RecordingSessionManager
 import dev.acme.adbtoolbox.application.recording.RecordingViewModel
 import dev.acme.adbtoolbox.application.shell.ShellViewModel
@@ -53,6 +54,8 @@ import dev.acme.adbtoolbox.domain.discovery.FakeToolLocator
 import dev.acme.adbtoolbox.domain.discovery.ToolId
 import dev.acme.adbtoolbox.domain.nav.FakeNavigationPersistence
 import dev.acme.adbtoolbox.domain.nav.ViewId
+import dev.acme.adbtoolbox.domain.network.FakeHostNetworkInfo
+import dev.acme.adbtoolbox.domain.network.FakeNetworkRecentsPersistence
 import dev.acme.adbtoolbox.domain.process.FakeProcessExecutor
 import dev.acme.adbtoolbox.domain.packages.FakePackageRepository
 import dev.acme.adbtoolbox.intellij.devicefacts.DeviceFactsPanel
@@ -93,6 +96,7 @@ class AdbToolboxToolWindowPanelTest : BasePlatformTestCase() {
         val mirroringScope = CoroutineScope(SupervisorJob() + dispatchers.default)
         val recordingScope = CoroutineScope(SupervisorJob() + dispatchers.default)
         val appsScope = CoroutineScope(SupervisorJob() + dispatchers.default)
+        val networkScope = CoroutineScope(SupervisorJob() + dispatchers.default)
         val displayScope = CoroutineScope(SupervisorJob() + dispatchers.default)
     }
 
@@ -244,6 +248,16 @@ class AdbToolboxToolWindowPanelTest : BasePlatformTestCase() {
         )
     }
 
+    private fun proxyController(scope: CoroutineScope, dispatchers: DispatcherProvider): ProxyController =
+        ProxyController(
+            scope = scope,
+            dispatchers = dispatchers,
+            transport = FakeAdbTransport(),
+            selectedDeviceState = MutableStateFlow<SelectedDeviceState>(SelectedDeviceState.None),
+            hostNetworkInfo = FakeHostNetworkInfo(),
+            recentsPersistence = FakeNetworkRecentsPersistence(),
+        )
+
     private data class DisplayModels(
         val fontScale: FontScaleViewModel,
         val density: DensityViewModel,
@@ -315,6 +329,8 @@ class AdbToolboxToolWindowPanelTest : BasePlatformTestCase() {
             clearDataViewModel = appsModels.clearData,
             uninstallViewModel = appsModels.uninstall,
             appsScope = harness.appsScope,
+            proxyController = proxyController(harness.networkScope, dispatchers),
+            networkScope = harness.networkScope,
             fontScaleViewModel = displayModels.fontScale,
             densityViewModel = displayModels.density,
             quickTogglesViewModel = displayModels.quickToggles,
@@ -344,6 +360,16 @@ class AdbToolboxToolWindowPanelTest : BasePlatformTestCase() {
         val panel = panel(dispatchers, harness)
 
         assertTrue(panel.host.activeViewHost.isRegistered(ViewId.Apps.routeKey))
+
+        panel.dispose()
+    }
+
+    fun `test the Network view is registered in the feature host`() {
+        val dispatchers = dispatchers()
+        val harness = Harness(dispatchers)
+        val panel = panel(dispatchers, harness)
+
+        assertTrue(panel.host.activeViewHost.isRegistered(ViewId.Network.routeKey))
 
         panel.dispose()
     }
@@ -408,6 +434,7 @@ class AdbToolboxToolWindowPanelTest : BasePlatformTestCase() {
         assertFalse(harness.mirroringScope.isActive)
         assertFalse(harness.recordingScope.isActive)
         assertFalse(harness.appsScope.isActive)
+        assertFalse(harness.networkScope.isActive)
         assertFalse(harness.displayScope.isActive)
     }
 

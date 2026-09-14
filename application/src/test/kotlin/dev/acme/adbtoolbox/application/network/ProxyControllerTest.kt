@@ -15,6 +15,10 @@ import dev.acme.adbtoolbox.domain.device.Device
 import dev.acme.adbtoolbox.domain.device.DeviceConnectionState
 import dev.acme.adbtoolbox.domain.device.SelectedDeviceState
 import dev.acme.adbtoolbox.domain.dispatch.DispatcherProvider
+import dev.acme.adbtoolbox.domain.network.FakeHostNetworkInfo
+import dev.acme.adbtoolbox.domain.network.FakeNetworkRecentsPersistence
+import dev.acme.adbtoolbox.domain.network.HostInterfaceEnumeration
+import dev.acme.adbtoolbox.domain.network.NetworkInterfaceCandidate
 import dev.acme.adbtoolbox.domain.network.ProxyEndpoint
 import dev.acme.adbtoolbox.domain.network.ProxyHost
 import dev.acme.adbtoolbox.domain.network.ProxyHostResult
@@ -65,6 +69,8 @@ class ProxyControllerTest {
 
     private fun harness(
         transport: AdbTransport,
+        hostNetworkInfo: FakeHostNetworkInfo = FakeHostNetworkInfo(),
+        recentsPersistence: FakeNetworkRecentsPersistence = FakeNetworkRecentsPersistence(),
     ): Triple<TestScope, MutableStateFlow<SelectedDeviceState>, ProxyController> {
         val scope = TestScope()
         val dispatcher = StandardTestDispatcher(scope.testScheduler)
@@ -74,6 +80,8 @@ class ProxyControllerTest {
             dispatchers = TestDispatcherProviderFixture(dispatcher),
             transport = transport,
             selectedDeviceState = selectedDeviceState,
+            hostNetworkInfo = hostNetworkInfo,
+            recentsPersistence = recentsPersistence,
         )
         return Triple(scope, selectedDeviceState, controller)
     }
@@ -88,6 +96,7 @@ class ProxyControllerTest {
 
         val state = controller.state.value
         state.serial shouldBe serialA
+        state.isDeviceEligible shouldBe true
         state.readState.shouldBeInstanceOf<ProxyReadState.Active>()
         val request = transport.textRequests.single() as AdbDeviceRequest
         request.serial shouldBe serialA
@@ -330,6 +339,7 @@ class ProxyControllerTest {
 
         selectedDeviceState.value = offlineState(serialA)
         scope.runCurrent()
+        controller.state.value.isDeviceEligible shouldBe false
         selectedDeviceState.value = onlineState(serialA)
         scope.runCurrent()
 
@@ -368,6 +378,243 @@ class ProxyControllerTest {
         scope.runCurrent()
 
         controller.state.value shouldBe lastState
+    }
+
+    @Test
+    fun `editing the host field live-validates without issuing any command`() = runTest {
+        val transport = FakeAdbTransport(textScript = { completedText(":0") })
+        val (scope, selectedDeviceState, controller) = harness(transport)
+        selectedDeviceState.value = onlineState(serialA)
+        scope.runCurrent()
+        val requestsBefore = transport.textRequests.size
+
+        controller.handle(ProxyIntent.EditHost("10.0.4 .117"))
+        scope.runCurrent()
+
+        controller.state.value.hostInput shouldBe "10.0.4 .117"
+        controller.state.value.hostError shouldBe "Host must not contain whitespace or control characters"
+        controller.state.value.canSubmit shouldBe false
+        transport.textRequests.size shouldBe requestsBefore
+    }
+
+    @Test
+    fun `editing the port field live-validates without issuing any command`() = runTest {
+        val transport = FakeAdbTransport(textScript = { completedText(":0") })
+        val (scope, selectedDeviceState, controller) = harness(transport)
+        selectedDeviceState.value = onlineState(serialA)
+        scope.runCurrent()
+
+        controller.handle(ProxyIntent.EditHost("10.0.4.117"))
+        controller.handle(ProxyIntent.EditPort("70000"))
+        scope.runCurrent()
+
+        controller.state.value.portError shouldBe "Port must be 1-65535"
+        controller.state.value.canSubmit shouldBe false
+    }
+
+    @Test
+    fun `a fully valid form can submit`() = runTest {
+        val transport = FakeAdbTransport(textScript = { completedText(":0") })
+        val (scope, selectedDeviceState, controller) = harness(transport)
+        selectedDeviceState.value = onlineState(serialA)
+        scope.runCurrent()
+
+        controller.handle(ProxyIntent.EditHost("10.0.4.117"))
+        controller.handle(ProxyIntent.EditPort("8888"))
+        scope.runCurrent()
+
+        controller.state.value.canSubmit shouldBe true
+    }
+
+    @Test
+    fun `selecting a recent fills the fields without enabling`() = runTest {
+        val transport = FakeAdbTransport(textScript = { completedText(":0") })
+        val recents = FakeNetworkRecentsPersistence(
+            initial = listOf(
+                ProxyEndpoint(
+                    (ProxyHost.parse("10.0.4.117") as ProxyHostResult.Valid).host,
+                    (ProxyPort.parse(8888) as ProxyPortResult.Valid).port,
+                ),
+            ),
+        )
+        val (scope, selectedDeviceState, controller) = harness(transport, recentsPersistence = recents)
+        selectedDeviceState.value = onlineState(serialA)
+        scope.runCurrent()
+        val requestsBefore = transport.textRequests.size
+
+        val endpoint = controller.state.value.recents.single()
+        controller.handle(ProxyIntent.SelectRecent(endpoint))
+        scope.runCurrent()
+
+        controller.state.value.hostInput shouldBe "10.0.4.117"
+        controller.state.value.portInput shouldBe "8888"
+        transport.textRequests.size shouldBe requestsBefore
+    }
+
+    @Test
+    fun `enabling successfully records the endpoint as the most recent, persisted entry`() = runTest {
+        val responses = mutableListOf("10.0.4.117:8888")
+        val transport = FakeAdbTransport(textScript = { completedText(responses.removeFirst()) })
+        val recents = FakeNetworkRecentsPersistence()
+        val (scope, selectedDeviceState, controller) = harness(transport, recentsPersistence = recents)
+        selectedDeviceState.value = onlineState(serialA)
+        scope.runCurrent()
+        responses += "ignored-put-response"
+        responses += "10.0.4.117:8888"
+
+        controller.handle(ProxyIntent.Enable(hostInput = "10.0.4.117", portInput = "8888"))
+        scope.runCurrent()
+
+        val expected = ProxyEndpoint(
+            (ProxyHost.parse("10.0.4.117") as ProxyHostResult.Valid).host,
+            (ProxyPort.parse(8888) as ProxyPortResult.Valid).port,
+        )
+        controller.state.value.recents shouldBe listOf(expected)
+        recents.writes.last() shouldBe listOf(expected)
+    }
+
+    @Test
+    fun `a recents persistence failure is surfaced without stopping later proxy work`() = runTest {
+        val responses = mutableListOf(":0", "ignored-put-response", "10.0.4.117:8888", "ignored-reset", ":0")
+        val transport = FakeAdbTransport(textScript = { completedText(responses.removeFirst()) })
+        val recents = FakeNetworkRecentsPersistence().apply {
+            writeFailure = IllegalStateException("disk full")
+        }
+        val (scope, selectedDeviceState, controller) = harness(transport, recentsPersistence = recents)
+        selectedDeviceState.value = onlineState(serialA)
+        scope.runCurrent()
+
+        controller.handle(ProxyIntent.Enable(hostInput = "10.0.4.117", portInput = "8888"))
+        scope.runCurrent()
+
+        controller.state.value.error shouldBe "Failed to save recent proxy endpoints: disk full"
+
+        controller.handle(ProxyIntent.Reset)
+        scope.runCurrent()
+
+        controller.state.value.readState shouldBe ProxyReadState.Disabled
+        controller.state.value.error shouldBe null
+        transport.textRequests.size shouldBe 5
+    }
+
+    @Test
+    fun `a device switch preserves recents and form text but resets per-serial truth`() = runTest {
+        val transport = FakeAdbTransport(textScript = { completedText(":0") })
+        val recents = FakeNetworkRecentsPersistence(
+            initial = listOf(
+                ProxyEndpoint(
+                    (ProxyHost.parse("10.0.4.117") as ProxyHostResult.Valid).host,
+                    (ProxyPort.parse(8888) as ProxyPortResult.Valid).port,
+                ),
+            ),
+        )
+        val (scope, selectedDeviceState, controller) = harness(transport, recentsPersistence = recents)
+        selectedDeviceState.value = onlineState(serialA)
+        scope.runCurrent()
+        controller.handle(ProxyIntent.EditHost("proxy.acme.dev"))
+        scope.runCurrent()
+
+        selectedDeviceState.value = onlineState(serialB)
+        scope.runCurrent()
+
+        controller.state.value.hostInput shouldBe "proxy.acme.dev"
+        controller.state.value.recents.size shouldBe 1
+        controller.state.value.serial shouldBe serialB
+        controller.state.value.readState shouldBe ProxyReadState.Disabled
+    }
+
+    @Test
+    fun `Use my computer IP fills the host field with the single resolved candidate`() = runTest {
+        val transport = FakeAdbTransport(textScript = { completedText(":0") })
+        val hostNetworkInfo = FakeHostNetworkInfo(
+            enumeration = HostInterfaceEnumeration.Success(
+                listOf(NetworkInterfaceCandidate("en0", "Wi-Fi", "10.0.4.117", isUp = true, isLoopback = false)),
+            ),
+        )
+        val (scope, selectedDeviceState, controller) = harness(transport, hostNetworkInfo = hostNetworkInfo)
+        selectedDeviceState.value = onlineState(serialA)
+        scope.runCurrent()
+
+        controller.handle(ProxyIntent.UseComputerIp)
+        scope.runCurrent()
+
+        controller.state.value.hostInput shouldBe "10.0.4.117"
+        controller.state.value.isResolvingIp shouldBe false
+        controller.state.value.isBusy shouldBe false
+        controller.state.value.error shouldBe null
+    }
+
+    @Test
+    fun `Use my computer IP surfaces ambiguity as an actionable error without filling the field`() = runTest {
+        val transport = FakeAdbTransport(textScript = { completedText(":0") })
+        val hostNetworkInfo = FakeHostNetworkInfo(
+            enumeration = HostInterfaceEnumeration.Success(
+                listOf(
+                    NetworkInterfaceCandidate("en0", "Wi-Fi", "10.0.4.117", isUp = true, isLoopback = false),
+                    NetworkInterfaceCandidate("en1", "Ethernet", "10.0.4.200", isUp = true, isLoopback = false),
+                ),
+            ),
+        )
+        val (scope, selectedDeviceState, controller) = harness(transport, hostNetworkInfo = hostNetworkInfo)
+        selectedDeviceState.value = onlineState(serialA)
+        scope.runCurrent()
+
+        controller.handle(ProxyIntent.UseComputerIp)
+        scope.runCurrent()
+
+        controller.state.value.hostInput shouldBe ""
+        controller.state.value.error shouldBe "Multiple network interfaces found — choose one manually"
+        controller.state.value.isBusy shouldBe false
+    }
+
+    @Test
+    fun `Use my computer IP surfaces discovery failure as an error`() = runTest {
+        val transport = FakeAdbTransport(textScript = { completedText(":0") })
+        val hostNetworkInfo = FakeHostNetworkInfo(enumeration = HostInterfaceEnumeration.Failed("permission denied"))
+        val (scope, selectedDeviceState, controller) = harness(transport, hostNetworkInfo = hostNetworkInfo)
+        selectedDeviceState.value = onlineState(serialA)
+        scope.runCurrent()
+
+        controller.handle(ProxyIntent.UseComputerIp)
+        scope.runCurrent()
+
+        controller.state.value.error shouldBe "permission denied"
+        controller.state.value.isResolvingIp shouldBe false
+        controller.state.value.isBusy shouldBe false
+    }
+
+    @Test
+    fun `a device switch queued before a resolve is drained suppresses the stale IP result`() = runTest {
+        // Mirrors "a device switch mid-apply suppresses the stale result for the old serial": the
+        // initial read on A is in flight (delayed), so the ResolveIp item enqueued behind it is
+        // still waiting in the channel when the device switch increments the generation — proving
+        // the resolution itself is never even attempted for the stale generation.
+        val transport = DelayedAdbTransport(
+            listOf(
+                DelayedResponse(delayMillis = 50, stdout = ":0"), // initial read on selecting A, in flight
+                DelayedResponse(delayMillis = 0, stdout = ":0"), // read triggered by selecting B
+            ),
+        )
+        val hostNetworkInfo = FakeHostNetworkInfo(
+            enumeration = HostInterfaceEnumeration.Success(
+                listOf(NetworkInterfaceCandidate("en0", "Wi-Fi", "10.0.4.117", isUp = true, isLoopback = false)),
+            ),
+        )
+        val (scope, selectedDeviceState, controller) = harness(transport, hostNetworkInfo = hostNetworkInfo)
+        selectedDeviceState.value = onlineState(serialA)
+        scope.runCurrent() // the initial read(A) starts and suspends on its delay
+
+        controller.handle(ProxyIntent.UseComputerIp) // queued behind the busy actor
+        selectedDeviceState.value = onlineState(serialB) // switches before ResolveIp is drained
+        scope.runCurrent()
+
+        scope.advanceTimeBy(50)
+        scope.runCurrent()
+
+        controller.state.value.hostInput shouldBe ""
+        controller.state.value.serial shouldBe serialB
+        controller.state.value.readState shouldBe ProxyReadState.Disabled
+        controller.state.value.isResolvingIp shouldBe false
     }
 }
 
