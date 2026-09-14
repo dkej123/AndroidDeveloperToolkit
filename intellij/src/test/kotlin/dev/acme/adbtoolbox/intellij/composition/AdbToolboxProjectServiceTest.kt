@@ -3,6 +3,7 @@ package dev.acme.adbtoolbox.intellij.composition
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.service
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
+import dev.acme.adbtoolbox.application.devicecontext.AggregatedNavigationBadges
 import dev.acme.adbtoolbox.application.feedback.FeedbackIntent
 import dev.acme.adbtoolbox.domain.feedback.FeedbackMessage
 import dev.acme.adbtoolbox.domain.feedback.FeedbackSeverity
@@ -29,6 +30,7 @@ class AdbToolboxProjectServiceTest : BasePlatformTestCase() {
         assertNotNull(service.navigationPersistence)
         assertNotNull(service.navigationViewModel)
         assertNotNull(service.navigationBadges)
+        assertTrue(service.navigationBadges is AggregatedNavigationBadges)
         assertNotNull(service.feedbackViewModel)
         assertNotNull(service.captureDestination)
         assertNotNull(service.revealInFileManager)

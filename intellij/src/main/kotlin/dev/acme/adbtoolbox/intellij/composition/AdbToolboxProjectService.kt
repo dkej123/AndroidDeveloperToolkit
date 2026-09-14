@@ -33,11 +33,18 @@ import dev.acme.adbtoolbox.application.capture.CaptureScreenshotUseCase
 import dev.acme.adbtoolbox.application.capture.CaptureViewModel
 import dev.acme.adbtoolbox.application.device.SelectedDeviceViewModel
 import dev.acme.adbtoolbox.application.devicebar.DeviceBarViewModel
+import dev.acme.adbtoolbox.application.devicecontext.DeviceContextAggregator
+import dev.acme.adbtoolbox.application.devicecontext.AggregatedNavigationBadges
 import dev.acme.adbtoolbox.application.deviceactions.DeviceActionsUseCase
 import dev.acme.adbtoolbox.application.deviceactions.DeviceActionsViewModel
 import dev.acme.adbtoolbox.application.deviceactions.OpenShellUseCase
 import dev.acme.adbtoolbox.application.devicefacts.DeviceFactsViewModel
 import dev.acme.adbtoolbox.application.devicefacts.LoadDeviceFactsUseCase
+import dev.acme.adbtoolbox.application.display.QuickTogglesViewModel
+import dev.acme.adbtoolbox.application.display.density.DensityOverrideTracker
+import dev.acme.adbtoolbox.application.display.density.DensityUseCase
+import dev.acme.adbtoolbox.application.display.density.DensityViewModel
+import dev.acme.adbtoolbox.application.display.fontscale.FontScaleViewModel
 import dev.acme.adbtoolbox.application.feedback.FeedbackViewModel
 import dev.acme.adbtoolbox.application.mirroring.MirroringOptionsUseCase
 import dev.acme.adbtoolbox.application.mirroring.MirroringOptionsViewModel
@@ -59,12 +66,13 @@ import dev.acme.adbtoolbox.domain.device.DeviceListRefresher
 import dev.acme.adbtoolbox.domain.device.DeviceRepository
 import dev.acme.adbtoolbox.domain.device.DeviceSelectionPersistence
 import dev.acme.adbtoolbox.domain.deviceactions.TerminalLauncher
+import dev.acme.adbtoolbox.domain.device.DeviceCommandContext
+import dev.acme.adbtoolbox.domain.device.toCommandContext
 import dev.acme.adbtoolbox.domain.mirroring.MirroringOptionsRepository
 import dev.acme.adbtoolbox.domain.devicefacts.ClipboardPort
 import dev.acme.adbtoolbox.domain.discovery.ToolLocator
 import dev.acme.adbtoolbox.domain.discovery.ToolId
 import dev.acme.adbtoolbox.domain.dispatch.DispatcherProvider
-import dev.acme.adbtoolbox.domain.nav.MutableNavigationBadges
 import dev.acme.adbtoolbox.domain.nav.NavigationBadges
 import dev.acme.adbtoolbox.domain.nav.NavigationPersistence
 import dev.acme.adbtoolbox.domain.nav.ViewId
@@ -95,9 +103,13 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.isActive
 
 private val ANDROID_PLUGIN_ID = PluginId.getId("org.jetbrains.android")
@@ -211,6 +223,15 @@ class AdbToolboxProjectService(private val project: Project) : Disposable {
         persistence = deviceSelectionPersistence,
     )
 
+    /**
+     * Task 014's shared device-context aggregator: combines whatever badge/override contributors
+     * features register into one snapshot for the selected serial.
+     */
+    val deviceContextAggregator: DeviceContextAggregator = DeviceContextAggregator(
+        scope = childScope(),
+        selectedDeviceState = selectedDeviceViewModel.state,
+    )
+
     /** Task 011's device bar and picker presenter — reads/writes selection via [selectedDeviceViewModel]. */
     val deviceBarViewModel: DeviceBarViewModel = DeviceBarViewModel(
         scope = childScope(),
@@ -237,7 +258,8 @@ class AdbToolboxProjectService(private val project: Project) : Disposable {
      * [MutableNavigationBadges.set] from its own file) reach the same map without either one
      * editing this composition root again.
      */
-    val navigationBadges: NavigationBadges = MutableNavigationBadges()
+    val navigationBadges: NavigationBadges =
+        AggregatedNavigationBadges(childScope(), deviceContextAggregator)
 
     /** The task 013 non-modal feedback/status/toast channel — one instance shared by every feature. */
     val feedbackViewModel: FeedbackViewModel = FeedbackViewModel(scope = childScope(), dispatchers = dispatcherProvider)
@@ -477,6 +499,43 @@ class AdbToolboxProjectService(private val project: Project) : Disposable {
         packageRepository = packageRepository,
         selectedPackageViewModel = selectedPackageViewModel,
         feedback = feedbackViewModel,
+    )
+
+    /**
+     * Task 029's shared [DeviceCommandContext] flow for Display's font-scale/density bindings: a
+     * single [selectedDeviceViewModel] mapping reused by both, following
+     * [dev.acme.adbtoolbox.application.display.fontscale.FontScaleViewModel]'s constructor shape.
+     */
+    private val displayCommandContext: StateFlow<DeviceCommandContext> = selectedDeviceViewModel.state
+        .map { it.toCommandContext() }
+        .stateIn(childScope(), SharingStarted.Eagerly, selectedDeviceViewModel.state.value.toCommandContext())
+
+    /** Task 026's font-scale binding, driven by [selectedDeviceViewModel] via [displayCommandContext]. */
+    val fontScaleViewModel: FontScaleViewModel = FontScaleViewModel(
+        scope = childScope(),
+        dispatchers = dispatcherProvider,
+        transport = adbTransport,
+        commandContext = displayCommandContext,
+    )
+
+    /** Task 027's per-serial density override tracker, shared by [densityViewModel] and [dev.acme.adbtoolbox.intellij.display.DisplayCoordinator]'s override-summary registration. */
+    val densityOverrideTracker: DensityOverrideTracker = DensityOverrideTracker()
+    private val densityUseCase = DensityUseCase(adbTransport, densityOverrideTracker)
+
+    /** Task 027/029's density binding, driven by [selectedDeviceViewModel] via [displayCommandContext]. */
+    val densityViewModel: DensityViewModel = DensityViewModel(
+        scope = childScope(),
+        dispatchers = dispatcherProvider,
+        useCase = densityUseCase,
+        commandContext = displayCommandContext,
+    )
+
+    /** Task 028's quick-toggles binding, driven directly by [selectedDeviceViewModel]. */
+    val quickTogglesViewModel: QuickTogglesViewModel = QuickTogglesViewModel(
+        scope = childScope(),
+        dispatchers = dispatcherProvider,
+        transport = adbTransport,
+        selectedDeviceState = selectedDeviceViewModel.state,
     )
 
     /**

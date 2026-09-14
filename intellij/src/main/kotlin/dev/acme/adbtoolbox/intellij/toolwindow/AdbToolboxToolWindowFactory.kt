@@ -45,6 +45,12 @@ class AdbToolboxToolWindowFactory : ToolWindowFactory {
             clearDataViewModel = composition.clearDataViewModel,
             uninstallViewModel = composition.uninstallViewModel,
             appsScope = composition.childScope(),
+            fontScaleViewModel = composition.fontScaleViewModel,
+            densityViewModel = composition.densityViewModel,
+            quickTogglesViewModel = composition.quickTogglesViewModel,
+            densityOverrideTracker = composition.densityOverrideTracker,
+            deviceContextAggregator = composition.deviceContextAggregator,
+            displayScope = composition.childScope(),
             openSettings = { AdbToolboxSettingsOpener.open(project) },
             openMirroringOptions = { MirroringOptionsDialog(project).show() },
         )

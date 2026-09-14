@@ -16,8 +16,14 @@ import dev.acme.adbtoolbox.application.devicebar.DeviceBarViewModel
 import dev.acme.adbtoolbox.application.deviceactions.DeviceActionsUseCase
 import dev.acme.adbtoolbox.application.deviceactions.DeviceActionsViewModel
 import dev.acme.adbtoolbox.application.deviceactions.OpenShellUseCase
+import dev.acme.adbtoolbox.application.devicecontext.DeviceContextAggregator
 import dev.acme.adbtoolbox.application.devicefacts.DeviceFactsViewModel
 import dev.acme.adbtoolbox.application.devicefacts.LoadDeviceFactsUseCase
+import dev.acme.adbtoolbox.application.display.QuickTogglesViewModel
+import dev.acme.adbtoolbox.application.display.density.DensityOverrideTracker
+import dev.acme.adbtoolbox.application.display.density.DensityUseCase
+import dev.acme.adbtoolbox.application.display.density.DensityViewModel
+import dev.acme.adbtoolbox.application.display.fontscale.FontScaleViewModel
 import dev.acme.adbtoolbox.application.feedback.FeedbackViewModel
 import dev.acme.adbtoolbox.application.mirroring.MirroringSessionManager
 import dev.acme.adbtoolbox.application.mirroring.MirroringViewModel
@@ -35,6 +41,7 @@ import dev.acme.adbtoolbox.domain.device.FakeDeviceListRefresher
 import dev.acme.adbtoolbox.domain.device.FakeDeviceRepository
 import dev.acme.adbtoolbox.domain.device.FakeDeviceSelectionPersistence
 import dev.acme.adbtoolbox.domain.device.SelectedDeviceState
+import dev.acme.adbtoolbox.domain.device.toCommandContext
 import dev.acme.adbtoolbox.domain.deviceactions.FakeTerminalLauncher
 import dev.acme.adbtoolbox.domain.apps.FakeClearDataConfirmationPort
 import dev.acme.adbtoolbox.domain.apps.FakeUninstallConfirmationPort
@@ -86,6 +93,7 @@ class AdbToolboxToolWindowPanelTest : BasePlatformTestCase() {
         val mirroringScope = CoroutineScope(SupervisorJob() + dispatchers.default)
         val recordingScope = CoroutineScope(SupervisorJob() + dispatchers.default)
         val appsScope = CoroutineScope(SupervisorJob() + dispatchers.default)
+        val displayScope = CoroutineScope(SupervisorJob() + dispatchers.default)
     }
 
     private data class AppsModels(
@@ -236,6 +244,37 @@ class AdbToolboxToolWindowPanelTest : BasePlatformTestCase() {
         )
     }
 
+    private data class DisplayModels(
+        val fontScale: FontScaleViewModel,
+        val density: DensityViewModel,
+        val quickToggles: QuickTogglesViewModel,
+        val densityOverrideTracker: DensityOverrideTracker,
+        val aggregator: DeviceContextAggregator,
+    )
+
+    private fun displayModels(scope: CoroutineScope, dispatchers: DispatcherProvider): DisplayModels {
+        val selectedDeviceState = MutableStateFlow<SelectedDeviceState>(SelectedDeviceState.None)
+        val commandContext = selectedDeviceState.value.toCommandContext()
+        val densityOverrideTracker = DensityOverrideTracker()
+        return DisplayModels(
+            fontScale = FontScaleViewModel(
+                scope = scope,
+                dispatchers = dispatchers,
+                transport = FakeAdbTransport(),
+                commandContext = MutableStateFlow(commandContext),
+            ),
+            density = DensityViewModel(
+                scope = scope,
+                dispatchers = dispatchers,
+                useCase = DensityUseCase(FakeAdbTransport(), densityOverrideTracker),
+                commandContext = MutableStateFlow(commandContext),
+            ),
+            quickToggles = QuickTogglesViewModel(scope, dispatchers, FakeAdbTransport(), selectedDeviceState),
+            densityOverrideTracker = densityOverrideTracker,
+            aggregator = DeviceContextAggregator(scope, selectedDeviceState),
+        )
+    }
+
     private fun panel(
         dispatchers: DispatcherProvider,
         harness: Harness,
@@ -244,6 +283,7 @@ class AdbToolboxToolWindowPanelTest : BasePlatformTestCase() {
         val feedbackViewModel = FeedbackViewModel(harness.feedbackScope, dispatchers)
         val navigationVm = navigationViewModel(harness.navigationScope, dispatchers)
         val appsModels = appsModels(harness.appsScope, dispatchers, feedbackViewModel)
+        val displayModels = displayModels(harness.displayScope, dispatchers)
         return AdbToolboxToolWindowPanel(
             viewModel = ShellViewModel(harness.scope, dispatchers),
             dispatchers = dispatchers,
@@ -275,6 +315,12 @@ class AdbToolboxToolWindowPanelTest : BasePlatformTestCase() {
             clearDataViewModel = appsModels.clearData,
             uninstallViewModel = appsModels.uninstall,
             appsScope = harness.appsScope,
+            fontScaleViewModel = displayModels.fontScale,
+            densityViewModel = displayModels.density,
+            quickTogglesViewModel = displayModels.quickToggles,
+            densityOverrideTracker = displayModels.densityOverrideTracker,
+            deviceContextAggregator = displayModels.aggregator,
+            displayScope = harness.displayScope,
             openSettings = openSettings,
         )
     }
@@ -298,6 +344,16 @@ class AdbToolboxToolWindowPanelTest : BasePlatformTestCase() {
         val panel = panel(dispatchers, harness)
 
         assertTrue(panel.host.activeViewHost.isRegistered(ViewId.Apps.routeKey))
+
+        panel.dispose()
+    }
+
+    fun `test the Display view is registered in the feature host`() {
+        val dispatchers = dispatchers()
+        val harness = Harness(dispatchers)
+        val panel = panel(dispatchers, harness)
+
+        assertTrue(panel.host.activeViewHost.isRegistered(ViewId.Display.routeKey))
 
         panel.dispose()
     }
@@ -352,6 +408,7 @@ class AdbToolboxToolWindowPanelTest : BasePlatformTestCase() {
         assertFalse(harness.mirroringScope.isActive)
         assertFalse(harness.recordingScope.isActive)
         assertFalse(harness.appsScope.isActive)
+        assertFalse(harness.displayScope.isActive)
     }
 
     fun `test the screenshot control is mounted into the Device view alongside device facts`() {

@@ -9,12 +9,17 @@ import dev.acme.adbtoolbox.application.apps.UninstallViewModel
 import dev.acme.adbtoolbox.application.capture.CaptureViewModel
 import dev.acme.adbtoolbox.application.devicebar.DeviceBarViewModel
 import dev.acme.adbtoolbox.application.deviceactions.DeviceActionsViewModel
+import dev.acme.adbtoolbox.application.devicecontext.DeviceContextAggregator
 import dev.acme.adbtoolbox.application.devicefacts.DeviceFactsViewModel
+import dev.acme.adbtoolbox.application.display.QuickTogglesViewModel
+import dev.acme.adbtoolbox.application.display.density.DensityViewModel
+import dev.acme.adbtoolbox.application.display.fontscale.FontScaleViewModel
 import dev.acme.adbtoolbox.application.feedback.FeedbackViewModel
 import dev.acme.adbtoolbox.application.mirroring.MirroringViewModel
 import dev.acme.adbtoolbox.application.nav.NavigationViewModel
 import dev.acme.adbtoolbox.application.recording.RecordingViewModel
 import dev.acme.adbtoolbox.application.shell.ShellViewModel
+import dev.acme.adbtoolbox.domain.devicecontext.OverrideSummaryContributor
 import dev.acme.adbtoolbox.domain.dispatch.DispatcherProvider
 import dev.acme.adbtoolbox.domain.nav.ViewId
 import dev.acme.adbtoolbox.intellij.capture.CaptureCoordinator
@@ -22,6 +27,7 @@ import dev.acme.adbtoolbox.intellij.apps.AppsCoordinator
 import dev.acme.adbtoolbox.intellij.deviceactions.DeviceActionsCoordinator
 import dev.acme.adbtoolbox.intellij.devicebar.DeviceContextBarCoordinator
 import dev.acme.adbtoolbox.intellij.devicefacts.DeviceFactsCoordinator
+import dev.acme.adbtoolbox.intellij.display.DisplayCoordinator
 import dev.acme.adbtoolbox.intellij.feedback.FeedbackOverlayCoordinator
 import dev.acme.adbtoolbox.intellij.host.AdbToolboxHostPanel
 import dev.acme.adbtoolbox.intellij.mirroring.MirroringCoordinator
@@ -75,6 +81,11 @@ import kotlinx.coroutines.launch
  * [recordingViewModel] drives task 020's Device-view recording toggle via [RecordingCoordinator],
  * on its own [recordingScope] child scope. It is constructed after [mirroringCoordinator] for the
  * same "mounts into an already-registered panel" reason.
+ *
+ * [fontScaleViewModel]/[densityViewModel]/[quickTogglesViewModel] drive task 029's Display view via
+ * [DisplayCoordinator], on its own [displayScope] child scope, registering its own [ViewId.Display]
+ * route the same way [appsCoordinator] registers [ViewId.Apps]; [deviceContextAggregator]
+ * (task 014) is where it publishes its badge/override contributions.
  */
 class AdbToolboxToolWindowPanel(
     viewModel: ShellViewModel,
@@ -101,6 +112,12 @@ class AdbToolboxToolWindowPanel(
     clearDataViewModel: ClearDataViewModel,
     uninstallViewModel: UninstallViewModel,
     private val appsScope: CoroutineScope,
+    fontScaleViewModel: FontScaleViewModel,
+    densityViewModel: DensityViewModel,
+    quickTogglesViewModel: QuickTogglesViewModel,
+    densityOverrideTracker: OverrideSummaryContributor,
+    deviceContextAggregator: DeviceContextAggregator,
+    private val displayScope: CoroutineScope,
     openSettings: () -> Unit = {},
     openMirroringOptions: () -> Unit = {},
 ) : JBPanel<AdbToolboxToolWindowPanel>(BorderLayout()), Disposable {
@@ -171,6 +188,18 @@ class AdbToolboxToolWindowPanel(
         host.activeViewHost.registerFeatureView(ViewId.Apps.routeKey) { appsCoordinator.panel }
     }
 
+    private val displayCoordinator = DisplayCoordinator(
+        host = host,
+        fontScaleViewModel = fontScaleViewModel,
+        densityViewModel = densityViewModel,
+        quickTogglesViewModel = quickTogglesViewModel,
+        densityOverrideTracker = densityOverrideTracker,
+        feedback = feedbackViewModel,
+        aggregator = deviceContextAggregator,
+        scope = displayScope,
+        dispatchers = dispatchers,
+    )
+
     private val navigationCoordinator = NavigationRoutingCoordinator(
         host = host,
         rail = navigationRail,
@@ -199,6 +228,7 @@ class AdbToolboxToolWindowPanel(
     override fun dispose() {
         navigationCoordinator.dispose()
         feedbackCoordinator.dispose()
+        displayCoordinator.dispose()
         appsCoordinator.dispose()
         recordingCoordinator.dispose()
         mirroringCoordinator.dispose()
