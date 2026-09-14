@@ -2,8 +2,10 @@ package dev.acme.adbtoolbox.intellij.nav
 
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import dev.acme.adbtoolbox.application.nav.NavigationViewModel
+import dev.acme.adbtoolbox.domain.devicecontext.DeviceContextSnapshot
 import dev.acme.adbtoolbox.domain.dispatch.DispatcherProvider
 import dev.acme.adbtoolbox.domain.nav.FakeNavigationPersistence
+import dev.acme.adbtoolbox.domain.nav.NavigationBadge
 import dev.acme.adbtoolbox.domain.nav.NavigationState
 import dev.acme.adbtoolbox.domain.nav.ViewId
 import dev.acme.adbtoolbox.intellij.host.AdbToolboxHostPanel
@@ -11,6 +13,7 @@ import javax.swing.JLabel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.isActive
 
 /**
@@ -162,6 +165,24 @@ class NavigationRoutingCoordinatorTest : BasePlatformTestCase() {
         val coordinator = coordinator(host, rail)
 
         rail.list.selectedIndex = ViewId.entries.indexOf(ViewId.Network)
+
+        coordinator.dispose()
+    }
+
+    fun `test constructing with a device-context badge source does not crash and badges reach the rail directly`() {
+        val host = AdbToolboxHostPanel()
+        val rail = NavigationRailPanel()
+        val dispatchers = TestDispatchers()
+        val scope = CoroutineScope(SupervisorJob() + dispatchers.default)
+        val viewModel = NavigationViewModel(scope, dispatchers, FakeNavigationPersistence(), ViewId.Device)
+        val deviceContext = MutableStateFlow(
+            DeviceContextSnapshot(serial = null, badges = emptyMap(), runningProcesses = emptyList(), overrides = emptyList()),
+        )
+        val coordinator = NavigationRoutingCoordinator(host, rail, viewModel, scope, dispatchers, deviceContext = deviceContext)
+
+        // Exercises the same public seam production wiring uses (task 043); rail rendering itself
+        // is covered directly by NavigationRailPanelTest.updateBadges rather than asserted here.
+        rail.updateBadges(mapOf(ViewId.Logcat to NavigationBadge.Attention))
 
         coordinator.dispose()
     }

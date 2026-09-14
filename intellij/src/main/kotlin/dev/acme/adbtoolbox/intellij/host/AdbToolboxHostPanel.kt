@@ -45,6 +45,7 @@ class AdbToolboxHostPanel : JLayeredPane(), Disposable {
 
     override fun doLayout() {
         contentPanel.setBounds(0, 0, width, height)
+        overlays.relayout()
     }
 
     /** The feature-view registration seam: see [FeatureViewHost.registerFeatureView]. */

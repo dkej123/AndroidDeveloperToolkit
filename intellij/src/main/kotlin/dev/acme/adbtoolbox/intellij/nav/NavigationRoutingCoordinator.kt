@@ -3,12 +3,14 @@ package dev.acme.adbtoolbox.intellij.nav
 import com.intellij.openapi.Disposable
 import dev.acme.adbtoolbox.application.nav.NavigationIntent
 import dev.acme.adbtoolbox.application.nav.NavigationViewModel
+import dev.acme.adbtoolbox.domain.devicecontext.DeviceContextSnapshot
 import dev.acme.adbtoolbox.domain.dispatch.DispatcherProvider
 import dev.acme.adbtoolbox.domain.nav.NavigationState
 import dev.acme.adbtoolbox.domain.nav.ViewId
 import dev.acme.adbtoolbox.intellij.host.AdbToolboxHostPanel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.withContext
@@ -42,6 +44,7 @@ class NavigationRoutingCoordinator(
     private val scope: CoroutineScope,
     private val dispatchers: DispatcherProvider,
     private val openSettings: () -> Unit = {},
+    deviceContext: Flow<DeviceContextSnapshot>? = null,
 ) : Disposable {
 
     init {
@@ -50,6 +53,13 @@ class NavigationRoutingCoordinator(
         viewModel.state
             .onEach { state -> withContext(dispatchers.main) { route(state) } }
             .launchIn(scope)
+
+        // Task 043: paints the rail's amber/red override/attention badges (`design/README.md`
+        // §2) from task 014's aggregated per-serial snapshot. Optional/nullable so every existing
+        // caller/test that has no [DeviceContextSnapshot] source keeps working unchanged.
+        deviceContext
+            ?.onEach { snapshot -> withContext(dispatchers.main) { rail.updateBadges(snapshot.badges) } }
+            ?.launchIn(scope)
     }
 
     /**

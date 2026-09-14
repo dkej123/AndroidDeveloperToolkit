@@ -4,11 +4,15 @@ import com.intellij.openapi.Disposable
 import dev.acme.adbtoolbox.application.feedback.FeedbackIntent
 import dev.acme.adbtoolbox.application.feedback.FeedbackViewModel
 import dev.acme.adbtoolbox.application.feedback.FeedbackViewState
+import dev.acme.adbtoolbox.domain.devicecontext.DeviceContextSnapshot
 import dev.acme.adbtoolbox.domain.dispatch.DispatcherProvider
 import dev.acme.adbtoolbox.intellij.host.AdbToolboxHostPanel
+import dev.acme.adbtoolbox.intellij.ui.common.AdbToolboxTheme
 import java.awt.BorderLayout
+import java.awt.Rectangle
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.withContext
@@ -32,9 +36,11 @@ class FeedbackOverlayCoordinator(
     private val viewModel: FeedbackViewModel,
     private val scope: CoroutineScope,
     private val dispatchers: DispatcherProvider,
+    onResetOverrides: () -> Unit = {},
+    deviceContext: Flow<DeviceContextSnapshot>? = null,
 ) : Disposable {
 
-    val statusPanel = FeedbackStatusPanel()
+    val statusPanel = FeedbackStatusPanel(onResetOverrides = onResetOverrides)
     private val toastStackPanel = ToastStackPanel(
         onAction = { id -> viewModel.handle(FeedbackIntent.InvokeAction(id)) },
         onDismiss = { id -> viewModel.handle(FeedbackIntent.Dismiss(id)) },
@@ -49,12 +55,33 @@ class FeedbackOverlayCoordinator(
         viewModel.state
             .onEach { state -> withContext(dispatchers.main) { render(state) } }
             .launchIn(scope)
+
+        // Task 043: populates the status bar's "N overrides · reset all" chip (`design/README.md`
+        // §8) from task 014's aggregated per-serial snapshot. Optional/nullable so every existing
+        // caller/test that has no [DeviceContextSnapshot] source keeps working unchanged.
+        deviceContext
+            ?.onEach { snapshot -> withContext(dispatchers.main) { statusPanel.updateOverrideCount(snapshot.overrides.size) } }
+            ?.launchIn(scope)
     }
 
     /** Production code always reaches this already marshaled onto [dispatchers]' `main` context. */
     internal fun render(state: FeedbackViewState) {
         statusPanel.update(state.status)
         toastStackPanel.update(state.toasts)
+        overlays.show(toastStackPanel, ::toastBounds)
+    }
+
+    /**
+     * `design/README.md`'s Global layout: "Toast is anchored bottom-left, above the status bar,
+     * 8px inset". Height follows the stack's own preferred (toast-count-based) height.
+     */
+    private fun toastBounds(width: Int, height: Int): Rectangle {
+        val inset = 8
+        val insetWidth = (width - inset * 2).coerceAtLeast(0)
+        val preferredHeight = toastStackPanel.preferredSize.height
+        val bottom = height - AdbToolboxTheme.Sizes.statusBar - inset
+        val top = (bottom - preferredHeight).coerceAtLeast(0)
+        return Rectangle(inset, top, insetWidth, preferredHeight)
     }
 
     override fun dispose() {

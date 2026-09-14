@@ -1,10 +1,13 @@
 package dev.acme.adbtoolbox.intellij.nav
 
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
+import dev.acme.adbtoolbox.domain.nav.NavigationBadge
 import dev.acme.adbtoolbox.domain.nav.ViewId
 import java.awt.event.ActionEvent
 import java.awt.event.KeyEvent
+import java.awt.event.MouseEvent
 import javax.swing.JComponent
+import javax.swing.JLabel
 import javax.swing.KeyStroke
 
 /**
@@ -79,5 +82,57 @@ class NavigationRailPanelTest : BasePlatformTestCase() {
         action.actionPerformed(ActionEvent(panel.list, ActionEvent.ACTION_PERFORMED, null))
 
         assertEquals(ViewId.entries[1], selected)
+    }
+
+    fun `test the active destination's cell renders with an accent background`() {
+        val panel = NavigationRailPanel()
+
+        // The cell renderer is one shared, reused Swing component (the standard ListCellRenderer
+        // pattern) — each result must be read before the next call re-styles the same instance.
+        val activeBackground = (
+            panel.list.cellRenderer.getListCellRendererComponent(panel.list, ViewId.Display, 2, true, false) as JLabel
+            ).background
+        val inactiveBackground = (
+            panel.list.cellRenderer.getListCellRendererComponent(panel.list, ViewId.Network, 3, false, false) as JLabel
+            ).background
+
+        assertEquals(dev.acme.adbtoolbox.intellij.ui.common.AdbToolboxTheme.Colors.accentBg, activeBackground)
+        assertEquals(dev.acme.adbtoolbox.intellij.ui.common.AdbToolboxTheme.Colors.panel, inactiveBackground)
+    }
+
+    fun `test Settings uses the platform gear icon instead of a supplied rail glyph`() {
+        val panel = NavigationRailPanel()
+
+        val settingsCell = panel.list.cellRenderer.getListCellRendererComponent(
+            panel.list, ViewId.Settings, ViewId.entries.indexOf(ViewId.Settings), false, false,
+        ) as JLabel
+
+        assertEquals(com.intellij.icons.AllIcons.General.Settings, settingsCell.icon)
+    }
+
+    fun `test updateBadges does not throw and is readable by the cell renderer`() {
+        val panel = NavigationRailPanel()
+
+        panel.updateBadges(mapOf(ViewId.Logcat to NavigationBadge.Attention, ViewId.Display to NavigationBadge.Count(1)))
+
+        // No crash on repaint with badges set, and re-rendering the cell for a badged destination succeeds.
+        val cell = panel.list.cellRenderer.getListCellRendererComponent(
+            panel.list, ViewId.Logcat, ViewId.entries.indexOf(ViewId.Logcat), false, false,
+        )
+        assertNotNull(cell)
+    }
+
+    fun `test each destination exposes a tooltip via mouse position`() {
+        val panel = NavigationRailPanel()
+        panel.size = java.awt.Dimension(34, 200)
+        panel.list.setBounds(0, 0, 34, 200)
+        panel.list.doLayout()
+
+        val bounds = panel.list.getCellBounds(ViewId.entries.indexOf(ViewId.Device), ViewId.entries.indexOf(ViewId.Device))
+        val tooltip = panel.list.getToolTipText(
+            MouseEvent(panel.list, MouseEvent.MOUSE_MOVED, System.currentTimeMillis(), 0, bounds.x + 1, bounds.y + 1, 0, false),
+        )
+
+        assertEquals("Device — mirroring, capture, facts", tooltip)
     }
 }
