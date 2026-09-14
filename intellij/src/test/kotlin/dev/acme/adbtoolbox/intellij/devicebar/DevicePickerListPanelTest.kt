@@ -117,8 +117,7 @@ class DevicePickerListPanelTest : BasePlatformTestCase() {
         var requested = false
         val p = panel(onPairOverWifi = { requested = true })
 
-        val button = p.components.filterIsInstance<javax.swing.JButton>().first()
-        button.doClick()
+        p.pairOverWifiButtonForTest.doClick()
 
         assertTrue(requested)
     }

@@ -12,6 +12,12 @@ class ToastStackPanelTest : BasePlatformTestCase() {
     private fun message(id: String, action: FeedbackAction? = null) =
         FeedbackMessage(id = id, text = "text-$id", severity = FeedbackSeverity.Info, action = action)
 
+    private fun buttonsOf(container: java.awt.Container): List<JButton> =
+        container.components.flatMap { child ->
+            val nested = if (child is java.awt.Container) buttonsOf(child) else emptyList()
+            (if (child is JButton) listOf(child) else emptyList()) + nested
+        }
+
     fun `test an empty toast list renders no rows`() {
         val panel = ToastStackPanel(onAction = {}, onDismiss = {})
 
@@ -43,7 +49,7 @@ class ToastStackPanelTest : BasePlatformTestCase() {
         panel.update(listOf(message("a")))
 
         val row = panel.getComponent(0) as javax.swing.JComponent
-        val dismissButton = row.components.filterIsInstance<JButton>().first { it.text == "Dismiss" }
+        val dismissButton = buttonsOf(row).first { it.text == "Dismiss" }
         dismissButton.doClick()
 
         assertEquals("a", dismissedId)
@@ -54,7 +60,7 @@ class ToastStackPanelTest : BasePlatformTestCase() {
         panel.update(listOf(message("a")))
 
         val row = panel.getComponent(0) as javax.swing.JComponent
-        val buttons = row.components.filterIsInstance<JButton>()
+        val buttons = buttonsOf(row)
 
         assertEquals(listOf("Dismiss"), buttons.map { it.text })
     }
@@ -65,7 +71,7 @@ class ToastStackPanelTest : BasePlatformTestCase() {
         panel.update(listOf(message("a", action = FeedbackAction("Retry") {})))
 
         val row = panel.getComponent(0) as javax.swing.JComponent
-        val actionButton = row.components.filterIsInstance<JButton>().first { it.text == "Retry" }
+        val actionButton = buttonsOf(row).first { it.text == "Retry" }
         actionButton.doClick()
 
         assertEquals("a", actedId)

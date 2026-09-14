@@ -7,6 +7,7 @@ import dev.acme.adbtoolbox.application.devicebar.DeviceBarViewState
 import dev.acme.adbtoolbox.domain.dispatch.DispatcherProvider
 import dev.acme.adbtoolbox.intellij.host.AdbToolboxHostPanel
 import java.awt.BorderLayout
+import java.awt.Rectangle
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.launchIn
@@ -62,7 +63,24 @@ class DeviceContextBarCoordinator(
     internal fun render(state: DeviceBarViewState) {
         barPanel.update(state.bar)
         pickerPanel.update(state.picker)
-        if (state.picker.isOpen) overlays.show(pickerPanel) else overlays.dismiss(pickerPanel)
+        if (state.picker.isOpen) {
+            overlays.show(pickerPanel, ::pickerBounds)
+        } else {
+            overlays.dismiss(pickerPanel)
+        }
+    }
+
+    /**
+     * `design/README.md` §1's device picker popup placement: "absolutely positioned
+     * `top: 62, left: 8, right: 8`", height driven by the popup's own preferred (row-count-based)
+     * height rather than a fixed value the design does not specify.
+     */
+    private fun pickerBounds(width: Int, height: Int): Rectangle {
+        val insetWidth = (width - 16).coerceAtLeast(0)
+        val top = 62
+        val availableHeight = (height - top).coerceAtLeast(0)
+        val preferredHeight = pickerPanel.preferredSize.height.coerceAtMost(availableHeight)
+        return Rectangle(8, top, insetWidth, preferredHeight)
     }
 
     override fun dispose() {

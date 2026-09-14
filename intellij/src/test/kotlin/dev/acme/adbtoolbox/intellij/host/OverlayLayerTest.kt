@@ -56,4 +56,41 @@ class OverlayLayerTest : BasePlatformTestCase() {
 
         assertEquals(1, layer.overlayCount)
     }
+
+    fun `test an overlay with layoutBounds is positioned against the target's current size`() {
+        val target = JLayeredPane()
+        target.setBounds(0, 0, 400, 300)
+        val layer = OverlayLayer(target)
+        val overlay = JLabel("picker")
+
+        layer.show(overlay) { w, h -> java.awt.Rectangle(8, 62, w - 16, h - 62) }
+
+        assertEquals(java.awt.Rectangle(8, 62, 384, 238), overlay.bounds)
+    }
+
+    fun `test relayout reapplies layoutBounds after the target is resized`() {
+        val target = JLayeredPane()
+        target.setBounds(0, 0, 400, 300)
+        val layer = OverlayLayer(target)
+        val overlay = JLabel("toast")
+        layer.show(overlay) { w, h -> java.awt.Rectangle(8, h - 30, w - 16, 22) }
+
+        target.setBounds(0, 0, 200, 500)
+        layer.relayout()
+
+        assertEquals(java.awt.Rectangle(8, 470, 184, 22), overlay.bounds)
+    }
+
+    fun `test showing again with a new layoutBounds updates the bounds without duplicating`() {
+        val target = JLayeredPane()
+        target.setBounds(0, 0, 400, 300)
+        val layer = OverlayLayer(target)
+        val overlay = JLabel("picker")
+        layer.show(overlay) { _, _ -> java.awt.Rectangle(0, 0, 10, 10) }
+
+        layer.show(overlay) { _, _ -> java.awt.Rectangle(5, 5, 20, 20) }
+
+        assertEquals(java.awt.Rectangle(5, 5, 20, 20), overlay.bounds)
+        assertEquals(1, layer.overlayCount)
+    }
 }

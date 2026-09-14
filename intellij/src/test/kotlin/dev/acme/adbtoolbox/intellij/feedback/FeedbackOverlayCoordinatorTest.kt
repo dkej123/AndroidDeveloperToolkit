@@ -26,6 +26,12 @@ import kotlinx.coroutines.isActive
  */
 class FeedbackOverlayCoordinatorTest : BasePlatformTestCase() {
 
+    private fun labelsOf(container: java.awt.Container): List<javax.swing.JLabel> =
+        container.components.flatMap { child ->
+            val nested = if (child is java.awt.Container) labelsOf(child) else emptyList()
+            (if (child is javax.swing.JLabel) listOf(child) else emptyList()) + nested
+        }
+
     private class TestDispatchers : DispatcherProvider {
         override val default = Dispatchers.Default
         override val io = Dispatchers.IO
@@ -68,7 +74,7 @@ class FeedbackOverlayCoordinatorTest : BasePlatformTestCase() {
             ),
         )
 
-        val labels = coordinator.statusPanel.components.filterIsInstance<javax.swing.JLabel>()
+        val labels = labelsOf(coordinator.statusPanel)
         assertTrue(labels.any { it.text == "Refreshed" })
 
         coordinator.dispose()
@@ -80,7 +86,7 @@ class FeedbackOverlayCoordinatorTest : BasePlatformTestCase() {
 
         coordinator.render(FeedbackViewState(status = StatusState(process = ProcessIndicator.InProgress("scrcpy"))))
 
-        val labels = coordinator.statusPanel.components.filterIsInstance<javax.swing.JLabel>()
+        val labels = labelsOf(coordinator.statusPanel)
         assertTrue(labels.any { it.text == "scrcpy" })
 
         coordinator.dispose()

@@ -226,6 +226,7 @@ class AdbToolboxToolWindowPanel(
         scope = navigationScope,
         dispatchers = dispatchers,
         openSettings = openSettings,
+        deviceContext = deviceContextAggregator.state,
     )
 
     private val feedbackCoordinator = FeedbackOverlayCoordinator(
@@ -233,6 +234,7 @@ class AdbToolboxToolWindowPanel(
         viewModel = feedbackViewModel,
         scope = feedbackScope,
         dispatchers = dispatchers,
+        deviceContext = deviceContextAggregator.state,
     )
 
     init {

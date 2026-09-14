@@ -3,14 +3,20 @@ package dev.acme.adbtoolbox.intellij.devicebar
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import dev.acme.adbtoolbox.application.devicebar.DeviceBarPresentation
 import dev.acme.adbtoolbox.domain.adb.DeviceSerial
-import dev.acme.adbtoolbox.domain.device.Device
 import java.awt.event.MouseEvent
-import javax.swing.JButton
 
 private val serial = DeviceSerial.of("R58N90ABCDE")
-private fun device(model: String? = "Pixel_5") = Device(serial = serial, state = dev.acme.adbtoolbox.domain.device.DeviceConnectionState.Online, model = model)
+private fun device(model: String? = "Pixel_5") = dev.acme.adbtoolbox.domain.device.Device(
+    serial = serial,
+    state = dev.acme.adbtoolbox.domain.device.DeviceConnectionState.Online,
+    model = model,
+)
 
-/** [DeviceContextBarPanel] renders task 011's [DeviceBarPresentation]. Kept as a [BasePlatformTestCase] like every other test in this module. */
+/**
+ * [DeviceContextBarPanel] renders task 011's [DeviceBarPresentation] with task 043's supplied
+ * visual treatment (`design/README.md` §1). Kept as a [BasePlatformTestCase] like every other test
+ * in this module.
+ */
 class DeviceContextBarPanelTest : BasePlatformTestCase() {
 
     fun `test loading state renders a querying message`() {
@@ -29,22 +35,46 @@ class DeviceContextBarPanelTest : BasePlatformTestCase() {
         assertTrue(panel.selectorText.contains("No device", ignoreCase = true))
     }
 
-    fun `test online state renders the device identity and online count`() {
+    fun `test online state renders the device identity and a separate online count`() {
         val panel = DeviceContextBarPanel(onToggle = {}, onRefresh = {})
 
         panel.update(DeviceBarPresentation.Online(device(), onlineCount = 3))
 
         assertTrue(panel.selectorText.contains("Pixel_5"))
         assertTrue(panel.selectorText.contains(serial.toString()))
-        assertTrue(panel.selectorText.contains("3"))
+        assertEquals("3 online", panel.onlineCountText)
     }
 
-    fun `test unauthorized state mentions unauthorized`() {
+    fun `test online state over USB renders a USB connection chip`() {
+        val panel = DeviceContextBarPanel(onToggle = {}, onRefresh = {})
+
+        panel.update(DeviceBarPresentation.Online(device(), onlineCount = 1))
+
+        assertTrue(panel.connectionChipVisible)
+        assertEquals("USB", panel.connectionChipText)
+    }
+
+    fun `test online state over Wi-Fi renders a Wi-Fi connection chip`() {
+        val panel = DeviceContextBarPanel(onToggle = {}, onRefresh = {})
+        val wifiSerial = DeviceSerial.of("192.168.1.42:5555")
+        val wifiDevice = dev.acme.adbtoolbox.domain.device.Device(
+            serial = wifiSerial,
+            state = dev.acme.adbtoolbox.domain.device.DeviceConnectionState.Online,
+            model = "Pixel_5",
+        )
+
+        panel.update(DeviceBarPresentation.Online(wifiDevice, onlineCount = 1))
+
+        assertEquals("Wi-Fi", panel.connectionChipText)
+    }
+
+    fun `test unauthorized state mentions unauthorized and shows the retry link and banner`() {
         val panel = DeviceContextBarPanel(onToggle = {}, onRefresh = {})
 
         panel.update(DeviceBarPresentation.Unauthorized(device()))
 
         assertTrue(panel.selectorText.contains("unauthorized", ignoreCase = true))
+        assertTrue(panel.retryComponentForTest.isVisible)
     }
 
     fun `test offline state mentions offline`() {
@@ -63,6 +93,15 @@ class DeviceContextBarPanelTest : BasePlatformTestCase() {
         assertEquals("Device disconnected", panel.selectorText)
     }
 
+    fun `test a non-unauthorized state hides the retry link and banner`() {
+        val panel = DeviceContextBarPanel(onToggle = {}, onRefresh = {})
+        panel.update(DeviceBarPresentation.Unauthorized(device()))
+
+        panel.update(DeviceBarPresentation.Online(device(), onlineCount = 1))
+
+        assertFalse(panel.retryComponentForTest.isVisible)
+    }
+
     fun `test clicking the selector invokes onToggle`() {
         var toggled = false
         val panel = DeviceContextBarPanel(onToggle = { toggled = true }, onRefresh = {})
@@ -76,8 +115,21 @@ class DeviceContextBarPanelTest : BasePlatformTestCase() {
         var refreshed = false
         val panel = DeviceContextBarPanel(onToggle = {}, onRefresh = { refreshed = true })
 
-        val refreshButton = panel.components.filterIsInstance<JButton>().first()
-        refreshButton.doClick()
+        panel.refreshButtonForTest.doClick()
+
+        assertTrue(refreshed)
+    }
+
+    fun `test clicking the retry link invokes onRefresh`() {
+        var refreshed = false
+        val panel = DeviceContextBarPanel(onToggle = {}, onRefresh = { refreshed = true })
+        panel.update(DeviceBarPresentation.Unauthorized(device()))
+
+        for (listener in panel.retryComponentForTest.mouseListeners) {
+            listener.mouseClicked(
+                MouseEvent(panel.retryComponentForTest, MouseEvent.MOUSE_CLICKED, System.currentTimeMillis(), 0, 0, 0, 1, false),
+            )
+        }
 
         assertTrue(refreshed)
     }
