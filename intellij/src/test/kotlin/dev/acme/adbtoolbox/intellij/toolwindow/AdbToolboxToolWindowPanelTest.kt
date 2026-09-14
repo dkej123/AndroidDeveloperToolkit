@@ -98,6 +98,7 @@ class AdbToolboxToolWindowPanelTest : BasePlatformTestCase() {
         val appsScope = CoroutineScope(SupervisorJob() + dispatchers.default)
         val networkScope = CoroutineScope(SupervisorJob() + dispatchers.default)
         val displayScope = CoroutineScope(SupervisorJob() + dispatchers.default)
+        val logcatScope = CoroutineScope(SupervisorJob() + dispatchers.default)
     }
 
     private data class AppsModels(
@@ -258,6 +259,28 @@ class AdbToolboxToolWindowPanelTest : BasePlatformTestCase() {
             recentsPersistence = FakeNetworkRecentsPersistence(),
         )
 
+    private fun logcatControlsController(
+        scope: CoroutineScope,
+        dispatchers: DispatcherProvider,
+    ): dev.acme.adbtoolbox.application.logcat.LogcatControlsController {
+        val transport = FakeAdbTransport()
+        val selectedDeviceState = MutableStateFlow<SelectedDeviceState>(SelectedDeviceState.None)
+        val selectedPackageState = MutableStateFlow<dev.acme.adbtoolbox.domain.apps.SelectedPackageState>(
+            dev.acme.adbtoolbox.domain.apps.SelectedPackageState.None,
+        )
+        val sessionManager = dev.acme.adbtoolbox.application.logcat.LogcatSessionManager(
+            scope, dispatchers, selectedDeviceState, transport,
+        )
+        val pidTracker = dev.acme.adbtoolbox.application.logcat.LogcatPackagePidTracker(
+            scope, dispatchers, selectedPackageState,
+            dev.acme.adbtoolbox.application.logcat.LogcatPidResolver(transport),
+        )
+        return dev.acme.adbtoolbox.application.logcat.LogcatControlsController(
+            scope, dispatchers, selectedDeviceState, selectedPackageState, sessionManager, pidTracker,
+            dev.acme.adbtoolbox.domain.logcat.FakeLogcatControlsPersistence(),
+        )
+    }
+
     private data class DisplayModels(
         val fontScale: FontScaleViewModel,
         val density: DensityViewModel,
@@ -331,6 +354,8 @@ class AdbToolboxToolWindowPanelTest : BasePlatformTestCase() {
             appsScope = harness.appsScope,
             proxyController = proxyController(harness.networkScope, dispatchers),
             networkScope = harness.networkScope,
+            logcatControlsController = logcatControlsController(harness.logcatScope, dispatchers),
+            logcatScope = harness.logcatScope,
             fontScaleViewModel = displayModels.fontScale,
             densityViewModel = displayModels.density,
             quickTogglesViewModel = displayModels.quickToggles,

@@ -15,6 +15,7 @@ import dev.acme.adbtoolbox.application.display.QuickTogglesViewModel
 import dev.acme.adbtoolbox.application.display.density.DensityViewModel
 import dev.acme.adbtoolbox.application.display.fontscale.FontScaleViewModel
 import dev.acme.adbtoolbox.application.feedback.FeedbackViewModel
+import dev.acme.adbtoolbox.application.logcat.LogcatControlsController
 import dev.acme.adbtoolbox.application.mirroring.MirroringViewModel
 import dev.acme.adbtoolbox.application.nav.NavigationViewModel
 import dev.acme.adbtoolbox.application.network.ProxyController
@@ -31,6 +32,7 @@ import dev.acme.adbtoolbox.intellij.devicefacts.DeviceFactsCoordinator
 import dev.acme.adbtoolbox.intellij.display.DisplayCoordinator
 import dev.acme.adbtoolbox.intellij.feedback.FeedbackOverlayCoordinator
 import dev.acme.adbtoolbox.intellij.host.AdbToolboxHostPanel
+import dev.acme.adbtoolbox.intellij.logcat.LogcatCoordinator
 import dev.acme.adbtoolbox.intellij.mirroring.MirroringCoordinator
 import dev.acme.adbtoolbox.intellij.nav.NavigationRailPanel
 import dev.acme.adbtoolbox.intellij.nav.NavigationRoutingCoordinator
@@ -92,6 +94,11 @@ import kotlinx.coroutines.launch
  * [DisplayCoordinator], on its own [displayScope] child scope, registering its own [ViewId.Display]
  * route the same way [networkCoordinator] registers [ViewId.Network]; [deviceContextAggregator]
  * (task 014) is where it publishes its badge/override contributions.
+ *
+ * [logcatControlsController] drives task 037's Logcat view via [LogcatCoordinator], on its own
+ * [logcatScope] child scope, registering its own [ViewId.Logcat] route the same way
+ * [networkCoordinator] registers [ViewId.Network]; it publishes its own error-badge contribution
+ * into [deviceContextAggregator] the same way [displayCoordinator] does.
  */
 class AdbToolboxToolWindowPanel(
     viewModel: ShellViewModel,
@@ -120,6 +127,8 @@ class AdbToolboxToolWindowPanel(
     private val appsScope: CoroutineScope,
     proxyController: ProxyController,
     private val networkScope: CoroutineScope,
+    logcatControlsController: LogcatControlsController,
+    private val logcatScope: CoroutineScope,
     fontScaleViewModel: FontScaleViewModel,
     densityViewModel: DensityViewModel,
     quickTogglesViewModel: QuickTogglesViewModel,
@@ -207,6 +216,17 @@ class AdbToolboxToolWindowPanel(
         host.activeViewHost.registerFeatureView(ViewId.Network.routeKey) { networkCoordinator.panel }
     }
 
+    private val logcatCoordinator = LogcatCoordinator(
+        controller = logcatControlsController,
+        aggregator = deviceContextAggregator,
+        scope = logcatScope,
+        dispatchers = dispatchers,
+    )
+
+    init {
+        host.activeViewHost.registerFeatureView(ViewId.Logcat.routeKey) { logcatCoordinator.panel }
+    }
+
     private val displayCoordinator = DisplayCoordinator(
         host = host,
         fontScaleViewModel = fontScaleViewModel,
@@ -248,6 +268,7 @@ class AdbToolboxToolWindowPanel(
         navigationCoordinator.dispose()
         feedbackCoordinator.dispose()
         displayCoordinator.dispose()
+        logcatCoordinator.dispose()
         networkCoordinator.dispose()
         appsCoordinator.dispose()
         recordingCoordinator.dispose()

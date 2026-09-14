@@ -47,6 +47,8 @@ class AdbToolboxToolWindowFactory : ToolWindowFactory {
             appsScope = composition.childScope(),
             proxyController = composition.proxyController,
             networkScope = composition.childScope(),
+            logcatControlsController = composition.logcatControlsController,
+            logcatScope = composition.childScope(),
             fontScaleViewModel = composition.fontScaleViewModel,
             densityViewModel = composition.densityViewModel,
             quickTogglesViewModel = composition.quickTogglesViewModel,

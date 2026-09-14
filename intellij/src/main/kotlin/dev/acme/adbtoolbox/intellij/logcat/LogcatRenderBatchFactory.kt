@@ -25,6 +25,19 @@ object LogcatRenderBatchFactory {
         retainFromSequence = delta.oldestRetainedSequence,
     )
 
+    /** The exact rendered message text a row for [entry] carries — exposed (task 037) so a
+     * presentation controller can locate search-match spans against the same text this factory
+     * renders, rather than duplicating this join logic. */
+    fun messageTextFor(entry: LogcatEntry): String = when (entry) {
+        is LogcatEntry.Record -> buildList {
+            add(entry.record.message.value)
+            addAll(entry.continuationLines)
+        }.joinToString("\n")
+
+        is LogcatEntry.DaemonMarker -> entry.raw
+        is LogcatEntry.Malformed -> entry.raw
+    }
+
     private fun SequencedLogcatEntry.toRenderRow(spans: List<LogcatMatchSpan>): LogcatRenderRow =
         when (val source = entry) {
             is LogcatEntry.Record -> LogcatRenderRow(
@@ -32,10 +45,7 @@ object LogcatRenderBatchFactory {
                 severity = source.record.severity,
                 timestamp = source.record.timestamp.render(),
                 tag = source.record.tag.value,
-                message = buildList {
-                    add(source.record.message.value)
-                    addAll(source.continuationLines)
-                }.joinToString("\n"),
+                message = messageTextFor(source),
                 matchSpans = spans.toList(),
             )
 
@@ -44,7 +54,7 @@ object LogcatRenderBatchFactory {
                 severity = null,
                 timestamp = null,
                 tag = null,
-                message = source.raw,
+                message = messageTextFor(source),
                 matchSpans = spans.toList(),
             )
 
@@ -53,7 +63,7 @@ object LogcatRenderBatchFactory {
                 severity = null,
                 timestamp = null,
                 tag = null,
-                message = source.raw,
+                message = messageTextFor(source),
                 matchSpans = spans.toList(),
             )
         }

@@ -23,6 +23,10 @@ class LogcatFilterEngine {
 
     val currentCriteria: LogcatFilterCriteria get() = criteria
 
+    /** O(1) filtered-entry count (task 037), so a presentation controller can track visible-line
+     * counts on every buffer tick without [snapshot]'s O(n) copy. */
+    val filteredCount: Int get() = filtered.size
+
     fun snapshot(): List<SequencedLogcatEntry> = filtered.toList()
 
     /** Re-filters [source] in full against [newCriteria], replacing the current filtered view. */

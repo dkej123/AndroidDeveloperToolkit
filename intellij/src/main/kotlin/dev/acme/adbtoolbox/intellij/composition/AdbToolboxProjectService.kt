@@ -47,6 +47,10 @@ import dev.acme.adbtoolbox.application.display.density.DensityUseCase
 import dev.acme.adbtoolbox.application.display.density.DensityViewModel
 import dev.acme.adbtoolbox.application.display.fontscale.FontScaleViewModel
 import dev.acme.adbtoolbox.application.feedback.FeedbackViewModel
+import dev.acme.adbtoolbox.application.logcat.LogcatControlsController
+import dev.acme.adbtoolbox.application.logcat.LogcatPackagePidTracker
+import dev.acme.adbtoolbox.application.logcat.LogcatPidResolver
+import dev.acme.adbtoolbox.application.logcat.LogcatSessionManager
 import dev.acme.adbtoolbox.application.mirroring.MirroringOptionsUseCase
 import dev.acme.adbtoolbox.application.mirroring.MirroringOptionsViewModel
 import dev.acme.adbtoolbox.application.mirroring.MirroringSessionManager
@@ -73,6 +77,7 @@ import dev.acme.adbtoolbox.domain.device.toCommandContext
 import dev.acme.adbtoolbox.domain.mirroring.MirroringOptionsRepository
 import dev.acme.adbtoolbox.domain.devicefacts.ClipboardPort
 import dev.acme.adbtoolbox.domain.discovery.ToolLocator
+import dev.acme.adbtoolbox.domain.logcat.LogcatControlsPersistence
 import dev.acme.adbtoolbox.domain.discovery.ToolId
 import dev.acme.adbtoolbox.domain.dispatch.DispatcherProvider
 import dev.acme.adbtoolbox.domain.nav.NavigationBadges
@@ -95,6 +100,7 @@ import dev.acme.adbtoolbox.intellij.dispatch.IdeDispatcherProvider
 import dev.acme.adbtoolbox.intellij.persistence.AdbToolboxProjectState
 import dev.acme.adbtoolbox.intellij.persistence.AppsSelectionPersistenceAdapter
 import dev.acme.adbtoolbox.intellij.persistence.DeviceSelectionPersistenceAdapter
+import dev.acme.adbtoolbox.intellij.persistence.LogcatControlsPersistenceAdapter
 import dev.acme.adbtoolbox.intellij.persistence.MirroringOptionsPersistenceAdapter
 import dev.acme.adbtoolbox.intellij.persistence.NavigationPersistenceAdapter
 import dev.acme.adbtoolbox.intellij.persistence.NetworkPersistenceAdapter
@@ -556,6 +562,40 @@ class AdbToolboxProjectService(private val project: Project) : Disposable {
         selectedDeviceState = selectedDeviceViewModel.state,
         hostNetworkInfo = hostNetworkInfo,
         recentsPersistence = networkRecentsPersistence,
+    )
+
+    /** Task 034's Logcat session/buffer owner, driven by [selectedDeviceViewModel]. */
+    val logcatSessionManager: LogcatSessionManager = LogcatSessionManager(
+        scope = childScope(),
+        dispatchers = dispatcherProvider,
+        selectedDeviceState = selectedDeviceViewModel.state,
+        transport = adbTransport,
+    )
+
+    /** Task 035's package-pid resolver/tracker, driven by [selectedPackageViewModel] — the same
+     * shared selection Apps writes to. */
+    val logcatPackagePidTracker: LogcatPackagePidTracker = LogcatPackagePidTracker(
+        scope = childScope(),
+        dispatchers = dispatcherProvider,
+        selectedPackageState = selectedPackageViewModel.state,
+        resolver = LogcatPidResolver(adbTransport),
+    )
+
+    /** Task 037's persisted level/package-filter/wrap adapter. */
+    val logcatControlsPersistence: LogcatControlsPersistence =
+        LogcatControlsPersistenceAdapter(project.service<AdbToolboxProjectState>())
+
+    /** Task 037's Logcat controls reducer: search/level/package-filter/wrap/pause/follow/clear/footer
+     * state, driven by [selectedDeviceViewModel], [selectedPackageViewModel], [logcatSessionManager],
+     * and [logcatPackagePidTracker]. */
+    val logcatControlsController: LogcatControlsController = LogcatControlsController(
+        scope = childScope(),
+        dispatchers = dispatcherProvider,
+        selectedDeviceState = selectedDeviceViewModel.state,
+        selectedPackageState = selectedPackageViewModel.state,
+        sessionManager = logcatSessionManager,
+        pidTracker = logcatPackagePidTracker,
+        persistence = logcatControlsPersistence,
     )
 
     /**

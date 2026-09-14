@@ -49,5 +49,16 @@
             <keyboard-shortcut keymap="Mac OS X" first-keystroke="shift meta R"/>
             <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="shift meta R"/>
         </action>
+
+        <!-- Task 037's global focus-Logcat shortcut — forwards to the same NavigationViewModel.handle
+             entry point the rail uses; design/README.md's Interactions section names shift+cmd+L. -->
+        <action id="AdbToolbox.FocusLogcat"
+                class="dev.acme.adbtoolbox.intellij.logcat.FocusLogcatAction"
+                text="Focus Logcat"
+                description="Switch to the Logcat view">
+            <keyboard-shortcut keymap="$default" first-keystroke="shift control L"/>
+            <keyboard-shortcut keymap="Mac OS X" first-keystroke="shift meta L"/>
+            <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="shift meta L"/>
+        </action>
     </actions>
 </idea-plugin>
