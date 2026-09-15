@@ -1,7 +1,6 @@
 package dev.acme.adbtoolbox.intellij.apps
 
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.ui.Messages
 import dev.acme.adbtoolbox.domain.apps.ClearDataConfirmation
 import dev.acme.adbtoolbox.domain.apps.ClearDataConfirmationPort
 import dev.acme.adbtoolbox.domain.dispatch.DispatcherProvider
@@ -41,13 +40,12 @@ internal class ClearDataConfirmationPresenter(
         }
 }
 
-private fun showClearDataDialog(project: Project, spec: ClearDataDialogSpec): Int = Messages.showDialog(
-    project,
-    spec.message,
-    spec.title,
-    null,
-    spec.options.toTypedArray(),
-    spec.defaultOptionIndex,
-    spec.focusedOptionIndex,
-    Messages.getWarningIcon(),
-)
+private fun showClearDataDialog(project: Project, spec: ClearDataDialogSpec): Int {
+    val dialog = AppsConfirmationDialog(
+        project = project,
+        dialogTitle = spec.title,
+        bodyText = spec.message,
+        destructiveLabel = spec.options[spec.destructiveOptionIndex],
+    )
+    return if (dialog.showAndGet()) spec.destructiveOptionIndex else spec.cancelOptionIndex
+}

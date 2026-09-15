@@ -9,9 +9,9 @@ import dev.acme.adbtoolbox.application.apps.UninstallViewState
 import dev.acme.adbtoolbox.domain.devicecontext.ControlPolicy
 
 /**
- * [AppsPanel] is the toolbar (search + "show system packages" toggle) plus [AppsVirtualList] and an
- * empty-state message (`design/README.md` §4) — purely structural, like
- * [dev.acme.adbtoolbox.intellij.devicebar.DeviceContextBarPanel]; final visual design is a later task.
+ * [AppsPanel] is the toolbar (search + "show system packages" toggle) plus [AppsVirtualList], the
+ * two-line empty state, and the pinned action footer with its selected-app row and "Destructive"
+ * group (task 045, `design/README.md` §4).
  */
 class AppsPanelTest : BasePlatformTestCase() {
 
@@ -65,9 +65,75 @@ class AppsPanelTest : BasePlatformTestCase() {
 
         panel.update(AppsViewState(query = "nomatch", hasDevice = true, isLoading = false, rows = emptyList()))
 
-        assertTrue(panel.emptyStateTextForTest.isNotBlank())
+        assertTrue(panel.emptyStateTextForTest.contains("No packages match “nomatch”"))
+        assertTrue(panel.emptyStateTextForTest.contains("Search matches package name and app label."))
         panel.clearFilterLinkForTest.doClick()
         assertTrue(cleared)
+    }
+
+    fun `test a genuinely empty device shows its own message without a clear-filter link`() {
+        val panel = AppsPanel(onQueryChange = {}, onToggleSystemPackages = {}, onSelect = {}, onClearFilter = {})
+
+        panel.update(AppsViewState(query = "", hasDevice = true, isLoading = false, rows = emptyList()))
+
+        assertTrue(panel.emptyStateTextForTest.contains("No packages found"))
+        assertFalse(panel.clearFilterLinkForTest.isVisible)
+    }
+
+    fun `test the toolbar clear-query button only appears once a query is typed`() {
+        val panel = AppsPanel(onQueryChange = {}, onToggleSystemPackages = {}, onSelect = {}, onClearFilter = {})
+        assertFalse(panel.clearQueryButtonForTest.isVisible)
+
+        panel.update(AppsViewState(query = "sh", hasDevice = true, isLoading = false, rows = emptyList()))
+        assertTrue(panel.clearQueryButtonForTest.isVisible)
+
+        panel.update(AppsViewState(query = "", hasDevice = true, isLoading = false, rows = emptyList()))
+        assertFalse(panel.clearQueryButtonForTest.isVisible)
+    }
+
+    fun `test clicking the toolbar clear-query button invokes onClearFilter`() {
+        var cleared = false
+        val panel = AppsPanel(onQueryChange = {}, onToggleSystemPackages = {}, onSelect = {}, onClearFilter = { cleared = true })
+        panel.update(AppsViewState(query = "sh", hasDevice = true, isLoading = false, rows = emptyList()))
+
+        panel.clearQueryButtonForTest.doClick()
+
+        assertTrue(cleared)
+    }
+
+    fun `test the selected app's label and package surface in the pinned footer`() {
+        val panel = AppsPanel(onQueryChange = {}, onToggleSystemPackages = {}, onSelect = {}, onClearFilter = {})
+
+        panel.update(
+            AppsViewState(
+                hasDevice = true,
+                isLoading = false,
+                rows = listOf(
+                    AppsRow("com.acme.shop", "Acme Shop", labelResolved = true, isDebuggable = null, isSelected = true),
+                ),
+                selectedPackageName = "com.acme.shop",
+            ),
+        )
+
+        assertEquals("Acme Shop", panel.selectedAppLabelForTest)
+        assertEquals("com.acme.shop", panel.selectedAppPackageForTest)
+    }
+
+    fun `test the footer clears the selected-app row when nothing is selected`() {
+        val panel = AppsPanel(onQueryChange = {}, onToggleSystemPackages = {}, onSelect = {}, onClearFilter = {})
+
+        panel.update(AppsViewState(hasDevice = true, isLoading = false, rows = emptyList(), selectedPackageName = null))
+
+        assertEquals("", panel.selectedAppLabelForTest)
+        assertEquals("", panel.selectedAppPackageForTest)
+    }
+
+    fun `test the destructive group is labeled and starts with Clear data and Uninstall disabled`() {
+        val panel = AppsPanel(onQueryChange = {}, onToggleSystemPackages = {}, onSelect = {}, onClearFilter = {})
+
+        assertEquals("DESTRUCTIVE", panel.destructiveLabelForTest)
+        assertFalse(panel.clearDataButtonForTest.isEnabled)
+        assertFalse(panel.uninstallButtonForTest.isEnabled)
     }
 
     fun `test with no device the panel shows no rows and no crash`() {

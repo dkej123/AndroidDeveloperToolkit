@@ -27,29 +27,48 @@ class AppsVirtualListTest : BasePlatformTestCase() {
         assertEquals("com.acme.wallet", selected)
     }
 
-    fun `test the cell renderer shows the label and package name`() {
+    fun `test the cell renderer shows the label and package name in their own labels`() {
         val model = AppsVirtualListModel { true }
         val list = AppsVirtualList(model, onSelect = {})
         val entry = row("com.acme.shop", label = "Shop")
         model.apply(listOf(entry))
 
-        val component = list.cellRenderer.getListCellRendererComponent(list, entry, 0, false, false)
-        val text = (component as? javax.swing.JLabel)?.text.orEmpty()
+        list.cellRenderer.getListCellRendererComponent(list, entry, 0, false, false)
+        val renderer = list.rowRendererForTest
 
-        assertTrue(text.contains("Shop"))
-        assertTrue(text.contains("com.acme.shop"))
+        assertEquals("Shop", renderer.titleLabelForTest.text)
+        assertEquals("com.acme.shop", renderer.packageLabelForTest.text)
     }
 
-    fun `test a debuggable row's rendered text carries a debug marker`() {
+    fun `test only a debuggable row shows the debug tag, using the brand tile treatment`() {
         val model = AppsVirtualListModel { true }
         val list = AppsVirtualList(model, onSelect = {})
         val debuggable = row("com.acme.shop", debuggable = true)
-        model.apply(listOf(debuggable))
+        val notDebuggable = row("com.acme.other", debuggable = false)
+        model.apply(listOf(debuggable, notDebuggable))
+        val renderer = list.rowRendererForTest
 
-        val component = list.cellRenderer.getListCellRendererComponent(list, debuggable, 0, false, false)
-        val text = (component as? javax.swing.JLabel)?.text.orEmpty()
+        list.cellRenderer.getListCellRendererComponent(list, debuggable, 0, false, false)
+        assertTrue(renderer.debugTagForTest.isVisible)
+        assertEquals(dev.acme.adbtoolbox.intellij.ui.common.AdbToolboxTheme.Colors.brandBg, renderer.tileForTest.background)
 
-        assertTrue(text.contains("debug", ignoreCase = true))
+        list.cellRenderer.getListCellRendererComponent(list, notDebuggable, 1, false, false)
+        assertFalse(renderer.debugTagForTest.isVisible)
+        assertEquals(dev.acme.adbtoolbox.intellij.ui.common.AdbToolboxTheme.Colors.header, renderer.tileForTest.background)
+    }
+
+    fun `test a selected row is bold and tinted with the accent background`() {
+        val model = AppsVirtualListModel { true }
+        val list = AppsVirtualList(model, onSelect = {})
+        val selected = row("com.acme.shop", selected = true)
+        model.apply(listOf(selected))
+        val renderer = list.rowRendererForTest
+
+        list.cellRenderer.getListCellRendererComponent(list, selected, 0, false, false)
+
+        assertEquals(java.awt.Font.BOLD, renderer.titleLabelForTest.font.style)
+        assertEquals(dev.acme.adbtoolbox.intellij.ui.common.AdbToolboxTheme.Colors.accentBg, renderer.rootForTest.background)
+        assertTrue(renderer.rootForTest.isOpaque)
     }
 
     fun `test the selected row is reflected as the JList selection`() {

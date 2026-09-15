@@ -1,7 +1,6 @@
 package dev.acme.adbtoolbox.intellij.apps
 
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.ui.Messages
 import dev.acme.adbtoolbox.domain.apps.UninstallConfirmation
 import dev.acme.adbtoolbox.domain.apps.UninstallConfirmationPort
 import dev.acme.adbtoolbox.domain.dispatch.DispatcherProvider
@@ -43,13 +42,12 @@ internal class UninstallConfirmationPresenter(
         }
 }
 
-private fun showUninstallDialog(project: Project, spec: UninstallDialogSpec): Int = Messages.showDialog(
-    project,
-    spec.message,
-    spec.title,
-    null,
-    spec.options.toTypedArray(),
-    spec.defaultOptionIndex,
-    spec.focusedOptionIndex,
-    Messages.getWarningIcon(),
-)
+private fun showUninstallDialog(project: Project, spec: UninstallDialogSpec): Int {
+    val dialog = AppsConfirmationDialog(
+        project = project,
+        dialogTitle = spec.title,
+        bodyText = spec.message,
+        destructiveLabel = spec.options[spec.destructiveOptionIndex],
+    )
+    return if (dialog.showAndGet()) spec.destructiveOptionIndex else spec.cancelOptionIndex
+}
