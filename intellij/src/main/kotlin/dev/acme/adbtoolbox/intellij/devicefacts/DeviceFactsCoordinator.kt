@@ -29,10 +29,23 @@ class DeviceFactsCoordinator(
     private val viewModel: DeviceFactsViewModel,
     private val scope: CoroutineScope,
     private val dispatchers: DispatcherProvider,
+    onRefresh: () -> Unit,
+    onPairOverWifi: () -> Unit,
 ) : Disposable {
 
+    constructor(
+        host: AdbToolboxHostPanel,
+        viewModel: DeviceFactsViewModel,
+        scope: CoroutineScope,
+        dispatchers: DispatcherProvider,
+    ) : this(host, viewModel, scope, dispatchers, {}, {})
+
     val panel: DeviceFactsPanel = host.registerFeatureView(ViewId.Device.routeKey) {
-        DeviceFactsPanel(onCopyReport = { viewModel.handle(DeviceFactsIntent.CopyReport) })
+        DeviceFactsPanel(
+            onCopyReport = { viewModel.handle(DeviceFactsIntent.CopyReport) },
+            onRefresh = onRefresh,
+            onPairOverWifi = onPairOverWifi,
+        )
     } as DeviceFactsPanel
 
     init {

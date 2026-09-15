@@ -69,6 +69,7 @@ class CaptureViewTest : BasePlatformTestCase() {
 
         view.render(CaptureViewState(controlPolicy = ControlPolicy.Enabled, isCapturing = false))
         assertTrue(view.screenshotButton.isEnabled)
+        assertEquals("Screenshot", view.screenshotButton.text)
 
         view.render(CaptureViewState(controlPolicy = ControlPolicy.Enabled, isCapturing = true))
         assertFalse(view.screenshotButton.isEnabled)

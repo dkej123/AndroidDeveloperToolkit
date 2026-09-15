@@ -22,7 +22,7 @@ import kotlinx.coroutines.isActive
 
 /**
  * Connects task 016's [DeviceActionsViewModel] to task 015's already-registered
- * [DeviceFactsPanel]: mounts [DeviceActionsCoordinator.view] into [DeviceFactsPanel.actionsRow],
+ * [DeviceFactsPanel]: mounts [DeviceActionsCoordinator.view] into [DeviceFactsPanel.deviceActionsSlot],
  * the same seam [dev.acme.adbtoolbox.intellij.capture.CaptureCoordinatorTest] exercises for task
  * 019's Screenshot control.
  */
@@ -51,13 +51,12 @@ class DeviceActionsCoordinatorTest : BasePlatformTestCase() {
         return DeviceActionsCoordinator(deviceFactsPanel = panel, viewModel = viewModel, scope = scope, dispatchers = dispatchers)
     }
 
-    fun `test construction mounts the device-actions control into the panel's actions row`() {
+    fun `test construction mounts the device actions into the Device section`() {
         val panel = DeviceFactsPanel(onCopyReport = {})
 
         val coordinator = coordinator(panel)
 
-        assertTrue(panel.actionsRow.components.contains(coordinator.view))
-        assertTrue(panel.actionsRow.components.contains(panel.copyReportButton))
+        assertTrue(panel.deviceActionsSlot.components.contains(coordinator.view))
         coordinator.dispose()
     }
 

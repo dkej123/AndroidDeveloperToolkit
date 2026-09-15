@@ -8,6 +8,7 @@ import dev.acme.adbtoolbox.application.apps.ClearDataViewModel
 import dev.acme.adbtoolbox.application.apps.UninstallViewModel
 import dev.acme.adbtoolbox.application.capture.CaptureViewModel
 import dev.acme.adbtoolbox.application.devicebar.DeviceBarViewModel
+import dev.acme.adbtoolbox.application.devicebar.DeviceBarIntent
 import dev.acme.adbtoolbox.application.deviceactions.DeviceActionsViewModel
 import dev.acme.adbtoolbox.application.devicecontext.DeviceContextAggregator
 import dev.acme.adbtoolbox.application.devicefacts.DeviceFactsViewModel
@@ -150,6 +151,8 @@ class AdbToolboxToolWindowPanel(
         viewModel = deviceFactsViewModel,
         scope = deviceFactsScope,
         dispatchers = dispatchers,
+        onRefresh = { deviceBarViewModel.handle(DeviceBarIntent.Refresh) },
+        onPairOverWifi = { deviceBarViewModel.handle(DeviceBarIntent.RequestPairOverWifi) },
     )
 
     private val deviceContextBarCoordinator = DeviceContextBarCoordinator(
@@ -159,7 +162,7 @@ class AdbToolboxToolWindowPanel(
         dispatchers = dispatchers,
     )
 
-    // Mounted after deviceFactsCoordinator so its actionsRow already exists to append into.
+    // Mounted after deviceFactsCoordinator so its captureSlot already exists to append into.
     private val captureCoordinator = CaptureCoordinator(
         deviceFactsPanel = deviceFactsCoordinator.panel,
         viewModel = captureViewModel,
@@ -167,7 +170,7 @@ class AdbToolboxToolWindowPanel(
         dispatchers = dispatchers,
     )
 
-    // Mounted after captureCoordinator, into the same already-registered actionsRow.
+    // Mounted after deviceFactsCoordinator, into its already-registered deviceActionsSlot.
     private val deviceActionsCoordinator = DeviceActionsCoordinator(
         deviceFactsPanel = deviceFactsCoordinator.panel,
         viewModel = deviceActionsViewModel,
@@ -175,7 +178,7 @@ class AdbToolboxToolWindowPanel(
         dispatchers = dispatchers,
     )
 
-    // Mounted after deviceActionsCoordinator, into the same already-registered actionsRow.
+    // Mounted after deviceFactsCoordinator, into its already-registered mirroringSlot.
     private val mirroringCoordinator = MirroringCoordinator(
         deviceFactsPanel = deviceFactsCoordinator.panel,
         viewModel = mirroringViewModel,
@@ -184,12 +187,13 @@ class AdbToolboxToolWindowPanel(
         openOptions = openMirroringOptions,
     )
 
-    // Mounted after mirroringCoordinator, into the same already-registered actionsRow.
+    // Mounted after captureCoordinator, into the same already-registered captureSlot.
     private val recordingCoordinator = RecordingCoordinator(
         deviceFactsPanel = deviceFactsCoordinator.panel,
         viewModel = recordingViewModel,
         scope = recordingScope,
         dispatchers = dispatchers,
+        captureView = captureCoordinator.view,
     )
 
     private val appsCoordinator = AppsCoordinator(

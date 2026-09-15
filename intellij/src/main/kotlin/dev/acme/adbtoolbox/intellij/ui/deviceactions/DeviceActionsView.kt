@@ -7,6 +7,8 @@ import dev.acme.adbtoolbox.application.deviceactions.DeviceActionsViewModel
 import dev.acme.adbtoolbox.application.deviceactions.DeviceActionsViewState
 import dev.acme.adbtoolbox.domain.devicecontext.ControlPolicy
 import dev.acme.adbtoolbox.domain.dispatch.DispatcherProvider
+import dev.acme.adbtoolbox.intellij.ui.common.AdbToolboxTheme
+import java.awt.Dimension
 import java.awt.FlowLayout
 import javax.swing.JButton
 import kotlinx.coroutines.CoroutineScope
@@ -35,20 +37,24 @@ class DeviceActionsView(
 
     val rebootButton = JButton("Reboot").apply {
         toolTipText = "Reboot the selected device"
+        preferredSize = Dimension(preferredSize.width, AdbToolboxTheme.Sizes.secondaryButton)
         addActionListener { viewModel.handle(DeviceActionsIntent.Reboot) }
     }
 
     val openShellButton = JButton("Open shell").apply {
         toolTipText = "Open an adb shell session in the IDE's Terminal"
+        preferredSize = Dimension(preferredSize.width, AdbToolboxTheme.Sizes.secondaryButton)
         addActionListener { viewModel.handle(DeviceActionsIntent.OpenShell) }
     }
 
     val wakeButton = JButton("Wake").apply {
         toolTipText = "Wake the selected device"
+        preferredSize = Dimension(preferredSize.width, AdbToolboxTheme.Sizes.secondaryButton)
         addActionListener { viewModel.handle(DeviceActionsIntent.Wake) }
     }
 
     init {
+        isOpaque = false
         add(rebootButton)
         add(openShellButton)
         add(wakeButton)
@@ -64,6 +70,11 @@ class DeviceActionsView(
         rebootButton.isEnabled = enabled
         openShellButton.isEnabled = enabled
         wakeButton.isEnabled = enabled
+        if (state.controlPolicy !is ControlPolicy.Enabled) {
+            rebootButton.toolTipText = "Reboot the selected device — Connect a device to use this"
+            openShellButton.toolTipText = "Open an adb shell session in the IDE's Terminal — Connect a device to use this"
+            wakeButton.toolTipText = "Wake the selected device — Connect a device to use this"
+        }
     }
 
     override fun dispose() {

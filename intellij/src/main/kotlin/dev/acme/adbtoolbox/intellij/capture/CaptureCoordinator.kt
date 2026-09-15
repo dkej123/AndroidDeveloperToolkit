@@ -9,7 +9,7 @@ import kotlinx.coroutines.CoroutineScope
 
 /**
  * Mounts task 019's [CaptureView] into task 015's already-registered
- * [DeviceFactsPanel.actionsRow], rather than registering a second
+ * [DeviceFactsPanel.captureSlot], rather than registering a second
  * [dev.acme.adbtoolbox.intellij.host.FeatureViewHost] component for
  * [dev.acme.adbtoolbox.domain.nav.ViewId.Device]'s route key — that seam only ever holds one
  * component per route, and [dev.acme.adbtoolbox.intellij.devicefacts.DeviceFactsCoordinator]
@@ -25,7 +25,7 @@ class CaptureCoordinator(
     dispatchers: DispatcherProvider,
 ) : Disposable {
 
-    val view: CaptureView = CaptureView(viewModel, scope, dispatchers).also { deviceFactsPanel.actionsRow.add(it) }
+    val view: CaptureView = CaptureView(viewModel, scope, dispatchers).also { deviceFactsPanel.captureSlot.add(it) }
 
     override fun dispose() {
         view.dispose()

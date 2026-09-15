@@ -19,7 +19,7 @@ import kotlinx.coroutines.isActive
 
 /**
  * Connects task 019's [CaptureViewModel] to task 015's already-registered [DeviceFactsPanel]: mounts
- * [CaptureCoordinator.view] into [DeviceFactsPanel.actionsRow] rather than registering a competing
+ * [CaptureCoordinator.view] into [DeviceFactsPanel.captureSlot] rather than registering a competing
  * [dev.acme.adbtoolbox.intellij.host.FeatureViewHost] route for [dev.acme.adbtoolbox.domain.nav.ViewId.Device]
  * (only one component may ever be registered per route key). Kept as a [BasePlatformTestCase] like
  * every other `:intellij` coordinator test in this module.
@@ -50,13 +50,12 @@ class CaptureCoordinatorTest : BasePlatformTestCase() {
         return CaptureCoordinator(deviceFactsPanel = panel, viewModel = viewModel, scope = scope, dispatchers = dispatchers)
     }
 
-    fun `test construction mounts the screenshot control into the panel's actions row`() {
+    fun `test construction mounts the screenshot control into the Capture section`() {
         val panel = DeviceFactsPanel(onCopyReport = {})
 
         val coordinator = coordinator(panel)
 
-        assertTrue(panel.actionsRow.components.contains(coordinator.view))
-        assertTrue(panel.actionsRow.components.contains(panel.copyReportButton))
+        assertTrue(panel.captureSlot.components.contains(coordinator.view))
         coordinator.dispose()
     }
 

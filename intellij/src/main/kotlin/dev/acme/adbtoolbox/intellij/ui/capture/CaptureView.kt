@@ -7,7 +7,9 @@ import dev.acme.adbtoolbox.application.capture.CaptureViewModel
 import dev.acme.adbtoolbox.application.capture.CaptureViewState
 import dev.acme.adbtoolbox.domain.devicecontext.ControlPolicy
 import dev.acme.adbtoolbox.domain.dispatch.DispatcherProvider
-import java.awt.BorderLayout
+import dev.acme.adbtoolbox.intellij.ui.common.AdbToolboxTheme
+import java.awt.Dimension
+import java.awt.FlowLayout
 import javax.swing.JButton
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.cancel
@@ -21,7 +23,7 @@ import kotlinx.coroutines.withContext
  * chrome. Task 015 landed the Device view first, so this is not registered as its own
  * [dev.acme.adbtoolbox.intellij.host.FeatureViewHost] route; instead
  * `dev.acme.adbtoolbox.intellij.capture.CaptureCoordinator` mounts this panel into task 015's
- * already-registered [dev.acme.adbtoolbox.intellij.devicefacts.DeviceFactsPanel.actionsRow] — the
+ * already-registered [dev.acme.adbtoolbox.intellij.devicefacts.DeviceFactsPanel.captureSlot] — the
  * "fold this control into its own layout" outcome this class's earlier revision anticipated. Task
  * 044 owns final visual styling.
  *
@@ -39,15 +41,17 @@ class CaptureView(
     private val viewModel: CaptureViewModel,
     private val scope: CoroutineScope,
     private val dispatchers: DispatcherProvider,
-) : JBPanel<CaptureView>(BorderLayout()), Disposable {
+) : JBPanel<CaptureView>(FlowLayout(FlowLayout.LEFT, 0, 0)), Disposable {
 
     val screenshotButton = JButton("Screenshot").apply {
         toolTipText = "Save a PNG to ~/Desktop"
+        preferredSize = Dimension(preferredSize.width, AdbToolboxTheme.Sizes.secondaryButton)
         addActionListener { viewModel.handle(CaptureIntent.CaptureScreenshot) }
     }
 
     init {
-        add(screenshotButton, BorderLayout.NORTH)
+        isOpaque = false
+        add(screenshotButton)
 
         viewModel.state
             .onEach { state -> withContext(dispatchers.main) { render(state) } }
@@ -57,6 +61,11 @@ class CaptureView(
     /** Production code always reaches this already marshaled onto [dispatchers]' `main` context. */
     internal fun render(state: CaptureViewState) {
         screenshotButton.isEnabled = state.controlPolicy is ControlPolicy.Enabled && !state.isCapturing
+        screenshotButton.toolTipText = if (state.controlPolicy is ControlPolicy.Enabled) {
+            "Save a PNG to ~/Desktop"
+        } else {
+            "Save a PNG to ~/Desktop — Connect a device to use this"
+        }
     }
 
     override fun dispose() {

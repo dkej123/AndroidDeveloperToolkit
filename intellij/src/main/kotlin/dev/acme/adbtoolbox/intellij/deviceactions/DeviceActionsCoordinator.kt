@@ -9,7 +9,7 @@ import kotlinx.coroutines.CoroutineScope
 
 /**
  * Mounts task 016's [DeviceActionsView] into task 015's already-registered
- * [DeviceFactsPanel.actionsRow] — the same "fold this control into its own layout" seam
+ * [DeviceFactsPanel.deviceActionsSlot] — the same "fold this control into its own layout" seam
  * [dev.acme.adbtoolbox.intellij.capture.CaptureCoordinator] already uses for task 019's Screenshot
  * control, rather than registering a second [dev.acme.adbtoolbox.intellij.host.FeatureViewHost]
  * component for [dev.acme.adbtoolbox.domain.nav.ViewId.Device]'s route key (only one component may
@@ -24,7 +24,7 @@ class DeviceActionsCoordinator(
     dispatchers: DispatcherProvider,
 ) : Disposable {
 
-    val view: DeviceActionsView = DeviceActionsView(viewModel, scope, dispatchers).also { deviceFactsPanel.actionsRow.add(it) }
+    val view: DeviceActionsView = DeviceActionsView(viewModel, scope, dispatchers).also { deviceFactsPanel.deviceActionsSlot.add(it) }
 
     override fun dispose() {
         view.dispose()

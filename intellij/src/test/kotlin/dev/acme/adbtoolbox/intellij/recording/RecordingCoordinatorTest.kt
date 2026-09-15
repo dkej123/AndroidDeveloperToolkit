@@ -28,7 +28,7 @@ import kotlinx.coroutines.isActive
 
 /**
  * Connects task 020's [RecordingViewModel] to task 015's already-registered [DeviceFactsPanel]:
- * mounts [RecordingCoordinator.view] into [DeviceFactsPanel.actionsRow] — the same seam
+ * mounts [RecordingCoordinator.view] into [DeviceFactsPanel.captureSlot] — the same seam
  * [dev.acme.adbtoolbox.intellij.capture.CaptureCoordinatorTest] and
  * [dev.acme.adbtoolbox.intellij.mirroring.MirroringCoordinatorTest] exercise for their own
  * Device-view controls — rather than registering a competing
@@ -76,13 +76,12 @@ class RecordingCoordinatorTest : BasePlatformTestCase() {
         return RecordingCoordinator(deviceFactsPanel = panel, viewModel = viewModel(scope, dispatchers), scope = scope, dispatchers = dispatchers)
     }
 
-    fun `test construction mounts the recording control into the panel's actions row`() {
+    fun `test construction mounts the recording control into the Capture section`() {
         val panel = DeviceFactsPanel(onCopyReport = {})
 
         val coordinator = coordinator(panel)
 
-        assertTrue(panel.actionsRow.components.contains(coordinator.view))
-        assertTrue(panel.actionsRow.components.contains(panel.copyReportButton))
+        assertTrue(panel.captureSlot.components.contains(coordinator.view))
         coordinator.dispose()
     }
 

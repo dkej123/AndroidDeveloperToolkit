@@ -4,12 +4,13 @@ import com.intellij.openapi.Disposable
 import dev.acme.adbtoolbox.application.recording.RecordingViewModel
 import dev.acme.adbtoolbox.domain.dispatch.DispatcherProvider
 import dev.acme.adbtoolbox.intellij.devicefacts.DeviceFactsPanel
+import dev.acme.adbtoolbox.intellij.ui.capture.CaptureView
 import dev.acme.adbtoolbox.intellij.ui.recording.RecordingView
 import kotlinx.coroutines.CoroutineScope
 
 /**
  * Mounts task 020's [RecordingView] into task 015's already-registered
- * [DeviceFactsPanel.actionsRow] — the same "fold this control into its own layout" seam
+ * [DeviceFactsPanel.captureSlot] — the same "fold this control into its own layout" seam
  * [dev.acme.adbtoolbox.intellij.capture.CaptureCoordinator],
  * [dev.acme.adbtoolbox.intellij.deviceactions.DeviceActionsCoordinator], and
  * [dev.acme.adbtoolbox.intellij.mirroring.MirroringCoordinator] already use, rather than registering
@@ -24,9 +25,15 @@ class RecordingCoordinator(
     viewModel: RecordingViewModel,
     scope: CoroutineScope,
     dispatchers: DispatcherProvider,
+    captureView: CaptureView? = null,
 ) : Disposable {
 
-    val view: RecordingView = RecordingView(viewModel, scope, dispatchers).also { deviceFactsPanel.actionsRow.add(it) }
+    val view: RecordingView = RecordingView(
+        viewModel,
+        scope,
+        dispatchers,
+        onRecordingVisibilityChanged = { recording -> captureView?.isVisible = !recording },
+    ).also { deviceFactsPanel.captureSlot.add(it) }
 
     override fun dispose() {
         view.dispose()

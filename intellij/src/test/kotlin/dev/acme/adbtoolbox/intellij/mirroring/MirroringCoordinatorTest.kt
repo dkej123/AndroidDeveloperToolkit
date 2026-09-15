@@ -23,7 +23,7 @@ import kotlinx.coroutines.isActive
 
 /**
  * Connects task 018's [MirroringViewModel] to task 015's already-registered [DeviceFactsPanel]:
- * mounts [MirroringCoordinator.view] into [DeviceFactsPanel.actionsRow] — the same seam
+ * mounts [MirroringCoordinator.view] into [DeviceFactsPanel.mirroringSlot] — the same seam
  * [dev.acme.adbtoolbox.intellij.capture.CaptureCoordinatorTest] and
  * [dev.acme.adbtoolbox.intellij.deviceactions.DeviceActionsCoordinatorTest] exercise for their own
  * Device-view controls — rather than registering a competing
@@ -60,13 +60,12 @@ class MirroringCoordinatorTest : BasePlatformTestCase() {
         return MirroringCoordinator(deviceFactsPanel = panel, viewModel = viewModel(scope, dispatchers), scope = scope, dispatchers = dispatchers)
     }
 
-    fun `test construction mounts the mirroring control into the panel's actions row`() {
+    fun `test construction mounts the mirroring control into its supplied section`() {
         val panel = DeviceFactsPanel(onCopyReport = {})
 
         val coordinator = coordinator(panel)
 
-        assertTrue(panel.actionsRow.components.contains(coordinator.view))
-        assertTrue(panel.actionsRow.components.contains(panel.copyReportButton))
+        assertTrue(panel.mirroringSlot.components.contains(coordinator.view))
         coordinator.dispose()
     }
 

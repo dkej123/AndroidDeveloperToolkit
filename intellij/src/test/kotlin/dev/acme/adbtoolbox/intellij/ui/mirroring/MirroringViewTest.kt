@@ -83,10 +83,31 @@ class MirroringViewTest : BasePlatformTestCase() {
 
         view.render(MirroringViewState(controlPolicy = ControlPolicy.Enabled, presentationState = MirroringPresentationState.Running))
         assertTrue(view.toggleButton.isEnabled)
-        assertEquals("Stop mirroring", view.toggleButton.text)
+        assertEquals("Stop", view.toggleButton.text)
+        assertTrue(view.runningBanner.isVisible)
+        assertEquals("Mirroring · Running", view.runningLabel.text)
 
         view.dispose()
         assertFalse(scope.isActive)
+    }
+
+    fun `test idle state uses supplied controls and help copy and hides the running banner`() {
+        val dispatchers = TestDispatchers()
+        val scope = CoroutineScope(SupervisorJob() + dispatchers.default)
+        val vm = viewModel(scope, dispatchers, MutableStateFlow(SelectedDeviceState.None))
+        val view = MirroringView(vm, scope, dispatchers)
+
+        view.render(MirroringViewState(controlPolicy = ControlPolicy.Enabled, presentationState = MirroringPresentationState.Idle))
+
+        assertEquals("Start mirroring", view.toggleButton.text)
+        assertEquals("", view.optionsButton.text)
+        assertNotNull(view.optionsButton.icon)
+        assertFalse(view.runningBanner.isVisible)
+        assertEquals(
+            "Launches Genymobile scrcpy. Turn on “stay awake” and “show touches” in options.",
+            view.helpLabel.text,
+        )
+        view.dispose()
     }
 
     fun `test clicking the toggle button forwards a Toggle intent through the real view model`() {

@@ -110,6 +110,7 @@ class RecordingViewTest : BasePlatformTestCase() {
         assertTrue(view.toggleButton.isEnabled)
         assertEquals("Stop & save", view.toggleButton.text)
         assertEquals("Recording · 00:42", view.statusLabel.text)
+        assertTrue(view.recordingBanner.isVisible)
 
         view.render(RecordingViewState(controlPolicy = ControlPolicy.Enabled, presentationState = RecordingPresentationState.Stopping))
         assertFalse(view.toggleButton.isEnabled)
@@ -132,6 +133,28 @@ class RecordingViewTest : BasePlatformTestCase() {
         view.render(RecordingViewState(controlPolicy = ControlPolicy.Enabled, presentationState = RecordingPresentationState.Idle))
 
         assertEquals("", view.statusLabel.text)
+        assertFalse(view.recordingBanner.isVisible)
+        view.dispose()
+    }
+
+    fun `test recording visibility callback lets the Capture section replace its idle actions`() {
+        val dispatchers = TestDispatchers()
+        val scope = CoroutineScope(SupervisorJob() + dispatchers.default)
+        val vm = viewModel(scope, dispatchers, MutableStateFlow(SelectedDeviceState.None))
+        var recordingVisible = false
+        val view = RecordingView(vm, scope, dispatchers) { recordingVisible = it }
+
+        view.render(RecordingViewState(ControlPolicy.Enabled, RecordingPresentationState.Idle))
+        assertFalse(recordingVisible)
+
+        view.render(
+            RecordingViewState(
+                ControlPolicy.Enabled,
+                RecordingPresentationState.Recording,
+                elapsedLabel = "00:42",
+            ),
+        )
+        assertTrue(recordingVisible)
         view.dispose()
     }
 

@@ -1,14 +1,25 @@
 package dev.acme.adbtoolbox.intellij.ui.mirroring
 
 import com.intellij.openapi.Disposable
+import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBPanel
+import com.intellij.util.ui.JBUI
 import dev.acme.adbtoolbox.application.mirroring.MirroringIntent
 import dev.acme.adbtoolbox.application.mirroring.MirroringPresentationState
 import dev.acme.adbtoolbox.application.mirroring.MirroringViewModel
 import dev.acme.adbtoolbox.application.mirroring.MirroringViewState
 import dev.acme.adbtoolbox.domain.devicecontext.ControlPolicy
 import dev.acme.adbtoolbox.domain.dispatch.DispatcherProvider
+import dev.acme.adbtoolbox.intellij.icons.AdbToolboxIcons
+import dev.acme.adbtoolbox.intellij.ui.common.AdbToolboxTheme
+import dev.acme.adbtoolbox.intellij.ui.common.SolidChipBorder
+import dev.acme.adbtoolbox.intellij.ui.common.StatusDotIcon
+import java.awt.BorderLayout
+import java.awt.CardLayout
+import java.awt.Dimension
 import java.awt.FlowLayout
+import java.awt.Font
+import javax.swing.BorderFactory
 import javax.swing.JButton
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.cancel
@@ -16,65 +27,109 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.withContext
 
-/**
- * Task 018's minimal Device-view mirroring binding: one toggle button — no options editing,
- * capture, or final visual styling (task 018's out-of-scope list; later tasks own those). Follows
- * [dev.acme.adbtoolbox.intellij.ui.deviceactions.DeviceActionsView]'s established shape: [scope] is
- * owned by the caller, state is collected and marshaled onto [dispatchers]' `main` context before
- * touching Swing, and [render] is `internal`/non-suspend for direct unit testing.
- *
- * The button never decides start-vs-stop itself — every click only forwards
- * [MirroringIntent.Toggle] to [viewModel], the exact same intent
- * [dev.acme.adbtoolbox.intellij.mirroring.MirroringToggleAction] (task 018's global shortcut)
- * forwards, so the two triggers can never diverge.
- */
+/** Task 044 visual binding for the existing mirroring intent/state contract. */
 class MirroringView(
     private val viewModel: MirroringViewModel,
     private val scope: CoroutineScope,
     private val dispatchers: DispatcherProvider,
-    /** Task 040's "22px options icon button" (`design/README.md` §3): opens
-     * [dev.acme.adbtoolbox.intellij.ui.mirroring.MirroringOptionsDialog] directly from the Device
-     * view, independent of any session state — never itself touches [viewModel] or a running
-     * session. Injected rather than constructed here so this view stays free of a [com.intellij.openapi.project.Project]
-     * dependency and easily testable. */
     private val openOptions: () -> Unit = {},
-) : JBPanel<MirroringView>(FlowLayout(FlowLayout.LEFT, 4, 0)), Disposable {
+) : JBPanel<MirroringView>(BorderLayout()), Disposable {
 
-    val toggleButton = JButton("Start mirroring").apply {
+    private val startButton = JButton("Start mirroring").apply {
+        preferredSize = Dimension(preferredSize.width, AdbToolboxTheme.Sizes.primaryButton)
+        toolTipText = START_TOOLTIP
         addActionListener { viewModel.handle(MirroringIntent.Toggle) }
     }
 
-    val optionsButton = JButton("Options…").apply {
-        toolTipText = "Mirroring options — bitrate, resolution, stay awake"
+    private val stopButton = JButton("Stop").apply {
+        foreground = AdbToolboxTheme.Colors.red
+        border = SolidChipBorder(AdbToolboxTheme.Colors.redBorder)
+        isContentAreaFilled = false
+        preferredSize = Dimension(preferredSize.width, JBUI.scale(24))
+        addActionListener { viewModel.handle(MirroringIntent.Toggle) }
+    }
+
+    val toggleButton: JButton get() = if (runningBanner.isVisible) stopButton else startButton
+
+    val optionsButton = JButton(AdbToolboxIcons.Actions.options).apply {
+        text = ""
+        preferredSize = Dimension(AdbToolboxTheme.Sizes.iconButton, AdbToolboxTheme.Sizes.iconButton)
+        toolTipText = OPTIONS_TOOLTIP
+        isContentAreaFilled = false
         addActionListener { openOptions() }
     }
 
-    init {
-        add(toggleButton)
+    private val idleRow = JBPanel<Nothing>(FlowLayout(FlowLayout.LEFT, AdbToolboxTheme.Spacing.s3, 0)).apply {
+        isOpaque = false
+        add(startButton)
         add(optionsButton)
+    }
 
+    val runningLabel = JBLabel("Mirroring · Running").apply {
+        font = AdbToolboxTheme.Typography.body.deriveFont(Font.BOLD, JBUI.scale(11.5f))
+        foreground = AdbToolboxTheme.Colors.brand
+        icon = StatusDotIcon(AdbToolboxTheme.Colors.brand, filled = true)
+    }
+
+    val runningBanner = JBPanel<Nothing>(BorderLayout()).apply {
+        isOpaque = true
+        background = AdbToolboxTheme.Colors.brandBg
+        border = BorderFactory.createCompoundBorder(
+            SolidChipBorder(AdbToolboxTheme.Colors.brandBorder),
+            BorderFactory.createEmptyBorder(5, 8, 5, 8),
+        )
+        add(runningLabel, BorderLayout.CENTER)
+        add(stopButton, BorderLayout.EAST)
+    }
+
+    private val stateCards = JBPanel<Nothing>(CardLayout()).apply {
+        isOpaque = false
+        add(idleRow, IDLE)
+        add(runningBanner, RUNNING)
+    }
+
+    val helpLabel = JBLabel(IDLE_HELP).apply {
+        font = AdbToolboxTheme.Typography.caption
+        foreground = AdbToolboxTheme.Colors.textFaint
+        border = BorderFactory.createEmptyBorder(4, 0, 2, 0)
+    }
+
+    init {
+        isOpaque = false
+        add(stateCards, BorderLayout.NORTH)
+        add(helpLabel, BorderLayout.SOUTH)
         viewModel.state
             .onEach { state -> withContext(dispatchers.main) { render(state) } }
             .launchIn(scope)
     }
 
-    /** Production code always reaches this already marshaled onto [dispatchers]' `main` context. */
     internal fun render(state: MirroringViewState) {
-        toggleButton.isEnabled = state.controlPolicy is ControlPolicy.Enabled
-        optionsButton.isEnabled = state.controlPolicy is ControlPolicy.Enabled
-        toggleButton.text = when (state.presentationState) {
-            MirroringPresentationState.Running -> "Stop mirroring"
+        val enabled = state.controlPolicy is ControlPolicy.Enabled
+        startButton.isEnabled = enabled
+        stopButton.isEnabled = enabled
+        optionsButton.isEnabled = enabled
+        val isRunning = state.presentationState is MirroringPresentationState.Running
+        (stateCards.layout as CardLayout).show(stateCards, if (isRunning) RUNNING else IDLE)
+        runningBanner.isVisible = isRunning
+        idleRow.isVisible = !isRunning
+
+        startButton.text = when (state.presentationState) {
             MirroringPresentationState.Starting -> "Starting…"
             MirroringPresentationState.Stopping -> "Stopping…"
-            MirroringPresentationState.Idle,
-            MirroringPresentationState.Unavailable,
-            is MirroringPresentationState.Error,
-            -> "Start mirroring"
+            else -> "Start mirroring"
         }
-        toggleButton.toolTipText = (state.presentationState as? MirroringPresentationState.Error)?.message
+        startButton.toolTipText = (state.presentationState as? MirroringPresentationState.Error)?.message ?: START_TOOLTIP
+        helpLabel.text = if (isRunning) RUNNING_HELP else IDLE_HELP
     }
 
-    override fun dispose() {
-        scope.cancel()
+    override fun dispose() = scope.cancel()
+
+    private companion object {
+        const val IDLE = "idle"
+        const val RUNNING = "running"
+        const val START_TOOLTIP = "Start scrcpy for the selected device  ⇧⌘M"
+        const val OPTIONS_TOOLTIP = "Mirroring options — bitrate, resolution, stay awake"
+        const val IDLE_HELP = "Launches Genymobile scrcpy. Turn on “stay awake” and “show touches” in options."
+        const val RUNNING_HELP = "Window is open on your desktop. Closing it also stops this session."
     }
 }

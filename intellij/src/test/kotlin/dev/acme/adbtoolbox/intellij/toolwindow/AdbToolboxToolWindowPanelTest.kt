@@ -470,8 +470,8 @@ class AdbToolboxToolWindowPanelTest : BasePlatformTestCase() {
 
         val deviceView = panel.host.activeViewHost.componentFor(ViewId.Device.routeKey)
         assertTrue(deviceView is DeviceFactsPanel)
-        val actionsRow = (deviceView as DeviceFactsPanel).actionsRow
-        assertTrue(actionsRow.componentCount > 1)
+        val captureSlot = (deviceView as DeviceFactsPanel).captureSlot
+        assertTrue(captureSlot.componentCount > 0)
 
         panel.dispose()
     }
@@ -483,8 +483,8 @@ class AdbToolboxToolWindowPanelTest : BasePlatformTestCase() {
 
         val deviceView = panel.host.activeViewHost.componentFor(ViewId.Device.routeKey)
         assertTrue(deviceView is DeviceFactsPanel)
-        val actionsRow = (deviceView as DeviceFactsPanel).actionsRow
-        assertTrue(actionsRow.componentCount > 2)
+        val deviceActionsSlot = (deviceView as DeviceFactsPanel).deviceActionsSlot
+        assertTrue(deviceActionsSlot.componentCount > 0)
 
         panel.dispose()
     }
@@ -496,8 +496,8 @@ class AdbToolboxToolWindowPanelTest : BasePlatformTestCase() {
 
         val deviceView = panel.host.activeViewHost.componentFor(ViewId.Device.routeKey)
         assertTrue(deviceView is DeviceFactsPanel)
-        val actionsRow = (deviceView as DeviceFactsPanel).actionsRow
-        assertTrue(actionsRow.componentCount > 3)
+        val mirroringSlot = (deviceView as DeviceFactsPanel).mirroringSlot
+        assertTrue(mirroringSlot.componentCount > 0)
 
         panel.dispose()
     }
@@ -509,8 +509,8 @@ class AdbToolboxToolWindowPanelTest : BasePlatformTestCase() {
 
         val deviceView = panel.host.activeViewHost.componentFor(ViewId.Device.routeKey)
         assertTrue(deviceView is DeviceFactsPanel)
-        val actionsRow = (deviceView as DeviceFactsPanel).actionsRow
-        assertTrue(actionsRow.componentCount > 4)
+        val captureSlot = (deviceView as DeviceFactsPanel).captureSlot
+        assertTrue(captureSlot.componentCount > 1)
 
         panel.dispose()
     }

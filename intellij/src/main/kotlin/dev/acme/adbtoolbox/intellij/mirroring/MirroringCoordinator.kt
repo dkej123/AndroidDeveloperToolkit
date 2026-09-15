@@ -9,7 +9,7 @@ import kotlinx.coroutines.CoroutineScope
 
 /**
  * Mounts task 018's [MirroringView] into task 015's already-registered
- * [DeviceFactsPanel.actionsRow] — the same "fold this control into its own layout" seam
+ * [DeviceFactsPanel.mirroringSlot] — the same "fold this control into its own layout" seam
  * [dev.acme.adbtoolbox.intellij.capture.CaptureCoordinator] and
  * [dev.acme.adbtoolbox.intellij.deviceactions.DeviceActionsCoordinator] already use, rather than
  * registering a second [dev.acme.adbtoolbox.intellij.host.FeatureViewHost] component for
@@ -30,7 +30,7 @@ class MirroringCoordinator(
 ) : Disposable {
 
     val view: MirroringView = MirroringView(viewModel, scope, dispatchers, openOptions)
-        .also { deviceFactsPanel.actionsRow.add(it) }
+        .also { deviceFactsPanel.mirroringSlot.add(it) }
 
     override fun dispose() {
         view.dispose()
