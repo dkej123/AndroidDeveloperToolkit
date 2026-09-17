@@ -135,4 +135,15 @@ class NavigationRailPanelTest : BasePlatformTestCase() {
 
         assertEquals("Device — mirroring, capture, facts", tooltip)
     }
+
+    fun `test each destination's rendered cell exposes the same descriptive text as an accessible name`() {
+        val panel = NavigationRailPanel()
+
+        val cell = panel.list.cellRenderer.getListCellRendererComponent(
+            panel.list, ViewId.Network, ViewId.entries.indexOf(ViewId.Network), false, false,
+        ) as JLabel
+
+        assertEquals("Network — global proxy", cell.getAccessibleContext().accessibleName)
+        assertEquals("Network — global proxy", cell.toolTipText)
+    }
 }

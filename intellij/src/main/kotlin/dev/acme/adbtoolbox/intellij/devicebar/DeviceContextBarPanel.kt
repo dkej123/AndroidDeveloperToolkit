@@ -13,11 +13,8 @@ import java.awt.BorderLayout
 import java.awt.Cursor
 import java.awt.FlowLayout
 import java.awt.Font
-import java.awt.event.MouseAdapter
-import java.awt.event.MouseEvent
 import javax.swing.BorderFactory
 import javax.swing.JButton
-import javax.swing.JComponent
 
 /**
  * The device bar (task 011, `design/README.md` §1's Device bar), with task 043's supplied visual
@@ -40,13 +37,21 @@ class DeviceContextBarPanel(
     onRefresh: () -> Unit,
 ) : JBPanel<DeviceContextBarPanel>(BorderLayout()) {
 
-    private val selectorLabel = JBLabel("").apply {
+    // A real JButton, not a JBLabel with a MouseListener: task 050's keyboard-only pass found the
+    // label variant unreachable by Tab and inert on Enter/Space — the device picker's only trigger
+    // was a mouse click. JButton gives Tab-reachability, Enter/Space activation, a platform focus
+    // ring, and an accessible name derived from its own text for free.
+    private val selectorLabel = JButton("").apply {
         font = AdbToolboxTheme.Typography.body.deriveFont(Font.BOLD, JBUI.scale(11.5f))
         foreground = AdbToolboxTheme.Colors.text
         cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
-        addMouseListener(object : MouseAdapter() {
-            override fun mouseClicked(e: MouseEvent) = onToggle()
-        })
+        toolTipText = "Change device"
+        isContentAreaFilled = false
+        isBorderPainted = false
+        isFocusPainted = false
+        horizontalAlignment = JButton.LEFT
+        margin = java.awt.Insets(0, 0, 0, 0)
+        addActionListener { onToggle() }
     }
 
     private val serialLabel = JBLabel("").apply {
@@ -69,18 +74,24 @@ class DeviceContextBarPanel(
         foreground = AdbToolboxTheme.Colors.textFaint
     }
 
-    private val retryLabel = JBLabel("Retry").apply {
+    // Same JButton-over-JBLabel fix as [selectorLabel] — this was the unauthorized-state's only
+    // recovery action and was previously unreachable by keyboard.
+    private val retryLabel = JButton("Retry").apply {
         font = AdbToolboxTheme.Typography.body.deriveFont(Font.BOLD)
         foreground = AdbToolboxTheme.Colors.accent
         cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
+        toolTipText = "Re-query the device after accepting the USB debugging prompt"
+        isContentAreaFilled = false
+        isBorderPainted = false
+        isFocusPainted = false
+        margin = java.awt.Insets(0, 0, 0, 0)
         isVisible = false
-        addMouseListener(object : MouseAdapter() {
-            override fun mouseClicked(e: MouseEvent) = onRefresh()
-        })
+        addActionListener { onRefresh() }
     }
 
     private val refreshButton = JButton(AdbToolboxIcons.Actions.refresh).apply {
         toolTipText = "Refresh device list  ⌘⇧D"
+        getAccessibleContext().accessibleName = "Refresh device list"
         isContentAreaFilled = false
         isBorderPainted = false
         isFocusPainted = false
@@ -121,14 +132,29 @@ class DeviceContextBarPanel(
     /** Test/verification seam: the selector's current plain-text rendering. */
     val selectorText: String get() = selectorLabel.text
 
+    /** Returns keyboard focus to the selector button after the device picker popup it opened closes
+     * (Escape, a confirmed selection, or a mouse-away dismiss) — otherwise a keyboard-only user's
+     * focus would be left on a component the popup no longer occludes but that Swing itself never
+     * re-focused on their behalf. */
+    fun focusSelector() {
+        focusSelectorCallCountForTest++
+        selectorLabel.requestFocusInWindow()
+    }
+
+    /** Test-only visibility hook: counts [focusSelector] invocations — see
+     * [DevicePickerListPanel.focusListCallCountForTest] for why a call count, not a live focus
+     * assertion, is this headless sandbox's proof. */
+    internal var focusSelectorCallCountForTest: Int = 0
+        private set
+
     /** Test/verification seam: the right-side "N online" label's current text (empty when not shown). */
     val onlineCountText: String get() = onlineCountLabel.text
 
-    /** Test-only visibility hook so a test can simulate a real mouse click without a live display. */
-    internal val selectorComponentForTest: JComponent get() = selectorLabel
+    /** Test-only visibility hook so a test can simulate a real click/keyboard activation without a live display. */
+    internal val selectorComponentForTest: JButton get() = selectorLabel
 
-    /** Test-only visibility hook for the unauthorized-state "Retry" link. */
-    internal val retryComponentForTest: JComponent get() = retryLabel
+    /** Test-only visibility hook for the unauthorized-state "Retry" button. */
+    internal val retryComponentForTest: JButton get() = retryLabel
 
     /** Test-only visibility hook: the refresh icon button (nested inside [rightRow], not a direct child). */
     internal val refreshButtonForTest: JButton get() = refreshButton

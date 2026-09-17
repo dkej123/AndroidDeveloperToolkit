@@ -10,9 +10,8 @@ import java.awt.BorderLayout
 import java.awt.Cursor
 import java.awt.FlowLayout
 import java.awt.Font
-import java.awt.event.MouseAdapter
-import java.awt.event.MouseEvent
 import javax.swing.BorderFactory
+import javax.swing.JButton
 
 /**
  * The status bar (task 013, `design/README.md` §8), with task 043's supplied visual treatment
@@ -45,7 +44,11 @@ class FeedbackStatusPanel(
         foreground = AdbToolboxTheme.Colors.textDim
     }
 
-    private val overrideChipLabel = JBLabel("").apply {
+    // A real JButton, not a JBLabel with a MouseListener: task 050's keyboard-only pass found the
+    // status bar's only interactive control unreachable by Tab and inert on Enter/Space — the same
+    // fix applied to the device bar's selector/retry controls
+    // ([dev.acme.adbtoolbox.intellij.devicebar.DeviceContextBarPanel]).
+    private val overrideChipLabel = JButton("").apply {
         font = AdbToolboxTheme.Typography.monoMeta.deriveFont(Font.BOLD)
         foreground = AdbToolboxTheme.Colors.amber
         border = BorderFactory.createCompoundBorder(
@@ -54,10 +57,12 @@ class FeedbackStatusPanel(
         )
         cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
         toolTipText = "Revert font scale, density and proxy on this device"
+        isContentAreaFilled = false
+        isBorderPainted = true
+        isFocusPainted = false
+        margin = java.awt.Insets(0, 0, 0, 0)
         isVisible = false
-        addMouseListener(object : MouseAdapter() {
-            override fun mouseClicked(e: MouseEvent) = onResetOverrides()
-        })
+        addActionListener { onResetOverrides() }
     }
 
     private val leftRow = JBPanel<Nothing>(FlowLayout(FlowLayout.LEADING, AdbToolboxTheme.Spacing.s4, 0)).apply {
@@ -82,8 +87,8 @@ class FeedbackStatusPanel(
     val overrideChipVisible: Boolean get() = overrideChipLabel.isVisible
     val overrideChipText: String get() = overrideChipLabel.text
 
-    /** Test-only visibility hook so a test can simulate a real click without a live display. */
-    internal val overrideChipComponentForTest get() = overrideChipLabel
+    /** Test-only visibility hook so a test can simulate a real click/keyboard activation without a live display. */
+    internal val overrideChipComponentForTest: JButton get() = overrideChipLabel
 
     fun update(status: StatusState) {
         when (val process = status.process) {

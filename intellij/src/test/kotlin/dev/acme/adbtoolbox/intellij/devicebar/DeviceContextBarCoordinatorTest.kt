@@ -139,6 +139,44 @@ class DeviceContextBarCoordinatorTest : BasePlatformTestCase() {
         coordinator.dispose()
     }
 
+    // ---- Task 050: opening/closing the picker via keyboard must move focus with it ----
+
+    fun `test opening the picker moves keyboard focus into the row list exactly once`() {
+        val host = AdbToolboxHostPanel()
+        val coordinator = coordinator(host)
+        val openState = DeviceBarViewState(picker = DevicePickerState(isOpen = true, items = listOf(item("AAA"))))
+
+        coordinator.render(openState)
+        // A second render while still open (e.g. a highlight change) must not re-steal focus from
+        // whatever row the user has since navigated to with the arrow keys.
+        coordinator.render(openState.copy(picker = openState.picker.copy(highlightedIndex = 0)))
+
+        assertEquals(1, coordinator.pickerPanelForTest.focusListCallCountForTest)
+        coordinator.dispose()
+    }
+
+    fun `test closing the picker returns keyboard focus to the selector button`() {
+        val host = AdbToolboxHostPanel()
+        val coordinator = coordinator(host)
+        coordinator.render(DeviceBarViewState(picker = DevicePickerState(isOpen = true, items = listOf(item("AAA")))))
+
+        coordinator.render(DeviceBarViewState(picker = DevicePickerState(isOpen = false)))
+
+        assertEquals(1, coordinator.barPanel.focusSelectorCallCountForTest)
+        coordinator.dispose()
+    }
+
+    fun `test a state that never opens the picker never touches focus`() {
+        val host = AdbToolboxHostPanel()
+        val coordinator = coordinator(host)
+
+        coordinator.render(DeviceBarViewState(bar = DeviceBarPresentation.NoDevice))
+
+        assertEquals(0, coordinator.pickerPanelForTest.focusListCallCountForTest)
+        assertEquals(0, coordinator.barPanel.focusSelectorCallCountForTest)
+        coordinator.dispose()
+    }
+
     fun `test the coordinator wires up against a real view model without a construction-time crash`() {
         val host = AdbToolboxHostPanel()
         val dispatchers = TestDispatchers()

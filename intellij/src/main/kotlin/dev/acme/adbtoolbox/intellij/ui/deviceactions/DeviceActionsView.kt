@@ -70,7 +70,11 @@ class DeviceActionsView(
         rebootButton.isEnabled = enabled
         openShellButton.isEnabled = enabled
         wakeButton.isEnabled = enabled
-        if (state.controlPolicy !is ControlPolicy.Enabled) {
+        if (state.controlPolicy is ControlPolicy.Enabled) {
+            rebootButton.toolTipText = "Reboot the selected device"
+            openShellButton.toolTipText = "Open an adb shell session in the IDE's Terminal"
+            wakeButton.toolTipText = "Wake the selected device"
+        } else {
             rebootButton.toolTipText = "Reboot the selected device — Connect a device to use this"
             openShellButton.toolTipText = "Open an adb shell session in the IDE's Terminal — Connect a device to use this"
             wakeButton.toolTipText = "Wake the selected device — Connect a device to use this"

@@ -91,6 +91,30 @@ class DeviceActionsViewTest : BasePlatformTestCase() {
         assertFalse(scope.isActive)
     }
 
+    fun `test disabled buttons gain the supplied disabled reason, and re-enabling clears it`() {
+        val dispatchers = TestDispatchers()
+        val scope = CoroutineScope(SupervisorJob() + dispatchers.default)
+        val vm = viewModel(scope, dispatchers, MutableStateFlow(SelectedDeviceState.None))
+        val view = DeviceActionsView(vm, scope, dispatchers)
+
+        view.render(
+            DeviceActionsViewState(
+                controlPolicy = ControlPolicy.Disabled(dev.acme.adbtoolbox.domain.device.DeviceCommandContext.Disabled.NoDeviceSelected),
+                busyAction = null,
+            ),
+        )
+        assertTrue(view.rebootButton.toolTipText.endsWith("Connect a device to use this"))
+        assertTrue(view.openShellButton.toolTipText.endsWith("Connect a device to use this"))
+        assertTrue(view.wakeButton.toolTipText.endsWith("Connect a device to use this"))
+
+        view.render(DeviceActionsViewState(controlPolicy = ControlPolicy.Enabled, busyAction = null))
+
+        assertEquals("Reboot the selected device", view.rebootButton.toolTipText)
+        assertEquals("Open an adb shell session in the IDE's Terminal", view.openShellButton.toolTipText)
+        assertEquals("Wake the selected device", view.wakeButton.toolTipText)
+        view.dispose()
+    }
+
     fun `test clicking Reboot forwards a Reboot request through the real view model`() {
         val dispatchers = TestDispatchers()
         val vmScope = CoroutineScope(SupervisorJob() + dispatchers.default)

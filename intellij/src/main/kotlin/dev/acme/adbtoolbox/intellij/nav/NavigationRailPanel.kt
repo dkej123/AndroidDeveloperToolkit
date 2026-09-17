@@ -98,18 +98,17 @@ class NavigationRailPanel : JBPanel<NavigationRailPanel>(BorderLayout()) {
     }
 
     private fun badgeFor(viewId: ViewId): NavigationBadge = badges[viewId] ?: NavigationBadge.None
-
-    private companion object {
-        val TOOLTIPS: Map<ViewId, String> = mapOf(
-            ViewId.Device to "Device — mirroring, capture, facts",
-            ViewId.Apps to "Apps — restart, clear data, uninstall",
-            ViewId.Display to "Display — font scale and density",
-            ViewId.Network to "Network — global proxy",
-            ViewId.Logcat to "Logcat — severity, filters, search",
-            ViewId.Settings to "Settings",
-        )
-    }
 }
+
+/** Shared by [NavigationRailPanel]'s mouse-hover tooltip and [RailCellRenderer]'s per-row accessible name. */
+private val TOOLTIPS: Map<ViewId, String> = mapOf(
+    ViewId.Device to "Device — mirroring, capture, facts",
+    ViewId.Apps to "Apps — restart, clear data, uninstall",
+    ViewId.Display to "Display — font scale and density",
+    ViewId.Network to "Network — global proxy",
+    ViewId.Logcat to "Logcat — severity, filters, search",
+    ViewId.Settings to "Settings",
+)
 
 /**
  * Renders one 26px rail button: [RailGlyphIcon]/[AllIcons.General.Settings], the active/inactive
@@ -145,7 +144,8 @@ private class RailCellRenderer(
         background = if (isSelected) AdbToolboxTheme.Colors.accentBg else AdbToolboxTheme.Colors.panel
         border = RailButtonBorder(if (isSelected) AdbToolboxTheme.Colors.accentBorder else null)
 
-        toolTipText = value.name
+        toolTipText = TOOLTIPS[value] ?: value.name
+        getAccessibleContext().accessibleName = TOOLTIPS[value] ?: value.name
         return this
     }
 

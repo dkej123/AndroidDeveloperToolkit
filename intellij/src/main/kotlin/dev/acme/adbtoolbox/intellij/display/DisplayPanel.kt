@@ -493,6 +493,7 @@ class DisplayPanel(
         }
 
         fun toggleRow(toggle: ToggleSwitch, label: String, valueLabel: JBLabel): JPanel {
+            toggle.getAccessibleContext().accessibleName = label
             val labelComponent = JBLabel(label).apply {
                 font = AdbToolboxTheme.Typography.body.deriveFont(JBUI.scale(11.5f))
             }

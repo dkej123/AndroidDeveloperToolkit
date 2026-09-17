@@ -79,6 +79,7 @@ class LogcatPanel(
         border = BorderFactory.createEmptyBorder()
         font = AdbToolboxTheme.Typography.body
         toolTipText = "Search log…  ⌘F"
+        getAccessibleContext().accessibleName = "Search log"
         document.addDocumentListener(object : DocumentListener {
             override fun insertUpdate(e: DocumentEvent) = onQueryChange(text)
             override fun removeUpdate(e: DocumentEvent) = onQueryChange(text)
@@ -103,6 +104,8 @@ class LogcatPanel(
         foreground = AdbToolboxTheme.Colors.textFaint
         margin = java.awt.Insets(0, 0, 0, 0)
         isVisible = false
+        toolTipText = "Clear search"
+        getAccessibleContext().accessibleName = "Clear search"
         addActionListener { searchField.text = "" }
     }
 
@@ -159,6 +162,7 @@ class LogcatPanel(
 
     private val packageFilterChip = JToggleButton().apply {
         toolTipText = "Limit to the app selected in Apps"
+        getAccessibleContext().accessibleName = "Limit to selected app"
         font = AdbToolboxTheme.Typography.mono.deriveFont(JBUI.scale(10f))
         isContentAreaFilled = false
         isFocusPainted = false
@@ -282,9 +286,31 @@ class LogcatPanel(
         virtualList.inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_END, 0), "logcat.jumpToLatest")
         virtualList.actionMap.put("logcat.jumpToLatest", actionOf { onJumpToLatest() })
 
+        // `design/README.md` Interactions: "⌘F ... focuses Logcat search field". A modifier chord
+        // (never bare "F"), so registering it at WHEN_ANCESTOR_OF_FOCUSED_COMPONENT — reachable from
+        // anywhere in this view, including the search field itself (re-focus/select-all) — never
+        // collides with typing plain text into [searchField]. Uses the platform menu-shortcut mask
+        // (⌘ on macOS, Ctrl elsewhere) resolved from `os.name` rather than
+        // `Toolkit.getMenuShortcutKeyMaskEx()`, which throws `HeadlessException` in headless test JVMs.
+        val menuShortcutMask = if (System.getProperty("os.name").orEmpty().contains("Mac", ignoreCase = true)) {
+            java.awt.event.InputEvent.META_DOWN_MASK
+        } else {
+            java.awt.event.InputEvent.CTRL_DOWN_MASK
+        }
+        val focusSearchKeyStroke = KeyStroke.getKeyStroke(KeyEvent.VK_F, menuShortcutMask)
+        getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT)
+            .put(focusSearchKeyStroke, "logcat.focusSearch")
+        actionMap.put("logcat.focusSearch", actionOf { focusSearchField() })
+
         addComponentListener(object : ComponentAdapter() {
             override fun componentResized(e: ComponentEvent) = applyResponsiveColumns(width)
         })
+    }
+
+    /** `design/README.md` Interactions: "⌘F ... focuses Logcat search field". */
+    fun focusSearchField() {
+        searchField.requestFocusInWindow()
+        searchField.selectAll()
     }
 
     private var programmaticScroll = false
@@ -307,6 +333,7 @@ class LogcatPanel(
 
     /** Test-only visibility hooks so a test can drive real Swing interactions without a live display. */
     internal val searchFieldForTest: JTextField get() = searchField
+    internal val clearQueryButtonForTest: JButton get() = clearQueryButton
     internal val levelButtonsForTest: Map<LogSeverity, JToggleButton> get() = levelChips
     internal val packageFilterChipForTest: JToggleButton get() = packageFilterChip
     internal val pauseButtonForTest: JToggleButton get() = pauseButton
@@ -427,6 +454,7 @@ class LogcatPanel(
         fun iconToggleButton(icon: Icon, tooltip: String, onToggle: () -> Unit): JToggleButton = JToggleButton(icon).apply {
             preferredSize = Dimension(AdbToolboxTheme.Sizes.iconButton, AdbToolboxTheme.Sizes.iconButton)
             toolTipText = tooltip
+            getAccessibleContext().accessibleName = tooltip.substringBefore("  ")
             isContentAreaFilled = false
             isFocusPainted = false
             isOpaque = false
@@ -437,6 +465,7 @@ class LogcatPanel(
         fun iconButton(icon: Icon, tooltip: String): JButton = JButton(icon).apply {
             preferredSize = Dimension(AdbToolboxTheme.Sizes.iconButton, AdbToolboxTheme.Sizes.iconButton)
             toolTipText = tooltip
+            getAccessibleContext().accessibleName = tooltip.substringBefore("  ")
             isContentAreaFilled = false
             isFocusPainted = false
             isBorderPainted = false

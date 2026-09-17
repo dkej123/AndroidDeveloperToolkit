@@ -180,6 +180,45 @@ class AppsPanelTest : BasePlatformTestCase() {
         assertFalse(panel.launchButtonForTest.isEnabled)
     }
 
+    // ---- Task 050: disabled action buttons must name the actual reason, and clear it once enabled ----
+
+    fun `test updateLifecycle names no-device as the disabled reason`() {
+        val panel = AppsPanel(onQueryChange = {}, onToggleSystemPackages = {}, onSelect = {}, onClearFilter = {})
+
+        panel.updateLifecycle(
+            AppLifecycleViewState(
+                controlPolicy = ControlPolicy.Disabled(dev.acme.adbtoolbox.domain.device.DeviceCommandContext.Disabled.NoDeviceSelected),
+                selectedPackageName = null,
+                busy = false,
+            ),
+        )
+
+        assertTrue(panel.restartButtonForTest.toolTipText.endsWith("Connect a device to use this"))
+        assertTrue(panel.forceStopButtonForTest.toolTipText.endsWith("Connect a device to use this"))
+        assertTrue(panel.launchButtonForTest.toolTipText.endsWith("Connect a device to use this"))
+    }
+
+    fun `test updateLifecycle names no-selected-package as the disabled reason when a device is online`() {
+        val panel = AppsPanel(onQueryChange = {}, onToggleSystemPackages = {}, onSelect = {}, onClearFilter = {})
+
+        panel.updateLifecycle(AppLifecycleViewState(controlPolicy = ControlPolicy.Enabled, selectedPackageName = null, busy = false))
+
+        assertTrue(panel.restartButtonForTest.toolTipText.endsWith("Select an app to use this"))
+    }
+
+    fun `test updateLifecycle names busy as the disabled reason, and clears the reason once actions are enabled`() {
+        val panel = AppsPanel(onQueryChange = {}, onToggleSystemPackages = {}, onSelect = {}, onClearFilter = {})
+        panel.updateLifecycle(AppLifecycleViewState(controlPolicy = ControlPolicy.Enabled, selectedPackageName = "com.acme.shop", busy = true))
+
+        assertTrue(panel.restartButtonForTest.toolTipText.endsWith("An action is already running for this app"))
+
+        panel.updateLifecycle(AppLifecycleViewState(controlPolicy = ControlPolicy.Enabled, selectedPackageName = "com.acme.shop", busy = false))
+
+        assertEquals("Force-stop, then launch the main activity  ⇧⌘R", panel.restartButtonForTest.toolTipText)
+        assertEquals("am force-stop — leaves data intact", panel.forceStopButtonForTest.toolTipText)
+        assertEquals("monkey launch of the main activity", panel.launchButtonForTest.toolTipText)
+    }
+
     fun `test clicking restart, force-stop, and launch invoke their own callbacks`() {
         var restarted = 0
         var forceStopped = 0
@@ -226,6 +265,7 @@ class AppsPanelTest : BasePlatformTestCase() {
             ),
         )
         assertFalse(panel.clearDataButtonForTest.isEnabled)
+        assertTrue(panel.clearDataButtonForTest.toolTipText.endsWith("An action is already running for this app"))
     }
 
     fun `test clicking Clear data invokes only its callback`() {
@@ -272,6 +312,7 @@ class AppsPanelTest : BasePlatformTestCase() {
             ),
         )
         assertFalse(panel.uninstallButtonForTest.isEnabled)
+        assertTrue(panel.uninstallButtonForTest.toolTipText.endsWith("An action is already running for this app"))
     }
 
     fun `test clicking Uninstall invokes only its callback`() {

@@ -3,7 +3,6 @@ package dev.acme.adbtoolbox.intellij.devicebar
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import dev.acme.adbtoolbox.application.devicebar.DeviceBarPresentation
 import dev.acme.adbtoolbox.domain.adb.DeviceSerial
-import java.awt.event.MouseEvent
 
 private val serial = DeviceSerial.of("R58N90ABCDE")
 private fun device(model: String? = "Pixel_5") = dev.acme.adbtoolbox.domain.device.Device(
@@ -106,7 +105,7 @@ class DeviceContextBarPanelTest : BasePlatformTestCase() {
         var toggled = false
         val panel = DeviceContextBarPanel(onToggle = { toggled = true }, onRefresh = {})
 
-        panel.clickSelectorForTest()
+        panel.selectorComponentForTest.doClick()
 
         assertTrue(toggled)
     }
@@ -125,20 +124,37 @@ class DeviceContextBarPanelTest : BasePlatformTestCase() {
         val panel = DeviceContextBarPanel(onToggle = {}, onRefresh = { refreshed = true })
         panel.update(DeviceBarPresentation.Unauthorized(device()))
 
-        for (listener in panel.retryComponentForTest.mouseListeners) {
-            listener.mouseClicked(
-                MouseEvent(panel.retryComponentForTest, MouseEvent.MOUSE_CLICKED, System.currentTimeMillis(), 0, 0, 0, 1, false),
-            )
-        }
+        panel.retryComponentForTest.doClick()
 
         assertTrue(refreshed)
     }
-}
 
-/** Simulates a real mouse click on the selector without depending on actual AWT event delivery. */
-private fun DeviceContextBarPanel.clickSelectorForTest() {
-    val selector = this.selectorComponentForTest
-    for (listener in selector.mouseListeners) {
-        listener.mouseClicked(MouseEvent(selector, MouseEvent.MOUSE_CLICKED, System.currentTimeMillis(), 0, 0, 0, 1, false))
+    // ---- Task 050: the selector and retry controls must be real, keyboard-operable buttons ----
+
+    fun `test the selector is a focusable button reachable by keyboard, not a mouse-only label`() {
+        val panel = DeviceContextBarPanel(onToggle = {}, onRefresh = {})
+
+        assertTrue(panel.selectorComponentForTest.isFocusable)
+    }
+
+    fun `test the retry control is a focusable button reachable by keyboard, not a mouse-only label`() {
+        val panel = DeviceContextBarPanel(onToggle = {}, onRefresh = {})
+        panel.update(DeviceBarPresentation.Unauthorized(device()))
+
+        assertTrue(panel.retryComponentForTest.isFocusable)
+    }
+
+    fun `test the selector exposes an accessible name matching its rendered state`() {
+        val panel = DeviceContextBarPanel(onToggle = {}, onRefresh = {})
+
+        panel.update(DeviceBarPresentation.NoDevice)
+
+        assertEquals(panel.selectorText, panel.selectorComponentForTest.getAccessibleContext().accessibleName)
+    }
+
+    fun `test the refresh button exposes an accessible name`() {
+        val panel = DeviceContextBarPanel(onToggle = {}, onRefresh = {})
+
+        assertEquals("Refresh device list", panel.refreshButtonForTest.getAccessibleContext().accessibleName)
     }
 }

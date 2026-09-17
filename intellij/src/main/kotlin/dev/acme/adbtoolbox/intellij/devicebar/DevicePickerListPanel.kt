@@ -120,6 +120,21 @@ class DevicePickerListPanel(
     /** Test/verification seam: the rows currently rendered, in order. */
     val renderedItems: List<DevicePickerItem> get() = (0 until model.size()).map(model::getElementAt)
 
+    /** Moves keyboard focus into the row list — called once when the popup opens, since opening it
+     * via a keyboard-driven [onSelect]-adjacent trigger (Enter/Space on the device bar's selector
+     * button) would otherwise leave focus on that now-hidden-behind-the-popup button, stranding a
+     * keyboard-only user with a visible popup they cannot navigate with Up/Down/Enter/Escape. */
+    fun focusList() {
+        focusListCallCountForTest++
+        list.requestFocusInWindow()
+    }
+
+    /** Test-only visibility hook: counts [focusList] invocations — `requestFocusInWindow()` itself is
+     * a silent no-op in this headless test sandbox's undisplayed windows, so this is how a test
+     * proves the coordinator asked for focus at all. */
+    internal var focusListCallCountForTest: Int = 0
+        private set
+
     /** Test-only visibility hook so a test can simulate real key/mouse events without a live display. */
     internal val listComponentForTest: JBList<DevicePickerItem> get() = list
 

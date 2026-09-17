@@ -8,6 +8,7 @@ import dev.acme.adbtoolbox.application.apps.AppLifecycleViewState
 import dev.acme.adbtoolbox.application.apps.AppsViewState
 import dev.acme.adbtoolbox.application.apps.ClearDataViewState
 import dev.acme.adbtoolbox.application.apps.UninstallViewState
+import dev.acme.adbtoolbox.domain.devicecontext.ControlPolicy
 import dev.acme.adbtoolbox.intellij.icons.AdbToolboxIcons
 import dev.acme.adbtoolbox.intellij.ui.common.AdbToolboxTheme
 import dev.acme.adbtoolbox.intellij.ui.common.SolidChipBorder
@@ -164,15 +165,15 @@ class AppsPanel(
     }
 
     private val restartButton = primaryButton("Restart", AdbToolboxIcons.Actions.restart).apply {
-        toolTipText = "Force-stop, then launch the main activity  ⇧⌘R"
+        toolTipText = RESTART_TOOLTIP
         addActionListener { onRestart() }
     }
     private val forceStopButton = secondaryButton("Force-stop", AdbToolboxIcons.Actions.forceStop).apply {
-        toolTipText = "am force-stop — leaves data intact"
+        toolTipText = FORCE_STOP_TOOLTIP
         addActionListener { onForceStop() }
     }
     private val launchButton = secondaryButton("Launch").apply {
-        toolTipText = "monkey launch of the main activity"
+        toolTipText = LAUNCH_TOOLTIP
         addActionListener { onLaunch() }
     }
     private val actionRow = JPanel(FlowLayout(FlowLayout.LEFT, AdbToolboxTheme.Spacing.s3, 0)).apply {
@@ -188,11 +189,11 @@ class AppsPanel(
         foreground = AdbToolboxTheme.Colors.textFaint
     }
     private val clearDataButton = dangerButton("Clear data", AdbToolboxIcons.Actions.clearData).apply {
-        toolTipText = "Deletes databases, prefs and caches. Cannot be undone."
+        toolTipText = CLEAR_DATA_TOOLTIP
         addActionListener { onClearData() }
     }
     private val uninstallButton = dangerButton("Uninstall", AdbToolboxIcons.Actions.uninstall).apply {
-        toolTipText = "Removes the app and all its data. Cannot be undone."
+        toolTipText = UNINSTALL_TOOLTIP
         addActionListener { onUninstall() }
     }
     private val destructiveButtons = JPanel(FlowLayout(FlowLayout.RIGHT, AdbToolboxTheme.Spacing.s3, 0)).apply {
@@ -294,16 +295,26 @@ class AppsPanel(
         restartButton.isEnabled = enabled
         forceStopButton.isEnabled = enabled
         launchButton.isEnabled = enabled
+        val reason = disabledReason(state.controlPolicy, state.selectedPackageName, state.busy)
+        restartButton.toolTipText = RESTART_TOOLTIP.withDisabledReason(reason)
+        forceStopButton.toolTipText = FORCE_STOP_TOOLTIP.withDisabledReason(reason)
+        launchButton.toolTipText = LAUNCH_TOOLTIP.withDisabledReason(reason)
     }
 
     /** Reflects the independent confirm-before-command workflow onto its destructive control. */
     fun updateClearData(state: ClearDataViewState) {
         clearDataButton.isEnabled = state.actionEnabled
+        clearDataButton.toolTipText = CLEAR_DATA_TOOLTIP.withDisabledReason(
+            disabledReason(state.controlPolicy, state.selectedPackageName, state.busy),
+        )
     }
 
     /** Reflects task 025's independent confirm-before-command workflow onto its destructive control. */
     fun updateUninstall(state: UninstallViewState) {
         uninstallButton.isEnabled = state.actionEnabled
+        uninstallButton.toolTipText = UNINSTALL_TOOLTIP.withDisabledReason(
+            disabledReason(state.controlPolicy, state.selectedPackageName, state.busy),
+        )
     }
 
     /** Test/disposal seam: releases [list]'s own listeners. Coordinators call this from their own `dispose()`. */
@@ -327,6 +338,25 @@ class AppsPanel(
     }
 
     private companion object {
+        const val RESTART_TOOLTIP = "Force-stop, then launch the main activity  ⇧⌘R"
+        const val FORCE_STOP_TOOLTIP = "am force-stop — leaves data intact"
+        const val LAUNCH_TOOLTIP = "monkey launch of the main activity"
+        const val CLEAR_DATA_TOOLTIP = "Deletes databases, prefs and caches. Cannot be undone."
+        const val UNINSTALL_TOOLTIP = "Removes the app and all its data. Cannot be undone."
+
+        /** `design/README.md` Interactions: every device-mutating control "keeps its tooltip and gains
+         * the reason" it is disabled — extended here past the no-device case to the two other reasons
+         * these action buttons independently disable for (no package selected, an action already
+         * running), so the tooltip always names the actual blocker rather than staying silent. */
+        fun disabledReason(controlPolicy: ControlPolicy, selectedPackageName: String?, busy: Boolean): String? = when {
+            controlPolicy !is ControlPolicy.Enabled -> "Connect a device to use this"
+            selectedPackageName == null -> "Select an app to use this"
+            busy -> "An action is already running for this app"
+            else -> null
+        }
+
+        fun String.withDisabledReason(reason: String?): String = if (reason == null) this else "$this — $reason"
+
         fun primaryButton(text: String, icon: javax.swing.Icon) = JButton(text, icon).apply {
             preferredSize = Dimension(preferredSize.width, AdbToolboxTheme.Sizes.primaryButton)
             background = AdbToolboxTheme.Colors.accent

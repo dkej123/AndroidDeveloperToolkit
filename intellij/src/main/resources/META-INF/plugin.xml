@@ -60,5 +60,17 @@
             <keyboard-shortcut keymap="Mac OS X" first-keystroke="shift meta L"/>
             <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="shift meta L"/>
         </action>
+
+        <!-- Task 050's global refresh-devices shortcut — closes the gap where the device bar's
+             refresh button already advertised "⌘⇧D" in its tooltip with no keymap entry behind it;
+             design/README.md's Interactions section names shift+cmd+D. -->
+        <action id="AdbToolbox.RefreshDevices"
+                class="dev.acme.adbtoolbox.intellij.devicebar.RefreshDevicesAction"
+                text="Refresh Devices"
+                description="Refresh the connected device list">
+            <keyboard-shortcut keymap="$default" first-keystroke="shift control D"/>
+            <keyboard-shortcut keymap="Mac OS X" first-keystroke="shift meta D"/>
+            <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="shift meta D"/>
+        </action>
     </actions>
 </idea-plugin>

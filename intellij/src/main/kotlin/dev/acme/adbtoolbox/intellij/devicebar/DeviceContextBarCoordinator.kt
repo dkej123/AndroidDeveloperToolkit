@@ -49,7 +49,15 @@ class DeviceContextBarCoordinator(
         onPairOverWifi = { viewModel.handle(DeviceBarIntent.RequestPairOverWifi) },
     )
 
+    /** Test-only visibility hook: the picker popup, nested behind [overlays] rather than a direct child. */
+    internal val pickerPanelForTest: DevicePickerListPanel get() = pickerPanel
+
     private val overlays = host.overlays
+
+    /** Tracks the picker's previous open/closed state so [render] moves keyboard focus into (or back
+     * out of) the popup exactly once per open — never re-stealing focus from the list on every
+     * highlight-driven re-render while it stays open. */
+    private var pickerWasOpen = false
 
     init {
         host.deviceContextSlot.add(barPanel, BorderLayout.CENTER)
@@ -65,9 +73,12 @@ class DeviceContextBarCoordinator(
         pickerPanel.update(state.picker)
         if (state.picker.isOpen) {
             overlays.show(pickerPanel, ::pickerBounds)
+            if (!pickerWasOpen) pickerPanel.focusList()
         } else {
             overlays.dismiss(pickerPanel)
+            if (pickerWasOpen) barPanel.focusSelector()
         }
+        pickerWasOpen = state.picker.isOpen
     }
 
     /**

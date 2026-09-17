@@ -6,7 +6,6 @@ import dev.acme.adbtoolbox.domain.feedback.ProcessIndicator
 import dev.acme.adbtoolbox.domain.feedback.StatusState
 import java.awt.Component
 import java.awt.Container
-import java.awt.event.MouseEvent
 
 /**
  * [FeedbackStatusPanel] renders task 013's [StatusState] with task 043's supplied visual treatment
@@ -84,11 +83,25 @@ class FeedbackStatusPanelTest : BasePlatformTestCase() {
         val panel = FeedbackStatusPanel(onResetOverrides = { reset = true })
         panel.updateOverrideCount(2)
 
-        val chip = panel.overrideChipComponentForTest
-        for (listener in chip.mouseListeners) {
-            listener.mouseClicked(MouseEvent(chip, MouseEvent.MOUSE_CLICKED, System.currentTimeMillis(), 0, 0, 0, 1, false))
-        }
+        panel.overrideChipComponentForTest.doClick()
 
         assertTrue(reset)
+    }
+
+    // ---- Task 050: the override chip is the status bar's only interactive control ----
+
+    fun `test the override chip is a focusable button reachable by keyboard, not a mouse-only label`() {
+        val panel = FeedbackStatusPanel()
+        panel.updateOverrideCount(1)
+
+        assertTrue(panel.overrideChipComponentForTest.isFocusable)
+    }
+
+    fun `test the override chip exposes an accessible name matching its rendered copy`() {
+        val panel = FeedbackStatusPanel()
+
+        panel.updateOverrideCount(3)
+
+        assertEquals("3 overrides · reset all", panel.overrideChipComponentForTest.getAccessibleContext().accessibleName)
     }
 }
