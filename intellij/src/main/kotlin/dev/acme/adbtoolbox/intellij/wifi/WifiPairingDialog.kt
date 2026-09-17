@@ -6,8 +6,11 @@ import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBPasswordField
 import com.intellij.ui.components.JBTextField
 import com.intellij.util.ui.FormBuilder
+import dev.acme.adbtoolbox.intellij.icons.AdbToolboxIcons
+import dev.acme.adbtoolbox.intellij.ui.common.AdbToolboxTheme
 import java.util.Arrays
 import javax.swing.JComponent
+import javax.swing.SwingConstants
 
 /**
  * Task 039's native, no-bespoke-layout pairing input dialog (`design/README.md` §1's "Pair device
@@ -20,9 +23,9 @@ import javax.swing.JComponent
  */
 internal class WifiPairingDialog(project: Project) : DialogWrapper(project, false) {
 
-    private val pairingAddressField = JBTextField()
+    private val pairingAddressField = JBTextField().also(::styleAddressField)
     private val pairingCodeField = JBPasswordField()
-    private val connectAddressField = JBTextField()
+    private val connectAddressField = JBTextField().also(::styleAddressField)
 
     val pairingAddressText: String get() = pairingAddressField.text.orEmpty()
     val connectAddressText: String get() = connectAddressField.text.orEmpty()
@@ -42,10 +45,29 @@ internal class WifiPairingDialog(project: Project) : DialogWrapper(project, fals
     }
 
     override fun createCenterPanel(): JComponent = FormBuilder.createFormBuilder()
+        .addComponent(createPairingHeaderLabel())
         .addLabeledComponent(JBLabel("Pairing IP address & port"), pairingAddressField)
         .addLabeledComponent(JBLabel("Wi-Fi pairing code"), pairingCodeField)
         .addLabeledComponent(JBLabel("IP address & port (adb connect)"), connectAddressField)
         .panel
 
     override fun getPreferredFocusedComponent(): JComponent = pairingAddressField
+}
+
+/** IP:port values are copy-paste targets per the design system's mono rule — pulled out so it is
+ * unit-testable on a plain [JBTextField], matching [dev.acme.adbtoolbox.intellij.apps
+ * .styleDestructiveButton]'s "extract the one styled bit" shape for an untested [DialogWrapper]. */
+internal fun styleAddressField(field: JBTextField) {
+    field.font = AdbToolboxTheme.Typography.mono
+}
+
+/** The dialog's own header, using the supplied `authorize` icon (`design/icons/actions/authorize*.svg`)
+ * for this pairing/authorize entry point, since no bespoke pairing layout is supplied. */
+internal fun createPairingHeaderLabel(): JBLabel = JBLabel(
+    "Pair device over Wi-Fi",
+    AdbToolboxIcons.Actions.authorize,
+    SwingConstants.LEFT,
+).apply {
+    font = AdbToolboxTheme.Typography.sectionTitle
+    foreground = AdbToolboxTheme.Colors.text
 }

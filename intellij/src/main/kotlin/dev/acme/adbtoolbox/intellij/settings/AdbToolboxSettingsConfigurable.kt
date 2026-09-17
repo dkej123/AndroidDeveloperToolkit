@@ -15,6 +15,7 @@ import dev.acme.adbtoolbox.domain.settings.SettingsState
 import dev.acme.adbtoolbox.intellij.composition.AdbToolboxProjectService
 import dev.acme.adbtoolbox.intellij.persistence.AdbToolboxProjectState
 import dev.acme.adbtoolbox.intellij.persistence.SettingsPersistenceAdapter
+import dev.acme.adbtoolbox.intellij.ui.common.AdbToolboxTheme
 import kotlinx.coroutines.runBlocking
 import javax.swing.JComponent
 import javax.swing.JPanel
@@ -116,6 +117,11 @@ class AdbToolboxSettingsConfigurable internal constructor(
         private fun settingsField(componentName: String): JBTextField = JBTextField().apply {
             name = componentName
             columns = 36
+            // Paths and the buffer-size value are copy-paste targets, per the design system's
+            // "serials, IPs, ports, package names, densities... are always mono" rule (matches the
+            // same JBTextField().apply { font = AdbToolboxTheme.Typography.mono } custom-field
+            // pattern task 046's DisplayPanel uses for its own numeric override fields).
+            font = AdbToolboxTheme.Typography.mono
         }
 
         private fun Set<SettingsFieldError>.toMessage(): String = map { error ->

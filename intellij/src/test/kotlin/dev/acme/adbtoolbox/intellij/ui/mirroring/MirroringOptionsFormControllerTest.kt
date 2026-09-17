@@ -5,6 +5,7 @@ import dev.acme.adbtoolbox.application.mirroring.MirroringOptionsApplyResult
 import dev.acme.adbtoolbox.domain.mirroring.MirroringOptionFieldError
 import dev.acme.adbtoolbox.domain.mirroring.MirroringOptions
 import dev.acme.adbtoolbox.domain.mirroring.MirroringOptionsDraft
+import dev.acme.adbtoolbox.intellij.ui.common.AdbToolboxTheme
 
 /**
  * Task 040's apply/cancel behavior, kept as a [BasePlatformTestCase] (Swing components need the
@@ -34,6 +35,13 @@ class MirroringOptionsFormControllerTest : BasePlatformTestCase() {
             if (result is MirroringOptionsApplyResult.Applied) persisted = result.options
             return result
         }
+    }
+
+    fun `test the numeric option fields use the design system's mono font`() {
+        val controller = MirroringOptionsFormController(FakeBackend())
+
+        assertEquals(AdbToolboxTheme.Typography.mono, controller.maxSize.font)
+        assertEquals(AdbToolboxTheme.Typography.mono, controller.videoBitRateMbps.font)
     }
 
     fun `test the form presents every persisted field on creation`() {

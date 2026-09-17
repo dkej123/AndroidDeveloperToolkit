@@ -8,6 +8,7 @@ import dev.acme.adbtoolbox.domain.mirroring.MirroringOptionFieldError
 import dev.acme.adbtoolbox.domain.mirroring.MirroringOptions
 import dev.acme.adbtoolbox.domain.mirroring.MirroringOptionsDraft
 import dev.acme.adbtoolbox.domain.mirroring.toDraft
+import dev.acme.adbtoolbox.intellij.ui.common.AdbToolboxTheme
 import javax.swing.JPanel
 
 /** Task 040's editor backend seam — mirrors [dev.acme.adbtoolbox.intellij.settings.SettingsEditorBackend]:
@@ -129,6 +130,9 @@ internal class MirroringOptionsFormController(private val backend: MirroringOpti
         private fun optionField(componentName: String): JBTextField = JBTextField().apply {
             name = componentName
             columns = 8
+            // Pixel/bitrate magnitudes read the same way as the design system's mono density
+            // fields, matching task 046's DisplayPanel custom-field font choice.
+            font = AdbToolboxTheme.Typography.mono
         }
 
         private fun Set<MirroringOptionFieldError>.toMessage(): String = map { error ->

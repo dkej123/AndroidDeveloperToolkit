@@ -5,11 +5,24 @@ import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import dev.acme.adbtoolbox.application.settings.SettingsApplyResult
 import dev.acme.adbtoolbox.domain.settings.SettingsState
 import dev.acme.adbtoolbox.domain.settings.SettingsFieldError
+import dev.acme.adbtoolbox.intellij.ui.common.AdbToolboxTheme
 import java.awt.Component
 import java.awt.Container
 import javax.swing.JTextField
 
 class AdbToolboxSettingsConfigurableTest : BasePlatformTestCase() {
+
+    fun `test path and buffer fields use the design system's mono font for copy-paste values`() {
+        val configurable = AdbToolboxSettingsConfigurable(FakeSettingsEditorBackend())
+
+        val component = configurable.createComponent()
+
+        assertEquals(AdbToolboxTheme.Typography.mono, field(component, "adbPathField").font)
+        assertEquals(AdbToolboxTheme.Typography.mono, field(component, "scrcpyPathField").font)
+        assertEquals(AdbToolboxTheme.Typography.mono, field(component, "captureDirectoryField").font)
+        assertEquals(AdbToolboxTheme.Typography.mono, field(component, "logcatBufferSizeKbField").font)
+        configurable.disposeUIResources()
+    }
 
     fun `test create component presents every persisted task 038 setting`() {
         val backend = FakeSettingsEditorBackend(
