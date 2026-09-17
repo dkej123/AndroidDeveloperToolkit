@@ -64,7 +64,7 @@ class DeviceContextBarPanel(
         foreground = AdbToolboxTheme.Colors.textFaint
         border = BorderFactory.createCompoundBorder(
             SolidChipBorder(AdbToolboxTheme.Colors.borderStrong),
-            BorderFactory.createEmptyBorder(1, 4, 1, 4),
+            JBUI.Borders.empty(1, 4),
         )
         isVisible = false
     }
@@ -103,7 +103,7 @@ class DeviceContextBarPanel(
         foreground = AdbToolboxTheme.Colors.amber
         background = AdbToolboxTheme.Colors.amberBg
         isOpaque = true
-        border = BorderFactory.createEmptyBorder(6, 10, 6, 10)
+        border = JBUI.Borders.empty(6, 10)
         isVisible = false
     }
 
@@ -124,9 +124,27 @@ class DeviceContextBarPanel(
     init {
         background = AdbToolboxTheme.Colors.header
         border = BorderFactory.createMatteBorder(0, 0, 1, 0, AdbToolboxTheme.Colors.border)
-        add(leftRow, BorderLayout.WEST)
+        // leftRow is CENTER, not WEST: BorderLayout gives WEST its full preferred width regardless
+        // of available space, so a long device name would paint over (never resize away from) the
+        // required refresh action in EAST at narrow widths — same fix as
+        // [dev.acme.adbtoolbox.intellij.feedback.FeedbackStatusPanel].
+        add(leftRow, BorderLayout.CENTER)
         add(rightRow, BorderLayout.EAST)
         add(bannerLabel, BorderLayout.SOUTH)
+        addComponentListener(object : java.awt.event.ComponentAdapter() {
+            override fun componentResized(e: java.awt.event.ComponentEvent) = applyResponsiveLayout(width)
+        })
+    }
+
+    private var currentOnline: DeviceBarPresentation.Online? = null
+    private var isNarrow = false
+
+    /** `design/README.md`'s narrow-width rule: below [AdbToolboxTheme.Breakpoints.narrow] the
+     * device bar drops the serial and shortens "N online" to "N" — mirrors
+     * [dev.acme.adbtoolbox.intellij.devicefacts.DeviceFactsPanel.applyResponsiveLayout]'s pattern. */
+    internal fun applyResponsiveLayout(width: Int) {
+        isNarrow = width < AdbToolboxTheme.Breakpoints.narrow
+        currentOnline?.let { renderOnline(it) }
     }
 
     /** Test/verification seam: the selector's current plain-text rendering. */
@@ -150,6 +168,9 @@ class DeviceContextBarPanel(
     /** Test/verification seam: the right-side "N online" label's current text (empty when not shown). */
     val onlineCountText: String get() = onlineCountLabel.text
 
+    /** Test/verification seam: the serial label's current text (empty in the narrow width class). */
+    val serialText: String get() = serialLabel.text
+
     /** Test-only visibility hook so a test can simulate a real click/keyboard activation without a live display. */
     internal val selectorComponentForTest: JButton get() = selectorLabel
 
@@ -169,6 +190,7 @@ class DeviceContextBarPanel(
         retryLabel.isVisible = false
         bannerLabel.isVisible = false
         serialLabel.text = ""
+        currentOnline = bar as? DeviceBarPresentation.Online
 
         when (bar) {
             DeviceBarPresentation.Loading -> {
@@ -185,10 +207,9 @@ class DeviceContextBarPanel(
                 selectorLabel.icon = StatusDotIcon(AdbToolboxTheme.Colors.green, filled = true)
                 selectorLabel.foreground = AdbToolboxTheme.Colors.text
                 selectorLabel.text = "${bar.device.model ?: bar.device.serial} (${bar.device.serial})"
-                serialLabel.text = bar.device.serial.toString()
                 chipLabel.text = connectionChipText(bar.device.connectionKind)
                 chipLabel.isVisible = true
-                onlineCountLabel.text = "${bar.onlineCount} online"
+                renderOnline(bar)
             }
             is DeviceBarPresentation.Unauthorized -> {
                 selectorLabel.icon = StatusDotIcon(AdbToolboxTheme.Colors.amber, filled = true)
@@ -208,6 +229,11 @@ class DeviceContextBarPanel(
                 selectorLabel.text = bar.message
             }
         }
+    }
+
+    private fun renderOnline(bar: DeviceBarPresentation.Online) {
+        serialLabel.text = if (isNarrow) "" else bar.device.serial.toString()
+        onlineCountLabel.text = if (isNarrow) "${bar.onlineCount}" else "${bar.onlineCount} online"
     }
 
     private fun connectionChipText(kind: DeviceConnectionKind) = when (kind) {

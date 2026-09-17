@@ -95,6 +95,29 @@ class PresetChipRowTest : BasePlatformTestCase() {
         }
     }
 
+    // ---- Task 051: `design/README.md`'s narrow-width rule — preset chip rows wrap rather than
+    // clip or require horizontal scrolling ----
+
+    fun `test the row lays out chips onto multiple lines when narrower than one row's content`() {
+        val row = PresetChipRow(
+            choices = listOf(
+                PresetChipChoice(0.85, "0.85×"),
+                PresetChipChoice(1.0, "1×", isDefault = true),
+                PresetChipChoice(1.15, "1.15×"),
+                PresetChipChoice(1.3, "1.3×"),
+                PresetChipChoice(1.5, "1.5×"),
+            ),
+            selected = 1.0,
+        )
+        val oneLineWidth = row.preferredSize.width
+
+        row.setSize(oneLineWidth / 2, Int.MAX_VALUE / 2)
+        row.doLayout()
+
+        val distinctRowTops = row.chips.map { it.y }.distinct()
+        assertTrue("expected wrapping onto more than one line", distinctRowTops.size > 1)
+    }
+
     private fun fontScaleRow(selected: Double) = PresetChipRow(
         choices = listOf(
             PresetChipChoice(0.85, "0.85×"),

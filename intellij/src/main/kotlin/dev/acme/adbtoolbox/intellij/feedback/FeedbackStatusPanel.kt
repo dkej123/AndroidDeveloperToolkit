@@ -2,6 +2,7 @@ package dev.acme.adbtoolbox.intellij.feedback
 
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBPanel
+import com.intellij.util.ui.JBUI
 import dev.acme.adbtoolbox.domain.feedback.ProcessIndicator
 import dev.acme.adbtoolbox.domain.feedback.StatusState
 import dev.acme.adbtoolbox.intellij.ui.common.AdbToolboxTheme
@@ -36,7 +37,7 @@ class FeedbackStatusPanel(
         font = AdbToolboxTheme.Typography.monoMeta.deriveFont(Font.BOLD)
         isOpaque = true
         isVisible = false
-        border = BorderFactory.createEmptyBorder(1, 4, 1, 4)
+        border = JBUI.Borders.empty(1, 4)
     }
 
     private val messageLabel = JBLabel("").apply {
@@ -53,7 +54,7 @@ class FeedbackStatusPanel(
         foreground = AdbToolboxTheme.Colors.amber
         border = BorderFactory.createCompoundBorder(
             SolidChipBorder(AdbToolboxTheme.Colors.amber),
-            BorderFactory.createEmptyBorder(1, 4, 1, 4),
+            JBUI.Borders.empty(1, 4),
         )
         cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
         toolTipText = "Revert font scale, density and proxy on this device"
@@ -79,7 +80,11 @@ class FeedbackStatusPanel(
     init {
         background = AdbToolboxTheme.Colors.header
         border = BorderFactory.createMatteBorder(1, 0, 0, 0, AdbToolboxTheme.Colors.border)
-        add(leftRow, BorderLayout.WEST)
+        // leftRow is CENTER, not WEST: BorderLayout gives WEST its full preferred width regardless
+        // of available space, so a long last-command message would paint over (never literally
+        // resize away from) the required "reset all" action in EAST at narrow widths. CENTER is
+        // allotted only the remaining space and clips its child to that bound instead.
+        add(leftRow, BorderLayout.CENTER)
         add(rightRow, BorderLayout.EAST)
     }
 

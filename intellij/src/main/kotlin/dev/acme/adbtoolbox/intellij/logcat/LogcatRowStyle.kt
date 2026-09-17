@@ -20,10 +20,15 @@ object LogcatRowStyle {
     fun rowBackground(severity: LogSeverity?): JBColor? = paletteFor(severity).rowBg
     fun isBoldRow(severity: LogSeverity?): Boolean = severity == LogSeverity.ASSERT
 
-    /** `design/README.md`'s responsive rule: Logcat shows the tag column only at `>= wide`; the
-     * timestamp column is not width-gated. */
+    /** `design/README.md`'s responsive rule: the tag column shows only at `>= wide`; the timestamp
+     * column shows at `dock` and `wide` (`>= narrow`) and is dropped in the `narrow` width class,
+     * matching the supplied prototype's `showTime: W >= 340` (`design/designs/ADB Toolbox
+     * Plugin.dc.html`). */
     fun columnsFor(width: Int): LogcatColumnVisibility =
-        LogcatColumnVisibility(timestamp = true, tag = width >= AdbToolboxTheme.Breakpoints.wide)
+        LogcatColumnVisibility(
+            timestamp = width >= AdbToolboxTheme.Breakpoints.narrow,
+            tag = width >= AdbToolboxTheme.Breakpoints.wide,
+        )
 
     /** The supplied level-chip row has no separate "clear filter" chip: the V chip itself is the
      * "no floor" state, matching [dev.acme.adbtoolbox.application.logcat.LogcatControlsIntent.SetMinSeverity]'s

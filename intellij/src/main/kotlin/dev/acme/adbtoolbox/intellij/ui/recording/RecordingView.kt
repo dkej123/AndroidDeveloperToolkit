@@ -65,7 +65,7 @@ class RecordingView(
         background = AdbToolboxTheme.Colors.redBg
         border = BorderFactory.createCompoundBorder(
             SolidChipBorder(AdbToolboxTheme.Colors.redBorder),
-            BorderFactory.createEmptyBorder(5, 8, 5, 8),
+            JBUI.Borders.empty(5, 8),
         )
         add(statusLabel, BorderLayout.CENTER)
         add(stopButton, BorderLayout.EAST)

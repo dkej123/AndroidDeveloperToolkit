@@ -77,7 +77,7 @@ class MirroringView(
         background = AdbToolboxTheme.Colors.brandBg
         border = BorderFactory.createCompoundBorder(
             SolidChipBorder(AdbToolboxTheme.Colors.brandBorder),
-            BorderFactory.createEmptyBorder(5, 8, 5, 8),
+            JBUI.Borders.empty(5, 8),
         )
         add(runningLabel, BorderLayout.CENTER)
         add(stopButton, BorderLayout.EAST)
@@ -92,7 +92,7 @@ class MirroringView(
     val helpLabel = JBLabel(IDLE_HELP).apply {
         font = AdbToolboxTheme.Typography.caption
         foreground = AdbToolboxTheme.Colors.textFaint
-        border = BorderFactory.createEmptyBorder(4, 0, 2, 0)
+        border = JBUI.Borders.empty(4, 0, 2, 0)
     }
 
     init {

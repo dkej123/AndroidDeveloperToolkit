@@ -3,6 +3,7 @@ package dev.acme.adbtoolbox.intellij.devicebar
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBList
 import com.intellij.ui.components.JBPanel
+import com.intellij.util.ui.JBUI
 import dev.acme.adbtoolbox.application.devicebar.DevicePickerItem
 import dev.acme.adbtoolbox.application.devicebar.DevicePickerState
 import dev.acme.adbtoolbox.domain.adb.DeviceSerial
@@ -51,7 +52,7 @@ class DevicePickerListPanel(
     private val headerLabel = JBLabel("CONNECTED DEVICES").apply {
         font = AdbToolboxTheme.Typography.groupLabel
         foreground = AdbToolboxTheme.Colors.textFaint
-        border = BorderFactory.createEmptyBorder(7, 10, 4, 10)
+        border = JBUI.Borders.empty(7, 10, 4, 10)
     }
 
     private val hintLabel = JBLabel("↑↓ to select · ⏎ to apply").apply {
@@ -72,7 +73,7 @@ class DevicePickerListPanel(
         background = AdbToolboxTheme.Colors.header
         border = BorderFactory.createCompoundBorder(
             BorderFactory.createMatteBorder(1, 0, 0, 0, AdbToolboxTheme.Colors.border),
-            BorderFactory.createEmptyBorder(6, 10, 6, 10),
+            JBUI.Borders.empty(6, 10),
         )
         add(pairOverWifiButton, BorderLayout.WEST)
         add(hintLabel, BorderLayout.EAST)

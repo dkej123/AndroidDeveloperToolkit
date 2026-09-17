@@ -81,7 +81,7 @@ class DeviceFactsPanel(
 
     private val factsGrid = JBPanel<Nothing>(GridLayout(0, 3, AdbToolboxTheme.Spacing.s4, AdbToolboxTheme.Spacing.s4)).apply {
         isOpaque = false
-        border = BorderFactory.createEmptyBorder(2, 10, 6, 10)
+        border = JBUI.Borders.empty(2, 10, 6, 10)
         DeviceFactId.entries.forEach { factId -> add(factCell(factId, factLabels.getValue(factId))) }
     }
 
@@ -108,7 +108,7 @@ class DeviceFactsPanel(
     private val loadingPanel = JBPanel<Nothing>().apply {
         layout = BoxLayout(this, BoxLayout.Y_AXIS)
         background = AdbToolboxTheme.Colors.bg
-        border = BorderFactory.createEmptyBorder(12, 12, 12, 12)
+        border = JBUI.Borders.empty(12)
         skeletonBars.forEach { bar ->
             add(bar)
             add(Box.createVerticalStrut(AdbToolboxTheme.Spacing.s4))
@@ -164,7 +164,7 @@ class DeviceFactsPanel(
         background = AdbToolboxTheme.Colors.bg
         border = BorderFactory.createCompoundBorder(
             BorderFactory.createMatteBorder(0, 0, 1, 0, AdbToolboxTheme.Colors.border),
-            BorderFactory.createEmptyBorder(10, 0, 12, 0),
+            JBUI.Borders.empty(10, 0, 12, 0),
         )
         add(sectionHeader(title, JBLabel(meta).apply {
             font = AdbToolboxTheme.Typography.monoMeta
@@ -178,7 +178,7 @@ class DeviceFactsPanel(
         background = AdbToolboxTheme.Colors.bg
         border = BorderFactory.createCompoundBorder(
             BorderFactory.createMatteBorder(0, 0, 1, 0, AdbToolboxTheme.Colors.border),
-            BorderFactory.createEmptyBorder(10, 0, 12, 0),
+            JBUI.Borders.empty(10, 0, 12, 0),
         )
         add(sectionHeader("Device", copyReportButton), BorderLayout.NORTH)
         add(factsGrid, BorderLayout.CENTER)
@@ -187,7 +187,7 @@ class DeviceFactsPanel(
 
     private fun sectionHeader(title: String, trailing: JComponent): JPanel = JBPanel<Nothing>(BorderLayout()).apply {
         isOpaque = false
-        border = BorderFactory.createEmptyBorder(0, 10, 6, 10)
+        border = JBUI.Borders.empty(0, 10, 6, 10)
         add(JBLabel(title).apply {
             font = AdbToolboxTheme.Typography.sectionTitle
             foreground = AdbToolboxTheme.Colors.text
@@ -208,7 +208,7 @@ class DeviceFactsPanel(
         val column = JBPanel<Nothing>().apply {
             layout = BoxLayout(this, BoxLayout.Y_AXIS)
             isOpaque = false
-            border = BorderFactory.createEmptyBorder(34, 16, 16, 16)
+            border = JBUI.Borders.empty(34, 16, 16, 16)
         }
         fun centered(component: JComponent): JComponent = component.apply { alignmentX = Component.CENTER_ALIGNMENT }
 
@@ -252,7 +252,7 @@ class DeviceFactsPanel(
 
 private fun transparentFlow(): JBPanel<Nothing> = JBPanel<Nothing>(FlowLayout(FlowLayout.LEFT, 6, 0)).apply {
     isOpaque = false
-    border = BorderFactory.createEmptyBorder(0, 10, 2, 10)
+    border = JBUI.Borders.empty(0, 10, 2, 10)
 }
 
 private fun linkButton(text: String, action: () -> Unit): JButton = JButton(text).apply {

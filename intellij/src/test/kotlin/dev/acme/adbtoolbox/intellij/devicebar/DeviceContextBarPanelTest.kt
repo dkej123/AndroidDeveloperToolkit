@@ -157,4 +157,77 @@ class DeviceContextBarPanelTest : BasePlatformTestCase() {
 
         assertEquals("Refresh device list", panel.refreshButtonForTest.getAccessibleContext().accessibleName)
     }
+
+    // ---- Task 051: the narrow width class (`design/README.md`'s responsive rule) drops the serial
+    // and shortens "N online" to "N" ----
+
+    fun `test the narrow width class drops the serial and shortens the online count`() {
+        val panel = DeviceContextBarPanel(onToggle = {}, onRefresh = {})
+        panel.update(DeviceBarPresentation.Online(device(), onlineCount = 3))
+
+        panel.applyResponsiveLayout(dev.acme.adbtoolbox.intellij.ui.common.AdbToolboxTheme.Breakpoints.narrow - 1)
+
+        assertEquals("", panel.serialText)
+        assertEquals("3", panel.onlineCountText)
+    }
+
+    fun `test the dock width class shows the serial and the full online count`() {
+        val panel = DeviceContextBarPanel(onToggle = {}, onRefresh = {})
+        panel.update(DeviceBarPresentation.Online(device(), onlineCount = 3))
+
+        panel.applyResponsiveLayout(dev.acme.adbtoolbox.intellij.ui.common.AdbToolboxTheme.Breakpoints.narrow)
+
+        assertEquals(serial.toString(), panel.serialText)
+        assertEquals("3 online", panel.onlineCountText)
+    }
+
+    fun `test narrowing then widening restores the serial and full online count`() {
+        val panel = DeviceContextBarPanel(onToggle = {}, onRefresh = {})
+        panel.update(DeviceBarPresentation.Online(device(), onlineCount = 5))
+
+        panel.applyResponsiveLayout(dev.acme.adbtoolbox.intellij.ui.common.AdbToolboxTheme.Breakpoints.narrow - 1)
+        panel.applyResponsiveLayout(dev.acme.adbtoolbox.intellij.ui.common.AdbToolboxTheme.Breakpoints.wide)
+
+        assertEquals(serial.toString(), panel.serialText)
+        assertEquals("5 online", panel.onlineCountText)
+    }
+
+    fun `test a later update reapplies the current width class`() {
+        val panel = DeviceContextBarPanel(onToggle = {}, onRefresh = {})
+        panel.applyResponsiveLayout(dev.acme.adbtoolbox.intellij.ui.common.AdbToolboxTheme.Breakpoints.narrow - 1)
+
+        panel.update(DeviceBarPresentation.Online(device(), onlineCount = 7))
+
+        assertEquals("", panel.serialText)
+        assertEquals("7", panel.onlineCountText)
+    }
+
+    fun `test the narrow width class does not affect non-online states`() {
+        val panel = DeviceContextBarPanel(onToggle = {}, onRefresh = {})
+        panel.update(DeviceBarPresentation.Unauthorized(device()))
+
+        panel.applyResponsiveLayout(dev.acme.adbtoolbox.intellij.ui.common.AdbToolboxTheme.Breakpoints.narrow - 1)
+
+        assertTrue(panel.selectorText.contains("unauthorized", ignoreCase = true))
+        assertTrue(panel.retryComponentForTest.isVisible)
+    }
+
+    fun `test a long device name never overlaps the required refresh action's bounds`() {
+        val panel = DeviceContextBarPanel(onToggle = {}, onRefresh = {})
+        panel.update(
+            DeviceBarPresentation.Online(
+                device(model = "A Very Long OEM Device Model Name That Would Overflow A Narrow Bar"),
+                onlineCount = 3,
+            ),
+        )
+
+        panel.setSize(260, 30)
+        panel.doLayout()
+
+        val rightRow = panel.refreshButtonForTest.parent
+        val leftRow = panel.components.first { it !== rightRow && it.isVisible }
+
+        assertTrue(leftRow.x + leftRow.width <= rightRow.x)
+        assertTrue(rightRow.x + rightRow.width <= panel.width)
+    }
 }

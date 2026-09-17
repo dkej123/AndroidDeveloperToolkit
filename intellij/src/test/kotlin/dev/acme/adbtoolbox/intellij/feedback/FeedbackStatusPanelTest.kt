@@ -104,4 +104,27 @@ class FeedbackStatusPanelTest : BasePlatformTestCase() {
 
         assertEquals("3 overrides · reset all", panel.overrideChipComponentForTest.getAccessibleContext().accessibleName)
     }
+
+    // ---- Task 051: a long last-command message must never clip the required "reset all" action ----
+
+    fun `test an overlong message never overlaps the override chip's bounds at a narrow width`() {
+        val panel = FeedbackStatusPanel()
+        panel.updateOverrideCount(3)
+        panel.update(
+            StatusState(
+                message = "A very long last-command message that would overflow a narrow docked tool window width",
+            ),
+        )
+
+        panel.setSize(260, 22)
+        panel.doLayout()
+
+        val rightRow = panel.overrideChipComponentForTest.parent
+        val leftRow = panel.components.first { it !== rightRow }
+
+        // BorderLayout.CENTER (leftRow) must be clipped to the remaining space, never extending
+        // into BorderLayout.EAST (rightRow, holding the required "reset all" action).
+        assertTrue(leftRow.x + leftRow.width <= rightRow.x)
+        assertTrue(rightRow.x + rightRow.width <= panel.width)
+    }
 }

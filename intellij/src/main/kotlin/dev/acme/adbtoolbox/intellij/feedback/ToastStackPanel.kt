@@ -2,6 +2,7 @@ package dev.acme.adbtoolbox.intellij.feedback
 
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBPanel
+import com.intellij.util.ui.JBUI
 import dev.acme.adbtoolbox.domain.feedback.FeedbackMessage
 import dev.acme.adbtoolbox.domain.feedback.FeedbackSeverity
 import dev.acme.adbtoolbox.intellij.ui.common.AdbToolboxTheme
@@ -60,7 +61,7 @@ class ToastStackPanel(
             val (borderColor, glyph) = severityTreatment(message.severity)
             border = BorderFactory.createCompoundBorder(
                 BorderFactory.createMatteBorder(0, 2, 0, 0, borderColor),
-                BorderFactory.createEmptyBorder(6, 8, 6, 8),
+                JBUI.Borders.empty(6, 8),
             )
 
             val textLabel = JBLabel(if (glyph != null) "$glyph  ${message.text}" else message.text).apply {

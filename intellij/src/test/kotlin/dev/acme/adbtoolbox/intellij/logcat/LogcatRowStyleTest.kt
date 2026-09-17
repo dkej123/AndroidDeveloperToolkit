@@ -34,14 +34,24 @@ class LogcatRowStyleTest : BasePlatformTestCase() {
         assertFalse(LogcatRowStyle.isBoldRow(null))
     }
 
-    fun `test tag column is wide-breakpoint only, timestamp always shows`() {
-        val narrow = LogcatRowStyle.columnsFor(AdbToolboxTheme.Breakpoints.wide - 1)
+    fun `test tag column is wide-breakpoint only, timestamp is dock-and-above`() {
+        val dock = LogcatRowStyle.columnsFor(AdbToolboxTheme.Breakpoints.wide - 1)
         val wide = LogcatRowStyle.columnsFor(AdbToolboxTheme.Breakpoints.wide)
 
-        assertFalse(narrow.tag)
-        assertTrue(narrow.timestamp)
+        assertFalse(dock.tag)
+        assertTrue(dock.timestamp)
         assertTrue(wide.tag)
         assertTrue(wide.timestamp)
+    }
+
+    fun `test narrow width below the dock breakpoint hides both timestamp and tag`() {
+        val justBelowNarrow = LogcatRowStyle.columnsFor(AdbToolboxTheme.Breakpoints.narrow - 1)
+        val atNarrowIsDock = LogcatRowStyle.columnsFor(AdbToolboxTheme.Breakpoints.narrow)
+
+        assertFalse(justBelowNarrow.timestamp)
+        assertFalse(justBelowNarrow.tag)
+        assertTrue(atNarrowIsDock.timestamp)
+        assertFalse(atNarrowIsDock.tag)
     }
 
     fun `test the verbose chip is active for both null and explicit verbose min severity`() {
