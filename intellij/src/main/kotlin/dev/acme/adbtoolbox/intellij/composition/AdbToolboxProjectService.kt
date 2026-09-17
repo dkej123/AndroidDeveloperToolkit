@@ -36,6 +36,8 @@ import dev.acme.adbtoolbox.application.device.SelectedDeviceViewModel
 import dev.acme.adbtoolbox.application.devicebar.DeviceBarViewModel
 import dev.acme.adbtoolbox.application.devicecontext.DeviceContextAggregator
 import dev.acme.adbtoolbox.application.devicecontext.AggregatedNavigationBadges
+import dev.acme.adbtoolbox.application.devicecontext.OverrideResetCoordinator
+import dev.acme.adbtoolbox.application.display.density.DensityOverrideResetUseCase
 import dev.acme.adbtoolbox.application.deviceactions.DeviceActionsUseCase
 import dev.acme.adbtoolbox.application.deviceactions.DeviceActionsViewModel
 import dev.acme.adbtoolbox.application.deviceactions.OpenShellUseCase
@@ -68,9 +70,12 @@ import dev.acme.adbtoolbox.domain.capture.CaptureDestination
 import dev.acme.adbtoolbox.domain.capture.FileNamePolicy
 import dev.acme.adbtoolbox.domain.capture.RevealInFileManager
 import dev.acme.adbtoolbox.domain.capture.TimestampFileNamePolicy
+import dev.acme.adbtoolbox.domain.adb.DeviceSerial
 import dev.acme.adbtoolbox.domain.device.DeviceListRefresher
 import dev.acme.adbtoolbox.domain.device.DeviceRepository
 import dev.acme.adbtoolbox.domain.device.DeviceSelectionPersistence
+import dev.acme.adbtoolbox.domain.devicecontext.OverrideReapplyPersistence
+import dev.acme.adbtoolbox.domain.devicecontext.PendingReapplyOverride
 import dev.acme.adbtoolbox.domain.deviceactions.TerminalLauncher
 import dev.acme.adbtoolbox.domain.device.DeviceCommandContext
 import dev.acme.adbtoolbox.domain.device.toCommandContext
@@ -564,6 +569,32 @@ class AdbToolboxProjectService(private val project: Project) : Disposable {
         recentsPersistence = networkRecentsPersistence,
     )
 
+    /**
+     * Task 041's reset-all/reconnect re-apply coordinator: drives the status bar's "N overrides ·
+     * reset all" chip (wired via [FeedbackOverlayCoordinator]'s `onResetOverrides`) by delegating to
+     * each feature's own [dev.acme.adbtoolbox.domain.devicecontext.OverrideResetUseCase] —
+     * [fontScaleViewModel]'s ([dev.acme.adbtoolbox.application.display.fontscale.FontScaleViewModel.overrideResetUseCase]),
+     * [densityUseCase]/[densityOverrideTracker]'s, and [proxyController] itself (it implements the
+     * port directly). [overrideReapplyPersistence] is in-memory only for now — a pending re-apply
+     * offer survives a device disconnect/reconnect within this IDE session but not an IDE restart;
+     * wiring it to [AdbToolboxProjectState] (mirroring [deviceSelectionPersistence]'s adapter) is a
+     * natural follow-up, not required by task 041's scope.
+     */
+    val overrideReapplyPersistence: OverrideReapplyPersistence = InMemoryOverrideReapplyPersistence()
+
+    val overrideResetCoordinator: OverrideResetCoordinator = OverrideResetCoordinator(
+        scope = childScope(),
+        dispatchers = dispatcherProvider,
+        selectedDeviceState = selectedDeviceViewModel.state,
+        resetUseCases = listOf(
+            fontScaleViewModel.overrideResetUseCase(),
+            DensityOverrideResetUseCase(densityUseCase, densityOverrideTracker),
+            proxyController,
+        ),
+        reapplyPersistence = overrideReapplyPersistence,
+        feedback = feedbackViewModel,
+    )
+
     /** Task 034's Logcat session/buffer owner, driven by [selectedDeviceViewModel]. */
     val logcatSessionManager: LogcatSessionManager = LogcatSessionManager(
         scope = childScope(),
@@ -621,5 +652,23 @@ class AdbToolboxProjectService(private val project: Project) : Disposable {
         if (projectScope.isActive) {
             projectScope.cancel()
         }
+    }
+}
+
+/**
+ * An in-memory-only [OverrideReapplyPersistence] (task 041): a pending re-apply offer survives a
+ * device disconnect/reconnect for as long as this project's [AdbToolboxProjectService] instance
+ * lives, but not an IDE restart. Wiring this to [dev.acme.adbtoolbox.intellij.persistence.AdbToolboxProjectState]
+ * for cross-restart persistence (mirroring [DeviceSelectionPersistenceAdapter]'s shape) is a
+ * reasonable follow-up, not required by task 041's scope.
+ */
+private class InMemoryOverrideReapplyPersistence : OverrideReapplyPersistence {
+    @Volatile
+    private var stored: Map<DeviceSerial, List<PendingReapplyOverride>> = emptyMap()
+
+    override suspend fun read(): Map<DeviceSerial, List<PendingReapplyOverride>> = stored
+
+    override suspend fun write(pending: Map<DeviceSerial, List<PendingReapplyOverride>>) {
+        stored = pending
     }
 }

@@ -1,17 +1,12 @@
 package dev.acme.adbtoolbox.application.display.fontscale
 
-import dev.acme.adbtoolbox.domain.adb.AdbOutcome
-import dev.acme.adbtoolbox.domain.adb.AdbTextResult
 import dev.acme.adbtoolbox.domain.adb.AdbTransport
 import dev.acme.adbtoolbox.domain.adb.DeviceSerial
 import dev.acme.adbtoolbox.domain.device.DeviceCommandContext
 import dev.acme.adbtoolbox.domain.dispatch.DispatcherProvider
-import dev.acme.adbtoolbox.domain.display.fontscale.FontScaleCommands
 import dev.acme.adbtoolbox.domain.display.fontscale.FontScalePresets
-import dev.acme.adbtoolbox.domain.display.fontscale.FontScaleReadResult
 import dev.acme.adbtoolbox.domain.display.fontscale.FontScaleState
 import dev.acme.adbtoolbox.domain.display.fontscale.FontScaleValidationResult
-import dev.acme.adbtoolbox.domain.display.fontscale.parseFontScale
 import dev.acme.adbtoolbox.domain.display.fontscale.validateFontScale
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.BufferOverflow
@@ -46,12 +41,16 @@ class FontScaleViewModel(
     private val transport: AdbTransport,
     commandContext: StateFlow<DeviceCommandContext>,
     private val overrides: FontScaleOverrides = FontScaleOverrides(),
+    private val useCase: FontScaleUseCase = FontScaleUseCase(transport, overrides),
 ) {
     private val _state = MutableStateFlow<FontScaleState>(FontScaleState.Loading)
     val state: StateFlow<FontScaleState> = _state.asStateFlow()
 
     /** Registers with a `DeviceContextAggregator` (task 014) so the status bar reflects font scale. */
     val overrideContributor get() = overrides
+
+    /** This feature's task 041 coordinator-facing port — see [FontScaleOverrideResetUseCase]. */
+    fun overrideResetUseCase(): FontScaleOverrideResetUseCase = FontScaleOverrideResetUseCase(useCase, overrides)
 
     private sealed interface Op {
         val serial: DeviceSerial
@@ -121,45 +120,21 @@ class FontScaleViewModel(
         when (op) {
             is Op.Load -> {
                 _state.value = FontScaleState.Loading
-                applyReadResult(op.serial, transport.executeText(FontScaleCommands.read(op.serial)))
+                applyResult(op.serial, useCase.read(op.serial))
             }
             is Op.Write -> {
                 _state.value = FontScaleState.Applying(current = currentValueOrNull(), target = op.target)
-                val writeResult = transport.executeText(FontScaleCommands.write(op.serial, op.target))
-                if (eligibleSerial != op.serial) return
-                if (!writeResult.outcome.isSuccess()) {
-                    _state.value = FontScaleState.Error(currentValueOrNull(), writeResult.outcome.describeFailure(writeResult.stderr))
-                    return
-                }
-                applyReadResult(op.serial, transport.executeText(FontScaleCommands.read(op.serial)))
+                applyResult(op.serial, useCase.write(op.serial, op.target))
             }
         }
     }
 
-    private fun applyReadResult(serial: DeviceSerial, result: AdbTextResult) {
+    private fun applyResult(serial: DeviceSerial, result: FontScaleResult) {
         if (eligibleSerial != serial) return
-        if (!result.outcome.isSuccess()) {
-            _state.value = FontScaleState.Error(currentValueOrNull(), result.outcome.describeFailure(result.stderr))
-            return
-        }
-        when (val parsed = parseFontScale(result.stdout)) {
-            is FontScaleReadResult.Value -> {
-                overrides.record(serial, parsed.value)
-                _state.value = FontScaleState.Idle(parsed.value)
-            }
-            is FontScaleReadResult.Malformed -> {
-                _state.value = FontScaleState.Error(currentValueOrNull(), "Unexpected device output: ${parsed.raw}")
-            }
+        _state.value = when (result) {
+            is FontScaleResult.Success -> FontScaleState.Idle(result.value)
+            is FontScaleResult.Malformed -> FontScaleState.Error(currentValueOrNull(), "Unexpected device output: ${result.raw}")
+            is FontScaleResult.Failed -> FontScaleState.Error(currentValueOrNull(), result.message)
         }
     }
-}
-
-private fun AdbOutcome.isSuccess(): Boolean = this is AdbOutcome.Completed && (exitCode == null || exitCode == 0)
-
-private fun AdbOutcome.describeFailure(stderr: String): String = when (this) {
-    is AdbOutcome.Completed -> stderr.ifBlank { "Command failed (exit code $exitCode)" }
-    AdbOutcome.TimedOut -> "Command timed out"
-    AdbOutcome.Cancelled -> "Command was cancelled"
-    is AdbOutcome.TransportFailure -> reason
-    is AdbOutcome.Unsupported -> reason
 }

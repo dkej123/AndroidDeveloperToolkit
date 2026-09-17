@@ -57,6 +57,7 @@ class AdbToolboxToolWindowFactory : ToolWindowFactory {
             displayScope = composition.childScope(),
             openSettings = { AdbToolboxSettingsOpener.open(project) },
             openMirroringOptions = { MirroringOptionsDialog(project).show() },
+            onResetOverrides = { composition.overrideResetCoordinator.resetAll() },
         )
         val content = ContentFactory.getInstance().createContent(panel, "", false)
         content.setDisposer(panel)

@@ -51,4 +51,17 @@ class DensityOverrideTrackerTest {
 
         tracker.overridesFor(DeviceSerial.of("other-serial")) shouldBe emptyList()
     }
+
+    @Test
+    fun `overrideDpiFor returns the last recorded override dpi, or null when none is applied`() {
+        val tracker = DensityOverrideTracker()
+
+        tracker.overrideDpiFor(SERIAL) shouldBe null
+
+        tracker.record(SERIAL, DensityReading(420, 525))
+        tracker.overrideDpiFor(SERIAL) shouldBe 525
+
+        tracker.record(SERIAL, DensityReading(420, null))
+        tracker.overrideDpiFor(SERIAL) shouldBe null
+    }
 }

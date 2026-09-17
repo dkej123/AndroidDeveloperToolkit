@@ -138,6 +138,7 @@ class AdbToolboxToolWindowPanel(
     private val displayScope: CoroutineScope,
     openSettings: () -> Unit = {},
     openMirroringOptions: () -> Unit = {},
+    onResetOverrides: () -> Unit = {},
 ) : JBPanel<AdbToolboxToolWindowPanel>(BorderLayout()), Disposable {
 
     val host = AdbToolboxHostPanel()
@@ -258,6 +259,7 @@ class AdbToolboxToolWindowPanel(
         viewModel = feedbackViewModel,
         scope = feedbackScope,
         dispatchers = dispatchers,
+        onResetOverrides = onResetOverrides,
         deviceContext = deviceContextAggregator.state,
     )
 

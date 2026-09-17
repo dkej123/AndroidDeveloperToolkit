@@ -309,4 +309,13 @@ class FontScaleViewModelTest {
 
         viewModel.overrideContributor.overridesFor(serialA).single().description shouldBe "Font scale: 1.3×"
     }
+
+    @Test
+    fun `overrideResetUseCase shares the same override tracker as overrideContributor`() {
+        val transport = ScriptedFontScaleTransport { ok("1.3") }
+        val (scope, _, viewModel) = harness(transport)
+        scope.runCurrent()
+
+        viewModel.overrideResetUseCase().currentValue(serialA) shouldBe "1.3"
+    }
 }

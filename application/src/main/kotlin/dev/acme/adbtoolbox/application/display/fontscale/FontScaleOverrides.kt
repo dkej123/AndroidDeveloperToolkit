@@ -22,6 +22,9 @@ class FontScaleOverrides : OverrideSummaryContributor {
         lastReadback[serial] = value
     }
 
+    /** The last recorded readback for [serial] (task 041's [OverrideResetUseCase.currentValue] source), or `null`. */
+    fun lastValueFor(serial: DeviceSerial): Double? = lastReadback[serial]
+
     override fun overridesFor(serial: DeviceSerial?): List<OverrideSummary> {
         val value = serial?.let(lastReadback::get) ?: return emptyList()
         if (value == FontScalePresets.DEFAULT) return emptyList()

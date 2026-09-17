@@ -27,6 +27,9 @@ class DensityOverrideTracker : OverrideSummaryContributor {
         }
     }
 
+    /** The last recorded override dpi for [serial] (task 041's [OverrideResetUseCase.currentValue] source), or `null`. */
+    fun overrideDpiFor(serial: DeviceSerial): Int? = readings[serial]?.overrideDpi
+
     override fun overridesFor(serial: DeviceSerial?): List<OverrideSummary> {
         val reading = serial?.let { readings[it] } ?: return emptyList()
         val overrideDpi = reading.overrideDpi ?: return emptyList()

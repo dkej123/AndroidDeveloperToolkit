@@ -11,6 +11,8 @@ import dev.acme.adbtoolbox.domain.device.DeviceCommandContext
 import dev.acme.adbtoolbox.domain.device.SelectedDeviceState
 import dev.acme.adbtoolbox.domain.device.selectedSerialOrNull
 import dev.acme.adbtoolbox.domain.device.toCommandContext
+import dev.acme.adbtoolbox.domain.devicecontext.OverrideResetOutcome
+import dev.acme.adbtoolbox.domain.devicecontext.OverrideResetUseCase
 import dev.acme.adbtoolbox.domain.dispatch.DispatcherProvider
 import dev.acme.adbtoolbox.domain.network.HostIpv4Result
 import dev.acme.adbtoolbox.domain.network.HostNetworkInfo
@@ -25,6 +27,7 @@ import dev.acme.adbtoolbox.domain.network.ProxyReadState
 import dev.acme.adbtoolbox.domain.network.RecentProxyEndpoints
 import dev.acme.adbtoolbox.domain.network.parseProxyReadback
 import dev.acme.adbtoolbox.domain.network.resolveHostIpv4
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.channels.Channel
@@ -42,8 +45,13 @@ private sealed interface ProxyWorkItem {
         val serial: DeviceSerial,
         override val generation: Long,
         val endpoint: ProxyEndpoint,
+        val completion: CompletableDeferred<OverrideResetOutcome>? = null,
     ) : ProxyWorkItem
-    data class Reset(val serial: DeviceSerial, override val generation: Long) : ProxyWorkItem
+    data class Reset(
+        val serial: DeviceSerial,
+        override val generation: Long,
+        val completion: CompletableDeferred<OverrideResetOutcome>? = null,
+    ) : ProxyWorkItem
     data class ResolveIp(override val generation: Long) : ProxyWorkItem
 }
 
@@ -77,7 +85,7 @@ class ProxyController(
     selectedDeviceState: StateFlow<SelectedDeviceState>,
     private val hostNetworkInfo: HostNetworkInfo,
     private val recentsPersistence: NetworkRecentsPersistence,
-) {
+) : OverrideResetUseCase {
     private val _state = MutableStateFlow(ProxyViewState())
     val state: StateFlow<ProxyViewState> = _state.asStateFlow()
 
@@ -196,12 +204,45 @@ class ProxyController(
         enqueue(ProxyWorkItem.Reset(eligible.serial, generation))
     }
 
+    // --- task 041: OverrideResetUseCase — reset-all/reconnect re-apply, never issuing a command
+    // itself; both route through the exact same work-item queue enable()/reset() above use, so a
+    // coordinator-triggered mutation is serialized against any in-flight UI-triggered one rather
+    // than racing it. Both refuse to act on a serial other than the one this controller currently
+    // tracks — this controller (task 030/032) only ever remembers state for the selected device.
+
+    override val featureId: String = "proxy"
+
+    override fun currentValue(serial: DeviceSerial): String? {
+        val current = _state.value
+        if (current.serial != serial) return null
+        return (current.readState as? ProxyReadState.Active)?.endpoint?.render()
+    }
+
+    override suspend fun reset(serial: DeviceSerial): OverrideResetOutcome {
+        if (serial != currentSerial) return OverrideResetOutcome.Failed("Device changed")
+        val completion = CompletableDeferred<OverrideResetOutcome>()
+        enqueue(ProxyWorkItem.Reset(serial, generation, completion))
+        return completion.await()
+    }
+
+    override suspend fun reapply(serial: DeviceSerial, value: String): OverrideResetOutcome {
+        if (serial != currentSerial) return OverrideResetOutcome.Failed("Device changed")
+        val endpoint = parseEndpointToken(value)
+            ?: return OverrideResetOutcome.Failed("Invalid stored proxy endpoint: $value")
+        val completion = CompletableDeferred<OverrideResetOutcome>()
+        enqueue(ProxyWorkItem.Enable(serial, generation, endpoint, completion))
+        return completion.await()
+    }
+
     private fun enqueue(item: ProxyWorkItem) {
         workItems.trySend(item)
     }
 
     private suspend fun processItem(item: ProxyWorkItem) {
-        if (item.generation != generation) return
+        if (item.generation != generation) {
+            item.completionOrNull()?.complete(OverrideResetOutcome.Failed("Device changed"))
+            return
+        }
         if (item !is ProxyWorkItem.ResolveIp) setBusy(item.generation, true)
         when (item) {
             is ProxyWorkItem.Read -> {
@@ -211,10 +252,20 @@ class ProxyController(
             is ProxyWorkItem.Enable -> {
                 applyWrite(item.generation, item.serial, ProxyCommands.enable(item.endpoint))
                 recordRecentIfActive(item.generation)
+                item.completion?.complete(outcomeFor(item.generation))
             }
-            is ProxyWorkItem.Reset -> applyWrite(item.generation, item.serial, ProxyCommands.reset())
+            is ProxyWorkItem.Reset -> {
+                applyWrite(item.generation, item.serial, ProxyCommands.reset())
+                item.completion?.complete(outcomeFor(item.generation))
+            }
             is ProxyWorkItem.ResolveIp -> applyIpResolution(item.generation, hostNetworkInfo.resolveHostIpv4())
         }
+    }
+
+    private fun outcomeFor(generationAtDispatch: Long): OverrideResetOutcome {
+        if (generationAtDispatch != generation) return OverrideResetOutcome.Failed("Device changed")
+        val error = _state.value.error
+        return if (error != null) OverrideResetOutcome.Failed(error) else OverrideResetOutcome.Success
     }
 
     private suspend fun applyWrite(generationAtDispatch: Long, serial: DeviceSerial, command: AdbShellCommand) {
@@ -301,4 +352,23 @@ class ProxyController(
     private companion object {
         val COMMAND_TIMEOUT = 10.seconds
     }
+}
+
+private fun ProxyWorkItem.completionOrNull(): CompletableDeferred<OverrideResetOutcome>? = when (this) {
+    is ProxyWorkItem.Enable -> completion
+    is ProxyWorkItem.Reset -> completion
+    is ProxyWorkItem.Read, is ProxyWorkItem.ResolveIp -> null
+}
+
+/**
+ * Parses task 041's opaque proxy override token (the same text [ProxyEndpoint.render] produces)
+ * back into an endpoint, splitting on the last `:` exactly like [ProxyEndpoint.render] documents.
+ */
+private fun parseEndpointToken(value: String): ProxyEndpoint? {
+    val separatorIndex = value.lastIndexOf(':')
+    if (separatorIndex <= 0) return null
+    val hostResult = ProxyHost.parse(value.substring(0, separatorIndex))
+    val portResult = ProxyPort.parse(value.substring(separatorIndex + 1))
+    if (hostResult !is ProxyHostResult.Valid || portResult !is ProxyPortResult.Valid) return null
+    return ProxyEndpoint(hostResult.host, portResult.port)
 }
