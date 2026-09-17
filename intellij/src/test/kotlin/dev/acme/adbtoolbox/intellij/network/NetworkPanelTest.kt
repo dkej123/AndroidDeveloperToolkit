@@ -45,6 +45,27 @@ class NetworkPanelTest : BasePlatformTestCase() {
         assertFalse(p.activeBannerLabelForTest.isVisible)
     }
 
+    fun `test the host and port fields expose accessible names for screen readers`() {
+        val p = panel()
+
+        assertEquals("Proxy host", p.hostFieldForTest.getAccessibleContext().accessibleName)
+        assertEquals("Proxy port", p.portFieldForTest.getAccessibleContext().accessibleName)
+    }
+
+    fun `test an ineligible device names the blocker in the host field and Use my computer IP tooltips`() {
+        val p = panel()
+
+        p.update(ProxyViewState(isDeviceEligible = false))
+
+        assertTrue(p.hostFieldForTest.toolTipText.endsWith("Connect a device to use this"))
+        assertTrue(p.useComputerIpLinkForTest.toolTipText.endsWith("Connect a device to use this"))
+
+        p.update(ProxyViewState(isDeviceEligible = true, readState = ProxyReadState.Disabled))
+
+        assertEquals("host or IP", p.hostFieldForTest.toolTipText)
+        assertEquals("Fills your machine's LAN address", p.useComputerIpLinkForTest.toolTipText)
+    }
+
     fun `test update with an eligible device and no active proxy shows off and Enable proxy`() {
         val p = panel()
 

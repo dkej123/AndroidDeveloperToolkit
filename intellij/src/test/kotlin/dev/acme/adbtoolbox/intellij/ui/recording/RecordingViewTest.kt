@@ -124,6 +124,25 @@ class RecordingViewTest : BasePlatformTestCase() {
         assertFalse(scope.isActive)
     }
 
+    fun `test a disabled control policy names the blocker in the record button tooltip and Enabled restores the base tooltip`() {
+        val dispatchers = TestDispatchers()
+        val scope = CoroutineScope(SupervisorJob() + dispatchers.default)
+        val vm = viewModel(scope, dispatchers, MutableStateFlow(SelectedDeviceState.None))
+        val view = RecordingView(vm, scope, dispatchers)
+
+        view.render(
+            RecordingViewState(
+                controlPolicy = ControlPolicy.Disabled(DeviceCommandContext.Disabled.NoDeviceSelected),
+                presentationState = RecordingPresentationState.Unavailable,
+            ),
+        )
+        assertTrue(view.toggleButton.toolTipText.endsWith("Connect a device to use this"))
+
+        view.render(RecordingViewState(controlPolicy = ControlPolicy.Enabled, presentationState = RecordingPresentationState.Idle))
+        assertEquals("Record the screen — max 3 minutes per adb", view.toggleButton.toolTipText)
+        view.dispose()
+    }
+
     fun `test the status label is empty outside the Recording state`() {
         val dispatchers = TestDispatchers()
         val scope = CoroutineScope(SupervisorJob() + dispatchers.default)

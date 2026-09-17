@@ -60,7 +60,8 @@ class NetworkPanel(
     private val proxyHeader = sectionHeader(proxyTitleLabel, proxyStateLabel)
 
     private val hostField = monoField().apply {
-        toolTipText = "host or IP"
+        toolTipText = HOST_FIELD_TOOLTIP
+        getAccessibleContext().accessibleName = "Proxy host"
         document.addDocumentListener(object : DocumentListener {
             override fun insertUpdate(e: DocumentEvent) = onHostChange(text)
             override fun removeUpdate(e: DocumentEvent) = onHostChange(text)
@@ -74,6 +75,7 @@ class NetworkPanel(
     }
     private val portField = monoField().apply {
         preferredSize = Dimension(JBUI.scale(66), AdbToolboxTheme.Sizes.field)
+        getAccessibleContext().accessibleName = "Proxy port"
         document.addDocumentListener(object : DocumentListener {
             override fun insertUpdate(e: DocumentEvent) = onPortChange(text)
             override fun removeUpdate(e: DocumentEvent) = onPortChange(text)
@@ -95,7 +97,7 @@ class NetworkPanel(
     private val fieldErrorLabel = errorLabel()
 
     private val useComputerIpLink = linkButton("Use my computer IP") { onUseComputerIp() }.apply {
-        toolTipText = "Fills your machine's LAN address"
+        toolTipText = USE_COMPUTER_IP_TOOLTIP
     }
     private var isActive = false
     private val primaryProxyButton = primaryButton("Enable proxy", AdbToolboxIcons.Actions.proxy).apply {
@@ -209,6 +211,7 @@ class NetworkPanel(
 
         hostField.isEnabled = state.isDeviceEligible
         portField.isEnabled = state.isDeviceEligible
+        hostField.toolTipText = HOST_FIELD_TOOLTIP.withDisabledReason(state.isDeviceEligible)
 
         proxyStateLabel.text = when {
             !state.isDeviceEligible -> "—"
@@ -238,6 +241,7 @@ class NetworkPanel(
 
         useComputerIpLink.isEnabled = state.isDeviceEligible && !state.isBusy && !state.isResolvingIp
         useComputerIpLink.text = if (state.isResolvingIp) "Resolving…" else "Use my computer IP"
+        useComputerIpLink.toolTipText = USE_COMPUTER_IP_TOOLTIP.withDisabledReason(state.isDeviceEligible)
 
         if (recentsModel.size() != state.recents.size || (0 until recentsModel.size()).any { recentsModel.get(it) != state.recents[it] }) {
             recentsModel.clear()
@@ -267,6 +271,16 @@ class NetworkPanel(
     fun disposePanel() = Unit
 
     private companion object {
+        const val HOST_FIELD_TOOLTIP = "host or IP"
+        const val USE_COMPUTER_IP_TOOLTIP = "Fills your machine's LAN address"
+
+        /** `design/README.md` Interactions: every device-mutating control "keeps its tooltip and
+         * gains the reason" it is disabled — the same [dev.acme.adbtoolbox.intellij.apps
+         * .AppsPanel.disabledReason] extension, scoped to this view's single "no eligible device"
+         * blocker. */
+        fun String.withDisabledReason(isDeviceEligible: Boolean): String =
+            if (isDeviceEligible) this else "$this — Connect a device to use this"
+
         fun sectionTitleLabel(text: String) = JBLabel(text).apply {
             font = AdbToolboxTheme.Typography.sectionTitle
         }

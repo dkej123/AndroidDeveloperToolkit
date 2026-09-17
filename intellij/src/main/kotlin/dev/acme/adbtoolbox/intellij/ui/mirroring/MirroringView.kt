@@ -55,6 +55,7 @@ class MirroringView(
         text = ""
         preferredSize = Dimension(AdbToolboxTheme.Sizes.iconButton, AdbToolboxTheme.Sizes.iconButton)
         toolTipText = OPTIONS_TOOLTIP
+        getAccessibleContext().accessibleName = "Mirroring options"
         isContentAreaFilled = false
         addActionListener { openOptions() }
     }
@@ -108,6 +109,7 @@ class MirroringView(
         startButton.isEnabled = enabled
         stopButton.isEnabled = enabled
         optionsButton.isEnabled = enabled
+        optionsButton.toolTipText = OPTIONS_TOOLTIP.withDisabledReason(enabled)
         val isRunning = state.presentationState is MirroringPresentationState.Running
         (stateCards.layout as CardLayout).show(stateCards, if (isRunning) RUNNING else IDLE)
         runningBanner.isVisible = isRunning
@@ -118,7 +120,8 @@ class MirroringView(
             MirroringPresentationState.Stopping -> "Stopping…"
             else -> "Start mirroring"
         }
-        startButton.toolTipText = (state.presentationState as? MirroringPresentationState.Error)?.message ?: START_TOOLTIP
+        startButton.toolTipText = (state.presentationState as? MirroringPresentationState.Error)?.message
+            ?: START_TOOLTIP.withDisabledReason(enabled)
         helpLabel.text = if (isRunning) RUNNING_HELP else IDLE_HELP
     }
 
@@ -131,5 +134,12 @@ class MirroringView(
         const val OPTIONS_TOOLTIP = "Mirroring options — bitrate, resolution, stay awake"
         const val IDLE_HELP = "Launches Genymobile scrcpy. Turn on “stay awake” and “show touches” in options."
         const val RUNNING_HELP = "Window is open on your desktop. Closing it also stops this session."
+
+        /** `design/README.md` Interactions: every device-mutating control "keeps its tooltip and
+         * gains the reason" it is disabled — the same [dev.acme.adbtoolbox.intellij.apps
+         * .AppsPanel.disabledReason] extension, scoped to this view's single "no eligible device"
+         * blocker. */
+        fun String.withDisabledReason(enabled: Boolean): String =
+            if (enabled) this else "$this — Connect a device to use this"
     }
 }

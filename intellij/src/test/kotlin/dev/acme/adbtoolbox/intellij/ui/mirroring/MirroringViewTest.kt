@@ -126,6 +126,38 @@ class MirroringViewTest : BasePlatformTestCase() {
         vmScope.cancel()
     }
 
+    fun `test the options icon button exposes an accessible name derived from its tooltip`() {
+        val dispatchers = TestDispatchers()
+        val scope = CoroutineScope(SupervisorJob() + dispatchers.default)
+        val vm = viewModel(scope, dispatchers, MutableStateFlow(SelectedDeviceState.None))
+        val view = MirroringView(vm, scope, dispatchers)
+
+        assertEquals("Mirroring options", view.optionsButton.getAccessibleContext().accessibleName)
+        view.dispose()
+    }
+
+    fun `test a disabled control policy names the blocker in the start and options tooltips`() {
+        val dispatchers = TestDispatchers()
+        val scope = CoroutineScope(SupervisorJob() + dispatchers.default)
+        val vm = viewModel(scope, dispatchers, MutableStateFlow(SelectedDeviceState.None))
+        val view = MirroringView(vm, scope, dispatchers)
+
+        view.render(
+            MirroringViewState(
+                controlPolicy = ControlPolicy.Disabled(DeviceCommandContext.Disabled.NoDeviceSelected),
+                presentationState = MirroringPresentationState.Unavailable,
+            ),
+        )
+
+        assertTrue(view.toggleButton.toolTipText.endsWith("Connect a device to use this"))
+        assertTrue(view.optionsButton.toolTipText.endsWith("Connect a device to use this"))
+
+        view.render(MirroringViewState(controlPolicy = ControlPolicy.Enabled, presentationState = MirroringPresentationState.Idle))
+        assertEquals("Start scrcpy for the selected device  ⇧⌘M", view.toggleButton.toolTipText)
+        assertEquals("Mirroring options — bitrate, resolution, stay awake", view.optionsButton.toolTipText)
+        view.dispose()
+    }
+
     fun `test clicking the options button forwards to the injected openOptions callback without touching the view model`() {
         val dispatchers = TestDispatchers()
         val vmScope = CoroutineScope(SupervisorJob() + dispatchers.default)

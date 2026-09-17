@@ -99,7 +99,8 @@ class RecordingView(
             RecordingPresentationState.Pulling -> "Saving…"
             else -> "Record"
         }
-        recordButton.toolTipText = (state.presentationState as? RecordingPresentationState.Error)?.message ?: RECORD_TOOLTIP
+        recordButton.toolTipText = (state.presentationState as? RecordingPresentationState.Error)?.message
+            ?: RECORD_TOOLTIP.withDisabledReason(enabled)
         statusLabel.text = state.elapsedLabel?.let { "Recording · $it" } ?: ""
     }
 
@@ -109,5 +110,12 @@ class RecordingView(
         const val IDLE = "idle"
         const val RECORDING = "recording"
         const val RECORD_TOOLTIP = "Record the screen — max 3 minutes per adb"
+
+        /** `design/README.md` Interactions: every device-mutating control "keeps its tooltip and
+         * gains the reason" it is disabled — the same [dev.acme.adbtoolbox.intellij.apps
+         * .AppsPanel.disabledReason] extension, scoped to this view's single "no eligible device"
+         * blocker. */
+        fun String.withDisabledReason(enabled: Boolean): String =
+            if (enabled) this else "$this — Connect a device to use this"
     }
 }
