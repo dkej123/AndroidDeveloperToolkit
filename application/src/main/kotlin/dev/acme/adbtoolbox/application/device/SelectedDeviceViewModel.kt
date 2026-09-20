@@ -45,6 +45,9 @@ class SelectedDeviceViewModel(
 
     private val writeRequests = MutableSharedFlow<DeviceSerial?>(extraBufferCapacity = 1)
 
+    @Volatile
+    private var explicitSelectionHandled = false
+
     val state: StateFlow<SelectedDeviceState> =
         combine(deviceRepository.devices, _selectedSerial, _restored, _error, ::reduce)
             .stateIn(scope, SharingStarted.Eagerly, SelectedDeviceState.Loading)
@@ -65,6 +68,7 @@ class SelectedDeviceViewModel(
     }
 
     private fun select(serial: DeviceSerial?) {
+        explicitSelectionHandled = true
         _selectedSerial.value = serial
         writeRequests.tryEmit(serial)
     }
@@ -74,7 +78,7 @@ class SelectedDeviceViewModel(
             runCatching { persistence.readSelectedSerial() }
                 .onSuccess { persisted ->
                     _error.value = null
-                    _selectedSerial.value = persisted
+                    if (!explicitSelectionHandled) _selectedSerial.value = persisted
                     _restored.value = true
                 }
                 .onFailure { failure ->

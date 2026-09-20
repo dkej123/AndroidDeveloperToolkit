@@ -35,6 +35,9 @@ class SelectedPackageViewModel(
 
     private val writeRequests = MutableSharedFlow<SelectedPackage?>(extraBufferCapacity = 1)
 
+    @Volatile
+    private var explicitSelectionHandled = false
+
     val state: StateFlow<SelectedPackageState> =
         combine(_selection, _restored, ::reduce)
             .stateIn(scope, SharingStarted.Eagerly, SelectedPackageState.Loading)
@@ -54,6 +57,7 @@ class SelectedPackageViewModel(
     }
 
     private fun select(selection: SelectedPackage?) {
+        explicitSelectionHandled = true
         _selection.value = selection
         writeRequests.tryEmit(selection)
     }
@@ -61,7 +65,7 @@ class SelectedPackageViewModel(
     private fun restore() {
         scope.launch(dispatchers.io) {
             runCatching { persistence.readSelectedPackage() }
-                .onSuccess { persisted -> _selection.value = persisted }
+                .onSuccess { persisted -> if (!explicitSelectionHandled) _selection.value = persisted }
                 .onFailure { /* Degrades to "no selection" — a persisted read failure is never a crash. */ }
             _restored.value = true
         }

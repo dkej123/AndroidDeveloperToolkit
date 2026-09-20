@@ -243,6 +243,35 @@ class SelectedDeviceViewModelTest {
     }
 
     @Test
+    fun `an explicit Select handled before restore resolves is not clobbered by the persisted value`() = runTest {
+        val persistence = FakeDeviceSelectionPersistence(initial = serialA)
+        val repository = FakeDeviceRepository(listOf(device(serialA), device(serialB)))
+        val (scope, _, viewModel) = harness(persistence = persistence, repository = repository)
+
+        // Select is handled before the scope has run any pending coroutines, so restore()'s
+        // launch (scheduled in init) is still pending when this explicit intent lands.
+        viewModel.handle(SelectedDeviceIntent.Select(serialB))
+        scope.advanceTimeBy(1)
+        scope.runCurrent()
+
+        viewModel.state.value shouldBe SelectedDeviceState.Online(device(serialB))
+    }
+
+    @Test
+    fun `an explicit ClearSelection handled before restore resolves is not clobbered by the persisted value`() =
+        runTest {
+            val persistence = FakeDeviceSelectionPersistence(initial = serialA)
+            val repository = FakeDeviceRepository(listOf(device(serialA)))
+            val (scope, _, viewModel) = harness(persistence = persistence, repository = repository)
+
+            viewModel.handle(SelectedDeviceIntent.ClearSelection)
+            scope.advanceTimeBy(1)
+            scope.runCurrent()
+
+            viewModel.state.value shouldBe SelectedDeviceState.None
+        }
+
+    @Test
     fun `RetryRestore recovers from an Error state once the persistence read succeeds`() = runTest {
         val persistence = FakeDeviceSelectionPersistence(initial = serialA).apply {
             readFailure = RuntimeException("disk exploded")

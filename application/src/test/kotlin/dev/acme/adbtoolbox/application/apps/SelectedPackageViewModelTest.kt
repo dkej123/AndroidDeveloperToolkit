@@ -109,6 +109,32 @@ class SelectedPackageViewModelTest {
     }
 
     @Test
+    fun `an explicit Select handled before restore resolves is not clobbered by the persisted value`() = runTest {
+        val persistence = FakeSelectedPackagePersistence(initial = SelectedPackage(serialA, "com.acme.shop"))
+        val (scope, viewModel) = harness(persistence)
+
+        // Select is handled before the scope has run any pending coroutines, so restore()'s
+        // launch (scheduled in init) is still pending when this explicit intent lands.
+        viewModel.handle(SelectedPackageIntent.Select(serialB, "com.acme.other"))
+        scope.advanceTimeBy(1)
+        scope.runCurrent()
+
+        viewModel.state.value shouldBe SelectedPackageState.Selected(SelectedPackage(serialB, "com.acme.other"))
+    }
+
+    @Test
+    fun `an explicit Clear handled before restore resolves is not clobbered by the persisted value`() = runTest {
+        val persistence = FakeSelectedPackagePersistence(initial = SelectedPackage(serialA, "com.acme.shop"))
+        val (scope, viewModel) = harness(persistence)
+
+        viewModel.handle(SelectedPackageIntent.Clear)
+        scope.advanceTimeBy(1)
+        scope.runCurrent()
+
+        viewModel.state.value shouldBe SelectedPackageState.None
+    }
+
+    @Test
     fun `an unexpected persistence read failure degrades to None, never a crash`() = runTest {
         val persistence = FakeSelectedPackagePersistence().apply { readFailure = RuntimeException("disk exploded") }
         val (scope, viewModel) = harness(persistence)
