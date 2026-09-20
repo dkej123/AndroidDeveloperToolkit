@@ -461,6 +461,7 @@ class AdbToolboxToolWindowPanelTest : BasePlatformTestCase() {
         assertFalse(harness.appsScope.isActive)
         assertFalse(harness.networkScope.isActive)
         assertFalse(harness.displayScope.isActive)
+        assertFalse(harness.logcatScope.isActive)
     }
 
     fun `test the screenshot control is mounted into the Device view alongside device facts`() {

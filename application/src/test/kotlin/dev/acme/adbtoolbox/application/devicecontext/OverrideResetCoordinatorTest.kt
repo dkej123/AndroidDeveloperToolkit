@@ -99,16 +99,18 @@ class OverrideResetCoordinatorTest {
     )
 
     @Test
-    fun `resetAll with zero overrides is a no-op`() = with(harness(
-        FakeOverrideResetUseCase("font-scale"),
-        selected = onlineState(serialA),
-    )) {
-        scope.runCurrent()
+    fun `resetAll with zero overrides is a no-op`() {
+        with(harness(
+            FakeOverrideResetUseCase("font-scale"),
+            selected = onlineState(serialA),
+        )) {
+            scope.runCurrent()
 
-        coordinator.resetAll()
-        scope.runCurrent()
+            coordinator.resetAll()
+            scope.runCurrent()
 
-        feedback.state.value.toasts shouldBe emptyList()
+            feedback.state.value.toasts shouldBe emptyList()
+        }
     }
 
     @Test
