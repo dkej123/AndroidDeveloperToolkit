@@ -145,6 +145,19 @@ class NetworkPanelTest : BasePlatformTestCase() {
         assertEquals(1, resets)
     }
 
+    fun `test active banner text never overlaps Reset at dock width`() {
+        val p = panel()
+        p.update(ProxyViewState(isDeviceEligible = true, readState = ProxyReadState.Active(endpoint("10.0.4.117", 8888))))
+        p.setSize(346, 400)
+        recursivelyLayout(p)
+
+        val text = p.activeBannerLabelForTest
+        val reset = p.resetLinkForTest
+        val textRight = javax.swing.SwingUtilities.convertPoint(text.parent, text.x + text.width, text.y, p).x
+        val resetLeft = javax.swing.SwingUtilities.convertPoint(reset.parent, reset.x, reset.y, p).x
+        assertTrue(textRight <= resetLeft)
+    }
+
     // ---- Use my computer IP ----
 
     fun `test clicking Use my computer IP invokes the callback`() {
@@ -177,5 +190,12 @@ class NetworkPanelTest : BasePlatformTestCase() {
         p.recentsListForTest.selectedIndex = 0
 
         assertEquals(recent, selected)
+    }
+}
+
+private fun recursivelyLayout(component: java.awt.Component) {
+    if (component is java.awt.Container) {
+        component.doLayout()
+        component.components.forEach(::recursivelyLayout)
     }
 }

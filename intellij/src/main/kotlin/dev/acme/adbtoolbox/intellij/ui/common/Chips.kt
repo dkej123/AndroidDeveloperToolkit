@@ -6,6 +6,7 @@ import dev.acme.adbtoolbox.domain.logcat.LogSeverity
 import java.awt.BasicStroke
 import java.awt.Color
 import java.awt.Component
+import java.awt.Container
 import java.awt.Dimension
 import java.awt.FlowLayout
 import java.awt.Graphics
@@ -39,13 +40,31 @@ class PresetChipRow<T : Any>(
     choices: List<PresetChipChoice<T>>,
     selected: T,
 ) : JBPanel<PresetChipRow<T>>(
-    FlowLayout(FlowLayout.LEADING, AdbToolboxTheme.Spacing.s2, 0),
+    WrappingFlowLayout(FlowLayout.LEADING, AdbToolboxTheme.Spacing.s2, 0),
 ) {
+    private var publishedPreferredHeight = -1
+
     init {
         require(choices.isNotEmpty()) { "Preset chip row needs at least one choice" }
         require(choices.map { it.value }.distinct().size == choices.size) { "Preset chip values must be unique" }
         require(choices.any { it.value == selected }) { "Selected value must be one of the choices" }
         isOpaque = false
+    }
+
+    override fun setBounds(x: Int, y: Int, width: Int, height: Int) {
+        super.setBounds(x, y, width, height)
+        if (width <= 0) return
+        val required = layout.preferredLayoutSize(this)
+        if (publishedPreferredHeight != required.height) {
+            publishedPreferredHeight = required.height
+            preferredSize = Dimension(required.width, required.height)
+            var ancestor = parent
+            while (ancestor != null) {
+                ancestor.invalidate()
+                ancestor = ancestor.parent
+            }
+            parent?.revalidate()
+        }
     }
 
     var onSelectionChanged: (T) -> Unit = {}
@@ -95,6 +114,43 @@ class PresetChipRow<T : Any>(
                 choose(chips[target].value, notify = true)
             }
         })
+    }
+}
+
+/** FlowLayout with a preferred height that reflects the rows required by the current viewport. */
+private class WrappingFlowLayout(align: Int, hgap: Int, vgap: Int) : FlowLayout(align, hgap, vgap) {
+    override fun preferredLayoutSize(target: Container): Dimension = wrappingSize(target)
+
+    override fun minimumLayoutSize(target: Container): Dimension = wrappingSize(target)
+
+    private fun wrappingSize(target: Container): Dimension = synchronized(target.treeLock) {
+        val insets = target.insets
+        val parentWidth = target.parent?.width ?: 0
+        val availableWidth = (if (target.width > 0) target.width else parentWidth)
+            .minus(insets.left + insets.right + hgap * 2)
+            .takeIf { it > 0 }
+            ?: Int.MAX_VALUE
+        var rowWidth = 0
+        var rowHeight = 0
+        var widestRow = 0
+        var totalHeight = insets.top + insets.bottom + vgap * 2
+
+        target.components.filter(Component::isVisible).forEach { component ->
+            val size = component.preferredSize
+            val nextWidth = if (rowWidth == 0) size.width else rowWidth + hgap + size.width
+            if (nextWidth > availableWidth && rowWidth > 0) {
+                widestRow = maxOf(widestRow, rowWidth)
+                totalHeight += rowHeight + vgap
+                rowWidth = size.width
+                rowHeight = size.height
+            } else {
+                rowWidth = nextWidth
+                rowHeight = maxOf(rowHeight, size.height)
+            }
+        }
+        widestRow = maxOf(widestRow, rowWidth)
+        totalHeight += rowHeight
+        Dimension(widestRow + insets.left + insets.right + hgap * 2, totalHeight)
     }
 }
 
@@ -181,12 +237,17 @@ class LevelChip(val level: LogSeverity) : JToggleButton(level.symbol) {
         refreshPresentation()
     }
 
+    // `levelChips[].style`: the active chip takes the level's own color, 700 weight, `accentBg` and
+    // a 1px `accentBorder`; inactive chips are borderless `textFaint` glyphs with hover-only fill.
     private fun refreshPresentation() {
-        foreground = severityColor(level)
+        foreground = if (isSelected) severityColor(level) else AdbToolboxTheme.Colors.textFaint
+        font = AdbToolboxTheme.Typography.mono.deriveFont(if (isSelected) java.awt.Font.BOLD else java.awt.Font.PLAIN)
         background = if (isSelected) AdbToolboxTheme.Colors.accentBg else AdbToolboxTheme.Colors.panel
-        border = SolidChipBorder(
-            if (isSelected) AdbToolboxTheme.Colors.accentBorder else AdbToolboxTheme.Colors.border,
-        )
+        border = if (isSelected) {
+            SolidChipBorder(AdbToolboxTheme.Colors.accentBorder, radius = { AdbToolboxTheme.Radii.field })
+        } else {
+            javax.swing.BorderFactory.createEmptyBorder()
+        }
         repaint()
     }
 
@@ -196,7 +257,7 @@ class LevelChip(val level: LogSeverity) : JToggleButton(level.symbol) {
             try {
                 copy.color = background
                 copy.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
-                val arc = AdbToolboxTheme.Radii.chip * 2
+                val arc = AdbToolboxTheme.Radii.field * 2
                 copy.fillRoundRect(0, 0, width, height, arc, arc)
             } finally {
                 copy.dispose()
@@ -225,7 +286,10 @@ private fun severityColor(level: LogSeverity) = when (level) {
     LogSeverity.ASSERT -> AdbToolboxTheme.LogSeverityColors.assert.level
 }
 
-internal open class SolidChipBorder(private val color: Color) : AbstractBorder() {
+internal open class SolidChipBorder(
+    private val color: Color,
+    private val radius: () -> Int = { AdbToolboxTheme.Radii.chip },
+) : AbstractBorder() {
     override fun getBorderInsets(component: Component): Insets = Insets(
         JBUI.scale(1),
         JBUI.scale(1),
@@ -239,7 +303,7 @@ internal open class SolidChipBorder(private val color: Color) : AbstractBorder()
             copy.color = color
             val strokeWidth = JBUI.scale(1).toFloat()
             val offset = strokeWidth / 2f
-            val arc = (AdbToolboxTheme.Radii.chip * 2).toFloat()
+            val arc = (radius() * 2).toFloat()
             copy.stroke = borderStroke(strokeWidth)
             copy.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
             copy.draw(

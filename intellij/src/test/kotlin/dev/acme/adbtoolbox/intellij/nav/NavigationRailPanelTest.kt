@@ -146,4 +146,20 @@ class NavigationRailPanelTest : BasePlatformTestCase() {
         assertEquals("Network — global proxy", cell.getAccessibleContext().accessibleName)
         assertEquals("Network — global proxy", cell.toolTipText)
     }
+
+    fun `test Settings is pinned to the rail bottom and only its button area is a hit target`() {
+        val panel = NavigationRailPanel()
+        panel.setBounds(0, 0, 34, 500)
+        panel.doLayout()
+        panel.list.doLayout()
+
+        val settingsIndex = ViewId.entries.indexOf(ViewId.Settings)
+        val bounds = panel.list.getCellBounds(settingsIndex, settingsIndex)
+        val bottom = panel.list.height - panel.list.insets.bottom
+        assertEquals("Settings row must reach the rail bottom", bottom, bounds.y + bounds.height)
+
+        val railButton = dev.acme.adbtoolbox.intellij.ui.common.AdbToolboxTheme.Sizes.railButton
+        assertEquals(settingsIndex, panel.list.locationToIndex(java.awt.Point(17, bottom - railButton / 2)))
+        assertEquals(-1, panel.list.locationToIndex(java.awt.Point(17, bounds.y + 2)))
+    }
 }

@@ -76,6 +76,10 @@ object AdbToolboxTheme {
         val s4 get() = JBUI.scale(8)
         val s5 get() = JBUI.scale(12)
         val s6 get() = JBUI.scale(16)
+
+        /** The prototype's 10px horizontal inset for section rows (`padding: 0 10px` throughout
+         * `ADB Toolbox Plugin.dc.html`); not part of the 2/4/6/8/12/16 scale but used by every view. */
+        val sectionInset get() = JBUI.scale(10)
     }
 
     object Sizes {
@@ -117,8 +121,10 @@ object AdbToolboxTheme {
         val sectionTitle: Font get() = labelFont(12.5f, Font.BOLD)
 
         // The handoff defines body and caption relatively so user IDE font preferences win.
-        val body: Font get() = JBUI.Fonts.label()
-        val caption: Font get() = JBFont.small()
+        // Explicitly regular (tokens: body/caption weight 400): the family and size follow the IDE,
+        // but a look-and-feel whose default label font is bold must not make all body copy bold.
+        val body: Font get() = JBUI.Fonts.label().deriveFont(Font.PLAIN)
+        val caption: Font get() = JBFont.small().deriveFont(Font.PLAIN)
         val groupLabel: Font get() = labelFont(9.5f, Font.BOLD)
         val mono: Font get() = editorFont(11f)
         val monoMeta: Font get() = editorFont(9.5f)

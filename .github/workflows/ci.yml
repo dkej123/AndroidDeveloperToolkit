@@ -32,6 +32,14 @@ jobs:
       - name: Build, test, architecture check, and coverage gate
         run: ./gradlew clean build koverVerify --stacktrace
 
+      - name: Upload visual regression diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: visual-regression-diagnostics
+          path: intellij/build/reports/visual/*.png
+          if-no-files-found: ignore
+
       - name: Verify plugin
         run: ./gradlew :intellij:verifyPlugin --stacktrace
 

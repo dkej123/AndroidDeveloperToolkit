@@ -39,8 +39,8 @@ class DeviceContextBarPanelTest : BasePlatformTestCase() {
 
         panel.update(DeviceBarPresentation.Online(device(), onlineCount = 3))
 
-        assertTrue(panel.selectorText.contains("Pixel_5"))
-        assertTrue(panel.selectorText.contains(serial.toString()))
+        assertEquals("Pixel_5", panel.selectorText)
+        assertEquals(serial.toString(), panel.serialText)
         assertEquals("3 online", panel.onlineCountText)
     }
 
@@ -223,11 +223,14 @@ class DeviceContextBarPanelTest : BasePlatformTestCase() {
 
         panel.setSize(260, 30)
         panel.doLayout()
+        panel.refreshButtonForTest.parent.doLayout()
 
-        val rightRow = panel.refreshButtonForTest.parent
-        val leftRow = panel.components.first { it !== rightRow && it.isVisible }
+        val selector = panel.selectorComponentForTest
+        val refresh = panel.refreshButtonForTest
+        val selectorRight = javax.swing.SwingUtilities.convertPoint(selector.parent, selector.x + selector.width, 0, panel).x
+        val refreshLeft = javax.swing.SwingUtilities.convertPoint(refresh.parent, refresh.x, 0, panel).x
 
-        assertTrue(leftRow.x + leftRow.width <= rightRow.x)
-        assertTrue(rightRow.x + rightRow.width <= panel.width)
+        assertTrue("selector ends at $selectorRight, refresh starts at $refreshLeft", selectorRight <= refreshLeft)
+        assertTrue(refreshLeft + refresh.width <= panel.width)
     }
 }

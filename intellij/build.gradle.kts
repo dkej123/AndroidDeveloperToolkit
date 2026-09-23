@@ -1,6 +1,7 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.jetbrains.intellij.platform.gradle.TestFrameworkType
+import java.util.zip.ZipFile
 
 // IntelliJ Platform frontend and composition root per docs/adr/0001. The only module allowed to
 // import IntelliJ/Swing/ToolWindow APIs. Wires :application use cases to :adapters-jvm/:adapters-adb
@@ -151,6 +152,13 @@ tasks.test {
     // Platform tests (BasePlatformTestCase) must never require a real display — this sandboxed
     // build environment has none, and the tests are meant to run deterministically in CI too.
     systemProperty("java.awt.headless", "true")
+    // Golden images are immutable in normal/CI runs. Maintainers can explicitly approve freshly
+    // rendered candidates with `-PupdateVisualGoldens=true`; no ambient system property can
+    // silently rewrite the repository's reviewed visual contract.
+    systemProperty(
+        "adbtoolbox.updateVisualGoldens",
+        providers.gradleProperty("updateVisualGoldens").orElse("false").get(),
+    )
 }
 
 // :domain/:application/:adapters-jvm/:adapters-adb each declare kotlinx-coroutines-core as their
@@ -169,4 +177,37 @@ tasks.test {
 configurations.matching { it.name == "testRuntimeClasspath" }.configureEach {
     exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-coroutines-core")
     exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-coroutines-core-jvm")
+}
+
+// IntelliJ owns this library at runtime. Bundling another version makes plugin and platform
+// classes resolve different Dispatchers types and crashes the tool window with LinkageError.
+configurations.matching { it.name == "runtimeClasspath" }.configureEach {
+    exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-coroutines-core")
+    exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-coroutines-core-jvm")
+}
+
+val verifyPluginDistribution = tasks.register("verifyPluginDistribution") {
+    group = "verification"
+    description = "Rejects platform-owned libraries that would split classes across IDE/plugin classloaders."
+    dependsOn(tasks.named("buildPlugin"))
+
+    doLast {
+        val distributions = layout.buildDirectory.dir("distributions").get().asFile
+        val archive = distributions.listFiles { file -> file.extension == "zip" }
+            ?.singleOrNull()
+            ?: error("Expected exactly one plugin ZIP under $distributions")
+        val forbidden = ZipFile(archive).use { zip ->
+            zip.entries().asSequence()
+                .map { it.name }
+                .filter { it.substringAfterLast('/').startsWith("kotlinx-coroutines-core") }
+                .toList()
+        }
+        check(forbidden.isEmpty()) {
+            "Plugin must use IntelliJ's bundled coroutines runtime; remove from ZIP: ${forbidden.joinToString()}"
+        }
+    }
+}
+
+tasks.named("check") {
+    dependsOn(verifyPluginDistribution)
 }

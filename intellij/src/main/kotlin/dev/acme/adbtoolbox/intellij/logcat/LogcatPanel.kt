@@ -10,7 +10,13 @@ import dev.acme.adbtoolbox.domain.logcat.LogcatPauseState
 import dev.acme.adbtoolbox.intellij.icons.AdbToolboxIcons
 import dev.acme.adbtoolbox.intellij.ui.common.AdbToolboxTheme
 import dev.acme.adbtoolbox.intellij.ui.common.LevelChip
+import dev.acme.adbtoolbox.intellij.ui.common.DesignButton
+import dev.acme.adbtoolbox.intellij.ui.common.DesignButtonStyle
+import dev.acme.adbtoolbox.intellij.ui.common.FlexRowLayout
+import dev.acme.adbtoolbox.intellij.ui.common.RoundedSurface
 import dev.acme.adbtoolbox.intellij.ui.common.SolidChipBorder
+import dev.acme.adbtoolbox.intellij.ui.common.flexRow
+import dev.acme.adbtoolbox.intellij.ui.common.flexSpacer
 import dev.acme.adbtoolbox.intellij.ui.common.StatusDotIcon
 import java.awt.BasicStroke
 import java.awt.BorderLayout
@@ -77,7 +83,8 @@ class LogcatPanel(
     private val searchField = JBTextField().apply {
         isOpaque = false
         border = BorderFactory.createEmptyBorder()
-        font = AdbToolboxTheme.Typography.body
+        font = AdbToolboxTheme.Typography.body.deriveFont(JBUI.scale(11f))
+        emptyText.text = "Search log…  ⌘F"
         toolTipText = "Search log…  ⌘F"
         getAccessibleContext().accessibleName = "Search log"
         document.addDocumentListener(object : DocumentListener {
@@ -109,16 +116,18 @@ class LogcatPanel(
         addActionListener { searchField.text = "" }
     }
 
-    private val searchFieldWrap = JPanel(BorderLayout(AdbToolboxTheme.Spacing.s3, 0)).apply {
-        preferredSize = Dimension(preferredSize.width, AdbToolboxTheme.Sizes.field)
-        background = AdbToolboxTheme.Colors.field
-        border = BorderFactory.createCompoundBorder(
-            SolidChipBorder(AdbToolboxTheme.Colors.borderStrong),
-            JBUI.Borders.empty(0, AdbToolboxTheme.Spacing.s3),
-        )
-        add(searchIconLabel, BorderLayout.WEST)
-        add(searchField, BorderLayout.CENTER)
-        add(clearQueryButton, BorderLayout.EAST)
+    // `searchWrapStyle`: 24px, radius 4, `field` fill, 1px `borderStrong`, `padding: 0 7px`, gap 6.
+    private val searchFieldWrap = RoundedSurface(
+        AdbToolboxTheme.Colors.field,
+        AdbToolboxTheme.Colors.borderStrong,
+        radius = { AdbToolboxTheme.Radii.field },
+    ).apply {
+        layout = FlexRowLayout(AdbToolboxTheme.Spacing.s3)
+        border = JBUI.Borders.empty(0, JBUI.scale(7))
+        preferredSize = Dimension(0, AdbToolboxTheme.Sizes.field)
+        add(searchIconLabel)
+        add(searchField, FlexRowLayout.FILL)
+        add(clearQueryButton)
     }
 
     private val pauseButton = iconToggleButton(AdbToolboxIcons.Actions.pause, "Pause the stream  Space") { onTogglePause() }
@@ -130,22 +139,15 @@ class LogcatPanel(
         addActionListener { onClearLocal() }
     }
 
-    private val toolbarButtons = JPanel(FlowLayout(FlowLayout.LEFT, AdbToolboxTheme.Spacing.s1, 0)).apply {
-        isOpaque = false
-        add(pauseButton)
-        add(followButton)
-        add(wrapButton)
-        add(DividerLine())
-        add(clearButton)
-    }
+    // `logToolbarBtnsStyle`: gap 2; the divider carries its own `margin: 0 2px`.
+    private val toolbarButtons = flexRow(AdbToolboxTheme.Spacing.s1, pauseButton, followButton, wrapButton, DividerLine(), clearButton)
 
-    private val toolbar = JPanel(BorderLayout(AdbToolboxTheme.Spacing.s3, 0)).apply {
+    // `logToolbarStyle`: `padding: 6px 6px 6px 8px`, gap 6, 1px bottom border.
+    private val toolbar = flexRow(AdbToolboxTheme.Spacing.s3, searchFieldWrap, toolbarButtons, fill = searchFieldWrap).apply {
         border = BorderFactory.createCompoundBorder(
             BorderFactory.createMatteBorder(0, 0, 1, 0, AdbToolboxTheme.Colors.border),
-            JBUI.Borders.empty(AdbToolboxTheme.Spacing.s3, AdbToolboxTheme.Spacing.s3, AdbToolboxTheme.Spacing.s3, AdbToolboxTheme.Spacing.s4),
+            JBUI.Borders.empty(AdbToolboxTheme.Spacing.s3, AdbToolboxTheme.Spacing.s4, AdbToolboxTheme.Spacing.s3, AdbToolboxTheme.Spacing.s3),
         )
-        add(searchFieldWrap, BorderLayout.CENTER)
-        add(toolbarButtons, BorderLayout.EAST)
     }
 
     // ---- filter row (`design/README.md` §7's level chips + package filter) ----
@@ -160,30 +162,25 @@ class LogcatPanel(
     }
     private val levelChipGroup = ButtonGroup().also { group -> levelChips.values.forEach(group::add) }
 
-    private val packageFilterChip = JToggleButton().apply {
+    private val packageFilterChip = PackageFilterChip().apply {
         toolTipText = "Limit to the app selected in Apps"
         getAccessibleContext().accessibleName = "Limit to selected app"
-        font = AdbToolboxTheme.Typography.mono.deriveFont(JBUI.scale(10f))
-        isContentAreaFilled = false
-        isFocusPainted = false
-        preferredSize = Dimension(preferredSize.width, JBUI.scale(20))
         addActionListener { onTogglePackageFilter() }
     }
 
-    private val filterRow = JPanel(BorderLayout()).apply {
+    // `logFilterRowStyle`: five level chips, spacer, package chip; gap 3, `padding: 0 8px 6px`.
+    private val filterRow = run {
+        val spacer = flexSpacer()
+        flexRow(JBUI.scale(3), *levelChips.values.toTypedArray(), spacer, packageFilterChip, fill = spacer)
+    }.apply {
         border = BorderFactory.createCompoundBorder(
             BorderFactory.createMatteBorder(0, 0, 1, 0, AdbToolboxTheme.Colors.border),
             JBUI.Borders.empty(0, AdbToolboxTheme.Spacing.s4, AdbToolboxTheme.Spacing.s3, AdbToolboxTheme.Spacing.s4),
         )
-        val levelsPanel = JPanel(FlowLayout(FlowLayout.LEFT, AdbToolboxTheme.Spacing.s1, 0)).apply {
-            isOpaque = false
-            levelChips.values.forEach(::add)
-        }
-        add(levelsPanel, BorderLayout.WEST)
-        add(packageFilterChip, BorderLayout.EAST)
     }
 
     private val header = JPanel(BorderLayout()).apply {
+        background = AdbToolboxTheme.Colors.bg
         add(toolbar, BorderLayout.NORTH)
         add(filterRow, BorderLayout.SOUTH)
     }
@@ -192,6 +189,7 @@ class LogcatPanel(
 
     private val scrollPane = JScrollPane(virtualList).apply {
         border = BorderFactory.createEmptyBorder()
+        viewport.background = AdbToolboxTheme.Colors.bg
     }
 
     private val jumpToLatestLink = linkButton("Jump to latest") { onJumpToLatest() }
@@ -200,13 +198,10 @@ class LogcatPanel(
         font = AdbToolboxTheme.Typography.body.deriveFont(Font.BOLD, JBUI.scale(10.5f))
         foreground = AdbToolboxTheme.Colors.amber
     }
-    private val pausedPill = JPanel(FlowLayout(FlowLayout.LEFT, AdbToolboxTheme.Spacing.s3, 0)).apply {
-        isOpaque = true
-        background = AdbToolboxTheme.Colors.panel
-        border = BorderFactory.createCompoundBorder(
-            SolidChipBorder(AdbToolboxTheme.Colors.amber),
-            JBUI.Borders.empty(AdbToolboxTheme.Spacing.s2, AdbToolboxTheme.Spacing.s4, AdbToolboxTheme.Spacing.s2, AdbToolboxTheme.Spacing.s3),
-        )
+    // `pausedPillStyle`: fully rounded, `panel` fill, 1px amber, `padding: 4px 8px 4px 7px`, gap 7.
+    private val pausedPill = RoundedSurface(AdbToolboxTheme.Colors.panel, AdbToolboxTheme.Colors.amber, radius = { AdbToolboxTheme.Radii.pill }).apply {
+        layout = FlexRowLayout(JBUI.scale(7))
+        border = JBUI.Borders.empty(AdbToolboxTheme.Spacing.s2, JBUI.scale(7), AdbToolboxTheme.Spacing.s2, AdbToolboxTheme.Spacing.s4)
         add(pausedDotLabel)
         add(pausedTextLabel)
         add(jumpToLatestLink)
@@ -222,28 +217,39 @@ class LogcatPanel(
         add(pausedPillRow, BorderLayout.SOUTH)
     }
 
-    private val bodyStack = JPanel().apply {
+    // The overlay is added first: Swing paints children in reverse order, so the first child is on
+    // top. Overlapping children also require optimized drawing to be off.
+    private val bodyStack = object : JPanel() {
+        override fun isOptimizedDrawingEnabled(): Boolean = false
+    }.apply {
         layout = OverlayLayout(this)
-        add(scrollPane)
         add(pausedPillOverlay)
+        add(scrollPane)
     }
 
+    // `emptyWrapStyle`: centered column, `padding: 34px 16px 16px`, gap 6.
     private val emptyStateTitleLabel = JBLabel("").apply {
         font = AdbToolboxTheme.Typography.sectionTitle
-        horizontalAlignment = JBLabel.CENTER
+        alignmentX = Component.CENTER_ALIGNMENT
     }
     private val emptyStateBodyLabel = JBLabel("").apply {
         font = AdbToolboxTheme.Typography.body.deriveFont(JBUI.scale(11f))
         foreground = AdbToolboxTheme.Colors.textDim
-        horizontalAlignment = JBLabel.CENTER
+        alignmentX = Component.CENTER_ALIGNMENT
     }
-    private val resetFiltersLink = linkButton("Reset filters") { onResetFilters() }.apply { isVisible = false }
+    private val resetFiltersLink = linkButton("Reset filters") { onResetFilters() }.apply {
+        isVisible = false
+        alignmentX = Component.CENTER_ALIGNMENT
+    }
     private val emptyStatePanel = JPanel().apply {
         layout = BoxLayout(this, BoxLayout.Y_AXIS)
-        border = JBUI.Borders.empty(AdbToolboxTheme.Spacing.s6, AdbToolboxTheme.Spacing.s4)
+        isOpaque = false
+        border = JBUI.Borders.empty(JBUI.scale(34), AdbToolboxTheme.Spacing.s6, AdbToolboxTheme.Spacing.s6, AdbToolboxTheme.Spacing.s6)
         isVisible = false
         add(emptyStateTitleLabel)
+        add(javax.swing.Box.createVerticalStrut(AdbToolboxTheme.Spacing.s3))
         add(emptyStateBodyLabel)
+        add(javax.swing.Box.createVerticalStrut(AdbToolboxTheme.Spacing.s3))
         add(resetFiltersLink)
     }
 
@@ -257,15 +263,17 @@ class LogcatPanel(
 
     private val footerLabel = footerLabel("")
     private val footerBufferLabel = footerLabel("")
-    private val footer = JPanel(BorderLayout()).apply {
-        preferredSize = Dimension(preferredSize.width, AdbToolboxTheme.Sizes.statusBar)
+    private val footer = run {
+        val spacer = flexSpacer()
+        flexRow(AdbToolboxTheme.Spacing.s4, footerLabel, spacer, footerBufferLabel, fill = spacer)
+    }.apply {
+        isOpaque = true
+        preferredSize = Dimension(0, AdbToolboxTheme.Sizes.statusBar)
         background = AdbToolboxTheme.Colors.header
         border = BorderFactory.createCompoundBorder(
             BorderFactory.createMatteBorder(1, 0, 0, 0, AdbToolboxTheme.Colors.border),
             JBUI.Borders.empty(0, AdbToolboxTheme.Spacing.s4),
         )
-        add(footerLabel, BorderLayout.WEST)
-        add(footerBufferLabel, BorderLayout.EAST)
     }
 
     init {
@@ -354,7 +362,7 @@ class LogcatPanel(
         levelChips.forEach { (level, chip) -> chip.isSelected = LogcatRowStyle.isChipActive(level, state.minSeverity) }
 
         packageFilterChip.text = if (state.packageFilterOn) {
-            state.packageFilterLabel?.let { LogcatRowStyle.truncateTag(it, maxChars = 24) } ?: "all packages"
+            state.packageFilterLabel ?: "all packages"
         } else {
             "all packages"
         }
@@ -429,22 +437,9 @@ class LogcatPanel(
     }
 
     private fun presentPackageFilterChip() {
-        if (packageFilterChip.isSelected) {
-            packageFilterChip.foreground = AdbToolboxTheme.Colors.accent
-            packageFilterChip.background = AdbToolboxTheme.Colors.accentBg
-            packageFilterChip.isOpaque = true
-            packageFilterChip.border = BorderFactory.createCompoundBorder(
-                SolidChipBorder(AdbToolboxTheme.Colors.accentBorder),
-                JBUI.Borders.empty(0, AdbToolboxTheme.Spacing.s3),
-            )
-        } else {
-            packageFilterChip.foreground = AdbToolboxTheme.Colors.textFaint
-            packageFilterChip.isOpaque = false
-            packageFilterChip.border = BorderFactory.createCompoundBorder(
-                SolidChipBorder(AdbToolboxTheme.Colors.border),
-                JBUI.Borders.empty(0, AdbToolboxTheme.Spacing.s3),
-            )
-        }
+        packageFilterChip.foreground = if (packageFilterChip.isSelected) AdbToolboxTheme.Colors.accent else AdbToolboxTheme.Colors.textFaint
+        packageFilterChip.revalidate()
+        packageFilterChip.repaint()
     }
 
     /** Test/disposal seam: no owned listeners beyond Swing's own, kept for [dev.acme.adbtoolbox.intellij.network.NetworkPanel]-style symmetry. */
@@ -471,12 +466,7 @@ class LogcatPanel(
             isBorderPainted = false
         }
 
-        fun linkButton(text: String, onClick: () -> Unit) = JButton(text).apply {
-            isContentAreaFilled = false
-            isFocusPainted = false
-            isBorderPainted = false
-            foreground = AdbToolboxTheme.Colors.accent
-            font = AdbToolboxTheme.Typography.body.deriveFont(Font.BOLD, JBUI.scale(10.5f))
+        fun linkButton(text: String, onClick: () -> Unit) = DesignButton(text, DesignButtonStyle.LINK).apply {
             addActionListener { onClick() }
         }
 
@@ -541,5 +531,46 @@ private class TrashGlyphIcon(private val color: Color) : Icon {
         } finally {
             g2.dispose()
         }
+    }
+}
+
+/**
+ * `pkgFilterStyle`: 20px, radius 4, `padding: 0 7px`, mono 10px, at most 160px wide with an
+ * ellipsis. On = accent text on `accentBg` + 1px `accentBorder`; off = `textFaint` + 1px `border`.
+ */
+private class PackageFilterChip : JToggleButton() {
+    init {
+        font = AdbToolboxTheme.Typography.mono.deriveFont(JBUI.scale(10f))
+        isContentAreaFilled = false
+        isFocusPainted = false
+        isBorderPainted = false
+        isOpaque = false
+        border = JBUI.Borders.empty(0, JBUI.scale(7))
+        margin = java.awt.Insets(0, 0, 0, 0)
+    }
+
+    override fun getPreferredSize(): Dimension {
+        val insets = insets
+        val textWidth = getFontMetrics(font).stringWidth(text.orEmpty()) + insets.left + insets.right
+        return Dimension(minOf(textWidth, JBUI.scale(160)), JBUI.scale(20))
+    }
+
+    override fun getMaximumSize(): Dimension = preferredSize
+
+    override fun paintComponent(g: Graphics) {
+        val g2 = g.create() as Graphics2D
+        try {
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
+            val arc = (AdbToolboxTheme.Radii.field * 2).toFloat()
+            if (isSelected) {
+                g2.color = AdbToolboxTheme.Colors.accentBg
+                g2.fill(RoundRectangle2D.Float(0f, 0f, width.toFloat(), height.toFloat(), arc, arc))
+            }
+            g2.color = if (isSelected) AdbToolboxTheme.Colors.accentBorder else AdbToolboxTheme.Colors.border
+            g2.draw(RoundRectangle2D.Float(0.5f, 0.5f, width - 1f, height - 1f, arc, arc))
+        } finally {
+            g2.dispose()
+        }
+        super.paintComponent(g)
     }
 }

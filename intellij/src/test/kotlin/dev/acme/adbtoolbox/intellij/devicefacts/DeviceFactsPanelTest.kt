@@ -37,6 +37,7 @@ class DeviceFactsPanelTest : BasePlatformTestCase() {
             when (it) {
                 is AbstractButton -> it.text
                 is JLabel -> it.accessibleContext.accessibleName ?: it.text
+                is javax.swing.text.JTextComponent -> it.text
                 else -> null
             }
         }
@@ -112,6 +113,33 @@ class DeviceFactsPanelTest : BasePlatformTestCase() {
         assertEquals(2, panel.factColumnCount)
     }
 
+    fun `test no-device copy and actions fit the narrow content viewport`() {
+        val panel = DeviceFactsPanel(onCopyReport = {})
+        panel.update(DeviceFactsViewState.NoDevice)
+        panel.setSize(266, 568)
+        repeat(3) { recursivelyLayout(panel) }
+
+        val visibleContent = panel.descendants()
+            .filter { it.isVisible && hasVisibleAncestors(it, panel) }
+            .filter {
+                (it is AbstractButton && it.text in setOf("Refresh", "Pair over Wi-Fi…")) ||
+                    (it is javax.swing.text.JTextComponent && it.text.startsWith("Connect over USB"))
+            }
+
+        assertEquals(3, visibleContent.size)
+        visibleContent.forEach { component ->
+            val bounds = javax.swing.SwingUtilities.convertRectangle(component.parent, component.bounds, panel)
+            assertTrue("${component.javaClass.simpleName} has no paintable area: $bounds", bounds.width > 0 && bounds.height > 0)
+            assertTrue("${component.javaClass.simpleName} starts outside the viewport: $bounds", bounds.x >= 0)
+            assertTrue("${component.javaClass.simpleName} exceeds the viewport: $bounds", bounds.x + bounds.width <= panel.width)
+        }
+        val body = visibleContent.single { it is javax.swing.text.JTextComponent }
+        assertTrue(
+            "Empty-state copy must retain the design's 16px side margins: ${body.bounds}",
+            body.width <= panel.width - 32,
+        )
+    }
+
     fun `test rendering a Connected snapshot never fails even when one fact is Unavailable`() {
         val panel = DeviceFactsPanel(onCopyReport = {})
         val snapshot = DeviceFactsSnapshot(
@@ -129,5 +157,12 @@ class DeviceFactsPanelTest : BasePlatformTestCase() {
         panel.update(DeviceFactsViewState.Connected(snapshot))
 
         assertTrue(panel.copyReportButton.isEnabled)
+    }
+}
+
+private fun recursivelyLayout(component: Component) {
+    if (component is Container) {
+        component.doLayout()
+        component.components.forEach(::recursivelyLayout)
     }
 }

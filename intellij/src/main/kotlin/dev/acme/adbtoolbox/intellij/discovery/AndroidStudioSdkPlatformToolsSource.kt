@@ -1,17 +1,15 @@
 package dev.acme.adbtoolbox.intellij.discovery
 
 import com.intellij.openapi.application.readAction
-import com.intellij.openapi.projectRoots.ProjectJdkTable
+import com.intellij.openapi.project.Project
 import dev.acme.adbtoolbox.domain.discovery.AndroidSdkPlatformToolsSource
+import org.jetbrains.android.sdk.AndroidSdkUtils
 import java.io.File
 
 /**
- * Looks for an `platform-tools` directory under any SDK the IDE already knows about
- * ([ProjectJdkTable] — the generic IntelliJ Platform SDK table, not an Android-plugin-specific API,
- * since `:intellij` does not yet take a compile-time dependency on `org.jetbrains.android`; task 005
- * adds that when the ddmlib transport needs real Android SDK types). When Android Studio's Android
- * plugin has registered an Android SDK, its `homePath` is exactly the SDK root, so this heuristic
- * finds it without any Android-specific classes.
+ * Resolves `platform-tools` from the exact adb executable selected by Android Studio. Android SDKs
+ * are not guaranteed to appear in IntelliJ's generic JDK table, so deriving this from
+ * `ProjectJdkTable` can report no adb while Device Manager is already connected to one.
  *
  * A [dev.acme.adbtoolbox.domain.discovery.ToolLocator] composed with this source (task 007's
  * composition root) tries it alongside `:adapters-jvm`'s environment-variable-based source — this
@@ -21,12 +19,15 @@ import java.io.File
  * caller's thread directly, and the filesystem probe of each candidate directory runs off the EDT
  * inside that same read action's background dispatch.
  */
-class AndroidStudioSdkPlatformToolsSource : AndroidSdkPlatformToolsSource {
+class AndroidStudioSdkPlatformToolsSource(
+    private val adbPathProvider: () -> File?,
+) : AndroidSdkPlatformToolsSource {
+
+    constructor(project: Project) : this(adbPathProvider = { AndroidSdkUtils.getAdb(project) })
+
     override suspend fun platformToolsDirectory(): String? = readAction {
-        ProjectJdkTable.getInstance().allJdks
-            .asSequence()
-            .mapNotNull { it.homePath }
-            .map { homePath -> "$homePath/platform-tools" }
-            .firstOrNull { candidate -> File(candidate).isDirectory }
+        platformToolsDirectory(adbPathProvider())
     }
 }
+
+internal fun platformToolsDirectory(adbPath: File?): String? = adbPath?.parentFile?.absolutePath

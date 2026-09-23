@@ -45,6 +45,8 @@ object LogcatRowStyle {
     /** The tag column's 104px "ellipsised" treatment, approximated by character count — Swing's
      * basic HTML `text-overflow` support is unreliable, so [LogcatVirtualList]'s renderer needs the
      * substring already resolved before it ever reaches the label. */
+    const val TAG_COLUMN_CHARS = 15
+
     fun truncateTag(tag: String, maxChars: Int = 18): String =
         if (tag.length <= maxChars) tag else tag.take(maxChars - 1) + "…"
 
@@ -64,11 +66,18 @@ object LogcatRowStyle {
             row.timestamp?.let { segments += htmlSpan(it, AdbToolboxTheme.LogSeverityColors.timestamp) }
         }
         if (presentation.columns.tag) {
-            row.tag?.let { segments += htmlSpan(truncateTag(it), AdbToolboxTheme.LogSeverityColors.tag) }
+            row.tag?.let { tag ->
+                // Fixed-width mono column (`tagStyle`: 104px ≈ 15 cells of the 11px editor font), so
+                // messages start on one vertical edge instead of right after each tag.
+                val cell = truncateTag(tag, TAG_COLUMN_CHARS)
+                val padding = "&nbsp;".repeat(TAG_COLUMN_CHARS - cell.length)
+                segments += htmlSpanRaw(cell.htmlEscaped() + padding, AdbToolboxTheme.LogSeverityColors.tag, bold = false)
+            }
         }
         segments += messageHtml(row, presentation.wrapLines)
 
-        val joined = segments.joinToString("&nbsp;&nbsp;")
+        // `rowStyle` gap 7 ≈ one cell of the 11px mono font.
+        val joined = segments.joinToString("&nbsp;")
         val body = if (wrapWidthPx != null) "<div width=\"$wrapWidthPx\">$joined</div>" else joined
         return "<html>$body</html>"
     }

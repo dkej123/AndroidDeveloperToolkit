@@ -11,14 +11,18 @@ import dev.acme.adbtoolbox.application.apps.UninstallViewState
 import dev.acme.adbtoolbox.domain.devicecontext.ControlPolicy
 import dev.acme.adbtoolbox.intellij.icons.AdbToolboxIcons
 import dev.acme.adbtoolbox.intellij.ui.common.AdbToolboxTheme
+import dev.acme.adbtoolbox.intellij.ui.common.DesignButton
+import dev.acme.adbtoolbox.intellij.ui.common.DesignButtonStyle
+import dev.acme.adbtoolbox.intellij.ui.common.FlexRowLayout
+import dev.acme.adbtoolbox.intellij.ui.common.RoundedSurface
 import dev.acme.adbtoolbox.intellij.ui.common.SolidChipBorder
+import dev.acme.adbtoolbox.intellij.ui.common.flexRow
+import dev.acme.adbtoolbox.intellij.ui.common.flexSpacer
 import java.awt.BasicStroke
 import java.awt.BorderLayout
 import java.awt.Color
 import java.awt.Component
 import java.awt.Dimension
-import java.awt.FlowLayout
-import java.awt.Font
 import java.awt.Graphics
 import java.awt.Graphics2D
 import java.awt.RenderingHints
@@ -59,7 +63,9 @@ class AppsPanel(
     private val searchField = JBTextField().apply {
         isOpaque = false
         border = BorderFactory.createEmptyBorder()
-        font = AdbToolboxTheme.Typography.body
+        font = AdbToolboxTheme.Typography.body.deriveFont(JBUI.scale(11f))
+        emptyText.text = "Filter packages…"
+        getAccessibleContext().accessibleName = "Filter packages"
         document.addDocumentListener(object : DocumentListener {
             override fun insertUpdate(e: DocumentEvent) = onQueryChange(text)
             override fun removeUpdate(e: DocumentEvent) = onQueryChange(text)
@@ -77,16 +83,18 @@ class AppsPanel(
         addActionListener { onClearFilter() }
     }
 
-    private val searchFieldWrap = JPanel(BorderLayout(AdbToolboxTheme.Spacing.s3, 0)).apply {
-        preferredSize = Dimension(preferredSize.width, AdbToolboxTheme.Sizes.field)
-        background = AdbToolboxTheme.Colors.field
-        border = BorderFactory.createCompoundBorder(
-            SolidChipBorder(AdbToolboxTheme.Colors.borderStrong),
-            JBUI.Borders.empty(0, AdbToolboxTheme.Spacing.s3),
-        )
-        add(searchIconLabel, BorderLayout.WEST)
-        add(searchField, BorderLayout.CENTER)
-        add(clearQueryButton, BorderLayout.EAST)
+    // `searchWrapStyle`: 24px, radius 4, `field` fill, 1px `borderStrong`, `padding: 0 7px`, gap 6.
+    private val searchFieldWrap = RoundedSurface(
+        AdbToolboxTheme.Colors.field,
+        AdbToolboxTheme.Colors.borderStrong,
+        radius = { AdbToolboxTheme.Radii.field },
+    ).apply {
+        layout = FlexRowLayout(AdbToolboxTheme.Spacing.s3)
+        border = JBUI.Borders.empty(0, JBUI.scale(7))
+        preferredSize = Dimension(0, AdbToolboxTheme.Sizes.field)
+        add(searchIconLabel)
+        add(searchField, FlexRowLayout.FILL)
+        add(clearQueryButton)
     }
 
     private val systemToggle = JToggleButton(EyeGlyphIcon(AdbToolboxTheme.Colors.textDim)).apply {
@@ -103,47 +111,49 @@ class AppsPanel(
         presentSystemToggle(this, active = false)
     }
 
-    private val toolbar = JPanel(BorderLayout(AdbToolboxTheme.Spacing.s3, 0)).apply {
+    private val toolbar = flexRow(AdbToolboxTheme.Spacing.s3, searchFieldWrap, systemToggle, fill = searchFieldWrap).apply {
+        isOpaque = true
+        background = AdbToolboxTheme.Colors.bg
         border = BorderFactory.createCompoundBorder(
             BorderFactory.createMatteBorder(0, 0, 1, 0, AdbToolboxTheme.Colors.border),
             JBUI.Borders.empty(AdbToolboxTheme.Spacing.s3, AdbToolboxTheme.Spacing.s4),
         )
-        add(searchFieldWrap, BorderLayout.CENTER)
-        add(systemToggle, BorderLayout.EAST)
     }
 
     private val list = AppsVirtualList(onSelect = onSelect)
     private val scrollPane = JScrollPane(list).apply {
         border = BorderFactory.createEmptyBorder()
+        viewport.background = AdbToolboxTheme.Colors.bg
     }
 
+    // `emptyWrapStyle`: centered column, `padding: 34px 16px 16px`, gap 6.
     private val emptyStateTitleLabel = JBLabel("").apply {
         font = AdbToolboxTheme.Typography.sectionTitle
-        horizontalAlignment = JBLabel.CENTER
+        alignmentX = Component.CENTER_ALIGNMENT
     }
     private val emptyStateBodyLabel = JBLabel("").apply {
-        font = AdbToolboxTheme.Typography.body
+        font = AdbToolboxTheme.Typography.body.deriveFont(JBUI.scale(11f))
         foreground = AdbToolboxTheme.Colors.textDim
-        horizontalAlignment = JBLabel.CENTER
+        alignmentX = Component.CENTER_ALIGNMENT
     }
-    private val clearFilterLink = JButton("Clear filter").apply {
-        isContentAreaFilled = false
-        isFocusPainted = false
-        isBorderPainted = false
-        foreground = AdbToolboxTheme.Colors.accent
-        font = AdbToolboxTheme.Typography.body.deriveFont(Font.BOLD)
+    private val clearFilterLink = DesignButton("Clear filter", DesignButtonStyle.LINK).apply {
+        alignmentX = Component.CENTER_ALIGNMENT
         addActionListener { onClearFilter() }
     }
     private val emptyStatePanel = JPanel().apply {
         layout = javax.swing.BoxLayout(this, javax.swing.BoxLayout.Y_AXIS)
-        border = JBUI.Borders.empty(AdbToolboxTheme.Spacing.s6, AdbToolboxTheme.Spacing.s4)
+        isOpaque = false
+        border = JBUI.Borders.empty(JBUI.scale(34), AdbToolboxTheme.Spacing.s6, AdbToolboxTheme.Spacing.s6, AdbToolboxTheme.Spacing.s6)
         add(emptyStateTitleLabel)
+        add(javax.swing.Box.createVerticalStrut(AdbToolboxTheme.Spacing.s3))
         add(emptyStateBodyLabel)
+        add(javax.swing.Box.createVerticalStrut(AdbToolboxTheme.Spacing.s3))
         add(clearFilterLink)
         isVisible = false
     }
 
     private val centerContainer = JPanel(BorderLayout()).apply {
+        background = AdbToolboxTheme.Colors.bg
         add(scrollPane, BorderLayout.CENTER)
         add(emptyStatePanel, BorderLayout.NORTH)
     }
@@ -151,7 +161,8 @@ class AppsPanel(
     // ---- pinned action footer (`design/README.md` §4) ----
 
     private val selectedAppLabel = JBLabel("").apply {
-        font = AdbToolboxTheme.Typography.sectionTitle
+        font = AdbToolboxTheme.Typography.sectionTitle.deriveFont(JBUI.scale(12f))
+        foreground = AdbToolboxTheme.Colors.text
     }
     private val selectedAppPackageLabel = JBLabel("").apply {
         font = AdbToolboxTheme.Typography.monoMeta
@@ -159,55 +170,60 @@ class AppsPanel(
     }
     private val selectedAppRow = JPanel().apply {
         layout = javax.swing.BoxLayout(this, javax.swing.BoxLayout.Y_AXIS)
-        border = JBUI.Borders.empty(0, AdbToolboxTheme.Spacing.s5)
+        isOpaque = false
+        alignmentX = Component.LEFT_ALIGNMENT
+        border = JBUI.Borders.empty(0, AdbToolboxTheme.Spacing.sectionInset)
         add(selectedAppLabel)
         add(selectedAppPackageLabel)
     }
 
-    private val restartButton = primaryButton("Restart", AdbToolboxIcons.Actions.restart).apply {
+    private val restartButton = DesignButton("Restart", DesignButtonStyle.PRIMARY).apply {
         toolTipText = RESTART_TOOLTIP
+        isEnabled = false
         addActionListener { onRestart() }
     }
-    private val forceStopButton = secondaryButton("Force-stop", AdbToolboxIcons.Actions.forceStop).apply {
+    private val forceStopButton = DesignButton("Force-stop", DesignButtonStyle.SECONDARY).apply {
         toolTipText = FORCE_STOP_TOOLTIP
+        isEnabled = false
         addActionListener { onForceStop() }
     }
-    private val launchButton = secondaryButton("Launch").apply {
+    private val launchButton = DesignButton("Launch", DesignButtonStyle.SECONDARY).apply {
         toolTipText = LAUNCH_TOOLTIP
+        isEnabled = false
         addActionListener { onLaunch() }
     }
-    private val actionRow = JPanel(FlowLayout(FlowLayout.LEFT, AdbToolboxTheme.Spacing.s3, 0)).apply {
-        isOpaque = false
-        border = JBUI.Borders.empty(0, AdbToolboxTheme.Spacing.s4)
-        add(restartButton)
-        add(forceStopButton)
-        add(launchButton)
+    private val actionRow = flexRow(AdbToolboxTheme.Spacing.s3, restartButton, forceStopButton, launchButton).apply {
+        border = JBUI.Borders.empty(0, AdbToolboxTheme.Spacing.sectionInset)
     }
 
     private val destructiveLabel = JBLabel("DESTRUCTIVE").apply {
         font = AdbToolboxTheme.Typography.groupLabel
         foreground = AdbToolboxTheme.Colors.textFaint
     }
-    private val clearDataButton = dangerButton("Clear data", AdbToolboxIcons.Actions.clearData).apply {
+    private val clearDataButton = DesignButton("Clear data", DesignButtonStyle.DANGER).apply {
         toolTipText = CLEAR_DATA_TOOLTIP
+        isEnabled = false
         addActionListener { onClearData() }
     }
-    private val uninstallButton = dangerButton("Uninstall", AdbToolboxIcons.Actions.uninstall).apply {
+    private val uninstallButton = DesignButton("Uninstall", DesignButtonStyle.DANGER).apply {
         toolTipText = UNINSTALL_TOOLTIP
+        isEnabled = false
         addActionListener { onUninstall() }
     }
-    private val destructiveButtons = JPanel(FlowLayout(FlowLayout.RIGHT, AdbToolboxTheme.Spacing.s3, 0)).apply {
-        isOpaque = false
-        add(clearDataButton)
-        add(uninstallButton)
-    }
-    private val destructiveZone = JPanel(BorderLayout()).apply {
+
+    // `dangerZoneStyle`: margin 0 10px, 1px dashed top border, `padding: 8px 10px 0`; the label
+    // takes `margin-right: auto`, so both destructive buttons sit on the trailing edge.
+    private val destructiveZone = run {
+        val spacer = flexSpacer()
+        flexRow(AdbToolboxTheme.Spacing.s3, destructiveLabel, spacer, clearDataButton, uninstallButton, fill = spacer)
+    }.apply {
         border = BorderFactory.createCompoundBorder(
-            DashedTopBorder(AdbToolboxTheme.Colors.border),
-            JBUI.Borders.empty(AdbToolboxTheme.Spacing.s4, AdbToolboxTheme.Spacing.s5, 0, AdbToolboxTheme.Spacing.s5),
+            JBUI.Borders.empty(0, AdbToolboxTheme.Spacing.sectionInset),
+            BorderFactory.createCompoundBorder(
+                DashedTopBorder(AdbToolboxTheme.Colors.border),
+                JBUI.Borders.empty(AdbToolboxTheme.Spacing.s4, AdbToolboxTheme.Spacing.sectionInset, 0, 0),
+            ),
         )
-        add(destructiveLabel, BorderLayout.WEST)
-        add(destructiveButtons, BorderLayout.EAST)
     }
 
     private val actionFooterPanel = JPanel().apply {
@@ -216,7 +232,7 @@ class AppsPanel(
         isOpaque = true
         border = BorderFactory.createCompoundBorder(
             BorderFactory.createMatteBorder(1, 0, 0, 0, AdbToolboxTheme.Colors.border),
-            JBUI.Borders.empty(AdbToolboxTheme.Spacing.s4, 0, AdbToolboxTheme.Spacing.s5, 0),
+            JBUI.Borders.empty(AdbToolboxTheme.Spacing.s4, 0, JBUI.scale(10), 0),
         )
         add(selectedAppRow)
         add(javax.swing.Box.createVerticalStrut(AdbToolboxTheme.Spacing.s4))
@@ -356,39 +372,6 @@ class AppsPanel(
         }
 
         fun String.withDisabledReason(reason: String?): String = if (reason == null) this else "$this — $reason"
-
-        fun primaryButton(text: String, icon: javax.swing.Icon) = JButton(text, icon).apply {
-            preferredSize = Dimension(preferredSize.width, AdbToolboxTheme.Sizes.primaryButton)
-            background = AdbToolboxTheme.Colors.accent
-            foreground = Color.WHITE
-            isOpaque = true
-            isContentAreaFilled = true
-            isFocusPainted = false
-            isBorderPainted = false
-            font = AdbToolboxTheme.Typography.body.deriveFont(Font.BOLD, JBUI.scale(11.5f))
-            isEnabled = false
-        }
-
-        fun secondaryButton(text: String, icon: javax.swing.Icon? = null) =
-            (if (icon != null) JButton(text, icon) else JButton(text)).apply {
-                preferredSize = Dimension(preferredSize.width, AdbToolboxTheme.Sizes.secondaryButton)
-                foreground = AdbToolboxTheme.Colors.text
-                isContentAreaFilled = false
-                isFocusPainted = false
-                border = SolidChipBorder(AdbToolboxTheme.Colors.borderStrong)
-                font = AdbToolboxTheme.Typography.body.deriveFont(JBUI.scale(11.5f))
-                isEnabled = false
-            }
-
-        fun dangerButton(text: String, icon: javax.swing.Icon) = JButton(text, icon).apply {
-            preferredSize = Dimension(preferredSize.width, JBUI.scale(24))
-            foreground = AdbToolboxTheme.Colors.red
-            isContentAreaFilled = false
-            isFocusPainted = false
-            border = SolidChipBorder(AdbToolboxTheme.Colors.redBorder)
-            font = AdbToolboxTheme.Typography.body.deriveFont(Font.BOLD, JBUI.scale(11f))
-            isEnabled = false
-        }
     }
 }
 

@@ -5,7 +5,8 @@ import com.intellij.ui.components.JBList
 import com.intellij.util.ui.JBUI
 import dev.acme.adbtoolbox.application.apps.AppsRow
 import dev.acme.adbtoolbox.intellij.ui.common.AdbToolboxTheme
-import dev.acme.adbtoolbox.intellij.ui.common.SolidChipBorder
+import dev.acme.adbtoolbox.intellij.ui.common.FlexRowLayout
+import dev.acme.adbtoolbox.intellij.ui.common.RoundedSurface
 import java.awt.BorderLayout
 import java.awt.Component
 import java.awt.Dimension
@@ -13,7 +14,6 @@ import java.awt.Font
 import java.awt.GridLayout
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
-import javax.swing.BorderFactory
 import javax.swing.JComponent
 import javax.swing.JList
 import javax.swing.JPanel
@@ -45,6 +45,7 @@ class AppsVirtualList(
 
     init {
         cellRenderer = rowRenderer
+        // `appListStyle`: `padding: 4px 6px` around 34px rows.
         fixedCellHeight = AdbToolboxTheme.Sizes.appRow
         border = JBUI.Borders.empty(AdbToolboxTheme.Spacing.s2, AdbToolboxTheme.Spacing.s3)
         isOpaque = false
@@ -81,23 +82,23 @@ class AppsVirtualList(
  */
 internal class AppsRowRenderer : ListCellRenderer<AppsRow> {
 
-    private val tile = JPanel().apply {
+    // `iconStyle`: 16px square tile, radius 4.
+    private val tile = RoundedSurface(null, null, radius = { AdbToolboxTheme.Radii.field }).apply {
         preferredSize = Dimension(JBUI.scale(16), JBUI.scale(16))
-        isOpaque = true
     }
 
     private val titleLabel = JBLabel()
     private val packageLabel = JBLabel()
 
-    private val debugTag = JBLabel("debug").apply {
-        isOpaque = true
+    // `tagStyle`: 9px/700 teal text on `brandBg`, 1px `brandBorder`, radius 3, padding 1px 4px.
+    private val debugTagLabel = JBLabel("debug").apply {
         foreground = AdbToolboxTheme.Colors.brand
-        background = AdbToolboxTheme.Colors.brandBg
-        font = AdbToolboxTheme.Typography.groupLabel.deriveFont(JBUI.scale(9f))
-        border = BorderFactory.createCompoundBorder(
-            SolidChipBorder(AdbToolboxTheme.Colors.brandBorder),
-            JBUI.Borders.empty(1, 4),
-        )
+        font = AdbToolboxTheme.Typography.body.deriveFont(Font.BOLD, JBUI.scale(9f))
+        border = JBUI.Borders.empty(1, 4)
+    }
+    private val debugTag = RoundedSurface(AdbToolboxTheme.Colors.brandBg, AdbToolboxTheme.Colors.brandBorder, radius = { JBUI.scale(3) }).apply {
+        layout = BorderLayout()
+        add(debugTagLabel, BorderLayout.CENTER)
     }
 
     private val textStack = JPanel(GridLayout(2, 1)).apply {
@@ -106,17 +107,20 @@ internal class AppsRowRenderer : ListCellRenderer<AppsRow> {
         add(packageLabel)
     }
 
-    private val root = JPanel(BorderLayout(AdbToolboxTheme.Spacing.s4, 0)).apply {
-        add(tile, BorderLayout.WEST)
-        add(textStack, BorderLayout.CENTER)
-        add(debugTag, BorderLayout.EAST)
+    // `rowStyle`: 34px, radius 5, `padding: 0 8px`, gap 7, selected = `accentBg` + 1px `accentBorder`.
+    private val root = RoundedSurface(null, null).apply {
+        layout = FlexRowLayout(JBUI.scale(7))
+        border = JBUI.Borders.empty(0, AdbToolboxTheme.Spacing.s4)
+        add(tile)
+        add(textStack, FlexRowLayout.FILL)
+        add(debugTag)
     }
 
-    internal val tileForTest: JComponent get() = tile
+    internal val tileForTest: RoundedSurface get() = tile
     internal val titleLabelForTest: JBLabel get() = titleLabel
     internal val packageLabelForTest: JBLabel get() = packageLabel
     internal val debugTagForTest: JComponent get() = debugTag
-    internal val rootForTest: JComponent get() = root
+    internal val rootForTest: RoundedSurface get() = root
 
     override fun getListCellRendererComponent(
         list: JList<out AppsRow>,
@@ -137,17 +141,21 @@ internal class AppsRowRenderer : ListCellRenderer<AppsRow> {
         packageLabel.font = AdbToolboxTheme.Typography.monoMeta
 
         val debuggable = value.isDebuggable == true
-        tile.background = if (debuggable) AdbToolboxTheme.Colors.brandBg else AdbToolboxTheme.Colors.header
-        tile.border = SolidChipBorder(if (debuggable) AdbToolboxTheme.Colors.brandBorder else AdbToolboxTheme.Colors.border)
+        tile.fill = if (debuggable) AdbToolboxTheme.Colors.brandBg else AdbToolboxTheme.Colors.header
+        tile.outline = if (debuggable) AdbToolboxTheme.Colors.brandBorder else AdbToolboxTheme.Colors.border
         debugTag.isVisible = debuggable
 
-        root.isOpaque = value.isSelected
-        root.background = if (value.isSelected) AdbToolboxTheme.Colors.accentBg else null
-        root.border = if (value.isSelected) {
-            SolidChipBorder(AdbToolboxTheme.Colors.accentBorder)
-        } else {
-            JBUI.Borders.empty(1)
-        }
+        root.fill = if (value.isSelected) AdbToolboxTheme.Colors.accentBg else null
+        root.outline = if (value.isSelected) AdbToolboxTheme.Colors.accentBorder else null
+
+        // JList's CellRendererPane paints renderer components without validating nested layout
+        // managers. Give this compound renderer its final row bounds explicitly so its tile,
+        // two-line text stack and debug tag are paintable in both the IDE and off-screen tests.
+        val rowWidth = (list.width - list.insets.left - list.insets.right).coerceAtLeast(1)
+        root.setSize(rowWidth, AdbToolboxTheme.Sizes.appRow)
+        root.doLayout()
+        textStack.doLayout()
+        debugTag.doLayout()
 
         return root
     }

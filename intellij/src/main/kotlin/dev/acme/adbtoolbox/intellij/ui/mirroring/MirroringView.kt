@@ -1,5 +1,11 @@
 package dev.acme.adbtoolbox.intellij.ui.mirroring
 
+import dev.acme.adbtoolbox.intellij.ui.common.DesignButton
+import dev.acme.adbtoolbox.intellij.ui.common.DesignButtonStyle
+import dev.acme.adbtoolbox.intellij.ui.common.FlexRowLayout
+import dev.acme.adbtoolbox.intellij.ui.common.RoundedSurface
+import dev.acme.adbtoolbox.intellij.ui.common.WrappingText
+import dev.acme.adbtoolbox.intellij.ui.common.flexRow
 import com.intellij.openapi.Disposable
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBPanel
@@ -12,14 +18,11 @@ import dev.acme.adbtoolbox.domain.devicecontext.ControlPolicy
 import dev.acme.adbtoolbox.domain.dispatch.DispatcherProvider
 import dev.acme.adbtoolbox.intellij.icons.AdbToolboxIcons
 import dev.acme.adbtoolbox.intellij.ui.common.AdbToolboxTheme
-import dev.acme.adbtoolbox.intellij.ui.common.SolidChipBorder
 import dev.acme.adbtoolbox.intellij.ui.common.StatusDotIcon
 import java.awt.BorderLayout
 import java.awt.CardLayout
 import java.awt.Dimension
-import java.awt.FlowLayout
 import java.awt.Font
-import javax.swing.BorderFactory
 import javax.swing.JButton
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.cancel
@@ -35,17 +38,12 @@ class MirroringView(
     private val openOptions: () -> Unit = {},
 ) : JBPanel<MirroringView>(BorderLayout()), Disposable {
 
-    private val startButton = JButton("Start mirroring").apply {
-        preferredSize = Dimension(preferredSize.width, AdbToolboxTheme.Sizes.primaryButton)
+    private val startButton = DesignButton("Start mirroring", DesignButtonStyle.PRIMARY).apply {
         toolTipText = START_TOOLTIP
         addActionListener { viewModel.handle(MirroringIntent.Toggle) }
     }
 
-    private val stopButton = JButton("Stop").apply {
-        foreground = AdbToolboxTheme.Colors.red
-        border = SolidChipBorder(AdbToolboxTheme.Colors.redBorder)
-        isContentAreaFilled = false
-        preferredSize = Dimension(preferredSize.width, JBUI.scale(24))
+    private val stopButton = DesignButton("Stop", DesignButtonStyle.DANGER).apply {
         addActionListener { viewModel.handle(MirroringIntent.Toggle) }
     }
 
@@ -57,14 +55,12 @@ class MirroringView(
         toolTipText = OPTIONS_TOOLTIP
         getAccessibleContext().accessibleName = "Mirroring options"
         isContentAreaFilled = false
+        isBorderPainted = false
+        isFocusPainted = false
         addActionListener { openOptions() }
     }
 
-    private val idleRow = JBPanel<Nothing>(FlowLayout(FlowLayout.LEFT, AdbToolboxTheme.Spacing.s3, 0)).apply {
-        isOpaque = false
-        add(startButton)
-        add(optionsButton)
-    }
+    private val idleRow = flexRow(AdbToolboxTheme.Spacing.s3, startButton, optionsButton)
 
     val runningLabel = JBLabel("Mirroring · Running").apply {
         font = AdbToolboxTheme.Typography.body.deriveFont(Font.BOLD, JBUI.scale(11.5f))
@@ -72,15 +68,12 @@ class MirroringView(
         icon = StatusDotIcon(AdbToolboxTheme.Colors.brand, filled = true)
     }
 
-    val runningBanner = JBPanel<Nothing>(BorderLayout()).apply {
-        isOpaque = true
-        background = AdbToolboxTheme.Colors.brandBg
-        border = BorderFactory.createCompoundBorder(
-            SolidChipBorder(AdbToolboxTheme.Colors.brandBorder),
-            JBUI.Borders.empty(5, 8),
-        )
-        add(runningLabel, BorderLayout.CENTER)
-        add(stopButton, BorderLayout.EAST)
+    // `runningRowStyle`: radius 5, `brandBg` + 1px `brandBorder`, `padding: 6px 8px`, gap 7.
+    val runningBanner = RoundedSurface(AdbToolboxTheme.Colors.brandBg, AdbToolboxTheme.Colors.brandBorder).apply {
+        layout = FlexRowLayout(JBUI.scale(7))
+        border = JBUI.Borders.empty(6, 8)
+        add(runningLabel, FlexRowLayout.FILL)
+        add(stopButton)
     }
 
     private val stateCards = JBPanel<Nothing>(CardLayout()).apply {
@@ -89,16 +82,15 @@ class MirroringView(
         add(runningBanner, RUNNING)
     }
 
-    val helpLabel = JBLabel(IDLE_HELP).apply {
-        font = AdbToolboxTheme.Typography.caption
-        foreground = AdbToolboxTheme.Colors.textFaint
-        border = JBUI.Borders.empty(4, 0, 2, 0)
+    // `helpText`: 10.5px `textFaint`, wraps to the section width; 6px section gap above it.
+    val helpLabel = WrappingText(IDLE_HELP, AdbToolboxTheme.Typography.caption, AdbToolboxTheme.Colors.textFaint).apply {
+        border = JBUI.Borders.empty(6, 0, 2, 0)
     }
 
     init {
         isOpaque = false
         add(stateCards, BorderLayout.NORTH)
-        add(helpLabel, BorderLayout.SOUTH)
+        add(helpLabel, BorderLayout.CENTER)
         viewModel.state
             .onEach { state -> withContext(dispatchers.main) { render(state) } }
             .launchIn(scope)

@@ -98,7 +98,9 @@ class AdbToolboxThemeTest : BasePlatformTestCase() {
         val editor = EditorColorsManager.getInstance().globalScheme.getFont(EditorFontType.PLAIN)
 
         assertEquals(label.family, AdbToolboxTheme.Typography.body.family)
-        assertEquals(label.style, AdbToolboxTheme.Typography.body.style)
+        assertEquals(label.size2D, AdbToolboxTheme.Typography.body.size2D)
+        // Tokens: body/caption weight 400, independent of a look-and-feel's default label style.
+        assertEquals(Font.PLAIN, AdbToolboxTheme.Typography.body.style)
         assertEquals(small.family, AdbToolboxTheme.Typography.caption.family)
         assertEquals(editor.family, AdbToolboxTheme.Typography.mono.family)
         assertEquals(Font.BOLD, AdbToolboxTheme.Typography.title.style)

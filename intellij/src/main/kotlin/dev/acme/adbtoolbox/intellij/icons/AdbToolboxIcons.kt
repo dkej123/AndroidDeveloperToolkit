@@ -5,32 +5,32 @@ import javax.swing.Icon
 
 /** IntelliJ-loaded production icons supplied under `design/icons`. */
 object AdbToolboxIcons {
-    val toolWindow: Icon = load("/icons/adbToolbox.svg")
+    val toolWindow: Icon get() = load("/icons/adbToolbox.svg")
 
     object Actions {
-        val authorize: Icon = load("/icons/actions/authorize.svg")
-        val autoscroll: Icon = load("/icons/actions/autoscroll.svg")
-        val clearData: Icon = load("/icons/actions/clearData.svg")
-        val density: Icon = load("/icons/actions/density.svg")
-        val filter: Icon = load("/icons/actions/filter.svg")
-        val fontScale: Icon = load("/icons/actions/fontScale.svg")
-        val forceStop: Icon = load("/icons/actions/forceStop.svg")
-        val mirror: Icon = load("/icons/actions/mirror.svg")
-        val options: Icon = load("/icons/actions/options.svg")
-        val pause: Icon = load("/icons/actions/pause.svg")
-        val proxy: Icon = load("/icons/actions/proxy.svg")
-        val record: Icon = load("/icons/actions/record.svg")
-        val refresh: Icon = load("/icons/actions/refresh.svg")
-        val restart: Icon = load("/icons/actions/restart.svg")
-        val resume: Icon = load("/icons/actions/resume.svg")
-        val screenshot: Icon = load("/icons/actions/screenshot.svg")
-        val search: Icon = load("/icons/actions/search.svg")
-        val uninstall: Icon = load("/icons/actions/uninstall.svg")
-        val wrap: Icon = load("/icons/actions/wrap.svg")
+        val authorize: Icon get() = load("/icons/actions/authorize.svg")
+        val autoscroll: Icon get() = load("/icons/actions/autoscroll.svg")
+        val clearData: Icon get() = load("/icons/actions/clearData.svg")
+        val density: Icon get() = load("/icons/actions/density.svg")
+        val filter: Icon get() = load("/icons/actions/filter.svg")
+        val fontScale: Icon get() = load("/icons/actions/fontScale.svg")
+        val forceStop: Icon get() = load("/icons/actions/forceStop.svg")
+        val mirror: Icon get() = load("/icons/actions/mirror.svg")
+        val options: Icon get() = load("/icons/actions/options.svg")
+        val pause: Icon get() = load("/icons/actions/pause.svg")
+        val proxy: Icon get() = load("/icons/actions/proxy.svg")
+        val record: Icon get() = load("/icons/actions/record.svg")
+        val refresh: Icon get() = load("/icons/actions/refresh.svg")
+        val restart: Icon get() = load("/icons/actions/restart.svg")
+        val resume: Icon get() = load("/icons/actions/resume.svg")
+        val screenshot: Icon get() = load("/icons/actions/screenshot.svg")
+        val search: Icon get() = load("/icons/actions/search.svg")
+        val uninstall: Icon get() = load("/icons/actions/uninstall.svg")
+        val wrap: Icon get() = load("/icons/actions/wrap.svg")
     }
 
     /** Complete loadable catalog, used by the package test and future feature call sites. */
-    val all: List<Icon> = listOf(
+    val all: List<Icon> get() = listOf(
         toolWindow,
         Actions.authorize,
         Actions.autoscroll,
@@ -53,5 +53,7 @@ object AdbToolboxIcons {
         Actions.wrap,
     )
 
-    private fun load(path: String): Icon = IconLoader.getIcon(path, AdbToolboxIcons::class.java)
+    private fun load(path: String): Icon = requireNotNull(IconLoader.getIcon(path, AdbToolboxIcons::class.java)) {
+        "Missing icon resource: $path"
+    }
 }

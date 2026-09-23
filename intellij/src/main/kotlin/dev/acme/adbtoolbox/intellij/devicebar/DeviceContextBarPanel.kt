@@ -8,10 +8,11 @@ import dev.acme.adbtoolbox.intellij.icons.AdbToolboxIcons
 import dev.acme.adbtoolbox.intellij.ui.common.AdbToolboxTheme
 import dev.acme.adbtoolbox.intellij.ui.common.SolidChipBorder
 import dev.acme.adbtoolbox.intellij.ui.common.StatusDotIcon
+import dev.acme.adbtoolbox.intellij.ui.common.flexRow
+import dev.acme.adbtoolbox.intellij.ui.common.flexSpacer
 import com.intellij.util.ui.JBUI
 import java.awt.BorderLayout
 import java.awt.Cursor
-import java.awt.FlowLayout
 import java.awt.Font
 import javax.swing.BorderFactory
 import javax.swing.JButton
@@ -44,6 +45,8 @@ class DeviceContextBarPanel(
     private val selectorLabel = JButton("").apply {
         font = AdbToolboxTheme.Typography.body.deriveFont(Font.BOLD, JBUI.scale(11.5f))
         foreground = AdbToolboxTheme.Colors.text
+        iconTextGap = AdbToolboxTheme.Spacing.s3
+        border = JBUI.Borders.empty()
         cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
         toolTipText = "Change device"
         isContentAreaFilled = false
@@ -61,9 +64,9 @@ class DeviceContextBarPanel(
 
     private val chipLabel = JBLabel("").apply {
         font = AdbToolboxTheme.Typography.groupLabel.deriveFont(JBUI.scale(9f))
-        foreground = AdbToolboxTheme.Colors.textFaint
+        foreground = AdbToolboxTheme.Colors.textDim
         border = BorderFactory.createCompoundBorder(
-            SolidChipBorder(AdbToolboxTheme.Colors.borderStrong),
+            SolidChipBorder(AdbToolboxTheme.Colors.border, radius = { JBUI.scale(3) }),
             JBUI.Borders.empty(1, 4),
         )
         isVisible = false
@@ -77,7 +80,8 @@ class DeviceContextBarPanel(
     // Same JButton-over-JBLabel fix as [selectorLabel] — this was the unauthorized-state's only
     // recovery action and was previously unreachable by keyboard.
     private val retryLabel = JButton("Retry").apply {
-        font = AdbToolboxTheme.Typography.body.deriveFont(Font.BOLD)
+        font = AdbToolboxTheme.Typography.body.deriveFont(Font.BOLD, JBUI.scale(11f))
+        border = JBUI.Borders.empty()
         foreground = AdbToolboxTheme.Colors.accent
         cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
         toolTipText = "Re-query the device after accepting the USB debugging prompt"
@@ -90,6 +94,8 @@ class DeviceContextBarPanel(
     }
 
     private val refreshButton = JButton(AdbToolboxIcons.Actions.refresh).apply {
+        preferredSize = java.awt.Dimension(AdbToolboxTheme.Sizes.iconButton, AdbToolboxTheme.Sizes.iconButton)
+        margin = java.awt.Insets(0, 0, 0, 0)
         toolTipText = "Refresh device list  ⌘⇧D"
         getAccessibleContext().accessibleName = "Refresh device list"
         isContentAreaFilled = false
@@ -99,7 +105,7 @@ class DeviceContextBarPanel(
     }
 
     private val bannerLabel = JBLabel(UNAUTHORIZED_BANNER_TEXT).apply {
-        font = AdbToolboxTheme.Typography.caption
+        font = AdbToolboxTheme.Typography.caption.deriveFont(JBUI.scale(10.5f))
         foreground = AdbToolboxTheme.Colors.amber
         background = AdbToolboxTheme.Colors.amberBg
         isOpaque = true
@@ -107,34 +113,40 @@ class DeviceContextBarPanel(
         isVisible = false
     }
 
-    private val leftRow = JBPanel<Nothing>(FlowLayout(FlowLayout.LEADING, AdbToolboxTheme.Spacing.s3, 0)).apply {
-        isOpaque = false
-        add(selectorLabel)
-        add(serialLabel)
-        add(chipLabel)
-        add(retryLabel)
-    }
+    // `caretIconStyle`: 5px chevron after the connection chip, marking the selector as a picker.
+    private val caretLabel = JBLabel(CaretIcon(AdbToolboxTheme.Colors.textDim)).apply { isVisible = false }
 
-    private val rightRow = JBPanel<Nothing>(FlowLayout(FlowLayout.TRAILING, AdbToolboxTheme.Spacing.s3, 0)).apply {
-        isOpaque = false
-        add(onlineCountLabel)
-        add(refreshButton)
+    private val row = run {
+        val spacer = flexSpacer()
+        flexRow(
+            AdbToolboxTheme.Spacing.s3,
+            selectorLabel, serialLabel, chipLabel, caretLabel, retryLabel, spacer, onlineCountLabel, refreshButton,
+            fill = spacer,
+            shrink = selectorLabel,
+        ).apply {
+            // `deviceBarStyle`: 30px row, `padding: 0 4px 0 8px`, gap 6, every child vertically centered.
+            border = JBUI.Borders.empty(0, AdbToolboxTheme.Spacing.s4, 0, AdbToolboxTheme.Spacing.s2)
+            preferredSize = java.awt.Dimension(0, AdbToolboxTheme.Sizes.deviceBar - JBUI.scale(1))
+        }
     }
 
     init {
         background = AdbToolboxTheme.Colors.header
         border = BorderFactory.createMatteBorder(0, 0, 1, 0, AdbToolboxTheme.Colors.border)
-        // leftRow is CENTER, not WEST: BorderLayout gives WEST its full preferred width regardless
-        // of available space, so a long device name would paint over (never resize away from) the
-        // required refresh action in EAST at narrow widths — same fix as
-        // [dev.acme.adbtoolbox.intellij.feedback.FeedbackStatusPanel].
-        add(leftRow, BorderLayout.CENTER)
-        add(rightRow, BorderLayout.EAST)
+        add(row, BorderLayout.CENTER)
         add(bannerLabel, BorderLayout.SOUTH)
         addComponentListener(object : java.awt.event.ComponentAdapter() {
             override fun componentResized(e: java.awt.event.ComponentEvent) = applyResponsiveLayout(width)
         })
     }
+
+    /** Fixed 30px bar; the unauthorized banner adds its own height below it (`warnBannerStyle`). */
+    override fun getPreferredSize(): java.awt.Dimension {
+        val banner = if (bannerLabel.isVisible) bannerLabel.preferredSize.height else 0
+        return java.awt.Dimension(super.getPreferredSize().width, AdbToolboxTheme.Sizes.deviceBar + banner)
+    }
+
+    override fun getMinimumSize(): java.awt.Dimension = java.awt.Dimension(0, preferredSize.height)
 
     private var currentOnline: DeviceBarPresentation.Online? = null
     private var isNarrow = false
@@ -177,7 +189,7 @@ class DeviceContextBarPanel(
     /** Test-only visibility hook for the unauthorized-state "Retry" button. */
     internal val retryComponentForTest: JButton get() = retryLabel
 
-    /** Test-only visibility hook: the refresh icon button (nested inside [rightRow], not a direct child). */
+    /** Test-only visibility hook: the refresh icon button (nested inside the bar row, not a direct child). */
     internal val refreshButtonForTest: JButton get() = refreshButton
 
     /** Test/verification seam: the connection-kind chip's current text/visibility ("USB"/"Wi-Fi"). */
@@ -186,11 +198,19 @@ class DeviceContextBarPanel(
 
     fun update(bar: DeviceBarPresentation) {
         chipLabel.isVisible = false
+        caretLabel.isVisible = false
         onlineCountLabel.text = ""
         retryLabel.isVisible = false
         bannerLabel.isVisible = false
         serialLabel.text = ""
         currentOnline = bar as? DeviceBarPresentation.Online
+        // Device name and the unauthorized label are 11.5/600; the loading and no-device messages
+        // are regular `textDim` copy (`deviceLoadingTextStyle`, `noDeviceTextStyle`).
+        val emphasized = bar is DeviceBarPresentation.Online || bar is DeviceBarPresentation.Unauthorized
+        selectorLabel.font = AdbToolboxTheme.Typography.body.deriveFont(
+            if (emphasized) Font.BOLD else Font.PLAIN,
+            JBUI.scale(11.5f),
+        )
 
         when (bar) {
             DeviceBarPresentation.Loading -> {
@@ -206,9 +226,10 @@ class DeviceContextBarPanel(
             is DeviceBarPresentation.Online -> {
                 selectorLabel.icon = StatusDotIcon(AdbToolboxTheme.Colors.green, filled = true)
                 selectorLabel.foreground = AdbToolboxTheme.Colors.text
-                selectorLabel.text = "${bar.device.model ?: bar.device.serial} (${bar.device.serial})"
+                selectorLabel.text = bar.device.model ?: bar.device.serial.toString()
                 chipLabel.text = connectionChipText(bar.device.connectionKind)
                 chipLabel.isVisible = true
+                caretLabel.isVisible = true
                 renderOnline(bar)
             }
             is DeviceBarPresentation.Unauthorized -> {
@@ -232,7 +253,7 @@ class DeviceContextBarPanel(
     }
 
     private fun renderOnline(bar: DeviceBarPresentation.Online) {
-        serialLabel.text = if (isNarrow) "" else bar.device.serial.toString()
+        serialLabel.text = if (isNarrow || bar.device.model == null) "" else bar.device.serial.toString()
         onlineCountLabel.text = if (isNarrow) "${bar.onlineCount}" else "${bar.onlineCount} online"
     }
 
@@ -244,5 +265,31 @@ class DeviceContextBarPanel(
     private companion object {
         const val UNAUTHORIZED_BANNER_TEXT =
             "Accept the “Allow USB debugging” prompt on the device, then retry."
+    }
+}
+
+/** The selector's 5px caret (`caretIconStyle`: a 1.3px chevron pointing down). */
+private class CaretIcon(private val color: java.awt.Color) : javax.swing.Icon {
+    override fun getIconWidth(): Int = JBUI.scale(8)
+    override fun getIconHeight(): Int = JBUI.scale(8)
+
+    override fun paintIcon(c: java.awt.Component?, g: java.awt.Graphics, x: Int, y: Int) {
+        val g2 = g.create() as java.awt.Graphics2D
+        try {
+            g2.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING, java.awt.RenderingHints.VALUE_ANTIALIAS_ON)
+            g2.color = color
+            g2.stroke = java.awt.BasicStroke(JBUI.scale(1.3f), java.awt.BasicStroke.CAP_ROUND, java.awt.BasicStroke.JOIN_ROUND)
+            val half = JBUI.scale(3f)
+            val cx = x + iconWidth / 2f
+            val cy = y + iconHeight / 2f
+            val path = java.awt.geom.Path2D.Float().apply {
+                moveTo(cx - half, cy - half / 2)
+                lineTo(cx, cy + half / 2)
+                lineTo(cx + half, cy - half / 2)
+            }
+            g2.draw(path)
+        } finally {
+            g2.dispose()
+        }
     }
 }

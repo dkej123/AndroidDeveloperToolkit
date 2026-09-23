@@ -8,22 +8,27 @@ import com.intellij.util.ui.JBUI
 import dev.acme.adbtoolbox.application.network.ProxyViewState
 import dev.acme.adbtoolbox.domain.network.ProxyEndpoint
 import dev.acme.adbtoolbox.domain.network.ProxyReadState
-import dev.acme.adbtoolbox.intellij.icons.AdbToolboxIcons
 import dev.acme.adbtoolbox.intellij.ui.common.AdbToolboxTheme
+import dev.acme.adbtoolbox.intellij.ui.common.DesignButton
+import dev.acme.adbtoolbox.intellij.ui.common.DesignButtonStyle
+import dev.acme.adbtoolbox.intellij.ui.common.DesignSections
+import dev.acme.adbtoolbox.intellij.ui.common.FlexRowLayout
+import dev.acme.adbtoolbox.intellij.ui.common.RoundedSurface
 import dev.acme.adbtoolbox.intellij.ui.common.SolidChipBorder
+import dev.acme.adbtoolbox.intellij.ui.common.flexRow
+import dev.acme.adbtoolbox.intellij.ui.common.flexSpacer
 import dev.acme.adbtoolbox.intellij.ui.common.StatusDotIcon
+import dev.acme.adbtoolbox.intellij.ui.common.ViewportWidthPanel
 import java.awt.BorderLayout
-import java.awt.Color
 import java.awt.Dimension
-import java.awt.FlowLayout
 import java.awt.Font
 import javax.swing.BorderFactory
-import javax.swing.Box
 import javax.swing.BoxLayout
 import javax.swing.DefaultListModel
 import javax.swing.JButton
 import javax.swing.JPanel
 import javax.swing.JScrollPane
+import javax.swing.ScrollPaneConstants
 import javax.swing.JTextField
 import javax.swing.ListCellRenderer
 import javax.swing.event.DocumentEvent
@@ -55,9 +60,14 @@ class NetworkPanel(
 
     // ---- Global HTTP proxy section (`design/README.md` §6.1) ----
 
-    private val proxyTitleLabel = sectionTitleLabel("Global HTTP proxy")
-    private val proxyStateLabel = sectionMetaLabel()
-    private val proxyHeader = sectionHeader(proxyTitleLabel, proxyStateLabel)
+    private val proxyTitleLabel = DesignSections.titleLabel("Global HTTP proxy")
+
+    // `proxyStateStyle`: 10px/700 UI font, `textFaint` when off, amber when active.
+    private val proxyStateLabel = JBLabel("—").apply {
+        font = AdbToolboxTheme.Typography.body.deriveFont(Font.BOLD, JBUI.scale(10f))
+        foreground = AdbToolboxTheme.Colors.textFaint
+    }
+    private val proxyHeader = DesignSections.header(proxyTitleLabel, proxyStateLabel)
 
     private val hostField = monoField().apply {
         toolTipText = HOST_FIELD_TOOLTIP
@@ -69,9 +79,8 @@ class NetworkPanel(
         })
     }
     private val colonLabel = JBLabel(":").apply {
-        font = AdbToolboxTheme.Typography.mono
+        font = AdbToolboxTheme.Typography.mono.deriveFont(JBUI.scale(12f))
         foreground = AdbToolboxTheme.Colors.textFaint
-        border = JBUI.Borders.empty(0, AdbToolboxTheme.Spacing.s2)
     }
     private val portField = monoField().apply {
         preferredSize = Dimension(JBUI.scale(66), AdbToolboxTheme.Sizes.field)
@@ -82,16 +91,9 @@ class NetworkPanel(
             override fun changedUpdate(e: DocumentEvent) = onPortChange(text)
         })
     }
-    private val portGroup = JPanel(BorderLayout()).apply {
-        isOpaque = false
-        add(colonLabel, BorderLayout.WEST)
-        add(portField, BorderLayout.CENTER)
-    }
-    private val fieldRow = JPanel(BorderLayout(AdbToolboxTheme.Spacing.s2, 0)).apply {
-        isOpaque = false
-        border = JBUI.Borders.empty(0, AdbToolboxTheme.Spacing.s5)
-        add(hostField, BorderLayout.CENTER)
-        add(portGroup, BorderLayout.EAST)
+    // `proxyFieldRowStyle`: host (flex) · mono ":" · 66px port, gap 5, `padding: 0 10px`.
+    private val fieldRow = flexRow(JBUI.scale(5), hostField, colonLabel, portField, fill = hostField).apply {
+        border = JBUI.Borders.empty(0, AdbToolboxTheme.Spacing.sectionInset)
     }
 
     private val fieldErrorLabel = errorLabel()
@@ -100,15 +102,17 @@ class NetworkPanel(
         toolTipText = USE_COMPUTER_IP_TOOLTIP
     }
     private var isActive = false
-    private val primaryProxyButton = primaryButton("Enable proxy", AdbToolboxIcons.Actions.proxy).apply {
+    private val primaryProxyButton = DesignButton("Enable proxy", DesignButtonStyle.PRIMARY).apply {
+        isEnabled = false
         addActionListener { if (isActive) onReset() else onEnable() }
     }
-    private val actionRow = JPanel(FlowLayout(FlowLayout.LEADING, AdbToolboxTheme.Spacing.s3, 0)).apply {
-        isOpaque = false
-        border = JBUI.Borders.empty(0, AdbToolboxTheme.Spacing.s5)
-        add(useComputerIpLink)
-        add(Box.createHorizontalStrut(AdbToolboxTheme.Spacing.s6))
-        add(primaryProxyButton)
+
+    // `actionRowStyle` + spacer: the link on the leading edge, the primary action on the trailing edge.
+    private val actionRow = run {
+        val spacer = flexSpacer()
+        flexRow(AdbToolboxTheme.Spacing.s3, useComputerIpLink, spacer, primaryProxyButton, fill = spacer)
+    }.apply {
+        border = JBUI.Borders.empty(0, AdbToolboxTheme.Spacing.sectionInset)
     }
 
     private val liveDotLabel = JBLabel(StatusDotIcon(AdbToolboxTheme.Colors.amber, filled = true))
@@ -117,45 +121,42 @@ class NetworkPanel(
         foreground = AdbToolboxTheme.Colors.amber
     }
     private val resetLink = linkButton("Reset") { onReset() }
-    private val activeBanner = JPanel(BorderLayout(AdbToolboxTheme.Spacing.s2, 0)).apply {
-        isOpaque = true
-        background = AdbToolboxTheme.Colors.amberBg
-        border = BorderFactory.createCompoundBorder(
-            SolidChipBorder(AdbToolboxTheme.Colors.amber),
-            JBUI.Borders.empty(AdbToolboxTheme.Spacing.s3, AdbToolboxTheme.Spacing.s4),
-        )
-        val leading = JPanel(FlowLayout(FlowLayout.LEADING, AdbToolboxTheme.Spacing.s3, 0)).apply {
-            isOpaque = false
-            add(liveDotLabel)
-            add(activeBannerTextLabel)
-        }
-        add(leading, BorderLayout.WEST)
-        add(resetLink, BorderLayout.EAST)
+
+    // `proxyActiveBannerStyle`: `padding: 6px 8px`, radius 5, `amberBg` + 1px amber, gap 7. The text
+    // is the row's only flexible child, so it ellipsises before it can reach the Reset action.
+    private val activeBanner = RoundedSurface(AdbToolboxTheme.Colors.amberBg, AdbToolboxTheme.Colors.amber).apply {
+        layout = FlexRowLayout(JBUI.scale(7))
+        border = JBUI.Borders.empty(AdbToolboxTheme.Spacing.s3, AdbToolboxTheme.Spacing.s4)
+        add(liveDotLabel)
+        add(activeBannerTextLabel, FlexRowLayout.FILL)
+        add(resetLink)
     }
     private val activeBannerWrap = JPanel(BorderLayout()).apply {
         isOpaque = false
         isVisible = false
-        border = JBUI.Borders.empty(AdbToolboxTheme.Spacing.s1, AdbToolboxTheme.Spacing.s5, 0, AdbToolboxTheme.Spacing.s5)
+        border = JBUI.Borders.empty(AdbToolboxTheme.Spacing.s1, AdbToolboxTheme.Spacing.sectionInset, 0, AdbToolboxTheme.Spacing.sectionInset)
         add(activeBanner, BorderLayout.CENTER)
     }
 
-    private val helpTextLabel = helpLabel("")
+    private val helpTextLabel = DesignSections.helpText("")
 
-    private val proxySection = section(proxyHeader, fieldRow, fieldErrorLabel, actionRow, activeBannerWrap, helpTextLabel)
+    private val proxySection = DesignSections.section(proxyHeader, fieldRow, fieldErrorLabel, actionRow, activeBannerWrap, helpTextLabel)
 
     // ---- Recent section (`design/README.md` §6.2) ----
 
-    private val recentHeader = sectionHeader(sectionTitleLabel("Recent"), null)
+    private val recentHeader = DesignSections.header(DesignSections.titleLabel("Recent"), null)
 
     private val recentsModel = DefaultListModel<ProxyEndpoint>()
+    // `recentProxies[].rowStyle`: 26px rows, `padding: 0 10px`, mono 11px target on the leading edge.
     private val recentsList = JBList(recentsModel).apply {
         isOpaque = false
-        border = JBUI.Borders.empty(0, AdbToolboxTheme.Spacing.s5)
+        border = JBUI.Borders.empty()
         fixedCellHeight = JBUI.scale(26)
         cellRenderer = ListCellRenderer<ProxyEndpoint> { _, value, _, _, _ ->
             JBLabel(value.render()).apply {
                 font = AdbToolboxTheme.Typography.mono
                 foreground = AdbToolboxTheme.Colors.text
+                border = JBUI.Borders.empty(0, AdbToolboxTheme.Spacing.sectionInset)
             }
         }
         addListSelectionListener { event ->
@@ -165,9 +166,9 @@ class NetworkPanel(
         }
     }
 
-    private val recentSection = section(recentHeader, recentsList)
+    private val recentSection = DesignSections.section(recentHeader, recentsList)
 
-    private val contentPanel = JPanel().apply {
+    private val contentPanel = ViewportWidthPanel().apply {
         layout = BoxLayout(this, BoxLayout.Y_AXIS)
         background = AdbToolboxTheme.Colors.bg
         add(proxySection)
@@ -176,6 +177,7 @@ class NetworkPanel(
 
     private val scrollPane = JScrollPane(contentPanel).apply {
         border = BorderFactory.createEmptyBorder()
+        horizontalScrollBarPolicy = ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER
         verticalScrollBar.unitIncrement = AdbToolboxTheme.Spacing.s5
     }
 
@@ -205,7 +207,10 @@ class NetworkPanel(
         val portInvalid = state.portError != null
         portField.foreground = if (portInvalid) AdbToolboxTheme.Colors.red else AdbToolboxTheme.Colors.text
         portField.border = BorderFactory.createCompoundBorder(
-            SolidChipBorder(if (portInvalid) AdbToolboxTheme.Colors.red else AdbToolboxTheme.Colors.borderStrong),
+            SolidChipBorder(
+                if (portInvalid) AdbToolboxTheme.Colors.red else AdbToolboxTheme.Colors.borderStrong,
+                radius = { AdbToolboxTheme.Radii.field },
+            ),
             JBUI.Borders.empty(0, AdbToolboxTheme.Spacing.s3),
         )
 
@@ -232,7 +237,7 @@ class NetworkPanel(
         helpTextLabel.text = if (active != null) {
             "Survives reboot until reset. Some apps pin certificates and will still fail."
         } else {
-            "<html>Sets <tt>settings put global http_proxy</tt>. Recent targets are remembered per project.</html>"
+            "Sets settings put global http_proxy. Recent targets are remembered per project."
         }
 
         val fieldError = state.hostError ?: state.portError ?: state.error
@@ -251,20 +256,7 @@ class NetworkPanel(
 
     private fun presentProxyButton(active: Boolean) {
         primaryProxyButton.text = if (active) "Disable" else "Enable proxy"
-        if (active) {
-            primaryProxyButton.isOpaque = false
-            primaryProxyButton.isContentAreaFilled = false
-            primaryProxyButton.isBorderPainted = true
-            primaryProxyButton.background = AdbToolboxTheme.Colors.panel
-            primaryProxyButton.foreground = AdbToolboxTheme.Colors.text
-            primaryProxyButton.border = SolidChipBorder(AdbToolboxTheme.Colors.borderStrong)
-        } else {
-            primaryProxyButton.isOpaque = true
-            primaryProxyButton.isContentAreaFilled = true
-            primaryProxyButton.isBorderPainted = false
-            primaryProxyButton.background = AdbToolboxTheme.Colors.accent
-            primaryProxyButton.foreground = Color.WHITE
-        }
+        primaryProxyButton.style = if (active) DesignButtonStyle.SECONDARY else DesignButtonStyle.PRIMARY
     }
 
     /** Test/disposal seam: no owned listeners today, kept for [dev.acme.adbtoolbox.intellij.apps.AppsPanel]-style symmetry. */
@@ -281,76 +273,25 @@ class NetworkPanel(
         fun String.withDisabledReason(isDeviceEligible: Boolean): String =
             if (isDeviceEligible) this else "$this — Connect a device to use this"
 
-        fun sectionTitleLabel(text: String) = JBLabel(text).apply {
-            font = AdbToolboxTheme.Typography.sectionTitle
-        }
-
-        fun sectionMetaLabel() = JBLabel("—").apply {
-            font = AdbToolboxTheme.Typography.mono.deriveFont(JBUI.scale(10f))
-            foreground = AdbToolboxTheme.Colors.textFaint
-        }
-
-        fun sectionHeader(title: JBLabel, meta: JBLabel?) = JPanel(BorderLayout()).apply {
-            isOpaque = false
-            border = JBUI.Borders.empty(0, AdbToolboxTheme.Spacing.s5)
-            add(title, BorderLayout.WEST)
-            if (meta != null) add(meta, BorderLayout.EAST)
-        }
-
         fun monoField() = JBTextField().apply {
             font = AdbToolboxTheme.Typography.mono
+            background = AdbToolboxTheme.Colors.field
             preferredSize = Dimension(preferredSize.width, AdbToolboxTheme.Sizes.field)
             border = BorderFactory.createCompoundBorder(
-                SolidChipBorder(AdbToolboxTheme.Colors.borderStrong),
+                SolidChipBorder(AdbToolboxTheme.Colors.borderStrong, radius = { AdbToolboxTheme.Radii.field }),
                 JBUI.Borders.empty(0, AdbToolboxTheme.Spacing.s3),
             )
         }
 
         fun errorLabel() = JBLabel("").apply {
-            font = AdbToolboxTheme.Typography.body.deriveFont(JBUI.scale(10.5f))
+            font = AdbToolboxTheme.Typography.caption.deriveFont(JBUI.scale(10.5f))
             foreground = AdbToolboxTheme.Colors.red
             isVisible = false
-            border = JBUI.Borders.empty(0, AdbToolboxTheme.Spacing.s5)
+            border = JBUI.Borders.empty(0, AdbToolboxTheme.Spacing.sectionInset)
         }
 
-        fun helpLabel(text: String) = JBLabel(text).apply {
-            font = AdbToolboxTheme.Typography.body.deriveFont(JBUI.scale(10.5f))
-            foreground = AdbToolboxTheme.Colors.textFaint
-            border = JBUI.Borders.empty(0, AdbToolboxTheme.Spacing.s5)
-        }
-
-        fun linkButton(text: String, onClick: () -> Unit) = JButton(text).apply {
-            isContentAreaFilled = false
-            isFocusPainted = false
-            isBorderPainted = false
-            foreground = AdbToolboxTheme.Colors.accent
-            font = AdbToolboxTheme.Typography.body.deriveFont(Font.BOLD, JBUI.scale(11f))
+        fun linkButton(text: String, onClick: () -> Unit) = DesignButton(text, DesignButtonStyle.LINK).apply {
             addActionListener { onClick() }
-        }
-
-        fun primaryButton(text: String, icon: javax.swing.Icon) = JButton(text, icon).apply {
-            preferredSize = Dimension(preferredSize.width, AdbToolboxTheme.Sizes.primaryButton)
-            background = AdbToolboxTheme.Colors.accent
-            foreground = Color.WHITE
-            isOpaque = true
-            isContentAreaFilled = true
-            isFocusPainted = false
-            isBorderPainted = false
-            font = AdbToolboxTheme.Typography.body.deriveFont(Font.BOLD, JBUI.scale(11.5f))
-            isEnabled = false
-        }
-
-        fun section(vararg children: java.awt.Component) = JPanel().apply {
-            layout = BoxLayout(this, BoxLayout.Y_AXIS)
-            isOpaque = false
-            border = BorderFactory.createCompoundBorder(
-                BorderFactory.createMatteBorder(0, 0, 1, 0, AdbToolboxTheme.Colors.border),
-                JBUI.Borders.empty(AdbToolboxTheme.Spacing.s5, 0, AdbToolboxTheme.Spacing.s5, 0),
-            )
-            children.forEachIndexed { index, child ->
-                if (index > 0) add(Box.createVerticalStrut(AdbToolboxTheme.Spacing.s3))
-                add(child)
-            }
         }
     }
 }

@@ -1,5 +1,7 @@
 package dev.acme.adbtoolbox.intellij.ui.capture
 
+import dev.acme.adbtoolbox.intellij.ui.common.DesignButton
+import dev.acme.adbtoolbox.intellij.ui.common.DesignButtonStyle
 import com.intellij.openapi.Disposable
 import com.intellij.ui.components.JBPanel
 import dev.acme.adbtoolbox.application.capture.CaptureIntent
@@ -7,10 +9,7 @@ import dev.acme.adbtoolbox.application.capture.CaptureViewModel
 import dev.acme.adbtoolbox.application.capture.CaptureViewState
 import dev.acme.adbtoolbox.domain.devicecontext.ControlPolicy
 import dev.acme.adbtoolbox.domain.dispatch.DispatcherProvider
-import dev.acme.adbtoolbox.intellij.ui.common.AdbToolboxTheme
-import java.awt.Dimension
 import java.awt.FlowLayout
-import javax.swing.JButton
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.launchIn
@@ -43,9 +42,8 @@ class CaptureView(
     private val dispatchers: DispatcherProvider,
 ) : JBPanel<CaptureView>(FlowLayout(FlowLayout.LEFT, 0, 0)), Disposable {
 
-    val screenshotButton = JButton("Screenshot").apply {
+    val screenshotButton = DesignButton("Screenshot", DesignButtonStyle.SECONDARY).apply {
         toolTipText = "Save a PNG to ~/Desktop"
-        preferredSize = Dimension(preferredSize.width, AdbToolboxTheme.Sizes.secondaryButton)
         addActionListener { viewModel.handle(CaptureIntent.CaptureScreenshot) }
     }
 

@@ -6,10 +6,12 @@ import com.intellij.util.ui.JBUI
 import dev.acme.adbtoolbox.domain.feedback.ProcessIndicator
 import dev.acme.adbtoolbox.domain.feedback.StatusState
 import dev.acme.adbtoolbox.intellij.ui.common.AdbToolboxTheme
+import dev.acme.adbtoolbox.intellij.ui.common.RoundedSurface
 import dev.acme.adbtoolbox.intellij.ui.common.SolidChipBorder
+import dev.acme.adbtoolbox.intellij.ui.common.StatusDotIcon
+import dev.acme.adbtoolbox.intellij.ui.common.flexRow
 import java.awt.BorderLayout
 import java.awt.Cursor
-import java.awt.FlowLayout
 import java.awt.Font
 import javax.swing.BorderFactory
 import javax.swing.JButton
@@ -34,14 +36,21 @@ class FeedbackStatusPanel(
 ) : JBPanel<FeedbackStatusPanel>(BorderLayout()) {
 
     private val processLabel = JBLabel("").apply {
-        font = AdbToolboxTheme.Typography.monoMeta.deriveFont(Font.BOLD)
-        isOpaque = true
+        font = AdbToolboxTheme.Typography.mono.deriveFont(Font.BOLD, JBUI.scale(9f))
+        icon = StatusDotIcon(AdbToolboxTheme.Colors.brand, filled = true, diameter = 5)
+        iconTextGap = JBUI.scale(5)
+        border = JBUI.Borders.empty(1, 6)
+    }
+
+    // `runningChipStyle`: padding 1px 6px, radius 4, tinted fill + 1px border.
+    private val processChip = RoundedSurface(null, null, radius = { JBUI.scale(4) }).apply {
+        layout = BorderLayout()
         isVisible = false
-        border = JBUI.Borders.empty(1, 4)
+        add(processLabel, BorderLayout.CENTER)
     }
 
     private val messageLabel = JBLabel("").apply {
-        font = AdbToolboxTheme.Typography.caption
+        font = AdbToolboxTheme.Typography.caption.deriveFont(JBUI.scale(9.5f))
         foreground = AdbToolboxTheme.Colors.textDim
     }
 
@@ -50,42 +59,37 @@ class FeedbackStatusPanel(
     // fix applied to the device bar's selector/retry controls
     // ([dev.acme.adbtoolbox.intellij.devicebar.DeviceContextBarPanel]).
     private val overrideChipLabel = JButton("").apply {
-        font = AdbToolboxTheme.Typography.monoMeta.deriveFont(Font.BOLD)
+        // `overrideChipStyle`: 9px/700 UI font, amber text and 1px amber border, radius 3, padding 1px 5px.
+        font = AdbToolboxTheme.Typography.body.deriveFont(Font.BOLD, JBUI.scale(9f))
         foreground = AdbToolboxTheme.Colors.amber
         border = BorderFactory.createCompoundBorder(
-            SolidChipBorder(AdbToolboxTheme.Colors.amber),
-            JBUI.Borders.empty(1, 4),
+            SolidChipBorder(AdbToolboxTheme.Colors.amber, radius = { JBUI.scale(3) }),
+            JBUI.Borders.empty(1, 5),
         )
         cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
         toolTipText = "Revert font scale, density and proxy on this device"
         isContentAreaFilled = false
         isBorderPainted = true
         isFocusPainted = false
+        isOpaque = false
         margin = java.awt.Insets(0, 0, 0, 0)
         isVisible = false
         addActionListener { onResetOverrides() }
     }
 
-    private val leftRow = JBPanel<Nothing>(FlowLayout(FlowLayout.LEADING, AdbToolboxTheme.Spacing.s4, 0)).apply {
-        isOpaque = false
-        add(processLabel)
-        add(messageLabel)
-    }
-
-    private val rightRow = JBPanel<Nothing>(FlowLayout(FlowLayout.TRAILING, AdbToolboxTheme.Spacing.s4, 0)).apply {
-        isOpaque = false
-        add(overrideChipLabel)
-    }
-
     init {
+        preferredSize = java.awt.Dimension(0, AdbToolboxTheme.Sizes.statusBar)
+        minimumSize = java.awt.Dimension(0, AdbToolboxTheme.Sizes.statusBar)
         background = AdbToolboxTheme.Colors.header
-        border = BorderFactory.createMatteBorder(1, 0, 0, 0, AdbToolboxTheme.Colors.border)
-        // leftRow is CENTER, not WEST: BorderLayout gives WEST its full preferred width regardless
-        // of available space, so a long last-command message would paint over (never literally
-        // resize away from) the required "reset all" action in EAST at narrow widths. CENTER is
-        // allotted only the remaining space and clips its child to that bound instead.
-        add(leftRow, BorderLayout.CENTER)
-        add(rightRow, BorderLayout.EAST)
+        border = BorderFactory.createCompoundBorder(
+            BorderFactory.createMatteBorder(1, 0, 0, 0, AdbToolboxTheme.Colors.border),
+            JBUI.Borders.empty(0, AdbToolboxTheme.Spacing.s4),
+        )
+        // `statusBarStyle`: one vertically centered flex row with an 8px gap. The message is the
+        // only flexible child, so a long last-command message ellipsises instead of pushing the
+        // required "reset all" action out of the bar at narrow widths.
+        val row = flexRow(AdbToolboxTheme.Spacing.s4, processChip, messageLabel, overrideChipLabel, fill = messageLabel)
+        add(row, BorderLayout.CENTER)
     }
 
     /** Test/verification seam: the override chip's current text/visibility. */
@@ -99,14 +103,17 @@ class FeedbackStatusPanel(
         when (val process = status.process) {
             ProcessIndicator.Idle -> {
                 processLabel.text = ""
-                processLabel.isVisible = false
+                processChip.isVisible = false
             }
             is ProcessIndicator.InProgress -> {
                 processLabel.text = process.label
-                processLabel.isVisible = true
+                processChip.isVisible = true
                 val recording = process.label.startsWith("REC", ignoreCase = true)
-                processLabel.foreground = if (recording) AdbToolboxTheme.Colors.red else AdbToolboxTheme.Colors.brand
-                processLabel.background = if (recording) AdbToolboxTheme.Colors.redBg else AdbToolboxTheme.Colors.brandBg
+                val color = if (recording) AdbToolboxTheme.Colors.red else AdbToolboxTheme.Colors.brand
+                processLabel.foreground = color
+                processLabel.icon = StatusDotIcon(color, filled = true, diameter = 5)
+                processChip.fill = if (recording) AdbToolboxTheme.Colors.redBg else AdbToolboxTheme.Colors.brandBg
+                processChip.outline = if (recording) AdbToolboxTheme.Colors.redBorder else AdbToolboxTheme.Colors.brandBorder
             }
         }
         messageLabel.text = status.message.orEmpty()
@@ -115,6 +122,10 @@ class FeedbackStatusPanel(
     /** Populates the "N overrides · reset all" chip (`design/README.md` §8); hidden when [count] is 0. */
     fun updateOverrideCount(count: Int) {
         overrideChipLabel.isVisible = count > 0
-        overrideChipLabel.text = if (count > 0) "$count overrides · reset all" else ""
+        overrideChipLabel.text = when {
+            count <= 0 -> ""
+            count == 1 -> "1 override · reset all"
+            else -> "$count overrides · reset all"
+        }
     }
 }

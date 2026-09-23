@@ -18,18 +18,24 @@ import dev.acme.adbtoolbox.intellij.ui.common.AdbToolboxTheme
 import dev.acme.adbtoolbox.intellij.ui.common.PresetChipChoice
 import dev.acme.adbtoolbox.intellij.ui.common.PresetChipKind
 import dev.acme.adbtoolbox.intellij.ui.common.PresetChipRow
+import dev.acme.adbtoolbox.intellij.ui.common.DesignButton
+import dev.acme.adbtoolbox.intellij.ui.common.DesignButtonStyle
+import dev.acme.adbtoolbox.intellij.ui.common.DesignSections
 import dev.acme.adbtoolbox.intellij.ui.common.SolidChipBorder
+import dev.acme.adbtoolbox.intellij.ui.common.flexRow
+import dev.acme.adbtoolbox.intellij.ui.common.flexSpacer
 import dev.acme.adbtoolbox.intellij.ui.common.ToggleSwitch
+import dev.acme.adbtoolbox.intellij.ui.common.ViewportWidthPanel
 import java.awt.BorderLayout
 import java.awt.Dimension
 import java.awt.FlowLayout
 import java.awt.Font
 import javax.swing.BorderFactory
-import javax.swing.Box
 import javax.swing.BoxLayout
 import javax.swing.JButton
 import javax.swing.JPanel
 import javax.swing.JScrollPane
+import javax.swing.ScrollPaneConstants
 import javax.swing.JTextField
 import javax.swing.JToggleButton
 
@@ -82,7 +88,8 @@ class DisplayPanel(
         ),
         selected = FontChoice.Preset(FontScalePresets.DEFAULT),
     ).apply {
-        border = JBUI.Borders.empty(0, AdbToolboxTheme.Spacing.s5)
+        // FlowLayout adds one hgap before the first chip; keep the chips on the 10px section inset.
+        border = JBUI.Borders.empty(0, AdbToolboxTheme.Spacing.sectionInset - AdbToolboxTheme.Spacing.s2)
         chips.forEach { chip ->
             chip.toolTipText = when (val value = chip.value) {
                 is FontChoice.Preset -> if (value.value == FontScalePresets.DEFAULT) {
@@ -139,7 +146,7 @@ class DisplayPanel(
         ),
         selected = DensityChoice.Preset(100),
     ).apply {
-        border = JBUI.Borders.empty(0, AdbToolboxTheme.Spacing.s5)
+        border = JBUI.Borders.empty(0, AdbToolboxTheme.Spacing.sectionInset - AdbToolboxTheme.Spacing.s2)
         onSelectionChanged = { choice ->
             when (choice) {
                 is DensityChoice.Preset -> {
@@ -196,11 +203,9 @@ class DisplayPanel(
         darkThemeRow,
         animationsRow,
         showTouchesRow,
-    ).apply {
-        border = JBUI.Borders.empty(AdbToolboxTheme.Spacing.s5, 0)
-    }
+    )
 
-    private val contentPanel = JPanel().apply {
+    private val contentPanel = ViewportWidthPanel().apply {
         layout = BoxLayout(this, BoxLayout.Y_AXIS)
         background = AdbToolboxTheme.Colors.bg
         add(fontSection)
@@ -210,6 +215,7 @@ class DisplayPanel(
 
     private val scrollPane = JScrollPane(contentPanel).apply {
         border = BorderFactory.createEmptyBorder()
+        horizontalScrollBarPolicy = ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER
         verticalScrollBar.unitIncrement = AdbToolboxTheme.Spacing.s5
     }
 
@@ -233,7 +239,7 @@ class DisplayPanel(
     internal val densityResetButtonForTest: JButton get() = densityResetLink
     internal val densityOverrideRowForTest: JPanel get() = densityOverrideRow
     internal val densityMetaLabelForTest: JBLabel get() = densityMetaLabel
-    internal val densityHelpLabelForTest: JBLabel get() = densityHelpLabel
+    internal val densityHelpLabelForTest: javax.swing.text.JTextComponent get() = densityHelpLabel
 
     internal val darkThemeToggleForTest: JToggleButton get() = darkThemeToggle
     internal val showTouchesToggleForTest: JToggleButton get() = showTouchesToggle
@@ -389,125 +395,80 @@ class DisplayPanel(
     }
 
     private companion object {
-        fun sectionTitleLabel(text: String) = JBLabel(text).apply {
-            font = AdbToolboxTheme.Typography.sectionTitle
-        }
+        fun sectionTitleLabel(text: String) = DesignSections.titleLabel(text)
 
-        fun sectionMetaLabel() = JBLabel("—").apply {
-            font = AdbToolboxTheme.Typography.mono.deriveFont(JBUI.scale(10f))
-            foreground = AdbToolboxTheme.Colors.textFaint
-        }
+        fun sectionMetaLabel() = DesignSections.metaLabel()
 
-        fun sectionHeader(title: JBLabel, meta: JBLabel?) = JPanel(BorderLayout()).apply {
-            isOpaque = false
-            border = JBUI.Borders.empty(0, AdbToolboxTheme.Spacing.s5)
-            add(title, BorderLayout.WEST)
-            if (meta != null) add(meta, BorderLayout.EAST)
-        }
+        fun sectionHeader(title: JBLabel, meta: JBLabel?) = DesignSections.header(title, meta)
 
         fun customField() = JBTextField().apply {
             font = AdbToolboxTheme.Typography.mono
+            background = AdbToolboxTheme.Colors.field
             preferredSize = Dimension(JBUI.scale(64), AdbToolboxTheme.Sizes.field)
             border = BorderFactory.createCompoundBorder(
-                SolidChipBorder(AdbToolboxTheme.Colors.borderStrong),
+                SolidChipBorder(AdbToolboxTheme.Colors.borderStrong, radius = { AdbToolboxTheme.Radii.field }),
                 JBUI.Borders.empty(0, AdbToolboxTheme.Spacing.s3),
             )
         }
 
         fun errorLabel() = JBLabel("").apply {
-            font = AdbToolboxTheme.Typography.body.deriveFont(JBUI.scale(10.5f))
+            font = AdbToolboxTheme.Typography.caption.deriveFont(JBUI.scale(10.5f))
             foreground = AdbToolboxTheme.Colors.red
             isVisible = false
         }
 
+        // `customRowStyle`: field · unit · secondary Apply · inline error, gap 6, `padding: 2px 10px 0`.
         fun customDisclosureRow(field: JBTextField, unit: String, errorLabel: JBLabel, onApply: () -> Unit): JPanel {
             field.addActionListener { onApply() }
             val unitLabel = JBLabel(unit).apply {
                 font = AdbToolboxTheme.Typography.mono
                 foreground = AdbToolboxTheme.Colors.textFaint
             }
-            val applyButton = JButton("Apply").apply {
-                preferredSize = Dimension(preferredSize.width, AdbToolboxTheme.Sizes.secondaryButton)
-                foreground = AdbToolboxTheme.Colors.text
-                isContentAreaFilled = false
-                isFocusPainted = false
-                border = SolidChipBorder(AdbToolboxTheme.Colors.borderStrong)
-                font = AdbToolboxTheme.Typography.body
+            val applyButton = DesignButton("Apply", DesignButtonStyle.SECONDARY).apply {
                 addActionListener { onApply() }
             }
-            return JPanel(FlowLayout(FlowLayout.LEADING, AdbToolboxTheme.Spacing.s3, 0)).apply {
-                isOpaque = false
+            return flexRow(AdbToolboxTheme.Spacing.s3, field, unitLabel, applyButton, errorLabel).apply {
                 isVisible = false
-                border = JBUI.Borders.empty(AdbToolboxTheme.Spacing.s1, AdbToolboxTheme.Spacing.s5, 0, AdbToolboxTheme.Spacing.s5)
-                add(field)
-                add(unitLabel)
-                add(applyButton)
-                add(errorLabel)
+                border = JBUI.Borders.empty(AdbToolboxTheme.Spacing.s1, AdbToolboxTheme.Spacing.sectionInset, 0, AdbToolboxTheme.Spacing.sectionInset)
             }
         }
 
         fun overrideNoteLabel(text: String) = JBLabel(text).apply {
-            font = AdbToolboxTheme.Typography.body.deriveFont(JBUI.scale(10.5f))
+            font = AdbToolboxTheme.Typography.caption.deriveFont(JBUI.scale(10.5f))
             foreground = AdbToolboxTheme.Colors.textFaint
         }
 
-        fun linkButton(text: String, onClick: () -> Unit) = JButton(text).apply {
-            isContentAreaFilled = false
-            isFocusPainted = false
-            isBorderPainted = false
-            foreground = AdbToolboxTheme.Colors.accent
-            font = AdbToolboxTheme.Typography.body.deriveFont(Font.BOLD, JBUI.scale(11f))
+        fun linkButton(text: String, onClick: () -> Unit) = DesignButton(text, DesignButtonStyle.LINK).apply {
             addActionListener { onClick() }
         }
 
-        fun overrideRow(note: JBLabel, link: JButton) = JPanel(BorderLayout()).apply {
-            isOpaque = false
+        // `resetRowStyle`: note (`margin-right: auto`) and link, gap 8, `padding: 2px 10px 0`.
+        fun overrideRow(note: JBLabel, link: JButton) = flexRow(AdbToolboxTheme.Spacing.s4, note, link, fill = note).apply {
             isVisible = false
-            border = JBUI.Borders.empty(AdbToolboxTheme.Spacing.s1, AdbToolboxTheme.Spacing.s5, 0, AdbToolboxTheme.Spacing.s5)
-            add(note, BorderLayout.WEST)
-            add(link, BorderLayout.EAST)
+            border = JBUI.Borders.empty(AdbToolboxTheme.Spacing.s1, AdbToolboxTheme.Spacing.sectionInset, 0, AdbToolboxTheme.Spacing.sectionInset)
         }
 
-        fun helpLabel(text: String) = JBLabel(text).apply {
-            font = AdbToolboxTheme.Typography.body.deriveFont(JBUI.scale(10.5f))
-            foreground = AdbToolboxTheme.Colors.textFaint
-            border = JBUI.Borders.empty(0, AdbToolboxTheme.Spacing.s5, AdbToolboxTheme.Spacing.s1, AdbToolboxTheme.Spacing.s5)
-        }
+        fun helpLabel(text: String) = DesignSections.helpText(text)
 
-        fun section(vararg children: java.awt.Component) = JPanel().apply {
-            layout = BoxLayout(this, BoxLayout.Y_AXIS)
-            isOpaque = false
-            border = BorderFactory.createCompoundBorder(
-                BorderFactory.createMatteBorder(0, 0, 1, 0, AdbToolboxTheme.Colors.border),
-                JBUI.Borders.empty(AdbToolboxTheme.Spacing.s5, 0, AdbToolboxTheme.Spacing.s5, 0),
-            )
-            children.forEachIndexed { index, child ->
-                if (index > 0) add(Box.createVerticalStrut(AdbToolboxTheme.Spacing.s3))
-                add(child)
-            }
-        }
+        fun section(vararg children: java.awt.Component) = DesignSections.section(*children)
 
         fun toggleValueLabel() = JBLabel("").apply {
             font = AdbToolboxTheme.Typography.mono.deriveFont(JBUI.scale(10f))
             foreground = AdbToolboxTheme.Colors.textFaint
         }
 
+        // `toggleRow`: 28px, `padding: 0 10px`, gap 8: track · label · spacer · mono value.
         fun toggleRow(toggle: ToggleSwitch, label: String, valueLabel: JBLabel): JPanel {
             toggle.getAccessibleContext().accessibleName = label
             val labelComponent = JBLabel(label).apply {
                 font = AdbToolboxTheme.Typography.body.deriveFont(JBUI.scale(11.5f))
+                foreground = AdbToolboxTheme.Colors.text
             }
-            val leading = JPanel(FlowLayout(FlowLayout.LEADING, AdbToolboxTheme.Spacing.s4, 0)).apply {
-                isOpaque = false
-                add(toggle)
-                add(labelComponent)
-            }
-            return JPanel(BorderLayout()).apply {
-                isOpaque = false
-                preferredSize = Dimension(preferredSize.width, AdbToolboxTheme.Sizes.toggleRow)
-                border = JBUI.Borders.empty(0, AdbToolboxTheme.Spacing.s5)
-                add(leading, BorderLayout.WEST)
-                add(valueLabel, BorderLayout.EAST)
+            val spacer = flexSpacer()
+            return flexRow(AdbToolboxTheme.Spacing.s4, toggle, labelComponent, spacer, valueLabel, fill = spacer).apply {
+                preferredSize = Dimension(0, AdbToolboxTheme.Sizes.toggleRow)
+                maximumSize = Dimension(Int.MAX_VALUE, AdbToolboxTheme.Sizes.toggleRow)
+                border = JBUI.Borders.empty(0, AdbToolboxTheme.Spacing.sectionInset)
             }
         }
 

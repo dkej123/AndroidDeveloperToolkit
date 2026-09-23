@@ -78,6 +78,14 @@ class FeedbackStatusPanelTest : BasePlatformTestCase() {
         assertEquals("3 overrides · reset all", panel.overrideChipText)
     }
 
+    fun `test a single override uses the singular copy`() {
+        val panel = FeedbackStatusPanel()
+
+        panel.updateOverrideCount(1)
+
+        assertEquals("1 override · reset all", panel.overrideChipText)
+    }
+
     fun `test clicking the override chip invokes onResetOverrides`() {
         var reset = false
         val panel = FeedbackStatusPanel(onResetOverrides = { reset = true })
@@ -118,13 +126,13 @@ class FeedbackStatusPanelTest : BasePlatformTestCase() {
 
         panel.setSize(260, 22)
         panel.doLayout()
+        val chip = panel.overrideChipComponentForTest
+        chip.parent.doLayout()
 
-        val rightRow = panel.overrideChipComponentForTest.parent
-        val leftRow = panel.components.first { it !== rightRow }
-
-        // BorderLayout.CENTER (leftRow) must be clipped to the remaining space, never extending
-        // into BorderLayout.EAST (rightRow, holding the required "reset all" action).
-        assertTrue(leftRow.x + leftRow.width <= rightRow.x)
-        assertTrue(rightRow.x + rightRow.width <= panel.width)
+        // The message is the row's only flexible child: it is clipped to the remaining space and
+        // never extends into the required "reset all" action.
+        val message = chip.parent.components.first { it is javax.swing.JLabel && it.isVisible && it !== chip }
+        assertTrue(message.x + message.width <= chip.x)
+        assertTrue(javax.swing.SwingUtilities.convertPoint(chip.parent, chip.x + chip.width, 0, panel).x <= panel.width)
     }
 }

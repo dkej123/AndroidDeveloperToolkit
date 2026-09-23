@@ -8,12 +8,17 @@ import dev.acme.adbtoolbox.domain.devicefacts.DeviceFactId
 import dev.acme.adbtoolbox.domain.devicefacts.DeviceFactState
 import dev.acme.adbtoolbox.domain.devicefacts.DeviceFactValue
 import dev.acme.adbtoolbox.intellij.ui.common.AdbToolboxTheme
+import dev.acme.adbtoolbox.intellij.ui.common.CenteredWrappingText
+import dev.acme.adbtoolbox.intellij.ui.common.DesignButton
+import dev.acme.adbtoolbox.intellij.ui.common.DesignButtonStyle
+import dev.acme.adbtoolbox.intellij.ui.common.DesignSections
+import dev.acme.adbtoolbox.intellij.ui.common.FlexRowLayout
+import dev.acme.adbtoolbox.intellij.ui.common.ViewportWidthPanel
+import dev.acme.adbtoolbox.intellij.ui.common.flexRow
 import java.awt.BorderLayout
 import java.awt.CardLayout
 import java.awt.Component
 import java.awt.Dimension
-import java.awt.FlowLayout
-import java.awt.Font
 import java.awt.Graphics
 import java.awt.Graphics2D
 import java.awt.GridLayout
@@ -66,9 +71,11 @@ class DeviceFactsPanel(
 
     private val cards: CardLayout get() = layout as CardLayout
 
-    val mirroringSlot: JBPanel<Nothing> = transparentFlow()
-    val captureSlot: JBPanel<Nothing> = transparentFlow()
-    val deviceActionsSlot: JBPanel<Nothing> = transparentFlow()
+    // Slot rows carry the sections' 10px inset. Mirroring fills the row (its help text wraps to
+    // the section width); capture and device actions are `actionRowStyle` rows with a 6px gap.
+    val mirroringSlot: JBPanel<Nothing> = slot(BorderLayout())
+    val captureSlot: JBPanel<Nothing> = slot(FlexRowLayout(AdbToolboxTheme.Spacing.s3))
+    val deviceActionsSlot: JBPanel<Nothing> = slot(FlexRowLayout(AdbToolboxTheme.Spacing.s3))
 
     private val factLabels: Map<DeviceFactId, JBLabel> = DeviceFactId.entries.associateWith {
         JBLabel("Loading…").apply {
@@ -81,17 +88,23 @@ class DeviceFactsPanel(
 
     private val factsGrid = JBPanel<Nothing>(GridLayout(0, 3, AdbToolboxTheme.Spacing.s4, AdbToolboxTheme.Spacing.s4)).apply {
         isOpaque = false
+        alignmentX = Component.LEFT_ALIGNMENT
         border = JBUI.Borders.empty(2, 10, 6, 10)
         DeviceFactId.entries.forEach { factId -> add(factCell(factId, factLabels.getValue(factId))) }
     }
 
-    private val contentPanel = JBPanel<Nothing>().apply {
-        layout = BoxLayout(this, BoxLayout.Y_AXIS)
+    // Sections stack at their preferred heights from the top (NORTH), and the column follows the
+    // viewport width so section meta, facts and help text never extend past the visible area.
+    private val contentPanel = ViewportWidthPanel().apply {
+        layout = BorderLayout()
         background = AdbToolboxTheme.Colors.bg
-        add(section("Mirroring", "scrcpy 2.7", mirroringSlot))
-        add(section("Capture", "~/Desktop", captureSlot))
-        add(deviceSection())
-        add(Box.createVerticalGlue())
+        add(JBPanel<Nothing>().apply {
+            layout = BoxLayout(this, BoxLayout.Y_AXIS)
+            isOpaque = false
+            add(section("Mirroring", "scrcpy 2.7", mirroringSlot))
+            add(section("Capture", "~/Desktop", captureSlot))
+            add(deviceSection())
+        }, BorderLayout.NORTH)
     }
 
     private val contentScroll = JScrollPane(
@@ -102,6 +115,15 @@ class DeviceFactsPanel(
         border = BorderFactory.createEmptyBorder()
         viewport.background = AdbToolboxTheme.Colors.bg
     }
+
+    // `emptyBodyStyle`: 11px `textDim`, centered, `max-width: 250px`; narrower columns wrap it to
+    // their own content width.
+    private val emptyBodyLabel = CenteredWrappingText(
+        EMPTY_BODY,
+        AdbToolboxTheme.Typography.body.deriveFont(JBUI.scale(11f)),
+        AdbToolboxTheme.Colors.textDim,
+        maxWidth = { JBUI.scale(250) },
+    )
 
     private val emptyPanel = emptyState(onRefresh, onPairOverWifi)
     private val skeletonBars = List(6) { index -> SkeletonBar(SKELETON_WIDTHS[index]) }
@@ -159,41 +181,17 @@ class DeviceFactsPanel(
         }
     }
 
-    private fun section(title: String, meta: String, body: JComponent): JPanel = JBPanel<Nothing>(BorderLayout()).apply {
-        alignmentX = Component.LEFT_ALIGNMENT
-        background = AdbToolboxTheme.Colors.bg
-        border = BorderFactory.createCompoundBorder(
-            BorderFactory.createMatteBorder(0, 0, 1, 0, AdbToolboxTheme.Colors.border),
-            JBUI.Borders.empty(10, 0, 12, 0),
-        )
-        add(sectionHeader(title, JBLabel(meta).apply {
-            font = AdbToolboxTheme.Typography.monoMeta
-            foreground = AdbToolboxTheme.Colors.textFaint
-        }), BorderLayout.NORTH)
-        add(body, BorderLayout.CENTER)
-    }
+    private fun section(title: String, meta: String, body: JComponent): JPanel =
+        DesignSections.section(DesignSections.header(DesignSections.titleLabel(title), DesignSections.metaLabel(meta, 9.5f)), body)
 
-    private fun deviceSection(): JPanel = JBPanel<Nothing>(BorderLayout()).apply {
-        alignmentX = Component.LEFT_ALIGNMENT
-        background = AdbToolboxTheme.Colors.bg
-        border = BorderFactory.createCompoundBorder(
-            BorderFactory.createMatteBorder(0, 0, 1, 0, AdbToolboxTheme.Colors.border),
-            JBUI.Borders.empty(10, 0, 12, 0),
-        )
-        add(sectionHeader("Device", copyReportButton), BorderLayout.NORTH)
-        add(factsGrid, BorderLayout.CENTER)
-        add(deviceActionsSlot, BorderLayout.SOUTH)
-    }
-
-    private fun sectionHeader(title: String, trailing: JComponent): JPanel = JBPanel<Nothing>(BorderLayout()).apply {
-        isOpaque = false
-        border = JBUI.Borders.empty(0, 10, 6, 10)
-        add(JBLabel(title).apply {
-            font = AdbToolboxTheme.Typography.sectionTitle
-            foreground = AdbToolboxTheme.Colors.text
-        }, BorderLayout.WEST)
-        add(trailing, BorderLayout.EAST)
-    }
+    // The Device header keeps "Copy report" next to its title (`sectionHeaderStyle` gap 8, no spacer).
+    private fun deviceSection(): JPanel = DesignSections.section(
+        flexRow(AdbToolboxTheme.Spacing.s4, DesignSections.titleLabel("Device"), copyReportButton).apply {
+            border = JBUI.Borders.empty(0, AdbToolboxTheme.Spacing.sectionInset)
+        },
+        factsGrid,
+        deviceActionsSlot,
+    )
 
     private fun factCell(id: DeviceFactId, value: JBLabel): JPanel = JBPanel<Nothing>(BorderLayout()).apply {
         isOpaque = false
@@ -212,25 +210,23 @@ class DeviceFactsPanel(
         }
         fun centered(component: JComponent): JComponent = component.apply { alignmentX = Component.CENTER_ALIGNMENT }
 
+        // `emptyWrapStyle` gap 6 between every item; the glyph adds `margin-bottom: 2`, the
+        // actions `margin-top: 4` and the footer `margin-top: 8`.
         column.add(centered(EmptyDeviceGlyph()))
-        column.add(Box.createVerticalStrut(AdbToolboxTheme.Spacing.s3))
+        column.add(Box.createVerticalStrut(AdbToolboxTheme.Spacing.s3 + AdbToolboxTheme.Spacing.s1))
         column.add(centered(JBLabel("No device connected").apply {
             font = AdbToolboxTheme.Typography.sectionTitle
             foreground = AdbToolboxTheme.Colors.text
         }))
         column.add(Box.createVerticalStrut(AdbToolboxTheme.Spacing.s3))
-        column.add(centered(JBLabel("<html><div style='text-align:center;width:250px'>$EMPTY_BODY</div></html>").apply {
-            font = AdbToolboxTheme.Typography.body
-            foreground = AdbToolboxTheme.Colors.textDim
-            accessibleContext.accessibleName = EMPTY_BODY
-        }))
-        column.add(Box.createVerticalStrut(AdbToolboxTheme.Spacing.s4))
-        column.add(centered(JBPanel<Nothing>(FlowLayout(FlowLayout.CENTER, AdbToolboxTheme.Spacing.s3, 0)).apply {
-            isOpaque = false
-            add(JButton("Refresh").apply { addActionListener { onRefresh() } })
-            add(JButton("Pair over Wi-Fi…").apply { addActionListener { onPairOverWifi() } })
-        }))
-        column.add(Box.createVerticalStrut(AdbToolboxTheme.Spacing.s4))
+        column.add(centered(emptyBodyLabel))
+        column.add(Box.createVerticalStrut(AdbToolboxTheme.Spacing.s3 + AdbToolboxTheme.Spacing.s2))
+        column.add(centered(flexRow(
+            AdbToolboxTheme.Spacing.s3,
+            DesignButton("Refresh", DesignButtonStyle.PRIMARY).apply { addActionListener { onRefresh() } },
+            DesignButton("Pair over Wi-Fi…", DesignButtonStyle.SECONDARY).apply { addActionListener { onPairOverWifi() } },
+        ).apply { maximumSize = preferredSize }))
+        column.add(Box.createVerticalStrut(AdbToolboxTheme.Spacing.s3 + AdbToolboxTheme.Spacing.s4))
         column.add(centered(JBLabel("adb 35.0.2 · /opt/homebrew/bin/adb").apply {
             font = AdbToolboxTheme.Typography.monoMeta
             foreground = AdbToolboxTheme.Colors.textFaint
@@ -250,18 +246,12 @@ class DeviceFactsPanel(
     }
 }
 
-private fun transparentFlow(): JBPanel<Nothing> = JBPanel<Nothing>(FlowLayout(FlowLayout.LEFT, 6, 0)).apply {
+private fun slot(layout: java.awt.LayoutManager): JBPanel<Nothing> = JBPanel<Nothing>(layout).apply {
     isOpaque = false
-    border = JBUI.Borders.empty(0, 10, 2, 10)
+    border = JBUI.Borders.empty(0, 10)
 }
 
-private fun linkButton(text: String, action: () -> Unit): JButton = JButton(text).apply {
-    isBorderPainted = false
-    isContentAreaFilled = false
-    isFocusPainted = false
-    foreground = AdbToolboxTheme.Colors.accent
-    font = AdbToolboxTheme.Typography.caption.deriveFont(Font.BOLD)
-    margin = JBUI.emptyInsets()
+private fun linkButton(text: String, action: () -> Unit): JButton = DesignButton(text, DesignButtonStyle.LINK).apply {
     addActionListener { action() }
 }
 
@@ -285,14 +275,21 @@ private class SkeletonBar(private val widthPercent: Int) : JComponent() {
 }
 
 private class EmptyDeviceGlyph : JComponent() {
-    init { preferredSize = Dimension(JBUI.scale(26), JBUI.scale(34)) }
+    init {
+        preferredSize = Dimension(JBUI.scale(26), JBUI.scale(34))
+        maximumSize = preferredSize
+    }
 
     override fun paintComponent(graphics: Graphics) {
         val copy = graphics.create() as Graphics2D
         try {
-            copy.color = AdbToolboxTheme.Colors.textFaint
+            // `emptyIconStyle`: radius 5, 1.6px `borderStrong` outline.
+            copy.color = AdbToolboxTheme.Colors.borderStrong
             copy.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
-            copy.drawRoundRect(1, 1, width - 3, height - 3, JBUI.scale(8), JBUI.scale(8))
+            val stroke = JBUI.scale(1.6f)
+            copy.stroke = java.awt.BasicStroke(stroke)
+            val arc = AdbToolboxTheme.Radii.button * 2f
+            copy.draw(java.awt.geom.RoundRectangle2D.Float(stroke / 2, stroke / 2, width - stroke, height - stroke, arc, arc))
         } finally {
             copy.dispose()
         }

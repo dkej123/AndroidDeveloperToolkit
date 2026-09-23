@@ -55,6 +55,19 @@ class DisplayPanelTest : BasePlatformTestCase() {
         assertFalse(invoked)
     }
 
+    fun `test every font-scale chip remains inside the row at dock width`() {
+        val p = panel()
+        p.setSize(346, 620)
+        recursivelyLayout(p)
+        recursivelyLayout(p)
+
+        val row = p.fontChipRowForTest
+        row.chips.forEach { chip ->
+            assertTrue("${chip.text} exceeds row width", chip.x + chip.width <= row.width)
+            assertTrue("${chip.text} exceeds row height", chip.y + chip.height <= row.height)
+        }
+    }
+
     fun `test pressing Enter in the font-scale custom field applies the parsed value`() {
         var applied: Double? = null
         val p = panel(onApplyFontScale = { applied = it })
@@ -253,4 +266,11 @@ class DisplayPanelTest : BasePlatformTestCase() {
 
 private fun javax.swing.JTextField.postActionEvent() {
     actionListeners.forEach { it.actionPerformed(ActionEvent(this, ActionEvent.ACTION_PERFORMED, "")) }
+}
+
+private fun recursivelyLayout(component: java.awt.Component) {
+    if (component is java.awt.Container) {
+        component.doLayout()
+        component.components.forEach(::recursivelyLayout)
+    }
 }

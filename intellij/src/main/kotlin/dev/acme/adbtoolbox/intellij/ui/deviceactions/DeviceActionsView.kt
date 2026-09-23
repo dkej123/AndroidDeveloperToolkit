@@ -1,5 +1,8 @@
 package dev.acme.adbtoolbox.intellij.ui.deviceactions
 
+import dev.acme.adbtoolbox.intellij.ui.common.DesignButton
+import dev.acme.adbtoolbox.intellij.ui.common.DesignButtonStyle
+import dev.acme.adbtoolbox.intellij.ui.common.FlexRowLayout
 import com.intellij.openapi.Disposable
 import com.intellij.ui.components.JBPanel
 import dev.acme.adbtoolbox.application.deviceactions.DeviceActionsIntent
@@ -8,9 +11,6 @@ import dev.acme.adbtoolbox.application.deviceactions.DeviceActionsViewState
 import dev.acme.adbtoolbox.domain.devicecontext.ControlPolicy
 import dev.acme.adbtoolbox.domain.dispatch.DispatcherProvider
 import dev.acme.adbtoolbox.intellij.ui.common.AdbToolboxTheme
-import java.awt.Dimension
-import java.awt.FlowLayout
-import javax.swing.JButton
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.launchIn
@@ -33,23 +33,20 @@ class DeviceActionsView(
     private val viewModel: DeviceActionsViewModel,
     private val scope: CoroutineScope,
     private val dispatchers: DispatcherProvider,
-) : JBPanel<DeviceActionsView>(FlowLayout(FlowLayout.LEFT, 4, 0)), Disposable {
+) : JBPanel<DeviceActionsView>(FlexRowLayout(AdbToolboxTheme.Spacing.s3)), Disposable {
 
-    val rebootButton = JButton("Reboot").apply {
+    val rebootButton = DesignButton("Reboot", DesignButtonStyle.SECONDARY).apply {
         toolTipText = "Reboot the selected device"
-        preferredSize = Dimension(preferredSize.width, AdbToolboxTheme.Sizes.secondaryButton)
         addActionListener { viewModel.handle(DeviceActionsIntent.Reboot) }
     }
 
-    val openShellButton = JButton("Open shell").apply {
+    val openShellButton = DesignButton("Open shell", DesignButtonStyle.SECONDARY).apply {
         toolTipText = "Open an adb shell session in the IDE's Terminal"
-        preferredSize = Dimension(preferredSize.width, AdbToolboxTheme.Sizes.secondaryButton)
         addActionListener { viewModel.handle(DeviceActionsIntent.OpenShell) }
     }
 
-    val wakeButton = JButton("Wake").apply {
+    val wakeButton = DesignButton("Wake", DesignButtonStyle.SECONDARY).apply {
         toolTipText = "Wake the selected device"
-        preferredSize = Dimension(preferredSize.width, AdbToolboxTheme.Sizes.secondaryButton)
         addActionListener { viewModel.handle(DeviceActionsIntent.Wake) }
     }
 

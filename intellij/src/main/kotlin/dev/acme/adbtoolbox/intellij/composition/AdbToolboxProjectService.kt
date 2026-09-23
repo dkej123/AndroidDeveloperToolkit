@@ -156,12 +156,17 @@ class AdbToolboxProjectService(private val project: Project) : Disposable {
 
     private val executableFileProbe = JvmExecutableFileProbe()
 
+    /** Whether Android Studio's Android plugin can supply its shared adb/ddmlib runtime. */
+    val androidPluginPresent: Boolean = PluginManagerCore.getPlugin(ANDROID_PLUGIN_ID)?.isEnabled == true
+
     val toolLocator: ToolLocator = DefaultToolLocator(
         configuredPathSource = SettingsBackedConfiguredToolPathSource(settingsRepository),
-        androidSdkSources = listOf(
-            EnvironmentAndroidSdkPlatformToolsSource(),
-            AndroidStudioSdkPlatformToolsSource(),
-        ),
+        androidSdkSources = buildList {
+            // Prefer the executable Android Studio itself selected so discovery talks to the same
+            // adb server that backs Device Manager. Keep environment discovery as the fallback.
+            if (androidPluginPresent) add(AndroidStudioSdkPlatformToolsSource(project))
+            add(EnvironmentAndroidSdkPlatformToolsSource())
+        },
         pathEnvironmentSource = JvmPathEnvironmentSource(),
         executableProbe = executableFileProbe,
         hostPlatformProvider = JvmHostPlatformProvider(),
@@ -187,12 +192,6 @@ class AdbToolboxProjectService(private val project: Project) : Disposable {
         dispatchers = dispatcherProvider,
         settings = settingsUseCase,
     )
-
-    /**
-     * Whether the Android plugin is both installed and enabled — checked once here at composition,
-     * per ADR 0005, never per ADB call.
-     */
-    val androidPluginPresent: Boolean = PluginManagerCore.getPlugin(ANDROID_PLUGIN_ID)?.isEnabled == true
 
     // DdmlibAdbTransport (and the IdeAndroidDebugBridgeDeviceSource it wraps) must only ever be
     // constructed when androidPluginPresent is true: both types have compileOnly(libs.ddmlib)

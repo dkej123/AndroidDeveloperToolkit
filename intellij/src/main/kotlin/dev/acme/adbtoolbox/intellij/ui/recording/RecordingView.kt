@@ -1,5 +1,10 @@
 package dev.acme.adbtoolbox.intellij.ui.recording
 
+import dev.acme.adbtoolbox.intellij.ui.common.DesignButton
+import dev.acme.adbtoolbox.intellij.ui.common.DesignButtonStyle
+import dev.acme.adbtoolbox.intellij.ui.common.FlexRowLayout
+import dev.acme.adbtoolbox.intellij.ui.common.RoundedSurface
+import dev.acme.adbtoolbox.intellij.ui.common.flexRow
 import com.intellij.openapi.Disposable
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBPanel
@@ -11,14 +16,9 @@ import dev.acme.adbtoolbox.application.recording.RecordingViewState
 import dev.acme.adbtoolbox.domain.devicecontext.ControlPolicy
 import dev.acme.adbtoolbox.domain.dispatch.DispatcherProvider
 import dev.acme.adbtoolbox.intellij.ui.common.AdbToolboxTheme
-import dev.acme.adbtoolbox.intellij.ui.common.SolidChipBorder
 import dev.acme.adbtoolbox.intellij.ui.common.StatusDotIcon
-import java.awt.BorderLayout
 import java.awt.CardLayout
-import java.awt.Dimension
-import java.awt.FlowLayout
 import java.awt.Font
-import javax.swing.BorderFactory
 import javax.swing.JButton
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.cancel
@@ -34,17 +34,12 @@ class RecordingView(
     private val onRecordingVisibilityChanged: (Boolean) -> Unit = {},
 ) : JBPanel<RecordingView>(CardLayout()), Disposable {
 
-    private val recordButton = JButton("Record").apply {
-        preferredSize = Dimension(preferredSize.width, AdbToolboxTheme.Sizes.secondaryButton)
+    private val recordButton = DesignButton("Record", DesignButtonStyle.SECONDARY).apply {
         toolTipText = RECORD_TOOLTIP
         addActionListener { viewModel.handle(RecordingIntent.Toggle) }
     }
 
-    private val stopButton = JButton("Stop & save").apply {
-        foreground = AdbToolboxTheme.Colors.red
-        border = SolidChipBorder(AdbToolboxTheme.Colors.redBorder)
-        isContentAreaFilled = false
-        preferredSize = Dimension(preferredSize.width, JBUI.scale(24))
+    private val stopButton = DesignButton("Stop & save", DesignButtonStyle.DANGER).apply {
         addActionListener { viewModel.handle(RecordingIntent.Toggle) }
     }
 
@@ -54,21 +49,18 @@ class RecordingView(
         font = AdbToolboxTheme.Typography.mono.deriveFont(Font.BOLD)
         foreground = AdbToolboxTheme.Colors.red
         icon = StatusDotIcon(AdbToolboxTheme.Colors.red, filled = true)
+        iconTextGap = JBUI.scale(7)
     }
 
-    private val idleRow = JBPanel<Nothing>(FlowLayout(FlowLayout.LEFT, 0, 0)).apply {
-        isOpaque = false
-        add(recordButton)
-    }
+    // Vertically centered so the idle button lines up with Screenshot in the shared capture row.
+    private val idleRow = flexRow(0, recordButton)
 
-    val recordingBanner = JBPanel<Nothing>(BorderLayout()).apply {
-        background = AdbToolboxTheme.Colors.redBg
-        border = BorderFactory.createCompoundBorder(
-            SolidChipBorder(AdbToolboxTheme.Colors.redBorder),
-            JBUI.Borders.empty(5, 8),
-        )
-        add(statusLabel, BorderLayout.CENTER)
-        add(stopButton, BorderLayout.EAST)
+    // `recordingRowStyle`: radius 5, `redBg` + 1px `redBorder`, `padding: 6px 8px`, gap 7.
+    val recordingBanner = RoundedSurface(AdbToolboxTheme.Colors.redBg, AdbToolboxTheme.Colors.redBorder).apply {
+        layout = FlexRowLayout(JBUI.scale(7))
+        border = JBUI.Borders.empty(6, 8)
+        add(statusLabel, FlexRowLayout.FILL)
+        add(stopButton)
     }
 
     init {

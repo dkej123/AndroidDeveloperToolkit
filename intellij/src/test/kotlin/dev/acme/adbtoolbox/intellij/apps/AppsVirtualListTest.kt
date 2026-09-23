@@ -40,6 +40,20 @@ class AppsVirtualListTest : BasePlatformTestCase() {
         assertEquals("com.acme.shop", renderer.packageLabelForTest.text)
     }
 
+    fun `test nested row labels receive paintable bounds from the renderer`() {
+        val model = AppsVirtualListModel { true }
+        val list = AppsVirtualList(model, onSelect = {}).apply { setSize(320, 200) }
+        val entry = row("com.acme.shop", label = "Shop", debuggable = true)
+        model.apply(listOf(entry))
+
+        list.cellRenderer.getListCellRendererComponent(list, entry, 0, true, false)
+        val renderer = list.rowRendererForTest
+
+        assertTrue(renderer.titleLabelForTest.width > 0)
+        assertTrue(renderer.packageLabelForTest.width > 0)
+        assertTrue(renderer.tileForTest.width > 0)
+    }
+
     fun `test only a debuggable row shows the debug tag, using the brand tile treatment`() {
         val model = AppsVirtualListModel { true }
         val list = AppsVirtualList(model, onSelect = {})
@@ -50,11 +64,11 @@ class AppsVirtualListTest : BasePlatformTestCase() {
 
         list.cellRenderer.getListCellRendererComponent(list, debuggable, 0, false, false)
         assertTrue(renderer.debugTagForTest.isVisible)
-        assertEquals(dev.acme.adbtoolbox.intellij.ui.common.AdbToolboxTheme.Colors.brandBg, renderer.tileForTest.background)
+        assertEquals(dev.acme.adbtoolbox.intellij.ui.common.AdbToolboxTheme.Colors.brandBg, renderer.tileForTest.fill)
 
         list.cellRenderer.getListCellRendererComponent(list, notDebuggable, 1, false, false)
         assertFalse(renderer.debugTagForTest.isVisible)
-        assertEquals(dev.acme.adbtoolbox.intellij.ui.common.AdbToolboxTheme.Colors.header, renderer.tileForTest.background)
+        assertEquals(dev.acme.adbtoolbox.intellij.ui.common.AdbToolboxTheme.Colors.header, renderer.tileForTest.fill)
     }
 
     fun `test a selected row is bold and tinted with the accent background`() {
@@ -67,8 +81,23 @@ class AppsVirtualListTest : BasePlatformTestCase() {
         list.cellRenderer.getListCellRendererComponent(list, selected, 0, false, false)
 
         assertEquals(java.awt.Font.BOLD, renderer.titleLabelForTest.font.style)
-        assertEquals(dev.acme.adbtoolbox.intellij.ui.common.AdbToolboxTheme.Colors.accentBg, renderer.rootForTest.background)
-        assertTrue(renderer.rootForTest.isOpaque)
+        assertEquals(dev.acme.adbtoolbox.intellij.ui.common.AdbToolboxTheme.Colors.accentBg, renderer.rootForTest.fill)
+        assertEquals(dev.acme.adbtoolbox.intellij.ui.common.AdbToolboxTheme.Colors.accentBorder, renderer.rootForTest.outline)
+    }
+
+    fun `test the app tile is a 16px square that is not stretched to the row height`() {
+        val model = AppsVirtualListModel { true }
+        val list = AppsVirtualList(model, onSelect = {}).apply { setSize(346, 200) }
+        val value = row("com.acme.shop", debuggable = true)
+        model.apply(listOf(value))
+        val renderer = list.rowRendererForTest
+
+        list.cellRenderer.getListCellRendererComponent(list, value, 0, false, false)
+
+        val tile = renderer.tileForTest
+        assertEquals(com.intellij.util.ui.JBUI.scale(16), tile.width)
+        assertEquals(com.intellij.util.ui.JBUI.scale(16), tile.height)
+        assertTrue(renderer.debugTagForTest.height < dev.acme.adbtoolbox.intellij.ui.common.AdbToolboxTheme.Sizes.appRow / 2)
     }
 
     fun `test the selected row is reflected as the JList selection`() {
