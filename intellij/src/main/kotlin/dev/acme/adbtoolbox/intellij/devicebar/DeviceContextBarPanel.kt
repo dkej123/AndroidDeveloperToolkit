@@ -1,5 +1,6 @@
 package dev.acme.adbtoolbox.intellij.devicebar
 
+import dev.acme.adbtoolbox.intellij.ui.common.ShortcutHints
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBPanel
 import dev.acme.adbtoolbox.application.devicebar.DeviceBarPresentation
@@ -96,7 +97,7 @@ class DeviceContextBarPanel(
     private val refreshButton = JButton(AdbToolboxIcons.Actions.refresh).apply {
         preferredSize = java.awt.Dimension(AdbToolboxTheme.Sizes.iconButton, AdbToolboxTheme.Sizes.iconButton)
         margin = java.awt.Insets(0, 0, 0, 0)
-        toolTipText = "Refresh device list  ⌘⇧D"
+        toolTipText = ShortcutHints.withAction("Refresh device list", "AdbToolbox.RefreshDevices")
         getAccessibleContext().accessibleName = "Refresh device list"
         isContentAreaFilled = false
         isBorderPainted = false
@@ -206,6 +207,7 @@ class DeviceContextBarPanel(
         currentOnline = bar as? DeviceBarPresentation.Online
         // Device name and the unauthorized label are 11.5/600; the loading and no-device messages
         // are regular `textDim` copy (`deviceLoadingTextStyle`, `noDeviceTextStyle`).
+        selectorLabel.toolTipText = "Change device"
         val emphasized = bar is DeviceBarPresentation.Online || bar is DeviceBarPresentation.Unauthorized
         selectorLabel.font = AdbToolboxTheme.Typography.body.deriveFont(
             if (emphasized) Font.BOLD else Font.PLAIN,
@@ -218,6 +220,12 @@ class DeviceContextBarPanel(
                 selectorLabel.foreground = AdbToolboxTheme.Colors.textDim
                 selectorLabel.text = "Querying adb devices…"
             }
+            is DeviceBarPresentation.SelectDevice -> {
+                selectorLabel.icon = StatusDotIcon(AdbToolboxTheme.Colors.green, filled = false)
+                selectorLabel.foreground = AdbToolboxTheme.Colors.text
+                selectorLabel.text = "${bar.deviceCount} devices — select one"
+                caretLabel.isVisible = true
+            }
             DeviceBarPresentation.NoDevice -> {
                 selectorLabel.icon = StatusDotIcon(AdbToolboxTheme.Colors.textFaint, filled = false)
                 selectorLabel.foreground = AdbToolboxTheme.Colors.textDim
@@ -226,7 +234,7 @@ class DeviceContextBarPanel(
             is DeviceBarPresentation.Online -> {
                 selectorLabel.icon = StatusDotIcon(AdbToolboxTheme.Colors.green, filled = true)
                 selectorLabel.foreground = AdbToolboxTheme.Colors.text
-                selectorLabel.text = bar.device.model ?: bar.device.serial.toString()
+                selectorLabel.text = bar.device.displayName
                 chipLabel.text = connectionChipText(bar.device.connectionKind)
                 chipLabel.isVisible = true
                 caretLabel.isVisible = true
@@ -235,19 +243,21 @@ class DeviceContextBarPanel(
             is DeviceBarPresentation.Unauthorized -> {
                 selectorLabel.icon = StatusDotIcon(AdbToolboxTheme.Colors.amber, filled = true)
                 selectorLabel.foreground = AdbToolboxTheme.Colors.amber
-                selectorLabel.text = "${bar.device.model ?: bar.device.serial} — unauthorized"
+                selectorLabel.text = "${bar.device.displayName} — unauthorized"
                 retryLabel.isVisible = true
                 bannerLabel.isVisible = true
             }
             is DeviceBarPresentation.Offline -> {
                 selectorLabel.icon = StatusDotIcon(AdbToolboxTheme.Colors.textFaint, filled = true)
                 selectorLabel.foreground = AdbToolboxTheme.Colors.textDim
-                selectorLabel.text = "${bar.device.model ?: bar.device.serial} — offline"
+                selectorLabel.text = "${bar.device.displayName} — offline"
             }
             is DeviceBarPresentation.Error -> {
                 selectorLabel.icon = StatusDotIcon(AdbToolboxTheme.Colors.red, filled = true)
                 selectorLabel.foreground = AdbToolboxTheme.Colors.red
                 selectorLabel.text = bar.message
+                // Discovery errors can be long (tried sources, adb stderr); keep the full text reachable.
+                selectorLabel.toolTipText = bar.message
             }
         }
     }

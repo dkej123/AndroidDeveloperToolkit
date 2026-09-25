@@ -170,6 +170,7 @@ class AppsViewModel(
                                 labelResolved = entry.labelResolved,
                                 isDebuggable = entry.isDebuggable,
                                 isSelected = entry.packageName == selectedPackageName,
+                                icon = entry.icon,
                             )
                         },
                     selectedPackageName = selectedPackageName,

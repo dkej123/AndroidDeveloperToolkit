@@ -11,6 +11,7 @@ import dev.acme.adbtoolbox.domain.adb.AdbOutcome
 import dev.acme.adbtoolbox.domain.adb.AdbServerRequest
 import dev.acme.adbtoolbox.domain.adb.AdbShellCommand
 import dev.acme.adbtoolbox.domain.adb.AdbStreamEvent
+import dev.acme.adbtoolbox.domain.adb.AdbTextResult
 import dev.acme.adbtoolbox.domain.adb.DeviceSerial
 import dev.acme.adbtoolbox.domain.adb.ShellToken
 import io.kotest.matchers.shouldBe
@@ -90,13 +91,16 @@ class DdmlibAdbTransportTest {
     // --- serial lookup and device state --------------------------------------------------------
 
     @Test
-    fun `unknown serial is a transport failure without invoking ddmlib`() {
+    fun `a serial unknown to the ddmlib bridge is unsupported so the binary transport can take over`() {
+        // The IDE's bridge may not be initialized yet (or tracks a different adb server) while
+        // `adb devices` already lists the device. Nothing reached the device, so ADR 0005's
+        // Unsupported-only fallback may safely retry on the binary transport.
         runBlocking {
             val other = mockDevice().also { every { it.serialNumber } returns "different-serial" }
             val result = transport(other).executeText(shellRequest)
 
             val outcome = result.outcome
-            outcome.shouldBeInstanceOf<AdbOutcome.TransportFailure>()
+            outcome.shouldBeInstanceOf<AdbOutcome.Unsupported>()
             outcome.reason shouldContain serial.toString()
             verify(exactly = 0) { other.executeShellCommand(any<String>(), any<IShellOutputReceiver>(), any<Long>(), any<TimeUnit>(), any<java.io.InputStream>()) }
         }
@@ -274,6 +278,24 @@ class DdmlibAdbTransportTest {
     // --- timeout and cancellation ------------------------------------------------------------------
 
     @Test
+    fun `ddmlib output timeout is disabled with zero rather than a huge value`() {
+        // ddmlib's contract is "0 = wait forever". Android Studio's adblib-backed IDevice converts
+        // any positive value to nanoseconds; Long.MAX_VALUE / 2 ms overflows there, and its
+        // idle-monitoring heartbeat then spins on every Dispatchers.Default thread while the
+        // command never completes (reproduced in Android Studio Quail 4, see docs/e2e-testing.md).
+        runBlocking {
+            val device = mockDevice()
+            device.respondsWith("ok")
+
+            transport(device).executeText(shellRequest)
+
+            verify {
+                device.executeShellCommand(any<String>(), any<IShellOutputReceiver>(), 0L, any<TimeUnit>(), any<java.io.InputStream>())
+            }
+        }
+    }
+
+    @Test
     fun `a request timeout stops the ddmlib call and reports TimedOut`() {
         runBlocking {
             val device = mockDevice()
@@ -288,6 +310,54 @@ class DdmlibAdbTransportTest {
             val result = withTimeout(5.seconds) { transport(device).executeText(request) }
 
             result.outcome shouldBe AdbOutcome.TimedOut
+        }
+    }
+
+    /** How the real ddmlib/adblib call ends when its thread is interrupted: blocking socket I/O
+     * fails with ClosedByInterruptException (an IOException), not InterruptedException. */
+    private fun IDevice.blocksUntilInterrupted(started: CountDownLatch = CountDownLatch(1)) {
+        every { executeShellCommand(any<String>(), any<IShellOutputReceiver>(), any<Long>(), any<TimeUnit>(), any<java.io.InputStream>()) } answers {
+            started.countDown()
+            try {
+                Thread.sleep(60_000)
+            } catch (_: InterruptedException) {
+                throw java.nio.channels.ClosedByInterruptException()
+            }
+        }
+    }
+
+    @Test
+    fun `a request timeout that interrupts blocking ddmlib I-O is reported as TimedOut, not a transport failure`() {
+        // Regression (docs/e2e-testing.md): slow-but-healthy commands (e.g. `monkey` on a busy
+        // device) surfaced as an "Operation interrupted" error toast instead of a timeout.
+        runBlocking {
+            val device = mockDevice()
+            device.blocksUntilInterrupted()
+            val request = shellRequest.copy(timeout = 60.milliseconds)
+
+            val result = withTimeout(5.seconds) { transport(device).executeText(request) }
+
+            result.outcome shouldBe AdbOutcome.TimedOut
+        }
+    }
+
+    @Test
+    fun `cancelling the caller while ddmlib blocks on I-O cancels instead of reporting a transport failure`() {
+        // Regression: a superseded refresh (collectLatest) cancelled in-flight `dumpsys package`
+        // calls, and each one was logged and shown as an "Operation interrupted" failure.
+        runBlocking {
+            val device = mockDevice()
+            val started = CountDownLatch(1)
+            device.blocksUntilInterrupted(started)
+            var result: AdbTextResult? = null
+
+            val job = launch(Dispatchers.Default) { result = transport(device).executeText(shellRequest) }
+            started.await(2, TimeUnit.SECONDS)
+            job.cancel()
+            withTimeout(5.seconds) { job.join() }
+
+            job.isCancelled shouldBe true
+            result shouldBe null
         }
     }
 

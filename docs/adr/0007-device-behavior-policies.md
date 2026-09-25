@@ -2,7 +2,9 @@
 
 ## Status
 
-Accepted
+Accepted. The **Application-label resolution** bullet is superseded by
+[0010](0010-app-labels-and-icons-via-device-helper.md): `dumpsys package` turned out to print no
+label.
 
 ## Context
 

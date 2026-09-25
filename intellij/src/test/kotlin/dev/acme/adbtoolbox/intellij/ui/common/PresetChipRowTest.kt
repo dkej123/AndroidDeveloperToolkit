@@ -67,6 +67,35 @@ class PresetChipRowTest : BasePlatformTestCase() {
         assertTrue(row.chips.single().border is DashedChipBorder)
     }
 
+    fun `test every chip label fits at its preferred size whatever button UI the IDE theme installs`() {
+        // Regression (docs/e2e-testing.md): under Android Studio's theme the button UI added its own
+        // wide insets and every preset rendered as "0.8…", "1.1…", "Custo…".
+        val row = PresetChipRow(
+            choices = listOf("0.85×", "1.15×", "Custom…").map { PresetChipChoice(it, it) },
+            selected = "0.85×",
+        )
+        val themeUi = javax.swing.UIManager.get("ToggleButtonUI")
+        javax.swing.UIManager.put("ToggleButtonUI", com.intellij.ide.ui.laf.darcula.ui.DarculaButtonUI::class.java.name)
+        try {
+            row.chips.forEach { it.updateUI() } // what Android Studio's theme does
+        } finally {
+            javax.swing.UIManager.put("ToggleButtonUI", themeUi)
+        }
+        for (chip in row.chips) {
+            chip.size = chip.preferredSize
+            val insets = chip.insets
+            val view = java.awt.Rectangle(insets.left, insets.top, chip.width - insets.left - insets.right, chip.height - insets.top - insets.bottom)
+            val shown = javax.swing.SwingUtilities.layoutCompoundLabel(
+                chip, chip.getFontMetrics(chip.font), chip.text, null,
+                chip.verticalAlignment, chip.horizontalAlignment, chip.verticalTextPosition, chip.horizontalTextPosition,
+                view, java.awt.Rectangle(), java.awt.Rectangle(), 0,
+            )
+            assertEquals(chip.text, shown)
+            // Chips paint their own surface; the theme's button UI must not re-layout the label.
+            assertEquals(javax.swing.plaf.basic.BasicToggleButtonUI::class.java, chip.ui.javaClass)
+        }
+    }
+
     fun `test default selection is neutral while a selected override is amber`() {
         val row = fontScaleRow(selected = 1.0)
 

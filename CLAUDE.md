@@ -15,6 +15,10 @@ These rules apply to every session in this repository.
   architecture/coverage gates instead. `verifyPlugin` still belongs in CI (GitHub Actions), scoped to
   a single IDE build target (not the full `recommended()` matrix) so it stays fast there — CI running
   it is expected and required; only ad hoc/local agent invocation is banned.
+- End-to-end tests: `docs/e2e-testing.md`. `e2e/scripts/run-e2e.sh` provisions everything they
+  need (Android SDK + emulator, Android Studio, headless X11 — no root) and runs `:e2e:e2eTest`
+  against a real Android Studio with a real emulator. Run it for any change that affects what a
+  user sees or does on a device; set `E2E_HOME` to a persistent directory in disposable sessions.
 
 ## Architecture
 - Preserve Clean Architecture boundaries between layers.

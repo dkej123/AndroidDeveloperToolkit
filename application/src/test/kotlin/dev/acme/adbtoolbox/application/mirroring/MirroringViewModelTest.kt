@@ -291,6 +291,25 @@ class MirroringViewModelTest {
     }
 
     @Test
+    fun `the error toast for a failed scrcpy start includes scrcpy's own error message`() = runTest {
+        val h = Harness(script = {
+            flow {
+                emit(ProcessEvent.StderrText("ERROR: Could not find any ADB device"))
+                emit(ProcessEvent.Completed(ProcessOutcome.Completed(1)))
+            }
+        })
+        h.selectedDeviceState.value = SelectedDeviceState.Online(onlineDevice(serialA))
+        h.scope.runCurrent()
+
+        h.viewModel.handle(MirroringIntent.Toggle)
+        h.scope.advanceTimeBy(1)
+        h.scope.runCurrent()
+
+        h.feedback.state.value.toasts.single().text shouldBe
+            "scrcpy exited unexpectedly (code 1): Could not find any ADB device"
+    }
+
+    @Test
     fun `a timed-out session posts an error toast and returns to Idle`() = runTest {
         val h = Harness(script = {
             flow {

@@ -32,9 +32,11 @@ private const val DEFAULT_MAX_CONCURRENT_ENRICHMENT = 4
 /**
  * The `:adapters-adb` [dev.acme.adbtoolbox.domain.packages.PackageRepository] (task 021): parses
  * `pm list packages` into an immediate, fallback-labeled [PackageListState.Content] snapshot, then
- * fills in each entry's label/debuggable metadata via a bounded-concurrency `dumpsys package <pkg>`
- * enrichment pipeline (never an unbounded serial N+1 scan) that republishes [state] incrementally
- * as results arrive.
+ * fills in each entry's label, icon and debuggable flag from the on-device [appInfoHelper] (ADR
+ * 0007) in one run, republishing [state] once when it finishes. Packages the helper
+ * does not report (or every package, when it is unavailable) fall back to a bounded-concurrency
+ * `dumpsys package <pkg>` pipeline (never an unbounded serial N+1 scan), which yields the
+ * debuggable flag but no label.
  *
  * [refresh] requests are collected with `collectLatest` (mirrors
  * [dev.acme.adbtoolbox.adapters.adb.device.AdbDeviceRepository]): a new call — for the same or a
@@ -51,6 +53,7 @@ class AdbPackageRepository(
     dispatchers: DispatcherProvider,
     private val transport: AdbTransport,
     private val maxConcurrentEnrichment: Int = DEFAULT_MAX_CONCURRENT_ENRICHMENT,
+    private val appInfoHelper: AppInfoHelper? = null,
 ) : PackageRepository {
 
     private val _state = MutableStateFlow<PackageListState>(PackageListState.Loading)
@@ -67,6 +70,14 @@ class AdbPackageRepository(
     )
 
     private val stateLock = Mutex()
+
+    /**
+     * Metadata already fetched per device, so a refresh (views re-read the device whenever the user
+     * returns to them) only runs `dumpsys package` for packages it has not seen. Entries for
+     * packages that disappear from the list are dropped. Only successful lookups are kept, so a
+     * transient failure is retried on the next refresh.
+     */
+    private val enrichedCache = mutableMapOf<DeviceSerial, MutableMap<String, PackageEntry>>()
 
     init {
         scope.launch(dispatchers.io) {
@@ -91,21 +102,56 @@ class AdbPackageRepository(
         }
 
         val names = PackageListCommand.distinctPackageNames(listResult)
-        val entries = names.associateWith { PackageEntry.unresolved(it) }
+        val known = stateLock.withLock {
+            enrichedCache.getOrPut(request.serial) { mutableMapOf() }.also { cache ->
+                // Only prune on a full listing: a user-scoped list omits system packages, whose
+                // metadata is still valid for the next all-packages listing.
+                if (request.scope == PackageListScope.All) cache.keys.retainAll(names.toSet())
+            }.toMap()
+        }
+        val entries = names.associateWith { known[it] ?: PackageEntry.unresolved(it) }
         publish(request, entries)
 
-        enrich(request, entries)
+        enrich(request, entries, toFetch = names.filterNot(known::containsKey))
     }
 
-    private suspend fun enrich(request: RefreshRequest, initialEntries: Map<String, PackageEntry>) {
-        val semaphore = Semaphore(maxConcurrentEnrichment)
+    private suspend fun enrich(request: RefreshRequest, initialEntries: Map<String, PackageEntry>, toFetch: List<String>) {
         var entries = initialEntries
+        val remaining = toFetch.toMutableSet()
+        if (appInfoHelper != null && toFetch.isNotEmpty()) {
+            var resolvedAny = false
+            appInfoHelper.query(request.serial, toFetch) { info ->
+                val entry = PackageEntry(
+                    packageName = info.packageName,
+                    label = info.label ?: info.packageName,
+                    labelResolved = info.label != null,
+                    isDebuggable = info.isDebuggable,
+                    icon = info.icon,
+                )
+                stateLock.withLock {
+                    // The helper may report more apps than asked for; they are cached for later lists.
+                    enrichedCache.getOrPut(request.serial) { mutableMapOf() }[info.packageName] = entry
+                    if (remaining.remove(info.packageName)) {
+                        entries = entries + (info.packageName to entry)
+                        resolvedAny = true
+                    }
+                }
+            }
+            // Published once, not per record: rows are sorted by label, so each publish can move
+            // rows under the user's pointer while they are trying to click one.
+            if (resolvedAny) stateLock.withLock { publish(request, entries) }
+        }
+
+        val semaphore = Semaphore(maxConcurrentEnrichment)
         coroutineScope {
-            initialEntries.keys.forEach { packageName ->
+            toFetch.filter(remaining::contains).forEach { packageName ->
                 launch {
                     val enriched = semaphore.withPermit { fetchMetadata(request.serial, packageName) }
                     stateLock.withLock {
                         entries = entries + (packageName to enriched)
+                        if (enriched.labelResolved || enriched.isDebuggable != null) {
+                            enrichedCache.getOrPut(request.serial) { mutableMapOf() }[packageName] = enriched
+                        }
                         publish(request, entries)
                     }
                 }

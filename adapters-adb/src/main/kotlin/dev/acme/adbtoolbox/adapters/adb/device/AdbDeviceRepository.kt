@@ -57,7 +57,8 @@ private val DEVICES_LIST_ARGUMENTS = listOf("devices", "-l")
  * An outcome other than [AdbOutcome.Completed] with a zero (or absent) exit code — a timeout,
  * cancellation, transport failure, or non-zero exit — leaves [devices] at its previous value rather
  * than clearing it: a transient `adb devices` hiccup must not flash every device to "disconnected"
- * (adb-development: "handle ... malformed/unexpected output without crashing the caller").
+ * (adb-development: "handle ... malformed/unexpected output without crashing the caller"). The
+ * failure reason is published on [listError] instead, and cleared by the next successful query.
  */
 class AdbDeviceRepository(
     scope: CoroutineScope,
@@ -70,6 +71,9 @@ class AdbDeviceRepository(
 
     private val _devices = MutableStateFlow<List<Device>>(emptyList())
     override val devices: StateFlow<List<Device>> = _devices.asStateFlow()
+
+    private val _listError = MutableStateFlow<String?>(null)
+    override val listError: StateFlow<String?> = _listError.asStateFlow()
 
     private val manualRefreshRequests = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
 
@@ -97,7 +101,17 @@ class AdbDeviceRepository(
         val outcome = result.outcome
         if (outcome is AdbOutcome.Completed && (outcome.exitCode == null || outcome.exitCode == 0)) {
             _devices.value = DeviceListParser.parseDevices(result.stdout)
+            _listError.value = null
+        } else if (outcome != AdbOutcome.Cancelled) {
+            // A cancelled query was superseded by a newer refresh; it says nothing about adb.
+            _listError.value = describeFailure(outcome, result.stderr)
         }
+    }
+
+    private fun describeFailure(outcome: AdbOutcome, stderr: String): String = when (outcome) {
+        is AdbOutcome.TransportFailure -> outcome.reason
+        is AdbOutcome.Completed -> "adb devices failed: ${stderr.trim().ifEmpty { "exit code ${outcome.exitCode}" }}"
+        else -> "adb devices failed: $outcome"
     }
 
     private fun tickerFlow(interval: Duration): Flow<Unit> = flow {

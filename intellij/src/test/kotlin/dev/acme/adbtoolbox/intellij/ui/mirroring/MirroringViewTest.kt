@@ -1,5 +1,6 @@
 package dev.acme.adbtoolbox.intellij.ui.mirroring
 
+import com.intellij.openapi.application.EDT
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import dev.acme.adbtoolbox.application.mirroring.MirroringPresentationState
 import dev.acme.adbtoolbox.application.mirroring.MirroringSessionManager
@@ -39,7 +40,9 @@ class MirroringViewTest : BasePlatformTestCase() {
     private class TestDispatchers : DispatcherProvider {
         override val default = Dispatchers.Default
         override val io = Dispatchers.IO
-        override val main = Dispatchers.Default
+        // Like production: renders are queued on the EDT behind the test body, so a direct
+        // render() in a test is never overwritten by a background initial-state render.
+        override val main = Dispatchers.EDT
     }
 
     private fun onlineDevice(serial: String) = Device(serial = DeviceSerial.of(serial), state = DeviceConnectionState.Online)
@@ -153,7 +156,9 @@ class MirroringViewTest : BasePlatformTestCase() {
         assertTrue(view.optionsButton.toolTipText.endsWith("Connect a device to use this"))
 
         view.render(MirroringViewState(controlPolicy = ControlPolicy.Enabled, presentationState = MirroringPresentationState.Idle))
-        assertEquals("Start scrcpy for the selected device  ⇧⌘M", view.toggleButton.toolTipText)
+        // The chord comes from the active keymap (ShortcutHintsTest), never a hardcoded "⇧⌘M".
+        assertTrue(view.toggleButton.toolTipText.startsWith("Start scrcpy for the selected device"))
+        if (!com.intellij.openapi.util.SystemInfo.isMac) assertFalse('⌘' in view.toggleButton.toolTipText)
         assertEquals("Mirroring options — bitrate, resolution, stay awake", view.optionsButton.toolTipText)
         view.dispose()
     }

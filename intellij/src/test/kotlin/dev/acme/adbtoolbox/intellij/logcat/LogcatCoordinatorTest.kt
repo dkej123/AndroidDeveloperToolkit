@@ -1,5 +1,6 @@
 package dev.acme.adbtoolbox.intellij.logcat
 
+import com.intellij.openapi.application.EDT
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import dev.acme.adbtoolbox.application.devicecontext.DeviceContextAggregator
 import dev.acme.adbtoolbox.application.logcat.LogcatControlsController
@@ -55,7 +56,9 @@ class LogcatCoordinatorTest : BasePlatformTestCase() {
     private class TestDispatchers : DispatcherProvider {
         override val default = Dispatchers.Default
         override val io = Dispatchers.IO
-        override val main = Dispatchers.Default
+        // Like production: collector renders are queued on the EDT behind the test body, so a
+        // direct render() in a test is never overwritten by a background initial-state render.
+        override val main = Dispatchers.EDT
     }
 
     private class Fixture(
@@ -214,13 +217,23 @@ class LogcatCoordinatorTest : BasePlatformTestCase() {
     }
 
     fun `test the badge contributor reflects an error session on the selected serial`() {
+        // The fixture's fake logcat stream ends immediately, so the session for the selected
+        // serial settles in Error; the contributor must then report Attention for that serial only.
         val f = fixture(initialState = SelectedDeviceState.Online(Device(SERIAL, DeviceConnectionState.Online)))
         val coordinator = coordinator(f)
+        val contributor = LogcatBadgeContributor(f.controller)
 
-        assertEquals(
-            dev.acme.adbtoolbox.domain.nav.NavigationBadge.None,
-            LogcatBadgeContributor(f.controller).badgeFor(SERIAL),
-        )
+        val deadline = System.currentTimeMillis() + 5_000
+        while (f.controller.state.value.sessionState !is dev.acme.adbtoolbox.domain.logcat.LogcatSessionState.Error &&
+            System.currentTimeMillis() < deadline
+        ) {
+            // The controller marshals onto the EDT (dispatchers.main); let it run while waiting.
+            com.intellij.util.ui.UIUtil.dispatchAllInvocationEvents()
+            Thread.sleep(10)
+        }
+
+        assertEquals(dev.acme.adbtoolbox.domain.nav.NavigationBadge.Attention, contributor.badgeFor(SERIAL))
+        assertEquals(dev.acme.adbtoolbox.domain.nav.NavigationBadge.None, contributor.badgeFor(DeviceSerial.of("OTHER001")))
         coordinator.dispose()
     }
 

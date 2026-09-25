@@ -14,6 +14,11 @@ kover = "0.9.1"
 # Matches Android Studio Ladybug (2024.2.1) / AGP ~8.6's ddmlib generation, consistent with the
 # docs/adr/0003 IntelliJ Platform 2024.2 (build 242) baseline.
 ddmlib = "31.7.3"
+# JetBrains Remote-Robot: drives the real IDE UI in the :e2e suite (docs/e2e-testing.md).
+remote-robot = "0.11.23"
+okhttp = "4.12.0"
+# D8 dexes the on-device app-info helper (ADR 0007) at build time; no Android SDK needed.
+r8 = "9.4.24"
 
 [libraries]
 ddmlib = { module = "com.android.tools.ddms:ddmlib", version.ref = "ddmlib" }
@@ -31,6 +36,10 @@ junit-vintage-engine = { module = "org.junit.vintage:junit-vintage-engine", vers
 junit4 = { module = "junit:junit", version.ref = "junit4" }
 kotest-assertions-core = { module = "io.kotest:kotest-assertions-core", version.ref = "kotest" }
 mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
+remote-robot = { module = "com.intellij.remoterobot:remote-robot", version.ref = "remote-robot" }
+remote-fixtures = { module = "com.intellij.remoterobot:remote-fixtures", version.ref = "remote-robot" }
+okhttp = { module = "com.squareup.okhttp3:okhttp", version.ref = "okhttp" }
+r8 = { module = "com.android.tools:r8", version.ref = "r8" }
 
 [plugins]
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }

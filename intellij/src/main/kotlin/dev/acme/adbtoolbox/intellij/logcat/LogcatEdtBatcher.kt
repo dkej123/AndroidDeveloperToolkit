@@ -1,5 +1,10 @@
 package dev.acme.adbtoolbox.intellij.logcat
 
+import dev.acme.adbtoolbox.domain.diagnostics.DiagCategory
+import dev.acme.adbtoolbox.domain.diagnostics.DiagLevel
+import dev.acme.adbtoolbox.domain.diagnostics.DiagnosticsLog
+import dev.acme.adbtoolbox.domain.diagnostics.NoOpDiagnosticsLog
+import dev.acme.adbtoolbox.domain.diagnostics.debug
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ModalityState
@@ -31,7 +36,11 @@ class LogcatEdtBatcher(
     private val scheduler: LogcatEdtScheduler = IntelliJLogcatEdtScheduler(),
     private val maxPendingRows: Int = DEFAULT_MAX_PENDING_ROWS,
     private val maxRowsPerDrain: Int = DEFAULT_MAX_ROWS_PER_DRAIN,
+    private val log: DiagnosticsLog = NoOpDiagnosticsLog,
+    private val nanoTime: () -> Long = System::nanoTime,
 ) : Disposable {
+    private var lastThroughputReport = Long.MIN_VALUE
+    private var reportedMetrics = LogcatRenderingMetrics()
     private val lock = Any()
     private val pendingRows = TreeMap<Long, LogcatRenderRow>()
     private var currentMetrics = LogcatRenderingMetrics()
@@ -159,7 +168,10 @@ class LogcatEdtBatcher(
             // Applying while holding [lock] prevents dispose from completing between the final
             // disposed check and the model mutation. Java monitors are reentrant, so a model
             // listener may still call submit/dispose on this batcher without deadlocking.
+            val start = nanoTime()
             target.apply(batch)
+            val end = nanoTime()
+            recordDrain(drainedRows.size, (end - start) / 1_000_000, end)
         }
         if (scheduleContinuation) {
             val task = scheduler.schedule(::drain)
@@ -173,7 +185,38 @@ class LogcatEdtBatcher(
         }
     }
 
+    /** Diagnostics: slow EDT drains immediately, and a throughput summary at most once a minute. */
+    private fun recordDrain(rows: Int, ms: Long, now: Long) {
+        if (ms >= SLOW_DRAIN_MS) {
+            log.log(DiagLevel.WARN, DiagCategory.LOGCAT, "slow drain", mapOf("rows" to rows, "ms" to ms, "pending" to pendingRows.size))
+        } else {
+            log.debug(DiagCategory.LOGCAT, "drain", mapOf("rows" to rows, "ms" to ms, "pending" to pendingRows.size))
+        }
+        if (lastThroughputReport == Long.MIN_VALUE) {
+            lastThroughputReport = now
+        } else if (now - lastThroughputReport >= THROUGHPUT_REPORT_NANOS) {
+            val metrics = currentMetrics
+            log.log(
+                DiagLevel.INFO,
+                DiagCategory.LOGCAT,
+                "throughput",
+                mapOf(
+                    "seconds" to (now - lastThroughputReport) / 1_000_000_000,
+                    "submittedBatches" to metrics.submittedBatches - reportedMetrics.submittedBatches,
+                    "edtDrains" to metrics.appliedBatches - reportedMetrics.appliedBatches,
+                    "droppedRows" to metrics.droppedPendingRows - reportedMetrics.droppedPendingRows,
+                    "peakPendingRows" to metrics.peakPendingRows,
+                    "modelSize" to target.getSize(),
+                ),
+            )
+            reportedMetrics = metrics
+            lastThroughputReport = now
+        }
+    }
+
     companion object {
+        private const val SLOW_DRAIN_MS = 50L
+        private const val THROUGHPUT_REPORT_NANOS = 60_000_000_000L
         const val DEFAULT_MAX_PENDING_ROWS = 100_000
         const val DEFAULT_MAX_ROWS_PER_DRAIN = 1_000
     }

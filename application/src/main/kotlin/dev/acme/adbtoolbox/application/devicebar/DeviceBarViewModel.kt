@@ -55,9 +55,11 @@ class DeviceBarViewModel(
     /** Fires once per [DeviceBarIntent.RequestPairOverWifi] — see the class doc's Pair-over-Wi-Fi note. */
     val pairOverWifiRequests: SharedFlow<Unit> = _pairOverWifiRequests.asSharedFlow()
 
+    private val discovery = combine(deviceRepository.devices, deviceRepository.listError, ::Discovery)
+
     val state: StateFlow<DeviceBarViewState> = combine(
         selectedDeviceViewModel.state,
-        deviceRepository.devices,
+        discovery,
         _pickerOpen,
         _highlightedIndex,
         _isRefreshing,
@@ -115,18 +117,22 @@ class DeviceBarViewModel(
         }
     }
 
+    private data class Discovery(val devices: List<Device>, val listError: String?)
+
     private fun reduce(
         selected: SelectedDeviceState,
-        devices: List<Device>,
+        discovery: Discovery,
         pickerOpen: Boolean,
         highlighted: Int,
         refreshing: Boolean,
     ): DeviceBarViewState {
+        val devices = discovery.devices
         val selectedSerial = selectedSerialOf(selected)
         val items = devices.map { device ->
             DevicePickerItem(
                 serial = device.serial,
-                model = device.model,
+                // Human-readable (spaces restored); null still means "adb reported no model".
+                model = device.model?.let { device.displayName },
                 product = device.product,
                 connectionKind = device.connectionKind,
                 connectionState = device.state,
@@ -136,7 +142,13 @@ class DeviceBarViewModel(
         val clampedHighlight = if (items.isEmpty()) -1 else highlighted.coerceIn(-1, items.size - 1)
         val bar = when (selected) {
             SelectedDeviceState.Loading -> DeviceBarPresentation.Loading
-            SelectedDeviceState.None -> DeviceBarPresentation.NoDevice
+            // "No device connected" only when adb really reported none; a failing query is shown
+            // as such, and attached-but-unselected devices invite the user to pick one.
+            SelectedDeviceState.None -> when {
+                devices.isNotEmpty() -> DeviceBarPresentation.SelectDevice(deviceCount = devices.size)
+                discovery.listError != null -> DeviceBarPresentation.Error(discovery.listError)
+                else -> DeviceBarPresentation.NoDevice
+            }
             is SelectedDeviceState.Online ->
                 DeviceBarPresentation.Online(selected.device, onlineCount = devices.count { it.state == DeviceConnectionState.Online })
             is SelectedDeviceState.Unauthorized -> DeviceBarPresentation.Unauthorized(selected.device)

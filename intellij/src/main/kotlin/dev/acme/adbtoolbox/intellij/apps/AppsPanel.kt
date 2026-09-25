@@ -1,5 +1,6 @@
 package dev.acme.adbtoolbox.intellij.apps
 
+import dev.acme.adbtoolbox.intellij.ui.common.ShortcutHints
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBPanel
 import com.intellij.ui.components.JBTextField
@@ -354,7 +355,7 @@ class AppsPanel(
     }
 
     private companion object {
-        const val RESTART_TOOLTIP = "Force-stop, then launch the main activity  ⇧⌘R"
+        val RESTART_TOOLTIP: String get() = ShortcutHints.withAction("Force-stop, then launch the main activity", "AdbToolbox.RestartApp")
         const val FORCE_STOP_TOOLTIP = "am force-stop — leaves data intact"
         const val LAUNCH_TOOLTIP = "monkey launch of the main activity"
         const val CLEAR_DATA_TOOLTIP = "Deletes databases, prefs and caches. Cannot be undone."

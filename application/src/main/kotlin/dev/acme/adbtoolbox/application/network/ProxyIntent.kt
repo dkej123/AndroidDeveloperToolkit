@@ -22,4 +22,8 @@ sealed interface ProxyIntent {
     /** Resolves and fills the host field with this machine's LAN IPv4 (`design/README.md` §6's "Use
      * my computer IP") — never enqueues an Enable by itself. */
     data object UseComputerIp : ProxyIntent
+
+    /** Re-reads the device's proxy, e.g. when the user comes back to the view — it may have been
+     * changed outside the plugin. */
+    data object Refresh : ProxyIntent
 }

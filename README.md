@@ -25,6 +25,7 @@ visual design lives under `design/` (start at `design/README.md`).
 ./gradlew architectureCheck    # dependency-direction + forbidden-import gate (docs/adr/0001, 0002)
 ./gradlew koverVerify          # 80% line-coverage floor for :domain/:application/:adapters-jvm/:adapters-adb
 ./gradlew :intellij:runIde     # launch a sandboxed IDE instance with the plugin installed
+e2e/scripts/run-e2e.sh         # end-to-end suite in real Android Studio + emulator (docs/e2e-testing.md)
 ```
 
 Agents/local development: run `./gradlew clean build koverVerify` (never `:intellij:verifyPlugin`

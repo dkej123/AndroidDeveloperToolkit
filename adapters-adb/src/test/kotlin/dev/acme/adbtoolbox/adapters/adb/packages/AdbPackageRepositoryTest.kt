@@ -13,6 +13,7 @@ import dev.acme.adbtoolbox.domain.adb.DeviceSerial
 import dev.acme.adbtoolbox.domain.adb.FakeAdbTransport
 import dev.acme.adbtoolbox.domain.adb.ShellToken
 import dev.acme.adbtoolbox.domain.dispatch.DispatcherProvider
+import dev.acme.adbtoolbox.domain.packages.AppIcon
 import dev.acme.adbtoolbox.domain.packages.PackageEntry
 import dev.acme.adbtoolbox.domain.packages.PackageListScope
 import dev.acme.adbtoolbox.domain.packages.PackageListState
@@ -105,7 +106,112 @@ private class ConcurrencyTrackingTransport(
     override suspend fun executeBinary(request: AdbRequest, sink: ByteSink): AdbOutcome = AdbOutcome.Completed(0)
 }
 
+private fun isPresenceCheck(request: AdbRequest): Boolean =
+    ((request as? AdbDeviceRequest)?.operation as? AdbOperation.Shell)?.command?.render()?.startsWith("test -f") == true
+
+private val TEST_BUNDLE = AppInfoHelperBundle(version = "test") { "/host/helper.jar" }
+
+// base64("Shop") = U2hvcA==, base64("Zebra") = WmVicmE=, base64 PNG stand-in "iVBORw==" = 89 50 4E 47.
+private val SHOP_AND_ZEBRA = listOf(
+    AdbStreamEvent.Line("ADBTOOLBOX-APPINFO 1"),
+    AdbStreamEvent.Line("P\tcom.acme.shop\td\tU2hvcA==\tiVBORw=="),
+    AdbStreamEvent.Line("P\tcom.acme.zebra\t-\tWmVicmE=\t-"),
+    AdbStreamEvent.Line("END"),
+    AdbStreamEvent.Completed(AdbOutcome.Completed(0)),
+)
+
 class AdbPackageRepositoryTest {
+
+    @Test
+    fun `the app-info helper resolves labels, icons and debuggable flags without dumpsys`() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val transport = FakeAdbTransport(
+            textScript = { request ->
+                when {
+                    listCommandOf(request) != null -> textResult("package:com.acme.zebra\npackage:com.acme.shop\n")
+                    isPresenceCheck(request) -> textResult("present")
+                    else -> textResult(dumpsysOutput())
+                }
+            },
+            streamScript = { SHOP_AND_ZEBRA },
+        )
+        val repository = AdbPackageRepository(
+            backgroundScope,
+            TestDispatcherProviderFixture(dispatcher),
+            transport,
+            appInfoHelper = AppInfoHelper(transport, TEST_BUNDLE),
+        )
+
+        repository.refresh(DeviceSerial.of("emulator-5554"), PackageListScope.User)
+        settle()
+
+        val content = repository.state.value as PackageListState.Content
+        content.packages shouldBe listOf(
+            PackageEntry("com.acme.shop", "Shop", labelResolved = true, isDebuggable = true, icon = AppIcon(byteArrayOf(0x89.toByte(), 0x50, 0x4E, 0x47))),
+            PackageEntry("com.acme.zebra", "Zebra", labelResolved = true, isDebuggable = false, icon = null),
+        )
+        transport.textRequests.mapNotNull(::metadataPackageOf) shouldBe emptyList()
+    }
+
+    @Test
+    fun `packages the helper did not report fall back to dumpsys, and helper results are cached`() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val transport = FakeAdbTransport(
+            textScript = { request ->
+                when {
+                    listCommandOf(request) != null -> textResult("package:com.acme.shop\npackage:com.acme.other\n")
+                    isPresenceCheck(request) -> textResult("present")
+                    else -> textResult(dumpsysOutput(label = null, debuggable = true))
+                }
+            },
+            streamScript = { SHOP_AND_ZEBRA },
+        )
+        val repository = AdbPackageRepository(
+            backgroundScope,
+            TestDispatcherProviderFixture(dispatcher),
+            transport,
+            appInfoHelper = AppInfoHelper(transport, TEST_BUNDLE),
+        )
+        val serial = DeviceSerial.of("emulator-5554")
+
+        repository.refresh(serial, PackageListScope.User)
+        settle()
+        repository.refresh(serial, PackageListScope.User)
+        settle()
+
+        transport.textRequests.mapNotNull(::metadataPackageOf) shouldBe listOf("com.acme.other")
+        transport.streamRequests.size shouldBe 1
+        val content = repository.state.value as PackageListState.Content
+        content.packages.map { it.label to it.isDebuggable } shouldBe
+            listOf("com.acme.other" to true, "Shop" to true)
+    }
+
+    @Test
+    fun `an unavailable helper leaves every package to dumpsys`() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val transport = FakeAdbTransport(
+            textScript = { request ->
+                when {
+                    listCommandOf(request) != null -> textResult("package:com.acme.shop\n")
+                    isPresenceCheck(request) -> textResult("")
+                    metadataPackageOf(request) != null -> textResult(dumpsysOutput(label = "Shop"))
+                    else -> textResult("", AdbOutcome.TransportFailure("push failed"))
+                }
+            },
+        )
+        val repository = AdbPackageRepository(
+            backgroundScope,
+            TestDispatcherProviderFixture(dispatcher),
+            transport,
+            appInfoHelper = AppInfoHelper(transport, TEST_BUNDLE),
+        )
+
+        repository.refresh(DeviceSerial.of("emulator-5554"), PackageListScope.User)
+        settle()
+
+        transport.streamRequests shouldBe emptyList()
+        (repository.state.value as PackageListState.Content).packages.single().label shouldBe "Shop"
+    }
 
     @Test
     fun `refresh parses the package list into an immediate fallback-labeled snapshot`() = runTest {
@@ -129,6 +235,39 @@ class AdbPackageRepositoryTest {
         content.scope shouldBe PackageListScope.User
         content.packages.map { it.packageName } shouldBe listOf("com.acme.other", "com.acme.shop")
         content.packages.all { !it.labelResolved && it.label == it.packageName } shouldBe true
+    }
+
+    @Test
+    fun `a refresh re-queries the package list but only enriches packages it has not seen`() = runTest {
+        // The Apps/Display/Network views now re-read the device each time the user returns to
+        // the tool window; re-running `dumpsys package` for 100+ system packages every time would
+        // turn that into a burst of device commands (docs/e2e-testing.md).
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        var installed = "package:com.acme.shop\n"
+        val enriched = mutableListOf<String>()
+        val transport = FakeAdbTransport(
+            textScript = { request ->
+                if (listCommandOf(request) != null) {
+                    textResult(installed)
+                } else {
+                    metadataPackageOf(request)?.let(enriched::add)
+                    textResult(dumpsysOutput(label = "Shop", debuggable = true))
+                }
+            },
+        )
+        val repository = AdbPackageRepository(backgroundScope, TestDispatcherProviderFixture(dispatcher), transport)
+        val serial = DeviceSerial.of("R58N90ABCDE")
+        repository.refresh(serial, PackageListScope.User)
+        settle()
+        installed = "package:com.acme.shop\npackage:com.acme.new\n"
+
+        repository.refresh(serial, PackageListScope.User)
+        settle()
+
+        enriched shouldBe listOf("com.acme.shop", "com.acme.new")
+        val content = repository.state.value as PackageListState.Content
+        content.packages.map { it.packageName to it.isDebuggable } shouldBe
+            listOf("com.acme.new" to true, "com.acme.shop" to true)
     }
 
     @Test

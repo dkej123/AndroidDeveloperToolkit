@@ -1,4 +1,5 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 // JVM-only per docs/adr/0001: implements the :domain AdbTransport port (ddmlib and binary-adb
@@ -7,6 +8,44 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
     alias(libs.plugins.kotlin.jvm)
     alias(libs.plugins.kover)
+}
+
+// The on-device app-info helper (ADR 0007): plain Java run on the device by `app_process`, compiled
+// against compile-only stubs of the few android.* classes it touches (the device supplies the real
+// ones) and dexed by D8, so building it needs no Android SDK. The dexed jar ships as a resource of
+// this module and is pushed to the device on first use.
+val deviceHelperStubs: SourceSet by sourceSets.creating
+val deviceHelper: SourceSet by sourceSets.creating {
+    compileClasspath += deviceHelperStubs.output
+}
+val d8: Configuration by configurations.creating
+
+tasks.named<JavaCompile>(deviceHelperStubs.compileJavaTaskName) {
+    options.release.set(8)
+    options.compilerArgs.add("-Xlint:-options")
+}
+tasks.named<JavaCompile>(deviceHelper.compileJavaTaskName) {
+    options.release.set(8)
+    options.compilerArgs.add("-Xlint:-options")
+}
+
+val deviceHelperResources = layout.buildDirectory.dir("generated/deviceHelper/resources")
+val dexDeviceHelper = tasks.register<JavaExec>("dexDeviceHelper") {
+    description = "Dexes the on-device app-info helper into a resource jar."
+    val classes = deviceHelper.output.classesDirs
+    val output = deviceHelperResources.map { it.file("dev/acme/adbtoolbox/adapters/adb/apps/app-info-helper.jar") }
+    inputs.files(classes)
+    outputs.file(output)
+    classpath = d8
+    mainClass.set("com.android.tools.r8.D8")
+    argumentProviders += CommandLineArgumentProvider {
+        listOf("--release", "--min-api", "21", "--output", output.get().asFile.absolutePath) +
+            classes.asFileTree.matching { include("**/*.class") }.files.map { it.absolutePath }.sorted()
+    }
+    doFirst { output.get().asFile.parentFile.mkdirs() }
+}
+sourceSets.main {
+    resources.srcDir(files(deviceHelperResources).builtBy(dexDeviceHelper))
 }
 
 dependencies {
@@ -29,6 +68,8 @@ dependencies {
     // plugin provides via IntelliJ's plugin-dependency classloader delegation.
     compileOnly(libs.ddmlib)
 
+    d8(libs.r8)
+
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.kotest.assertions.core)
     testImplementation(libs.kotlinx.coroutines.test)
@@ -46,10 +87,15 @@ kotlin {
 
 tasks.withType<KotlinCompile>().configureEach {
     compilerOptions.jvmTarget.set(JvmTarget.JVM_17)
+    // The plugin runs on the IDE's bundled Kotlin stdlib, not the one it compiles against. Pin the
+    // stdlib API to the oldest supported platform (ADR 0003: 2024.2 bundles Kotlin 1.9) so the
+    // compiler never emits calls into newer stdlib classes (e.g. Kotlin 2.2's coroutine
+    // `SpillingKt`), which fail with NoClassDefFoundError inside older IDEs.
+    compilerOptions.apiVersion.set(KotlinVersion.KOTLIN_1_9)
 }
 
 tasks.withType<JavaCompile>().configureEach {
-    options.release.set(17)
+    if (name == "compileJava" || name == "compileTestJava") options.release.set(17)
 }
 
 tasks.test {

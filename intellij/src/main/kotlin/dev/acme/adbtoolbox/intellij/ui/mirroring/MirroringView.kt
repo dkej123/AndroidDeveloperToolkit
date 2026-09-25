@@ -1,5 +1,6 @@
 package dev.acme.adbtoolbox.intellij.ui.mirroring
 
+import dev.acme.adbtoolbox.intellij.ui.common.ShortcutHints
 import dev.acme.adbtoolbox.intellij.ui.common.DesignButton
 import dev.acme.adbtoolbox.intellij.ui.common.DesignButtonStyle
 import dev.acme.adbtoolbox.intellij.ui.common.FlexRowLayout
@@ -122,7 +123,7 @@ class MirroringView(
     private companion object {
         const val IDLE = "idle"
         const val RUNNING = "running"
-        const val START_TOOLTIP = "Start scrcpy for the selected device  ⇧⌘M"
+        val START_TOOLTIP: String get() = ShortcutHints.withAction("Start scrcpy for the selected device", "dev.acme.adbtoolbox.ToggleMirroring")
         const val OPTIONS_TOOLTIP = "Mirroring options — bitrate, resolution, stay awake"
         const val IDLE_HELP = "Launches Genymobile scrcpy. Turn on “stay awake” and “show touches” in options."
         const val RUNNING_HELP = "Window is open on your desktop. Closing it also stops this session."

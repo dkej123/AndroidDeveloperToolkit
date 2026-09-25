@@ -11,6 +11,7 @@ import dev.acme.adbtoolbox.domain.device.DeviceConnectionState
 import dev.acme.adbtoolbox.domain.device.FakeDeviceRepository
 import dev.acme.adbtoolbox.domain.device.FakeDeviceSelectionPersistence
 import dev.acme.adbtoolbox.domain.dispatch.DispatcherProvider
+import dev.acme.adbtoolbox.domain.packages.AppIcon
 import dev.acme.adbtoolbox.domain.packages.FakePackageRepository
 import dev.acme.adbtoolbox.domain.packages.PackageEntry
 import dev.acme.adbtoolbox.domain.packages.PackageListScope
@@ -117,6 +118,22 @@ class AppsViewModelTest {
         val state = h.viewModel.state.value
         state.isLoading shouldBe false
         state.rows shouldBe listOf(AppsRow("com.acme.shop", "Shop", true, null, isSelected = false))
+    }
+
+    @Test
+    fun `a resolved launcher icon is carried onto its row`() = runTest {
+        val h = harness()
+        h.settle()
+        h.selectedDeviceViewModel.handle(dev.acme.adbtoolbox.application.device.SelectedDeviceIntent.Select(serialA))
+        h.settle()
+        val icon = AppIcon(byteArrayOf(1, 2, 3))
+
+        h.packageRepository.emit(
+            PackageListState.Content(serialA, PackageListScope.User, listOf(entry("com.acme.shop", "Shop").copy(icon = icon))),
+        )
+        h.settle()
+
+        h.viewModel.state.value.rows.single().icon shouldBe icon
     }
 
     @Test

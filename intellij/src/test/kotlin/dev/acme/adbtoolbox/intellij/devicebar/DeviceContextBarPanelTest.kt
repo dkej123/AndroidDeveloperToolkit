@@ -34,12 +34,33 @@ class DeviceContextBarPanelTest : BasePlatformTestCase() {
         assertTrue(panel.selectorText.contains("No device", ignoreCase = true))
     }
 
+    fun `test attached but unselected devices invite opening the picker`() {
+        var toggles = 0
+        val panel = DeviceContextBarPanel(onToggle = { toggles++ }, onRefresh = {})
+
+        panel.update(DeviceBarPresentation.SelectDevice(deviceCount = 2))
+
+        assertEquals("2 devices — select one", panel.selectorText)
+        assertFalse(panel.selectorText.contains("No device", ignoreCase = true))
+        panel.selectorComponentForTest.doClick()
+        assertEquals(1, toggles)
+    }
+
+    fun `test a device discovery failure is shown instead of no device`() {
+        val panel = DeviceContextBarPanel(onToggle = {}, onRefresh = {})
+
+        panel.update(DeviceBarPresentation.Error("adb executable not found (tried: PathFallback)"))
+
+        assertEquals("adb executable not found (tried: PathFallback)", panel.selectorText)
+    }
+
     fun `test online state renders the device identity and a separate online count`() {
         val panel = DeviceContextBarPanel(onToggle = {}, onRefresh = {})
 
         panel.update(DeviceBarPresentation.Online(device(), onlineCount = 3))
 
-        assertEquals("Pixel_5", panel.selectorText)
+        // adb's `model:Pixel_5` token is shown as the model name users know.
+        assertEquals("Pixel 5", panel.selectorText)
         assertEquals(serial.toString(), panel.serialText)
         assertEquals("3 online", panel.onlineCountText)
     }

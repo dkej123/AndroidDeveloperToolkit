@@ -4,6 +4,7 @@ import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBPanel
 import com.intellij.util.ui.JBUI
 import dev.acme.adbtoolbox.application.devicefacts.DeviceFactsViewState
+import dev.acme.adbtoolbox.application.devicefacts.DeviceSectionMeta
 import dev.acme.adbtoolbox.domain.devicefacts.DeviceFactId
 import dev.acme.adbtoolbox.domain.devicefacts.DeviceFactState
 import dev.acme.adbtoolbox.domain.devicefacts.DeviceFactValue
@@ -86,6 +87,10 @@ class DeviceFactsPanel(
 
     val copyReportButton = linkButton("Copy report") { onCopyReport() }.apply { isEnabled = false }
 
+    // Header meta text comes from DeviceSectionMetaViewModel (resolved scrcpy, effective capture dir).
+    private val mirroringMetaLabel = DesignSections.metaLabel("scrcpy", 9.5f)
+    private val captureMetaLabel = DesignSections.metaLabel("", 9.5f)
+
     private val factsGrid = JBPanel<Nothing>(GridLayout(0, 3, AdbToolboxTheme.Spacing.s4, AdbToolboxTheme.Spacing.s4)).apply {
         isOpaque = false
         alignmentX = Component.LEFT_ALIGNMENT
@@ -101,8 +106,8 @@ class DeviceFactsPanel(
         add(JBPanel<Nothing>().apply {
             layout = BoxLayout(this, BoxLayout.Y_AXIS)
             isOpaque = false
-            add(section("Mirroring", "scrcpy 2.7", mirroringSlot))
-            add(section("Capture", "~/Desktop", captureSlot))
+            add(section("Mirroring", mirroringMetaLabel, mirroringSlot))
+            add(section("Capture", captureMetaLabel, captureSlot))
             add(deviceSection())
         }, BorderLayout.NORTH)
     }
@@ -181,8 +186,13 @@ class DeviceFactsPanel(
         }
     }
 
-    private fun section(title: String, meta: String, body: JComponent): JPanel =
-        DesignSections.section(DesignSections.header(DesignSections.titleLabel(title), DesignSections.metaLabel(meta, 9.5f)), body)
+    fun updateSectionMeta(meta: DeviceSectionMeta) {
+        mirroringMetaLabel.text = meta.mirroring
+        captureMetaLabel.text = meta.capture
+    }
+
+    private fun section(title: String, meta: JBLabel, body: JComponent): JPanel =
+        DesignSections.section(DesignSections.header(DesignSections.titleLabel(title), meta), body)
 
     // The Device header keeps "Copy report" next to its title (`sectionHeaderStyle` gap 8, no spacer).
     private fun deviceSection(): JPanel = DesignSections.section(

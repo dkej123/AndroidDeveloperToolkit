@@ -202,11 +202,66 @@ class SelectedDeviceViewModelTest {
         }
 
     @Test
-    fun `on startup with no persisted serial, state is None, never auto-selected`() = runTest {
-        val repository = FakeDeviceRepository(listOf(device(serialA)))
+    fun `on startup with no persisted serial and exactly one online device, that device is selected and persisted`() =
+        runTest {
+            val persistence = FakeDeviceSelectionPersistence()
+            val repository = FakeDeviceRepository(listOf(device(serialA)))
+            val (scope, _, viewModel) = harness(persistence = persistence, repository = repository)
+
+            scope.advanceTimeBy(1)
+            scope.runCurrent()
+
+            viewModel.state.value shouldBe SelectedDeviceState.Online(device(serialA))
+            persistence.writeCompletions.last() shouldBe serialA
+        }
+
+    @Test
+    fun `a single device that comes online after startup is selected when nothing was chosen`() = runTest {
+        val repository = FakeDeviceRepository()
+        val (scope, _, viewModel) = harness(repository = repository)
+        scope.advanceTimeBy(1)
+        scope.runCurrent()
+        viewModel.state.value shouldBe SelectedDeviceState.None
+
+        repository.emit(listOf(device(serialA)))
+        scope.runCurrent()
+
+        viewModel.state.value shouldBe SelectedDeviceState.Online(device(serialA))
+    }
+
+    @Test
+    fun `a single unauthorized device is never auto-selected`() = runTest {
+        val repository = FakeDeviceRepository(listOf(device(serialA, DeviceConnectionState.Unauthorized)))
         val (scope, _, viewModel) = harness(repository = repository)
 
         scope.advanceTimeBy(1)
+        scope.runCurrent()
+
+        viewModel.state.value shouldBe SelectedDeviceState.None
+    }
+
+    @Test
+    fun `a persisted serial that is disconnected is never replaced by the only online device`() = runTest {
+        val persistence = FakeDeviceSelectionPersistence(initial = serialA)
+        val repository = FakeDeviceRepository(listOf(device(serialB)))
+        val (scope, _, viewModel) = harness(persistence = persistence, repository = repository)
+
+        scope.advanceTimeBy(1)
+        scope.runCurrent()
+
+        viewModel.state.value shouldBe SelectedDeviceState.Disconnected(serialA)
+    }
+
+    @Test
+    fun `after an explicit ClearSelection the only device is not selected again automatically`() = runTest {
+        val repository = FakeDeviceRepository(listOf(device(serialA)))
+        val (scope, _, viewModel) = harness(repository = repository)
+        scope.advanceTimeBy(1)
+        scope.runCurrent()
+
+        viewModel.handle(SelectedDeviceIntent.ClearSelection)
+        scope.runCurrent()
+        repository.emit(listOf(device(serialA)))
         scope.runCurrent()
 
         viewModel.state.value shouldBe SelectedDeviceState.None

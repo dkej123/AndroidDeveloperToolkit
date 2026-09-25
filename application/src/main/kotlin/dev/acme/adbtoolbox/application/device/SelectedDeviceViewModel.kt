@@ -19,8 +19,14 @@ import kotlinx.coroutines.launch
 
 /**
  * Owns the one explicit selected-device context for a project (task 009), reduced from
- * [deviceRepository]'s live [DeviceRepository.devices] and a persisted/user-chosen [DeviceSerial]
- * (never an implicit first/only device — adb-development explicitly rejects that pattern).
+ * [deviceRepository]'s live [DeviceRepository.devices] and a persisted/user-chosen [DeviceSerial].
+ *
+ * **Single-device default** (`design/designs/ADB Toolbox IA.dc.html`: "with one device the bar is
+ * a read-only summary"): once restore has resolved with nothing chosen, and the user has not
+ * explicitly cleared the selection, exactly one *online* device is selected and persisted as the
+ * explicit context. Every action still receives that exact serial (never a lazily resolved "current
+ * device"); with two or more devices, or a persisted serial that is currently absent, nothing is
+ * chosen on the user's behalf.
  * [scope]/[dispatchers] follow the same feature-local-child-scope/dispatcher-injection seam as
  * [dev.acme.adbtoolbox.application.shell.ShellViewModel] (ADR 0004).
  *
@@ -48,6 +54,10 @@ class SelectedDeviceViewModel(
     @Volatile
     private var explicitSelectionHandled = false
 
+    /** Set by an explicit [SelectedDeviceIntent.ClearSelection]; disables the single-device default. */
+    @Volatile
+    private var selectionClearedByUser = false
+
     val state: StateFlow<SelectedDeviceState> =
         combine(deviceRepository.devices, _selectedSerial, _restored, _error, ::reduce)
             .stateIn(scope, SharingStarted.Eagerly, SelectedDeviceState.Loading)
@@ -57,12 +67,21 @@ class SelectedDeviceViewModel(
         scope.launch(dispatchers.io) {
             writeRequests.collectLatest { serial -> persistence.writeSelectedSerial(serial) }
         }
+        scope.launch(dispatchers.default) {
+            combine(deviceRepository.devices, _selectedSerial, _restored) { devices, serial, restored ->
+                if (!restored || serial != null || selectionClearedByUser) return@combine null
+                devices.singleOrNull()?.takeIf { it.state == DeviceConnectionState.Online }?.serial
+            }.collect { single -> if (single != null) select(single) }
+        }
     }
 
     fun handle(intent: SelectedDeviceIntent) {
         when (intent) {
             is SelectedDeviceIntent.Select -> select(intent.serial)
-            SelectedDeviceIntent.ClearSelection -> select(null)
+            SelectedDeviceIntent.ClearSelection -> {
+                selectionClearedByUser = true
+                select(null)
+            }
             SelectedDeviceIntent.RetryRestore -> restore()
         }
     }

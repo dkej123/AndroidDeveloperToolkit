@@ -157,7 +157,8 @@ gap 8, padding 12, `adb-pulse` 1.4s ease-in-out infinite).
   1px `borderStrong`, 9px circle glyph, placeholder "Filter packages…", "×" clear when non-empty)
   + 22px icon button "Show system packages".
 - List (flex 1, scroll, padding 4px 6px, gap 1): rows 34px, radius 5, gap 7:
-  16px app tile (radius 4; debuggable = `brandBg` + `brandBorder`, else `header` + `border`) ·
+  16px app tile — the app's own launcher icon when the device reports one (ADR 0010), otherwise
+  radius 4; debuggable = `brandBg` + `brandBorder`, else `header` + `border` ·
   two-line text (label 11.5px, 700 when selected; package mono 9.5px `textFaint`, both ellipsised) ·
   "debug" tag (9px/700 teal on `brandBg`, 1px `brandBorder`, radius 3) for debuggable builds.
   Selected row: `accentBg` + 1px `accentBorder`. Filter matches package **and** label.

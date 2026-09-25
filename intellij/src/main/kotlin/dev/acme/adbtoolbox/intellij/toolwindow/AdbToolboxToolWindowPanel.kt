@@ -7,11 +7,12 @@ import dev.acme.adbtoolbox.application.apps.AppsViewModel
 import dev.acme.adbtoolbox.application.apps.ClearDataViewModel
 import dev.acme.adbtoolbox.application.apps.UninstallViewModel
 import dev.acme.adbtoolbox.application.capture.CaptureViewModel
-import dev.acme.adbtoolbox.application.devicebar.DeviceBarViewModel
-import dev.acme.adbtoolbox.application.devicebar.DeviceBarIntent
 import dev.acme.adbtoolbox.application.deviceactions.DeviceActionsViewModel
+import dev.acme.adbtoolbox.application.devicebar.DeviceBarIntent
+import dev.acme.adbtoolbox.application.devicebar.DeviceBarViewModel
 import dev.acme.adbtoolbox.application.devicecontext.DeviceContextAggregator
 import dev.acme.adbtoolbox.application.devicefacts.DeviceFactsViewModel
+import dev.acme.adbtoolbox.application.devicefacts.DeviceSectionMeta
 import dev.acme.adbtoolbox.application.display.QuickTogglesViewModel
 import dev.acme.adbtoolbox.application.display.density.DensityViewModel
 import dev.acme.adbtoolbox.application.display.fontscale.FontScaleViewModel
@@ -23,10 +24,12 @@ import dev.acme.adbtoolbox.application.network.ProxyController
 import dev.acme.adbtoolbox.application.recording.RecordingViewModel
 import dev.acme.adbtoolbox.application.shell.ShellViewModel
 import dev.acme.adbtoolbox.domain.devicecontext.OverrideSummaryContributor
+import dev.acme.adbtoolbox.domain.diagnostics.DiagnosticsLog
+import dev.acme.adbtoolbox.domain.diagnostics.NoOpDiagnosticsLog
 import dev.acme.adbtoolbox.domain.dispatch.DispatcherProvider
 import dev.acme.adbtoolbox.domain.nav.ViewId
-import dev.acme.adbtoolbox.intellij.capture.CaptureCoordinator
 import dev.acme.adbtoolbox.intellij.apps.AppsCoordinator
+import dev.acme.adbtoolbox.intellij.capture.CaptureCoordinator
 import dev.acme.adbtoolbox.intellij.deviceactions.DeviceActionsCoordinator
 import dev.acme.adbtoolbox.intellij.devicebar.DeviceContextBarCoordinator
 import dev.acme.adbtoolbox.intellij.devicefacts.DeviceFactsCoordinator
@@ -42,7 +45,11 @@ import dev.acme.adbtoolbox.intellij.recording.RecordingCoordinator
 import java.awt.BorderLayout
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * The tool-window content root. Mounts [host] — task 010's neutral [AdbToolboxHostPanel] with its
@@ -139,6 +146,8 @@ class AdbToolboxToolWindowPanel(
     openSettings: () -> Unit = {},
     openMirroringOptions: () -> Unit = {},
     onResetOverrides: () -> Unit = {},
+    diagnosticsLog: DiagnosticsLog = NoOpDiagnosticsLog,
+    sectionMeta: StateFlow<DeviceSectionMeta>? = null,
 ) : JBPanel<AdbToolboxToolWindowPanel>(BorderLayout()), Disposable {
 
     val host = AdbToolboxHostPanel()
@@ -170,6 +179,17 @@ class AdbToolboxToolWindowPanel(
         scope = captureScope,
         dispatchers = dispatchers,
     )
+
+    init {
+        sectionMeta
+            ?.onEach { meta ->
+                withContext(dispatchers.main) {
+                    deviceFactsCoordinator.panel.updateSectionMeta(meta)
+                    captureCoordinator.view.setDestinationLabel(meta.capture)
+                }
+            }
+            ?.launchIn(deviceFactsScope)
+    }
 
     // Mounted after deviceFactsCoordinator, into its already-registered deviceActionsSlot.
     private val deviceActionsCoordinator = DeviceActionsCoordinator(
@@ -226,6 +246,7 @@ class AdbToolboxToolWindowPanel(
         aggregator = deviceContextAggregator,
         scope = logcatScope,
         dispatchers = dispatchers,
+        diagnosticsLog = diagnosticsLog,
     )
 
     init {

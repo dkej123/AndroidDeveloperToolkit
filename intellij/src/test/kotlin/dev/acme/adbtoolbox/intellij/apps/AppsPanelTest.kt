@@ -214,7 +214,8 @@ class AppsPanelTest : BasePlatformTestCase() {
 
         panel.updateLifecycle(AppLifecycleViewState(controlPolicy = ControlPolicy.Enabled, selectedPackageName = "com.acme.shop", busy = false))
 
-        assertEquals("Force-stop, then launch the main activity  ⇧⌘R", panel.restartButtonForTest.toolTipText)
+        assertTrue(panel.restartButtonForTest.toolTipText.startsWith("Force-stop, then launch the main activity"))
+        if (!com.intellij.openapi.util.SystemInfo.isMac) assertFalse('⌘' in panel.restartButtonForTest.toolTipText)
         assertEquals("am force-stop — leaves data intact", panel.forceStopButtonForTest.toolTipText)
         assertEquals("monkey launch of the main activity", panel.launchButtonForTest.toolTipText)
     }

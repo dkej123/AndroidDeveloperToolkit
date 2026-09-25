@@ -18,6 +18,10 @@ import dev.acme.adbtoolbox.domain.device.Device
 sealed interface DeviceBarPresentation {
     data object Loading : DeviceBarPresentation
     data object NoDevice : DeviceBarPresentation
+
+    /** Devices are attached but none is selected yet (only reachable with two or more devices,
+     * or after the user explicitly cleared the selection); the bar invites opening the picker. */
+    data class SelectDevice(val deviceCount: Int) : DeviceBarPresentation
     data class Online(val device: Device, val onlineCount: Int) : DeviceBarPresentation
     data class Unauthorized(val device: Device) : DeviceBarPresentation
     data class Offline(val device: Device) : DeviceBarPresentation

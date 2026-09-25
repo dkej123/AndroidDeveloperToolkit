@@ -56,8 +56,27 @@ class ClearDataUseCaseTest {
     }
 
     @Test
-    fun `a null exit code remains an explicit unknown-status failure even with a Success body`() = runTest {
-        val transport = FakeAdbTransport(textScript = { AdbTextResult(AdbOutcome.Completed(null), "Success", "") })
+    fun `without an exit code (ddmlib) pm clear's own Success body decides success`() = runTest {
+        // ADR 0005: ddmlib has no OS exit code; its result distinguishes succeeded / failed with
+        // message / unknown from the output. In Android Studio every Clear data used to end in an
+        // "unknown exit status" error although pm had printed Success (docs/e2e-testing.md).
+        val transport = FakeAdbTransport(textScript = { AdbTextResult(AdbOutcome.Completed(null), "Success\n", "") })
+        val useCase = ClearDataUseCase(transport)
+
+        useCase.clearData(SERIAL, PACKAGE) shouldBe ClearDataResult.Success
+    }
+
+    @Test
+    fun `without an exit code a Failed body is a failure carrying pm's message`() = runTest {
+        val transport = FakeAdbTransport(textScript = { AdbTextResult(AdbOutcome.Completed(null), "Failed", "") })
+        val useCase = ClearDataUseCase(transport)
+
+        useCase.clearData(SERIAL, PACKAGE) shouldBe ClearDataResult.Failure("Failed")
+    }
+
+    @Test
+    fun `without an exit code an unrecognised body stays an explicit unknown-status failure`() = runTest {
+        val transport = FakeAdbTransport(textScript = { AdbTextResult(AdbOutcome.Completed(null), "", "") })
         val useCase = ClearDataUseCase(transport)
 
         useCase.clearData(SERIAL, PACKAGE) shouldBe

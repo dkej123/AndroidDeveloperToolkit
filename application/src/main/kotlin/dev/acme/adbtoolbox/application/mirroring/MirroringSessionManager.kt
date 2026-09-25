@@ -125,10 +125,15 @@ class MirroringSessionManager(
 
                 is DiscoveryOutcome.Found -> {
                     val tool = outcome.tool
+                    // scrcpy runs `adb` itself, from $ADB or PATH. An IDE launched from the desktop
+                    // usually lacks the shell PATH, so hand scrcpy the adb this plugin resolved —
+                    // also keeping both on the same adb server/version.
+                    val adb = (toolLocator.locate(ToolId.Adb) as? DiscoveryOutcome.Found)?.tool?.path?.value
                     val request = ProcessRequest(
                         command = ProcessCommand(
                             executable = tool.path.value,
                             arguments = buildScrcpyArguments(serial, options),
+                            environment = if (adb != null) mapOf("ADB" to adb) else emptyMap(),
                         ),
                         outputKind = ProcessOutputKind.Text,
                         timeout = null,
@@ -136,7 +141,9 @@ class MirroringSessionManager(
 
                     var enteredRunning = false
                     var finalOutcome: ProcessOutcome? = null
+                    var firstError: String? = null
                     processExecutor.execute(request).collect { event ->
+                        if (firstError == null) firstError = scrcpyErrorMessage(event)
                         when (event) {
                             is ProcessEvent.Completed -> finalOutcome = event.outcome
                             else -> if (!enteredRunning) {
@@ -146,7 +153,7 @@ class MirroringSessionManager(
                         }
                     }
 
-                    entry.state.value = resolveExitState(serial, finalOutcome, entry.stopRequested)
+                    entry.state.value = resolveExitState(serial, finalOutcome, entry.stopRequested, firstError)
                 }
             }
         } catch (cancellation: CancellationException) {
@@ -158,10 +165,21 @@ class MirroringSessionManager(
         }
     }
 
+    /** scrcpy reports failures as `ERROR: <message>` lines (on stderr, or stdout on some builds). */
+    private fun scrcpyErrorMessage(event: ProcessEvent): String? {
+        val line = when (event) {
+            is ProcessEvent.StderrText -> event.line
+            is ProcessEvent.StdoutText -> event.line
+            else -> return null
+        }
+        return line.trim().takeIf { it.startsWith("ERROR:") }?.removePrefix("ERROR:")?.trim()?.ifEmpty { null }
+    }
+
     private fun resolveExitState(
         serial: DeviceSerial,
         outcome: ProcessOutcome?,
         stopRequested: Boolean,
+        errorDetail: String?,
     ): MirroringSessionState {
         if (stopRequested) return MirroringSessionState.Exited(serial, MirroringExitReason.Requested)
         return when (outcome) {
@@ -169,7 +187,7 @@ class MirroringSessionManager(
                 if (outcome.exitCode == 0) {
                     MirroringSessionState.Exited(serial, MirroringExitReason.ExternalWindowExit)
                 } else {
-                    MirroringSessionState.Exited(serial, MirroringExitReason.ProcessExited(outcome.exitCode))
+                    MirroringSessionState.Exited(serial, MirroringExitReason.ProcessExited(outcome.exitCode, errorDetail))
                 }
 
             ProcessOutcome.TimedOut -> MirroringSessionState.Exited(serial, MirroringExitReason.Timeout)

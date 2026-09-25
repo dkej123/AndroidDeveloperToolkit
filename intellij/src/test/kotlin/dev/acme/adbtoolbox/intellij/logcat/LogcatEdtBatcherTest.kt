@@ -30,6 +30,26 @@ private class QueuedLogcatEdtScheduler : LogcatEdtScheduler {
 
 class LogcatEdtBatcherTest : BasePlatformTestCase() {
 
+    fun `test a drain that holds the EDT past the threshold is logged with its row count`() {
+        val scheduler = QueuedLogcatEdtScheduler()
+        val log = dev.acme.adbtoolbox.domain.diagnostics.RecordingDiagnosticsLog()
+        var now = 0L
+        val batcher = LogcatEdtBatcher(
+            LogcatVirtualListModel { true },
+            scheduler,
+            log = log,
+            nanoTime = { now.also { now += 80_000_000 } },
+        )
+
+        repeat(3) { batcher.submit(LogcatRenderBatch(listOf(row(it.toLong() + 1)))) }
+        scheduler.runAll()
+
+        val entry = log.inCategory(dev.acme.adbtoolbox.domain.diagnostics.DiagCategory.LOGCAT).single { it.message == "slow drain" }
+        assertEquals(dev.acme.adbtoolbox.domain.diagnostics.DiagLevel.WARN, entry.level)
+        assertEquals(3, entry.fields["rows"])
+        assertEquals(80L, entry.fields["ms"])
+    }
+
     fun `test ten thousand single-row submissions queue one task initially and drain in bounded chunks`() {
         val scheduler = QueuedLogcatEdtScheduler()
         val model = LogcatVirtualListModel { true }

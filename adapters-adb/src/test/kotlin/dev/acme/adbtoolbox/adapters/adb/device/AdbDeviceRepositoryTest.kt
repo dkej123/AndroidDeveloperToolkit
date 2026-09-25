@@ -250,4 +250,55 @@ class AdbDeviceRepositoryTest {
 
         transport.textRequests.size shouldBe callsBeforeCancel
     }
+
+    @Test
+    fun `a failed devices query is reported as a list error and cleared by the next successful query`() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        var failing = true
+        val transport = FakeAdbTransport(
+            textScript = {
+                if (failing) {
+                    AdbTextResult(AdbOutcome.TransportFailure("adb executable not found (tried: PathFallback)"), "", "")
+                } else {
+                    textResult(ONLINE_DEVICE_OUTPUT)
+                }
+            },
+        )
+        val repository = AdbDeviceRepository(
+            scope = backgroundScope,
+            dispatchers = TestDispatcherProviderFixture(dispatcher),
+            binaryTransport = transport,
+            pollInterval = 1.hours,
+            coalesceWindow = 10.milliseconds,
+        )
+
+        settle(20.milliseconds)
+        repository.listError.value shouldBe "adb executable not found (tried: PathFallback)"
+
+        failing = false
+        repository.refresh()
+        settle(20.milliseconds)
+
+        repository.listError.value shouldBe null
+        repository.devices.value.size shouldBe 1
+    }
+
+    @Test
+    fun `a non-zero adb exit reports its stderr as the list error`() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val transport = FakeAdbTransport(
+            textScript = { AdbTextResult(AdbOutcome.Completed(1), "", "adb: cannot connect to daemon\n") },
+        )
+        val repository = AdbDeviceRepository(
+            scope = backgroundScope,
+            dispatchers = TestDispatcherProviderFixture(dispatcher),
+            binaryTransport = transport,
+            pollInterval = 1.hours,
+            coalesceWindow = 10.milliseconds,
+        )
+
+        settle(20.milliseconds)
+
+        repository.listError.value shouldBe "adb devices failed: adb: cannot connect to daemon"
+    }
 }

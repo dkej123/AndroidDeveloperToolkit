@@ -1,5 +1,6 @@
 package dev.acme.adbtoolbox.intellij.logcat
 
+import dev.acme.adbtoolbox.intellij.ui.common.ShortcutHints
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBPanel
 import com.intellij.ui.components.JBTextField
@@ -84,8 +85,8 @@ class LogcatPanel(
         isOpaque = false
         border = BorderFactory.createEmptyBorder()
         font = AdbToolboxTheme.Typography.body.deriveFont(JBUI.scale(11f))
-        emptyText.text = "Search log…  ⌘F"
-        toolTipText = "Search log…  ⌘F"
+        emptyText.text = ShortcutHints.withKeyStroke("Search log…", focusSearchKeyStroke())
+        toolTipText = ShortcutHints.withKeyStroke("Search log…", focusSearchKeyStroke())
         getAccessibleContext().accessibleName = "Search log"
         document.addDocumentListener(object : DocumentListener {
             override fun insertUpdate(e: DocumentEvent) = onQueryChange(text)
@@ -284,10 +285,16 @@ class LogcatPanel(
 
         val bar = scrollPane.verticalScrollBar
         bar.addAdjustmentListener(AdjustmentListener {
-            if (programmaticScroll) return@AdjustmentListener
-            val atBottom = bar.value + bar.visibleAmount >= bar.maximum
-            if (!atBottom) onManualScrollAway()
+            val scrolledAway = followTracker.onAdjusted(bar.value, bar.visibleAmount, bar.maximum)
+            if (programmaticScroll || !isShowing) return@AdjustmentListener
+            if (scrolledAway) onManualScrollAway()
         })
+        // Rows keep arriving while another view is shown; catch up when Logcat becomes visible.
+        addHierarchyListener { event ->
+            if (event.changeFlags and java.awt.event.HierarchyEvent.SHOWING_CHANGED.toLong() != 0L && isShowing && following) {
+                SwingUtilities.invokeLater { scrollToBottom() }
+            }
+        }
 
         virtualList.inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_SPACE, 0), "logcat.togglePause")
         virtualList.actionMap.put("logcat.togglePause", actionOf { onTogglePause() })
@@ -300,12 +307,7 @@ class LogcatPanel(
         // collides with typing plain text into [searchField]. Uses the platform menu-shortcut mask
         // (⌘ on macOS, Ctrl elsewhere) resolved from `os.name` rather than
         // `Toolkit.getMenuShortcutKeyMaskEx()`, which throws `HeadlessException` in headless test JVMs.
-        val menuShortcutMask = if (System.getProperty("os.name").orEmpty().contains("Mac", ignoreCase = true)) {
-            java.awt.event.InputEvent.META_DOWN_MASK
-        } else {
-            java.awt.event.InputEvent.CTRL_DOWN_MASK
-        }
-        val focusSearchKeyStroke = KeyStroke.getKeyStroke(KeyEvent.VK_F, menuShortcutMask)
+        val focusSearchKeyStroke = focusSearchKeyStroke()
         getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT)
             .put(focusSearchKeyStroke, "logcat.focusSearch")
         actionMap.put("logcat.focusSearch", actionOf { focusSearchField() })
@@ -315,6 +317,17 @@ class LogcatPanel(
         })
     }
 
+    /** ⌘F on macOS, Ctrl+F elsewhere; the mask comes from `os.name` because
+     * `Toolkit.getMenuShortcutKeyMaskEx()` throws `HeadlessException` in headless test JVMs. */
+    private fun focusSearchKeyStroke(): KeyStroke {
+        val menuShortcutMask = if (System.getProperty("os.name").orEmpty().contains("Mac", ignoreCase = true)) {
+            java.awt.event.InputEvent.META_DOWN_MASK
+        } else {
+            java.awt.event.InputEvent.CTRL_DOWN_MASK
+        }
+        return KeyStroke.getKeyStroke(KeyEvent.VK_F, menuShortcutMask)
+    }
+
     /** `design/README.md` Interactions: "⌘F ... focuses Logcat search field". */
     fun focusSearchField() {
         searchField.requestFocusInWindow()
@@ -322,11 +335,17 @@ class LogcatPanel(
     }
 
     private var programmaticScroll = false
+    private val followTracker = FollowScrollTracker()
+
+    /** Whether the last rendered state follows the newest line (not paused, autoscroll on). */
+    private var following = true
 
     fun scrollToBottom() {
         if (!SwingUtilities.isEventDispatchThread()) return
         programmaticScroll = true
-        scrollPane.verticalScrollBar.value = scrollPane.verticalScrollBar.maximum
+        val bar = scrollPane.verticalScrollBar
+        bar.value = bar.maximum
+        followTracker.reset(bar.value)
         programmaticScroll = false
     }
 
@@ -356,6 +375,7 @@ class LogcatPanel(
     internal val footerBufferLabelForTest: JBLabel get() = footerBufferLabel
 
     fun update(state: LogcatControlsState) {
+        following = state.follow && state.pauseState !is LogcatPauseState.Paused
         if (searchField.text != state.query) searchField.text = state.query
         clearQueryButton.isVisible = state.query.isNotEmpty()
 

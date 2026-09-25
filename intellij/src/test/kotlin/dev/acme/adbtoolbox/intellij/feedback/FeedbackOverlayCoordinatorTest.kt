@@ -1,5 +1,6 @@
 package dev.acme.adbtoolbox.intellij.feedback
 
+import com.intellij.openapi.application.EDT
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import dev.acme.adbtoolbox.application.feedback.FeedbackViewModel
 import dev.acme.adbtoolbox.application.feedback.FeedbackViewState
@@ -35,7 +36,9 @@ class FeedbackOverlayCoordinatorTest : BasePlatformTestCase() {
     private class TestDispatchers : DispatcherProvider {
         override val default = Dispatchers.Default
         override val io = Dispatchers.IO
-        override val main = Dispatchers.Default
+        // Like production: collector renders are queued on the EDT behind the test body, so a
+        // direct render() in a test is never overwritten by a background initial-state render.
+        override val main = Dispatchers.EDT
     }
 
     private fun coordinator(host: AdbToolboxHostPanel): FeedbackOverlayCoordinator {

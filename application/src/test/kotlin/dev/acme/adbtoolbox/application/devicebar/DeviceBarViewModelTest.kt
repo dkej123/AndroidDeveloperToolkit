@@ -76,8 +76,33 @@ class DeviceBarViewModelTest {
     }
 
     @Test
-    fun `no persisted selection and devices present maps to NoDevice, never auto-selecting`() = runTest {
+    fun `no selection with several devices present asks the user to pick one instead of reporting no device`() = runTest {
         val harness = Harness(repository = FakeDeviceRepository(listOf(device(serialUsbA), device(serialUsbB))))
+        harness.settle()
+
+        harness.viewModel.state.value.bar shouldBe DeviceBarPresentation.SelectDevice(deviceCount = 2)
+    }
+
+    @Test
+    fun `no devices and no adb failure maps to NoDevice`() = runTest {
+        val harness = Harness()
+        harness.settle()
+
+        harness.viewModel.state.value.bar shouldBe DeviceBarPresentation.NoDevice
+    }
+
+    @Test
+    fun `a failing device list query is surfaced instead of reporting no device`() = runTest {
+        val harness = Harness()
+        harness.settle()
+
+        harness.repository.emitListError("adb executable not found (tried: PathFallback)")
+        harness.settle()
+
+        harness.viewModel.state.value.bar shouldBe
+            DeviceBarPresentation.Error("adb executable not found (tried: PathFallback)")
+
+        harness.repository.emitListError(null)
         harness.settle()
 
         harness.viewModel.state.value.bar shouldBe DeviceBarPresentation.NoDevice
@@ -227,7 +252,7 @@ class DeviceBarViewModelTest {
         harness.settle()
 
         harness.viewModel.state.value.picker.isOpen shouldBe false
-        harness.viewModel.state.value.bar shouldBe DeviceBarPresentation.NoDevice
+        harness.viewModel.state.value.bar shouldBe DeviceBarPresentation.SelectDevice(deviceCount = 2)
     }
 
     @Test

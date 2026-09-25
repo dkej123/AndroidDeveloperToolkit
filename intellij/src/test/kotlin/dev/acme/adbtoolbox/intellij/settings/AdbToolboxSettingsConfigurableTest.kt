@@ -12,6 +12,28 @@ import javax.swing.JTextField
 
 class AdbToolboxSettingsConfigurableTest : BasePlatformTestCase() {
 
+    private class FakeDiagnosticsPreferences(override var verbose: Boolean = false) : DiagnosticsPreferences
+
+    fun `test the verbose diagnostics checkbox reflects, modifies and applies the preference`() {
+        val preferences = FakeDiagnosticsPreferences(verbose = false)
+        val configurable = AdbToolboxSettingsConfigurable(FakeSettingsEditorBackend(), diagnosticsPreferences = preferences)
+        val component = configurable.createComponent()
+        val checkbox = descendants(component).filterIsInstance<javax.swing.JCheckBox>().single { it.name == "verboseDiagnosticsCheckBox" }
+
+        assertFalse(checkbox.isSelected)
+        checkbox.isSelected = true
+        assertTrue(configurable.isModified)
+
+        configurable.apply()
+
+        assertTrue(preferences.verbose)
+        assertFalse(configurable.isModified)
+        configurable.disposeUIResources()
+    }
+
+    private fun descendants(component: Component): List<Component> =
+        listOf(component) + ((component as? Container)?.components?.flatMap(::descendants) ?: emptyList())
+
     fun `test path and buffer fields use the design system's mono font for copy-paste values`() {
         val configurable = AdbToolboxSettingsConfigurable(FakeSettingsEditorBackend())
 

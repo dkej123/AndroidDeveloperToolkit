@@ -82,6 +82,16 @@ object LogcatRowStyle {
         return "<html>$body</html>"
     }
 
+    /** Upper bound of an unwrapped row's width in monospace cells: [rowHtml]'s visible text with
+     * every optional column shown and one-cell gaps between segments. */
+    fun unwrappedCells(row: LogcatRenderRow): Int {
+        var cells = row.message.length
+        if (row.severity != null) cells += 2
+        row.timestamp?.let { cells += it.length + 1 }
+        if (row.tag != null) cells += TAG_COLUMN_CHARS + 1
+        return cells
+    }
+
     private fun messageHtml(row: LogcatRenderRow, wrapLines: Boolean): String {
         val highlighted = highlightedEscaped(row.message, row.matchSpans)
         val withLineBreaks = if (wrapLines) highlighted.replace("\n", "<br>") else highlighted.replace("\n", " ")

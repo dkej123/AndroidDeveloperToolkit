@@ -2,6 +2,7 @@ package dev.acme.adbtoolbox.intellij.devicefacts
 
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import dev.acme.adbtoolbox.application.devicefacts.DeviceFactsViewState
+import dev.acme.adbtoolbox.application.devicefacts.DeviceSectionMeta
 import dev.acme.adbtoolbox.domain.adb.DeviceSerial
 import dev.acme.adbtoolbox.domain.devicefacts.DeviceFactId
 import dev.acme.adbtoolbox.domain.devicefacts.DeviceFactState
@@ -77,6 +78,17 @@ class DeviceFactsPanelTest : BasePlatformTestCase() {
         assertContainsElements(panel.visibleTexts(), "Mirroring", "Capture", "Device", "Copy report")
         assertNotSame(panel.mirroringSlot, panel.captureSlot)
         assertNotSame(panel.captureSlot, panel.deviceActionsSlot)
+    }
+
+    fun `test section headers show the resolved scrcpy version and capture directory`() {
+        // Regression (docs/e2e-testing.md): the headers were fixed "scrcpy 2.7" and "~/Desktop".
+        val panel = DeviceFactsPanel(onCopyReport = {})
+        panel.update(DeviceFactsViewState.Partial(DeviceFactsSnapshot.loading(serial)))
+
+        panel.updateSectionMeta(DeviceSectionMeta(mirroring = "scrcpy 4.1", capture = "~/captures"))
+
+        assertContainsElements(panel.visibleTexts(), "scrcpy 4.1", "~/captures")
+        assertDoesntContain(panel.visibleTexts(), "scrcpy 2.7", "~/Desktop")
     }
 
     fun `test no-device state replaces content with the supplied empty state actions and copy`() {

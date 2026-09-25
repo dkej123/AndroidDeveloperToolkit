@@ -160,6 +160,15 @@ class PresetChip<T : Any> internal constructor(
     val value: T get() = choice.value
     val kind: PresetChipKind get() = choice.kind
 
+    /**
+     * Chips paint their own surface and border, so they keep the plain Basic UI. A theme's button UI
+     * (e.g. `DarculaButtonUI` in Android Studio) lays text out with its own wide insets and
+     * truncated every label ("0.8…", "Custo…") at the design's compact width.
+     */
+    override fun updateUI() {
+        setUI(javax.swing.plaf.basic.BasicToggleButtonUI())
+    }
+
     init {
         isOpaque = false
         isContentAreaFilled = false

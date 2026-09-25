@@ -22,6 +22,7 @@
                              instance="dev.acme.adbtoolbox.intellij.settings.AdbToolboxSettingsConfigurable"
                              id="dev.acme.adbtoolbox.settings"
                              displayName="ADB Toolbox"/>
+        <notificationGroup id="ADB Toolbox Diagnostics" displayType="BALLOON"/>
     </extensions>
 
     <!-- Task 018's global mirroring shortcut — forwards to the same MirroringViewModel.handle
@@ -29,6 +30,24 @@
          keymap entries give the suggested Mac chord and a Ctrl-based equivalent everywhere else,
          since IntelliJ's "meta" modifier only exists as a real key on macOS keymaps. -->
     <actions>
+        <!-- Diagnostics: a one-click bundle to attach to bug reports, a sampling performance
+             recording, and the log folder. Also offered in the tool window's gear menu. -->
+        <group id="AdbToolbox.Diagnostics" text="ADB Toolbox Diagnostics" popup="true">
+            <action id="AdbToolbox.CollectDiagnostics"
+                    class="dev.acme.adbtoolbox.intellij.diagnostics.CollectDiagnosticsAction"
+                    text="Collect Diagnostics…"
+                    description="Save ADB Toolbox logs, environment, adb state and IDE freeze dumps to one ZIP"/>
+            <action id="AdbToolbox.RecordPerformance"
+                    class="dev.acme.adbtoolbox.intellij.diagnostics.RecordPerformanceAction"
+                    text="Record Performance (60 s)"
+                    description="Sample all threads for 60 seconds and save a hotspot report"/>
+            <action id="AdbToolbox.OpenDiagnosticsLogFolder"
+                    class="dev.acme.adbtoolbox.intellij.diagnostics.OpenDiagnosticsLogFolderAction"
+                    text="Open Diagnostics Log Folder"
+                    description="Reveal the ADB Toolbox diagnostics log folder"/>
+            <add-to-group group-id="HelpMenu" anchor="last"/>
+        </group>
+
         <action id="dev.acme.adbtoolbox.ToggleMirroring"
                 class="dev.acme.adbtoolbox.intellij.mirroring.MirroringToggleAction"
                 text="Toggle Device Mirroring"

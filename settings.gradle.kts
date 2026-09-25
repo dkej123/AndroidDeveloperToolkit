@@ -21,3 +21,7 @@ dependencyResolutionManagement {
 // :intellij -> :application -> :domain, with :adapters-jvm/:adapters-adb depending on :domain only
 // and wired in by :intellij at the composition root.
 include(":domain", ":application", ":adapters-jvm", ":adapters-adb", ":intellij")
+
+// End-to-end suite against a real Android Studio + emulator (docs/e2e-testing.md). Test-only: it
+// depends on no production module and is excluded from `test`/`check`; run it with `:e2e:e2eTest`.
+include(":e2e")

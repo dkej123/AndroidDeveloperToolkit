@@ -117,7 +117,13 @@ class ProxyController(
             is ProxyIntent.EditPort -> editPort(intent.text)
             is ProxyIntent.SelectRecent -> selectRecent(intent.endpoint)
             ProxyIntent.UseComputerIp -> useComputerIp()
+            ProxyIntent.Refresh -> refresh()
         }
+    }
+
+    private fun refresh() {
+        val eligible = currentContext as? DeviceCommandContext.Eligible ?: return
+        enqueue(ProxyWorkItem.Read(eligible.serial, generation))
     }
 
     private fun onDeviceStateChanged(deviceState: SelectedDeviceState) {

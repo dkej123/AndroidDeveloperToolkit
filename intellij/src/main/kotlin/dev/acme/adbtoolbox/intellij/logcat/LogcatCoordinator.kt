@@ -1,5 +1,7 @@
 package dev.acme.adbtoolbox.intellij.logcat
 
+import dev.acme.adbtoolbox.domain.diagnostics.DiagnosticsLog
+import dev.acme.adbtoolbox.domain.diagnostics.NoOpDiagnosticsLog
 import com.intellij.openapi.Disposable
 import dev.acme.adbtoolbox.application.devicecontext.DeviceContextAggregator
 import dev.acme.adbtoolbox.application.logcat.LogcatControlsController
@@ -41,7 +43,8 @@ class LogcatCoordinator(
     private val scope: CoroutineScope,
     private val dispatchers: DispatcherProvider,
     val virtualList: LogcatVirtualList = LogcatVirtualList(),
-    private val edtBatcher: LogcatEdtBatcher = LogcatEdtBatcher(virtualList.virtualModel),
+    diagnosticsLog: DiagnosticsLog = NoOpDiagnosticsLog,
+    private val edtBatcher: LogcatEdtBatcher = LogcatEdtBatcher(virtualList.virtualModel, log = diagnosticsLog),
     badgeContributor: BadgeContributor = LogcatBadgeContributor(controller),
 ) : Disposable {
 

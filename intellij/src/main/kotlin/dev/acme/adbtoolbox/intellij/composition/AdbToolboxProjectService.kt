@@ -6,24 +6,28 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.extensions.PluginId
 import com.intellij.openapi.project.Project
+import com.intellij.util.EnvironmentUtil
 import dev.acme.adbtoolbox.adapters.adb.binary.BinaryAdbTransport
 import dev.acme.adbtoolbox.adapters.adb.ddmlib.DdmlibAdbTransport
 import dev.acme.adbtoolbox.adapters.adb.device.AdbDeviceRepository
 import dev.acme.adbtoolbox.adapters.adb.device.DdmlibDeviceChangeListenerSource
-import dev.acme.adbtoolbox.adapters.adb.packages.AdbPackageRepository
 import dev.acme.adbtoolbox.adapters.adb.discovery.DefaultToolLocator
+import dev.acme.adbtoolbox.adapters.adb.packages.AdbPackageRepository
+import dev.acme.adbtoolbox.adapters.adb.packages.AppInfoHelper
 import dev.acme.adbtoolbox.adapters.jvm.capture.DesktopRevealInFileManager
 import dev.acme.adbtoolbox.adapters.jvm.capture.SettingsBackedCaptureDestination
+import dev.acme.adbtoolbox.adapters.jvm.discovery.DefaultSdkLocationPlatformToolsSource
 import dev.acme.adbtoolbox.adapters.jvm.discovery.EnvironmentAndroidSdkPlatformToolsSource
 import dev.acme.adbtoolbox.adapters.jvm.discovery.JvmExecutableFileProbe
 import dev.acme.adbtoolbox.adapters.jvm.discovery.JvmHostPlatformProvider
 import dev.acme.adbtoolbox.adapters.jvm.discovery.JvmPathEnvironmentSource
-import dev.acme.adbtoolbox.adapters.jvm.process.JvmProcessExecutor
 import dev.acme.adbtoolbox.adapters.jvm.discovery.SettingsBackedConfiguredToolPathSource
 import dev.acme.adbtoolbox.adapters.jvm.network.JvmHostNetworkInfo
+import dev.acme.adbtoolbox.adapters.jvm.process.JvmProcessExecutor
 import dev.acme.adbtoolbox.adapters.jvm.settings.JvmDirectoryProbe
 import dev.acme.adbtoolbox.application.apps.AppLifecycleUseCase
 import dev.acme.adbtoolbox.application.apps.AppLifecycleViewModel
+import dev.acme.adbtoolbox.application.apps.AppsIntent
 import dev.acme.adbtoolbox.application.apps.AppsViewModel
 import dev.acme.adbtoolbox.application.apps.ClearDataUseCase
 import dev.acme.adbtoolbox.application.apps.ClearDataViewModel
@@ -33,20 +37,28 @@ import dev.acme.adbtoolbox.application.apps.UninstallViewModel
 import dev.acme.adbtoolbox.application.capture.CaptureScreenshotUseCase
 import dev.acme.adbtoolbox.application.capture.CaptureViewModel
 import dev.acme.adbtoolbox.application.device.SelectedDeviceViewModel
-import dev.acme.adbtoolbox.application.devicebar.DeviceBarViewModel
-import dev.acme.adbtoolbox.application.devicecontext.DeviceContextAggregator
-import dev.acme.adbtoolbox.application.devicecontext.AggregatedNavigationBadges
-import dev.acme.adbtoolbox.application.devicecontext.OverrideResetCoordinator
-import dev.acme.adbtoolbox.application.display.density.DensityOverrideResetUseCase
 import dev.acme.adbtoolbox.application.deviceactions.DeviceActionsUseCase
 import dev.acme.adbtoolbox.application.deviceactions.DeviceActionsViewModel
 import dev.acme.adbtoolbox.application.deviceactions.OpenShellUseCase
+import dev.acme.adbtoolbox.application.devicebar.DeviceBarViewModel
+import dev.acme.adbtoolbox.application.devicecontext.AggregatedNavigationBadges
+import dev.acme.adbtoolbox.application.devicecontext.DeviceContextAggregator
+import dev.acme.adbtoolbox.application.devicecontext.OverrideResetCoordinator
 import dev.acme.adbtoolbox.application.devicefacts.DeviceFactsViewModel
+import dev.acme.adbtoolbox.application.devicefacts.DeviceSectionMetaViewModel
 import dev.acme.adbtoolbox.application.devicefacts.LoadDeviceFactsUseCase
+import dev.acme.adbtoolbox.application.diagnostics.DiagnosticsObservers
+import dev.acme.adbtoolbox.application.diagnostics.LoggingAdbTransport
+import dev.acme.adbtoolbox.application.diagnostics.LoggingProcessExecutor
+import dev.acme.adbtoolbox.application.diagnostics.LoggingToolLocator
+import dev.acme.adbtoolbox.application.display.QuickTogglesIntent
 import dev.acme.adbtoolbox.application.display.QuickTogglesViewModel
+import dev.acme.adbtoolbox.application.display.density.DensityOverrideResetUseCase
+import dev.acme.adbtoolbox.application.display.density.DensityIntent
 import dev.acme.adbtoolbox.application.display.density.DensityOverrideTracker
 import dev.acme.adbtoolbox.application.display.density.DensityUseCase
 import dev.acme.adbtoolbox.application.display.density.DensityViewModel
+import dev.acme.adbtoolbox.application.display.fontscale.FontScaleIntent
 import dev.acme.adbtoolbox.application.display.fontscale.FontScaleViewModel
 import dev.acme.adbtoolbox.application.feedback.FeedbackViewModel
 import dev.acme.adbtoolbox.application.logcat.LogcatControlsController
@@ -58,33 +70,42 @@ import dev.acme.adbtoolbox.application.mirroring.MirroringOptionsViewModel
 import dev.acme.adbtoolbox.application.mirroring.MirroringSessionManager
 import dev.acme.adbtoolbox.application.mirroring.MirroringViewModel
 import dev.acme.adbtoolbox.application.nav.NavigationViewModel
+import dev.acme.adbtoolbox.application.nav.ViewEnterRefresher
 import dev.acme.adbtoolbox.application.network.ProxyController
+import dev.acme.adbtoolbox.application.network.ProxyIntent
 import dev.acme.adbtoolbox.application.recording.RecordingSessionManager
 import dev.acme.adbtoolbox.application.recording.RecordingViewModel
-import dev.acme.adbtoolbox.application.shell.ShellViewModel
 import dev.acme.adbtoolbox.application.settings.SettingsUseCase
 import dev.acme.adbtoolbox.application.settings.SettingsViewModel
+import dev.acme.adbtoolbox.application.shell.ShellViewModel
+import dev.acme.adbtoolbox.application.wifi.WifiPairingIntent
+import dev.acme.adbtoolbox.application.wifi.WifiPairingUseCase
+import dev.acme.adbtoolbox.application.wifi.WifiPairingViewModel
+import dev.acme.adbtoolbox.domain.adb.AdbServerRequest
 import dev.acme.adbtoolbox.domain.adb.AdbTransport
+import dev.acme.adbtoolbox.domain.adb.DeviceSerial
 import dev.acme.adbtoolbox.domain.apps.SelectedPackagePersistence
 import dev.acme.adbtoolbox.domain.capture.CaptureDestination
 import dev.acme.adbtoolbox.domain.capture.FileNamePolicy
 import dev.acme.adbtoolbox.domain.capture.RevealInFileManager
 import dev.acme.adbtoolbox.domain.capture.TimestampFileNamePolicy
-import dev.acme.adbtoolbox.domain.adb.DeviceSerial
+import dev.acme.adbtoolbox.domain.device.DeviceCommandContext
 import dev.acme.adbtoolbox.domain.device.DeviceListRefresher
 import dev.acme.adbtoolbox.domain.device.DeviceRepository
 import dev.acme.adbtoolbox.domain.device.DeviceSelectionPersistence
+import dev.acme.adbtoolbox.domain.device.toCommandContext
+import dev.acme.adbtoolbox.domain.deviceactions.TerminalLauncher
 import dev.acme.adbtoolbox.domain.devicecontext.OverrideReapplyPersistence
 import dev.acme.adbtoolbox.domain.devicecontext.PendingReapplyOverride
-import dev.acme.adbtoolbox.domain.deviceactions.TerminalLauncher
-import dev.acme.adbtoolbox.domain.device.DeviceCommandContext
-import dev.acme.adbtoolbox.domain.device.toCommandContext
-import dev.acme.adbtoolbox.domain.mirroring.MirroringOptionsRepository
 import dev.acme.adbtoolbox.domain.devicefacts.ClipboardPort
-import dev.acme.adbtoolbox.domain.discovery.ToolLocator
-import dev.acme.adbtoolbox.domain.logcat.LogcatControlsPersistence
+import dev.acme.adbtoolbox.domain.diagnostics.DiagCategory
+import dev.acme.adbtoolbox.domain.diagnostics.DiagLevel
+import dev.acme.adbtoolbox.domain.diagnostics.DiagnosticsLog
 import dev.acme.adbtoolbox.domain.discovery.ToolId
+import dev.acme.adbtoolbox.domain.discovery.ToolLocator
 import dev.acme.adbtoolbox.domain.dispatch.DispatcherProvider
+import dev.acme.adbtoolbox.domain.logcat.LogcatControlsPersistence
+import dev.acme.adbtoolbox.domain.mirroring.MirroringOptionsRepository
 import dev.acme.adbtoolbox.domain.nav.NavigationBadges
 import dev.acme.adbtoolbox.domain.nav.NavigationPersistence
 import dev.acme.adbtoolbox.domain.nav.ViewId
@@ -92,14 +113,15 @@ import dev.acme.adbtoolbox.domain.network.HostNetworkInfo
 import dev.acme.adbtoolbox.domain.network.NetworkRecentsPersistence
 import dev.acme.adbtoolbox.domain.packages.PackageRepository
 import dev.acme.adbtoolbox.domain.process.ProcessExecutor
-import dev.acme.adbtoolbox.domain.time.SystemMonotonicClock
 import dev.acme.adbtoolbox.domain.settings.SettingsDependency
 import dev.acme.adbtoolbox.domain.settings.SettingsInvalidationPort
 import dev.acme.adbtoolbox.domain.settings.SettingsRepository
+import dev.acme.adbtoolbox.domain.time.SystemMonotonicClock
 import dev.acme.adbtoolbox.intellij.adb.IdeAndroidDebugBridgeDeviceSource
 import dev.acme.adbtoolbox.intellij.apps.ClearDataConfirmationPresenter
 import dev.acme.adbtoolbox.intellij.apps.UninstallConfirmationPresenter
 import dev.acme.adbtoolbox.intellij.clipboard.ClipboardPortAdapter
+import dev.acme.adbtoolbox.intellij.diagnostics.DiagnosticsService
 import dev.acme.adbtoolbox.intellij.discovery.AndroidStudioSdkPlatformToolsSource
 import dev.acme.adbtoolbox.intellij.dispatch.IdeDispatcherProvider
 import dev.acme.adbtoolbox.intellij.persistence.AdbToolboxProjectState
@@ -112,9 +134,7 @@ import dev.acme.adbtoolbox.intellij.persistence.NetworkPersistenceAdapter
 import dev.acme.adbtoolbox.intellij.persistence.SettingsPersistenceAdapter
 import dev.acme.adbtoolbox.intellij.terminal.TerminalLauncherAdapter
 import dev.acme.adbtoolbox.intellij.wifi.WifiPairingInputPresenter
-import dev.acme.adbtoolbox.application.wifi.WifiPairingUseCase
-import dev.acme.adbtoolbox.application.wifi.WifiPairingViewModel
-import dev.acme.adbtoolbox.application.wifi.WifiPairingIntent
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
@@ -145,11 +165,17 @@ private val TERMINAL_PLUGIN_ID = PluginId.getId("org.jetbrains.plugins.terminal"
 @Service(Service.Level.PROJECT)
 class AdbToolboxProjectService(private val project: Project) : Disposable {
 
-    val dispatcherProvider: DispatcherProvider = IdeDispatcherProvider()
+    private val diagnostics: DiagnosticsService = DiagnosticsService.getInstance()
+
+    /** The application-wide diagnostics log every decorator below writes to. */
+    val diagnosticsLog: DiagnosticsLog = diagnostics.log
+
+    val dispatcherProvider: DispatcherProvider = IdeDispatcherProvider(diagnosticsLog)
 
     private val projectScope: CoroutineScope = CoroutineScope(SupervisorJob() + dispatcherProvider.default)
 
-    val processExecutor: ProcessExecutor = JvmProcessExecutor()
+    val processExecutor: ProcessExecutor =
+        LoggingProcessExecutor(JvmProcessExecutor(), diagnosticsLog, SystemMonotonicClock, diagnostics.commandStats)
 
     val settingsRepository: SettingsRepository =
         SettingsPersistenceAdapter(project.service<AdbToolboxProjectState>())
@@ -159,23 +185,34 @@ class AdbToolboxProjectService(private val project: Project) : Disposable {
     /** Whether Android Studio's Android plugin can supply its shared adb/ddmlib runtime. */
     val androidPluginPresent: Boolean = PluginManagerCore.getPlugin(ANDROID_PLUGIN_ID)?.isEnabled == true
 
-    val toolLocator: ToolLocator = DefaultToolLocator(
+    private val hostPlatformProvider = JvmHostPlatformProvider()
+
+    // An IDE started from the macOS Dock/Finder or a desktop launcher does not inherit the user's
+    // shell PATH/ANDROID_HOME (Homebrew's /opt/homebrew/bin, a custom SDK). IntelliJ loads the login
+    // shell environment itself; read discovery variables from it, falling back to the process env.
+    private val shellEnvironment: (String) -> String? = { name -> EnvironmentUtil.getValue(name) ?: System.getenv(name) }
+
+    val toolLocator: ToolLocator = LoggingToolLocator(DefaultToolLocator(
         configuredPathSource = SettingsBackedConfiguredToolPathSource(settingsRepository),
         androidSdkSources = buildList {
             // Prefer the executable Android Studio itself selected so discovery talks to the same
             // adb server that backs Device Manager. Keep environment discovery as the fallback.
             if (androidPluginPresent) add(AndroidStudioSdkPlatformToolsSource(project))
-            add(EnvironmentAndroidSdkPlatformToolsSource())
+            add(EnvironmentAndroidSdkPlatformToolsSource(environmentProvider = shellEnvironment))
+            add(DefaultSdkLocationPlatformToolsSource(hostPlatform = hostPlatformProvider::current))
         },
-        pathEnvironmentSource = JvmPathEnvironmentSource(),
+        pathEnvironmentSource = JvmPathEnvironmentSource(pathVariableProvider = { shellEnvironment("PATH") }),
         executableProbe = executableFileProbe,
-        hostPlatformProvider = JvmHostPlatformProvider(),
+        hostPlatformProvider = hostPlatformProvider,
         processExecutor = processExecutor,
-    )
+    ), diagnosticsLog)
 
     private val settingsInvalidation = SettingsInvalidationPort { changed ->
         if (SettingsDependency.AdbPath in changed) toolLocator.invalidate(ToolId.Adb)
         if (SettingsDependency.ScrcpyPath in changed) toolLocator.invalidate(ToolId.Scrcpy)
+        if (SettingsDependency.ScrcpyPath in changed || SettingsDependency.CaptureDirectory in changed) {
+            deviceSectionMetaViewModel.refresh()
+        }
         // Capture reads the repository for each new target, so it has no cache to invalidate.
         // The Logcat runtime is composed by its own feature task and consumes the persisted size.
     }
@@ -200,12 +237,24 @@ class AdbToolboxProjectService(private val project: Project) : Disposable {
     // risk NoClassDefFoundError instead of the safe binary-transport fallback ADR 0005 requires.
     // selectAdbTransport takes already-constructed transports for its own testability (no IntelliJ
     // Platform API needed to unit-test it), so that eager construction is kept out of its call here.
-    private val binaryTransport: AdbTransport = BinaryAdbTransport(toolLocator, processExecutor)
+    private val binaryTransport: AdbTransport =
+        LoggingAdbTransport(BinaryAdbTransport(toolLocator, processExecutor), "binary", diagnosticsLog, SystemMonotonicClock)
+
+    /** Describes the Android plugin's ddmlib bridge for the diagnostics bundle; null without it. */
+    private var ddmlibBridgeState: (() -> String)? = null
 
     val adbTransport: AdbTransport = if (androidPluginPresent) {
+        val bridgeSource = IdeAndroidDebugBridgeDeviceSource(log = diagnosticsLog)
+        ddmlibBridgeState = bridgeSource::describeState
         selectAdbTransport(
             androidPluginPresent = true,
-            ddmlibTransport = DdmlibAdbTransport(IdeAndroidDebugBridgeDeviceSource(project)),
+            ddmlibTransport = LoggingAdbTransport(
+                DdmlibAdbTransport(bridgeSource),
+                "ddmlib",
+                diagnosticsLog,
+                SystemMonotonicClock,
+                diagnostics.commandStats,
+            ),
             binaryTransport = binaryTransport,
         )
     } else {
@@ -279,6 +328,17 @@ class AdbToolboxProjectService(private val project: Project) : Disposable {
     /** The task 013 non-modal feedback/status/toast channel — one instance shared by every feature. */
     val feedbackViewModel: FeedbackViewModel = FeedbackViewModel(scope = childScope(), dispatchers = dispatcherProvider)
 
+    init {
+        DiagnosticsObservers.start(
+            scope = childScope(),
+            log = diagnosticsLog,
+            deviceRepository = deviceRepository,
+            selectedDevice = selectedDeviceViewModel.state,
+            feedback = feedbackViewModel.state,
+        )
+        diagnosticsLog.log(DiagLevel.INFO, DiagCategory.LIFECYCLE, "project opened", mapOf("project" to project.name, "androidPlugin" to androidPluginPresent))
+    }
+
     private val wifiPairingInputPresenter = WifiPairingInputPresenter(project, dispatcherProvider)
     private val wifiPairingUseCase = WifiPairingUseCase(adbTransport, deviceListRefresher)
 
@@ -307,6 +367,16 @@ class AdbToolboxProjectService(private val project: Project) : Disposable {
     val clipboardPort: ClipboardPort = ClipboardPortAdapter()
 
     private val loadDeviceFactsUseCase = LoadDeviceFactsUseCase(adbTransport)
+
+    /** The Device view's Mirroring/Capture header meta: resolved scrcpy version, effective capture directory. */
+    val deviceSectionMetaViewModel: DeviceSectionMetaViewModel = DeviceSectionMetaViewModel(
+        scope = childScope(),
+        dispatchers = dispatcherProvider,
+        toolLocator = toolLocator,
+        settings = settingsRepository,
+        homeDirectory = System.getProperty("user.home").orEmpty(),
+        defaultCaptureDirectory = java.nio.file.Path.of(System.getProperty("user.home").orEmpty(), "Desktop").toString(),
+    )
 
     /** Task 015's Device-view facts section: android/resolution/density/battery/abi/uptime, driven by [selectedDeviceViewModel]. */
     val deviceFactsViewModel: DeviceFactsViewModel = DeviceFactsViewModel(
@@ -454,6 +524,7 @@ class AdbToolboxProjectService(private val project: Project) : Disposable {
         scope = childScope(),
         dispatchers = dispatcherProvider,
         transport = adbTransport,
+        appInfoHelper = AppInfoHelper(adbTransport),
     )
 
     /** Task 022's searchable package presentation, composed once per project. */
@@ -568,6 +639,22 @@ class AdbToolboxProjectService(private val project: Project) : Disposable {
         recentsPersistence = networkRecentsPersistence,
     )
 
+    /** Entering (or returning to) Apps, Display or Network re-reads that view's device state. */
+    val viewEnterRefresher: ViewEnterRefresher = ViewEnterRefresher(
+        scope = childScope(),
+        dispatcher = dispatcherProvider.default,
+        navigation = navigationViewModel.state,
+        refreshers = mapOf(
+            ViewId.Apps to { appsViewModel.handle(AppsIntent.Refresh) },
+            ViewId.Display to {
+                quickTogglesViewModel.handle(QuickTogglesIntent.Refresh)
+                fontScaleViewModel.handle(FontScaleIntent.Retry)
+                densityViewModel.handle(DensityIntent.Retry)
+            },
+            ViewId.Network to { proxyController.handle(ProxyIntent.Refresh) },
+        ),
+    )
+
     /**
      * Task 041's reset-all/reconnect re-apply coordinator: drives the status bar's "N overrides ·
      * reset all" chip (wired via [FeedbackOverlayCoordinator]'s `onResetOverrides`) by delegating to
@@ -639,7 +726,33 @@ class AdbToolboxProjectService(private val project: Project) : Disposable {
     fun childScope(): CoroutineScope =
         CoroutineScope(projectScope.coroutineContext + SupervisorJob(parent = projectScope.coroutineContext[Job]))
 
+    /**
+     * The live adb picture for the diagnostics bundle: resolved tools, `adb version`, `adb devices
+     * -l` (via the binary transport, bounded), the ddmlib bridge and the plugin's own device state.
+     */
+    suspend fun adbDiagnosticsReport(): String = buildString {
+        fun section(title: String) = append("\n== ").append(title).append('\n')
+        section("Tool discovery (fresh)")
+        for (tool in ToolId.entries) append(tool).append(": ").append(toolLocator.locate(tool, forceRefresh = true)).append('\n')
+        for (arguments in listOf(listOf("version"), listOf("devices", "-l"))) {
+            section("adb ${arguments.joinToString(" ")}")
+            val result = binaryTransport.executeText(AdbServerRequest(arguments, timeout = 10.seconds))
+            append("outcome: ").append(result.outcome).append('\n')
+            append(result.stdout.trimEnd()).append('\n')
+            if (result.stderr.isNotBlank()) append("stderr: ").append(result.stderr.trimEnd()).append('\n')
+        }
+        section("ddmlib bridge")
+        append(ddmlibBridgeState?.invoke() ?: "Android plugin not present — binary adb only").append('\n')
+        section("Plugin device state")
+        append("devices: ").append(deviceRepository.devices.value).append('\n')
+        append("listError: ").append(deviceRepository.listError.value).append('\n')
+        append("selected: ").append(selectedDeviceViewModel.state.value).append('\n')
+        section("Plugin settings")
+        append(runCatching { settingsRepository.readSettings() }.getOrElse { "unreadable: $it" }).append('\n')
+    }
+
     override fun dispose() {
+        diagnosticsLog.log(DiagLevel.INFO, DiagCategory.LIFECYCLE, "project closed", mapOf("project" to project.name))
         // feedbackViewModel.dispose() is distinct from cancelling projectScope (ADR 0004's scope
         // ownership alone does not reject an in-flight handle() call — see FeedbackViewModel's
         // class doc), so it is disposed explicitly here alongside the scope it is scoped under.

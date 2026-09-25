@@ -85,10 +85,21 @@ private fun exitsWithFlow(exitCode: Int): Flow<ProcessEvent> = flow {
     emit(ProcessEvent.Completed(ProcessOutcome.Completed(exitCode)))
 }
 
+private fun discoveredAdb() = DiscoveredTool(
+    id = ToolId.Adb,
+    source = ToolSource.AndroidSdk,
+    path = ToolExecutablePath.of("/Users/dev/Library/Android/sdk/platform-tools/adb"),
+    version = ToolVersion.of("35.0.2"),
+)
+
+private val defaultTools: (ToolId) -> DiscoveryOutcome = { id ->
+    DiscoveryOutcome.Found(if (id == ToolId.Adb) discoveredAdb() else discoveredScrcpy())
+}
+
 class MirroringSessionManagerTest {
 
     private fun harness(
-        toolOutcome: (ToolId) -> DiscoveryOutcome = { DiscoveryOutcome.Found(discoveredScrcpy()) },
+        toolOutcome: (ToolId) -> DiscoveryOutcome = defaultTools,
         script: (ProcessRequest) -> Flow<ProcessEvent> = { runningForeverFlow() },
     ): Triple<TestScope, ScriptedProcessExecutor, MirroringSessionManager> {
         val scope = TestScope()
@@ -168,6 +179,49 @@ class MirroringSessionManagerTest {
         executor.requests.single().command shouldBe ProcessCommand(
             executable = "/opt/homebrew/bin/scrcpy",
             arguments = buildScrcpyArguments(serialA, options),
+            environment = mapOf("ADB" to "/Users/dev/Library/Android/sdk/platform-tools/adb"),
+        )
+    }
+
+    @Test
+    fun `scrcpy is started without an ADB override when the plugin cannot locate adb itself`() = runTest {
+        val (scope, executor, manager) = harness(
+            toolOutcome = { id ->
+                if (id == ToolId.Adb) {
+                    DiscoveryOutcome.Failed(DiscoveryError.ToolNotFound(ToolId.Adb, emptyList()))
+                } else {
+                    DiscoveryOutcome.Found(discoveredScrcpy())
+                }
+            },
+        )
+
+        manager.start(serialA)
+        scope.advanceTimeBy(1)
+        scope.runCurrent()
+
+        executor.requests.single().command.environment shouldBe emptyMap()
+    }
+
+    @Test
+    fun `a non-zero exit keeps scrcpy's error line so the user sees why it failed`() = runTest {
+        val (scope, _, manager) = harness(
+            script = {
+                flow {
+                    emit(ProcessEvent.StdoutText("scrcpy 2.7 <https://github.com/Genymobile/scrcpy>"))
+                    emit(ProcessEvent.StderrText("ERROR: Could not find any ADB device"))
+                    emit(ProcessEvent.StderrText("ERROR: Server connection failed"))
+                    emit(ProcessEvent.Completed(ProcessOutcome.Completed(1)))
+                }
+            },
+        )
+
+        manager.start(serialA)
+        scope.advanceTimeBy(1)
+        scope.runCurrent()
+
+        manager.stateFor(serialA).value shouldBe MirroringSessionState.Exited(
+            serialA,
+            MirroringExitReason.ProcessExited(1, detail = "Could not find any ADB device"),
         )
     }
 

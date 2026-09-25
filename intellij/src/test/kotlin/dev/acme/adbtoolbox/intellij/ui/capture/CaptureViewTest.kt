@@ -1,5 +1,6 @@
 package dev.acme.adbtoolbox.intellij.ui.capture
 
+import com.intellij.openapi.application.EDT
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import dev.acme.adbtoolbox.application.capture.CaptureScreenshotUseCase
 import dev.acme.adbtoolbox.application.capture.CaptureViewModel
@@ -34,7 +35,9 @@ class CaptureViewTest : BasePlatformTestCase() {
     private class TestDispatchers : DispatcherProvider {
         override val default = Dispatchers.Default
         override val io = Dispatchers.IO
-        override val main = Dispatchers.Default
+        // Like production: renders are queued on the EDT behind the test body, so a direct
+        // render() in a test is never overwritten by a background initial-state render.
+        override val main = Dispatchers.EDT
     }
 
     private fun onlineDevice(serial: String) = Device(serial = DeviceSerial.of(serial), state = DeviceConnectionState.Online)
@@ -76,6 +79,18 @@ class CaptureViewTest : BasePlatformTestCase() {
 
         view.dispose()
         assertFalse(scope.isActive)
+    }
+
+    fun `test the screenshot tooltip names the configured capture directory`() {
+        val dispatchers = TestDispatchers()
+        val scope = CoroutineScope(SupervisorJob() + dispatchers.default)
+        val view = CaptureView(viewModel(scope, dispatchers, MutableStateFlow(SelectedDeviceState.None)), scope, dispatchers)
+        view.render(CaptureViewState(controlPolicy = ControlPolicy.Enabled, isCapturing = false))
+
+        view.setDestinationLabel("~/captures")
+
+        assertEquals("Save a PNG to ~/captures", view.screenshotButton.toolTipText)
+        view.dispose()
     }
 
     fun `test clicking the button forwards a CaptureScreenshot request through the real view model`() {

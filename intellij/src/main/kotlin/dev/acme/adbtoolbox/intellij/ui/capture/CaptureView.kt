@@ -42,8 +42,12 @@ class CaptureView(
     private val dispatchers: DispatcherProvider,
 ) : JBPanel<CaptureView>(FlowLayout(FlowLayout.LEFT, 0, 0)), Disposable {
 
+    /** Where screenshots go, as shown to the user (see DeviceSectionMetaViewModel). */
+    private var destinationLabel = "~/Desktop"
+    private var lastState = CaptureViewState()
+
     val screenshotButton = DesignButton("Screenshot", DesignButtonStyle.SECONDARY).apply {
-        toolTipText = "Save a PNG to ~/Desktop"
+        toolTipText = "Save a PNG to $destinationLabel"
         addActionListener { viewModel.handle(CaptureIntent.CaptureScreenshot) }
     }
 
@@ -58,12 +62,19 @@ class CaptureView(
 
     /** Production code always reaches this already marshaled onto [dispatchers]' `main` context. */
     internal fun render(state: CaptureViewState) {
+        lastState = state
         screenshotButton.isEnabled = state.controlPolicy is ControlPolicy.Enabled && !state.isCapturing
         screenshotButton.toolTipText = if (state.controlPolicy is ControlPolicy.Enabled) {
-            "Save a PNG to ~/Desktop"
+            "Save a PNG to $destinationLabel"
         } else {
-            "Save a PNG to ~/Desktop — Connect a device to use this"
+            "Save a PNG to $destinationLabel — Connect a device to use this"
         }
+    }
+
+    /** Must be called on the EDT. */
+    fun setDestinationLabel(label: String) {
+        destinationLabel = label
+        render(lastState)
     }
 
     override fun dispose() {

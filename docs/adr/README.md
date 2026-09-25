@@ -17,6 +17,7 @@ Format: Title, Status, Context, Decision, Consequences, Rejected alternatives.
 | [0007](0007-device-behavior-policies.md) | Device behavior policies (labels, Open shell, capture coexistence) |
 | [0008](0008-design-source-of-truth.md) | Design source of truth and secondary-flow treatment |
 | [0009](0009-reference-repository-usage.md) | Reference repository usage (ADBHelper, as_plugin) |
+| [0010](0010-app-labels-and-icons-via-device-helper.md) | Application labels and icons via an on-device helper |
 
 ## Status legend
 

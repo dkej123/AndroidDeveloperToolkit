@@ -12,7 +12,14 @@ class FakeDeviceRepository(initial: List<Device> = emptyList()) : DeviceReposito
     private val _devices = MutableStateFlow(initial)
     override val devices: StateFlow<List<Device>> = _devices.asStateFlow()
 
+    private val _listError = MutableStateFlow<String?>(null)
+    override val listError: StateFlow<String?> = _listError.asStateFlow()
+
     fun emit(devices: List<Device>) {
         _devices.value = devices
+    }
+
+    fun emitListError(message: String?) {
+        _listError.value = message
     }
 }

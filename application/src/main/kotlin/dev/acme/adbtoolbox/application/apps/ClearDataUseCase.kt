@@ -21,6 +21,9 @@ val DEFAULT_CLEAR_DATA_TIMEOUT: Duration = 10.seconds
 /** A truthful `pm clear` failure body — case-insensitive, matched against the trimmed combined output. */
 private const val FAILURE_MARKER = "failed"
 
+/** `pm clear`'s whole output on success; decides the result when ddmlib reports no exit code. */
+private const val SUCCESS_BODY = "success"
+
 /**
  * Runs task 024's destructive Clear-data action (`pm clear <pkg>`) through the [AdbTransport]
  * gateway, for the exact `(serial, packageName)` pair passed to [clearData] — never an implicit
@@ -74,8 +77,12 @@ class ClearDataUseCase(
         is AdbOutcome.Completed -> {
             val combined = (result.stdout + result.stderr).trim()
             when {
-                outcome.exitCode == null ->
-                    ClearDataResult.Failure("Command completed with unknown exit status")
+                // ddmlib (shell v1) reports no exit code (ADR 0005): pm's own output decides.
+                outcome.exitCode == null -> when {
+                    combined.lowercase().contains(FAILURE_MARKER) -> ClearDataResult.Failure(combined)
+                    combined.equals(SUCCESS_BODY, ignoreCase = true) -> ClearDataResult.Success
+                    else -> ClearDataResult.Failure("Command completed with unknown exit status")
+                }
                 outcome.exitCode != 0 ->
                     ClearDataResult.Failure(combined.ifBlank { "Command exited with code ${outcome.exitCode}" })
                 combined.lowercase().contains(FAILURE_MARKER) ->

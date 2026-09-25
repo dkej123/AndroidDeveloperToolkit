@@ -2,6 +2,7 @@
 
 package dev.acme.adbtoolbox.intellij.apps
 
+import com.intellij.openapi.application.EDT
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import dev.acme.adbtoolbox.application.apps.AppLifecycleUseCase
 import dev.acme.adbtoolbox.application.apps.AppLifecycleViewModel
@@ -56,7 +57,9 @@ class AppsCoordinatorTest : BasePlatformTestCase() {
     private class TestDispatchers : DispatcherProvider {
         override val default = Dispatchers.Default
         override val io = Dispatchers.IO
-        override val main = Dispatchers.Default
+        // Like production: collector renders are queued on the EDT behind the test body, so a
+        // direct render() in a test is never overwritten by a background initial-state render.
+        override val main = Dispatchers.EDT
     }
 
     private class Fixture(
@@ -76,7 +79,14 @@ class AppsCoordinatorTest : BasePlatformTestCase() {
         scope: CoroutineScope = CoroutineScope(SupervisorJob() + dispatchers.default),
         transport: FakeAdbTransport = FakeAdbTransport(textScript = { AdbTextResult(AdbOutcome.Completed(0), "", "") }),
     ): Fixture {
-        val deviceRepository = FakeDeviceRepository(listOf(Device(serialA, DeviceConnectionState.Online)))
+        // Two devices and no persisted selection: nothing is selected. With a single online device
+        // SelectedDeviceViewModel would auto-select it, racing these "no eligible device" tests.
+        val deviceRepository = FakeDeviceRepository(
+            listOf(
+                Device(serialA, DeviceConnectionState.Online),
+                Device(DeviceSerial.of("SECOND01"), DeviceConnectionState.Online),
+            ),
+        )
         val selectedDeviceViewModel = SelectedDeviceViewModel(
             scope = scope,
             dispatchers = dispatchers,

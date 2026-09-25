@@ -114,6 +114,34 @@ class ProxyControllerTest {
     }
 
     @Test
+    fun `refresh re-reads a proxy changed outside the plugin`() = runTest {
+        // Regression (docs/e2e-testing.md): after `settings put global http_proxy :0` from a
+        // terminal the view kept showing "active" with only a Disable button.
+        var deviceProxy = "10.0.4.117:8888"
+        val transport = FakeAdbTransport(textScript = { completedText(deviceProxy) })
+        val (scope, selectedDeviceState, controller) = harness(transport)
+        selectedDeviceState.value = onlineState(serialA)
+        scope.runCurrent()
+        deviceProxy = ":0"
+
+        controller.handle(ProxyIntent.Refresh)
+        scope.runCurrent()
+
+        controller.state.value.readState shouldBe ProxyReadState.Disabled
+    }
+
+    @Test
+    fun `refresh with no eligible device issues no command`() = runTest {
+        val transport = FakeAdbTransport(textScript = { completedText(":0") })
+        val (scope, _, controller) = harness(transport)
+
+        controller.handle(ProxyIntent.Refresh)
+        scope.runCurrent()
+
+        transport.textRequests shouldBe emptyList()
+    }
+
+    @Test
     fun `enable issues the put command then reads back, and the final state is the readback value`() = runTest {
         val responses = mutableListOf("10.0.4.117:8888")
         val transport = FakeAdbTransport(textScript = { completedText(responses.removeFirst()) })

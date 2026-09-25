@@ -1,5 +1,10 @@
 package dev.acme.adbtoolbox.intellij.toolwindow
 
+import com.intellij.openapi.actionSystem.ActionGroup
+import com.intellij.openapi.actionSystem.ActionManager
+import com.intellij.openapi.actionSystem.DefaultActionGroup
+import com.intellij.openapi.wm.ex.ToolWindowEx
+import com.intellij.openapi.wm.ex.ToolWindowManagerListener
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.ToolWindow
@@ -58,10 +63,24 @@ class AdbToolboxToolWindowFactory : ToolWindowFactory {
             openSettings = { AdbToolboxSettingsOpener.open(project) },
             openMirroringOptions = { MirroringOptionsDialog(project).show() },
             onResetOverrides = { composition.overrideResetCoordinator.resetAll() },
+            diagnosticsLog = composition.diagnosticsLog,
+            sectionMeta = composition.deviceSectionMetaViewModel.state,
         )
         val content = ContentFactory.getInstance().createContent(panel, "", false)
         content.setDisposer(panel)
         toolWindow.contentManager.addContent(content)
         toolWindow.setTitleActions(listOf(OpenAdbToolboxSettingsAction(project)))
+        project.messageBus.connect(toolWindow.disposable).subscribe(
+            ToolWindowManagerListener.TOPIC,
+            ToolWindowReturnListener(toolWindow.id) { composition.viewEnterRefresher.refreshCurrent() },
+        )
+        // Collect Diagnostics / Record Performance / Open Log Folder in the tool window's ⋮ menu.
+        (ActionManager.getInstance().getAction(DIAGNOSTICS_GROUP_ID) as? ActionGroup)?.let { group ->
+            (toolWindow as? ToolWindowEx)?.setAdditionalGearActions(DefaultActionGroup(group))
+        }
+    }
+
+    private companion object {
+        const val DIAGNOSTICS_GROUP_ID = "AdbToolbox.Diagnostics"
     }
 }

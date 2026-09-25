@@ -14,6 +14,7 @@ import dev.acme.adbtoolbox.domain.adb.AdbTextResult
 import dev.acme.adbtoolbox.domain.adb.AdbTransport
 import dev.acme.adbtoolbox.domain.adb.DeviceSerial
 import dev.acme.adbtoolbox.domain.process.ByteSink
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -29,11 +30,13 @@ import java.util.concurrent.TimeUnit
 import kotlin.coroutines.coroutineContext
 import kotlin.time.Duration
 
-// ddmlib's `executeShellCommand` requires a `long` timeout; passing an astronomically large value
-// disables ddmlib's own timeout so that this adapter's coroutine timeout/cancellation is the only
-// thing bounding the call (ADR 0005: timeout is a typed AdbOutcome, cancellation tears the call
-// down cooperatively via IShellOutputReceiver.isCancelled — never left hardcoded false).
-private const val NO_DDMLIB_TIMEOUT_MILLIS = Long.MAX_VALUE / 2
+// ddmlib's `executeShellCommand` requires a `long` timeout; 0 is its documented "no timeout" value,
+// so this adapter's coroutine timeout/cancellation is the only thing bounding the call (ADR 0005:
+// timeout is a typed AdbOutcome, cancellation tears the call down cooperatively via
+// IShellOutputReceiver.isCancelled — never left hardcoded false). Never use a huge value instead:
+// Android Studio's adblib-backed IDevice converts it to nanoseconds, overflows, and its
+// idle-monitoring heartbeat then busy-spins while the command never completes.
+private const val NO_DDMLIB_TIMEOUT_MILLIS = 0L
 
 /**
  * The `:adapters-adb` [AdbTransport] backed by ddmlib (ADR 0005): device discovery and shell
@@ -64,6 +67,7 @@ class DdmlibAdbTransport(
         }
         val device = when (val lookup = locateOnlineDevice(request.serial)) {
             is DeviceLookup.Failure -> return AdbTextResult(AdbOutcome.TransportFailure(lookup.reason), "", "")
+            is DeviceLookup.Unavailable -> return unsupportedText(lookup.reason)
             is DeviceLookup.Found -> lookup.device
         }
 
@@ -86,6 +90,11 @@ class DdmlibAdbTransport(
         val device = when (val lookup = locateOnlineDevice(request.serial)) {
             is DeviceLookup.Failure -> {
                 send(AdbStreamEvent.Completed(AdbOutcome.TransportFailure(lookup.reason)))
+                close()
+                return@callbackFlow
+            }
+            is DeviceLookup.Unavailable -> {
+                send(AdbStreamEvent.Completed(AdbOutcome.Unsupported(lookup.reason)))
                 close()
                 return@callbackFlow
             }
@@ -118,6 +127,7 @@ class DdmlibAdbTransport(
         }
         val device = when (val lookup = locateOnlineDevice(request.serial)) {
             is DeviceLookup.Failure -> return AdbOutcome.TransportFailure(lookup.reason)
+            is DeviceLookup.Unavailable -> return AdbOutcome.Unsupported(lookup.reason)
             is DeviceLookup.Found -> lookup.device
         }
 
@@ -131,8 +141,11 @@ class DdmlibAdbTransport(
     }
 
     private fun locateOnlineDevice(serial: DeviceSerial): DeviceLookup {
+        // A serial the bridge does not know is a capability gap detected before any device call
+        // (bridge not initialized yet, or attached to a different adb server): report it as
+        // Unsupported so ADR 0005's fallback can safely retry on the binary transport.
         val device = deviceSource.devices().find { it.serialNumber == serial.toString() }
-            ?: return DeviceLookup.Failure("No connected device with serial '$serial'")
+            ?: return DeviceLookup.Unavailable("ddmlib bridge does not know device '$serial'")
         return when (device.state) {
             IDevice.DeviceState.ONLINE -> DeviceLookup.Found(device)
             IDevice.DeviceState.OFFLINE -> DeviceLookup.Failure("Device '$serial' is offline")
@@ -163,7 +176,16 @@ class DdmlibAdbTransport(
                 override fun isCancelled(): Boolean = callJob?.let { !it.isActive } ?: false
             }
             runInterruptible(ioDispatcher) {
-                device.executeShellCommand(command, receiver, NO_DDMLIB_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS, null)
+                try {
+                    device.executeShellCommand(command, receiver, NO_DDMLIB_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS, null)
+                } catch (failure: Exception) {
+                    // Interrupting the blocked call (our timeout or the caller's cancellation) makes
+                    // ddmlib/adblib fail with an I/O error such as ClosedByInterruptException. That
+                    // is the cancellation itself, not a transport failure: surface it as one so a
+                    // timeout becomes TimedOut and a superseded call is simply cancelled.
+                    if (callJob?.isActive == false) throw CancellationException("ddmlib shell call interrupted").apply { initCause(failure) }
+                    throw failure
+                }
             }
         }
 
@@ -190,5 +212,6 @@ class DdmlibAdbTransport(
     private sealed interface DeviceLookup {
         data class Found(val device: IDevice) : DeviceLookup
         data class Failure(val reason: String) : DeviceLookup
+        data class Unavailable(val reason: String) : DeviceLookup
     }
 }

@@ -18,4 +18,11 @@ data class Device(
     val transportId: String? = null,
 ) {
     val connectionKind: DeviceConnectionKind get() = DeviceConnectionKind.of(serial.toString())
+
+    /**
+     * The name a user knows the device by. `adb devices -l` cannot print spaces inside a field, so
+     * [model] arrives underscore-joined ("Pixel_8_Pro"); this restores the spaces. Falls back to the
+     * [serial] when adb reports no model. [model] itself stays the raw adb token.
+     */
+    val displayName: String get() = model?.replace('_', ' ') ?: serial.toString()
 }

@@ -80,7 +80,7 @@ class UninstallViewModel(
 
         val target = Target(
             selection = selection,
-            deviceLabel = (device as SelectedDeviceState.Online).device.model ?: selection.serial.value,
+            deviceLabel = (device as SelectedDeviceState.Online).device.displayName,
             packageScope = currentPackageScope.value,
         )
         busyTargets.value = busyTargets.value + selection

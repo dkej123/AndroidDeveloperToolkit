@@ -206,7 +206,7 @@ class MirroringViewModel(
 
             is MirroringExitReason.ProcessExited -> FeedbackMessage(
                 id = "mirroring-exit-${clock.now()}",
-                text = "scrcpy exited unexpectedly (code ${reason.exitCode})",
+                text = "scrcpy exited unexpectedly (code ${reason.exitCode})" + (reason.detail?.let { ": $it" } ?: ""),
                 severity = FeedbackSeverity.Error,
             )
 

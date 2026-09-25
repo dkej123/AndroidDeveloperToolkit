@@ -1,0 +1,5 @@
+# <package> <F-Droid version code> — installed on the emulator as the Apps-view fixtures.
+# Keep them small, open source and x86-compatible (pure Java/Kotlin).
+org.billthefarmer.editor 198
+net.gsantner.markor 163
+com.github.muellerma.coffee 47

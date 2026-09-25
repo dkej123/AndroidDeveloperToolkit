@@ -11,8 +11,9 @@ sealed interface MirroringExitReason {
     data object ExternalWindowExit : MirroringExitReason
 
     /** The scrcpy process exited on its own with a non-zero exit code (covers, among other causes,
-     * the device disconnecting while mirroring). */
-    data class ProcessExited(val exitCode: Int) : MirroringExitReason
+     * the device disconnecting while mirroring). [detail] is scrcpy's first `ERROR:` message, when
+     * it printed one — the root cause, e.g. "Could not find any ADB device". */
+    data class ProcessExited(val exitCode: Int, val detail: String? = null) : MirroringExitReason
 
     /** The process was killed after exceeding its [dev.acme.adbtoolbox.domain.process.ProcessRequest.timeout]. */
     data object Timeout : MirroringExitReason
