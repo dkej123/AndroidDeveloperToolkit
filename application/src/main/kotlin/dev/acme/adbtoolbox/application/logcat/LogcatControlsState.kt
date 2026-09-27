@@ -16,8 +16,8 @@ import dev.acme.adbtoolbox.domain.logcat.LogcatUnseenState
  * [minSeverity]/[packageFilterOn]/[wrap] are the persisted slice (task 037,
  * [dev.acme.adbtoolbox.domain.logcat.LogcatPersistedControls]); [query]/[pauseState]/[follow] are
  * runtime-only, matching the design's state model split of persisted vs. runtime fields.
- * [packageFilterLabel] is the Apps-selected package name, or `null` when none is selected ("all
- * packages"). [unseen] is [LogcatUnseenState] extended to also apply while merely un-followed
+ * [packageFilterLabel] is the package chosen in Logcat's own picker ([LogcatPackageSelection]), or
+ * `null` when none is chosen ("all packages") — never the Apps selection. [unseen] is [LogcatUnseenState] extended to also apply while merely un-followed
  * (autoscroll off) — see [LogcatControlsController] for the derivation.
  */
 data class LogcatControlsState(

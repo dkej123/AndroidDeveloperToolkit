@@ -40,10 +40,14 @@ class NavigationPersistenceAdapterTest : BasePlatformTestCase() {
         val deviceAdapter = DeviceSelectionPersistenceAdapter(projectState)
         val navAdapter = NavigationPersistenceAdapter(projectState)
 
-        navAdapter.writeLastViewNow(ViewId.Display)
+        navAdapter.writeLastViewNow(ViewId.Network)
 
         assertNull(deviceAdapter.readSelectedSerialNow())
-        assertEquals(ViewId.Display, navAdapter.readLastViewNow())
+        assertEquals(ViewId.Network, navAdapter.readLastViewNow())
+    }
+
+    fun `test a persisted Display view reopens the Device view, where its controls moved`() {
+        assertEquals(ViewId.Device, resolvePersistedViewId(NavigationPersistenceState().apply { lastView = "display" }))
     }
 
     fun `test loadState composes via XmlSerializerUtil so a re-loaded view id survives`() {

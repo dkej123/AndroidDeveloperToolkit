@@ -16,11 +16,11 @@ class NavigationBadgesTest {
     fun `setting a badge for one view does not affect another view's entry`() {
         val badges = MutableNavigationBadges()
 
-        badges.set(ViewId.Display, NavigationBadge.Attention)
+        badges.set(ViewId.Network, NavigationBadge.Attention)
         badges.set(ViewId.Logcat, NavigationBadge.Count(3))
 
         badges.state.value shouldBe mapOf(
-            ViewId.Display to NavigationBadge.Attention,
+            ViewId.Network to NavigationBadge.Attention,
             ViewId.Logcat to NavigationBadge.Count(3),
         )
     }

@@ -18,6 +18,8 @@ class SettingsPersistenceState {
     var scrcpyPathOverride: String? = null
     var captureDirectory: String? = null
     var logcatBufferSizeKb: Int = DEFAULT_LOGCAT_BUFFER_SIZE_KB
+    var talkBackOnCommand: String? = null
+    var talkBackOffCommand: String? = null
 
     companion object {
         const val CURRENT_SCHEMA_VERSION: Int = 1

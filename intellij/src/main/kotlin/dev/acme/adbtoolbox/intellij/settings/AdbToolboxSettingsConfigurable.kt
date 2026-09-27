@@ -64,6 +64,8 @@ class AdbToolboxSettingsConfigurable internal constructor(
             currentForm.scrcpyPath.text != baseline.scrcpyPathOverride.orEmpty() ||
             currentForm.captureDirectory.text != baseline.captureDirectory.orEmpty() ||
             currentForm.logcatBufferSizeKb.text != baseline.logcatBufferSizeKb.toString() ||
+            currentForm.talkBackOn.text != baseline.talkBackOnCommand.orEmpty() ||
+            currentForm.talkBackOff.text != baseline.talkBackOffCommand.orEmpty() ||
             currentForm.verboseDiagnostics.isSelected != diagnosticsPreferences.verbose
     }
 
@@ -77,6 +79,8 @@ class AdbToolboxSettingsConfigurable internal constructor(
             scrcpyPathOverride = currentForm.scrcpyPath.text,
             captureDirectory = currentForm.captureDirectory.text,
             logcatBufferSizeKb = bufferSize,
+            talkBackOnCommand = currentForm.talkBackOn.text,
+            talkBackOffCommand = currentForm.talkBackOff.text,
         )
 
         diagnosticsPreferences.verbose = currentForm.verboseDiagnostics.isSelected
@@ -109,6 +113,8 @@ class AdbToolboxSettingsConfigurable internal constructor(
         target.scrcpyPath.text = state.scrcpyPathOverride.orEmpty()
         target.captureDirectory.text = state.captureDirectory.orEmpty()
         target.logcatBufferSizeKb.text = state.logcatBufferSizeKb.toString()
+        target.talkBackOn.text = state.talkBackOnCommand.orEmpty()
+        target.talkBackOff.text = state.talkBackOffCommand.orEmpty()
         target.verboseDiagnostics.isSelected = diagnosticsPreferences.verbose
     }
 
@@ -126,6 +132,12 @@ class AdbToolboxSettingsConfigurable internal constructor(
         val scrcpyPath = settingsField("scrcpyPathField")
         val captureDirectory = settingsField("captureDirectoryField")
         val logcatBufferSizeKb = settingsField("logcatBufferSizeKbField")
+        val talkBackOn = settingsField("talkBackOnCommandField").apply {
+            emptyText.text = "Auto: Samsung or Google TalkBack, detected per device"
+        }
+        val talkBackOff = settingsField("talkBackOffCommandField").apply {
+            emptyText.text = "Auto: clears the accessibility services"
+        }
 
         val panel: JPanel = FormBuilder.createFormBuilder()
             .addLabeledComponent("ADB executable:", adbPath, 1, false)
@@ -138,6 +150,12 @@ class AdbToolboxSettingsConfigurable internal constructor(
             .addTooltip(
                 "Allowed range: ${SettingsState.MIN_LOGCAT_BUFFER_SIZE_KB}–" +
                     "${SettingsState.MAX_LOGCAT_BUFFER_SIZE_KB} KB.",
+            )
+            .addLabeledComponent("TalkBack on command:", talkBackOn, 1, false)
+            .addLabeledComponent("TalkBack off command:", talkBackOff, 1, false)
+            .addTooltip(
+                "Run on the device shell by the Display view's TalkBack toggle; \"adb shell\" prefixes are dropped. " +
+                    "Leave blank to use the built-in Samsung or Google command for the connected device.",
             )
             .addSeparator()
             .addComponent(verboseDiagnostics)

@@ -1,5 +1,7 @@
 package dev.acme.adbtoolbox.intellij.visual
 
+import dev.acme.adbtoolbox.domain.display.TalkBackProfile
+
 import com.intellij.openapi.util.IconLoader
 import com.intellij.testFramework.EdtTestUtil
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
@@ -109,8 +111,8 @@ class VisualRegressionTest : BasePlatformTestCase() {
                         hasDevice = true,
                         isLoading = false,
                         rows = listOf(
-                            AppsRow("com.acme.shop", "Acme Shop", true, true, true),
-                            AppsRow("com.acme.wallet", "Wallet", true, false, false),
+                            AppsRow("com.acme.wallet", "Wallet", true, false, false, isPinned = true, sectionHeader = "Pinned"),
+                            AppsRow("com.acme.shop", "Acme Shop", true, true, true, sectionHeader = "All apps"),
                             AppsRow("com.acme.debug", "Debug tools", true, true, false),
                         ),
                         selectedPackageName = "com.acme.shop",
@@ -121,7 +123,7 @@ class VisualRegressionTest : BasePlatformTestCase() {
                 updateUninstall(UninstallViewState(ControlPolicy.Enabled, "com.acme.shop", busy = false))
             }
         }),
-        Scenario("display-light-dock", 380, 620, dark = false, selected = ViewId.Display, view = {
+        Scenario("display-light-dock", 380, 620, dark = false, selected = ViewId.Device, view = {
             DisplayPanel({}, {}, {}, {}, {}, {}, {}, {}).apply {
                 update(FontScaleState.Idle(1.15))
                 update(DensityViewState.Idle(DensityReading(428, 535)))
@@ -130,6 +132,8 @@ class VisualRegressionTest : BasePlatformTestCase() {
                         darkTheme = QuickToggleFieldState.Idle(true),
                         showTouches = QuickToggleFieldState.Idle(false),
                         animations = QuickToggleFieldState.Idle(AnimationsSummary.AllOff),
+                        talkBack = QuickToggleFieldState.Idle(false),
+                        talkBackProfile = TalkBackProfile.Samsung,
                     ),
                 )
             }
@@ -166,7 +170,7 @@ class VisualRegressionTest : BasePlatformTestCase() {
             val rail = NavigationRailPanel().apply {
                 setSelected(scenario.selected)
                 updateBadges(buildMap {
-                    if (scenario.overrideCount > 0) put(ViewId.Display, NavigationBadge.Count(1))
+                    if (scenario.overrideCount > 0) put(ViewId.Device, NavigationBadge.Count(1))
                     if (scenario.selected == ViewId.Logcat) put(ViewId.Logcat, NavigationBadge.Attention)
                 })
             }

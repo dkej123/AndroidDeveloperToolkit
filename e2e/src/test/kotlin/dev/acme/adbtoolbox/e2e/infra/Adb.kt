@@ -15,9 +15,14 @@ object Adb {
             val process = ProcessBuilder(listOf(E2eConfig.adb.path) + args)
                 .redirectError(stderrFile)
                 .start()
-            val stdout = process.inputStream.bufferedReader().readText()
-            check(process.waitFor(timeoutSeconds, TimeUnit.SECONDS)) { "adb ${args.joinToString(" ")} timed out" }
-            return Result(process.exitValue(), stdout.replace("\r", ""), stderrFile.readText().replace("\r", ""))
+            // Read stdout off this thread: a blocking read would outlast a hung device and the
+            // timeout below would never be reached.
+            val stdout = java.util.concurrent.CompletableFuture.supplyAsync { process.inputStream.bufferedReader().readText() }
+            if (!process.waitFor(timeoutSeconds, TimeUnit.SECONDS)) {
+                process.destroyForcibly()
+                error("adb ${args.joinToString(" ")} timed out after ${timeoutSeconds}s")
+            }
+            return Result(process.exitValue(), stdout.get(10, TimeUnit.SECONDS).replace("\r", ""), stderrFile.readText().replace("\r", ""))
         } finally {
             stderrFile.delete()
         }

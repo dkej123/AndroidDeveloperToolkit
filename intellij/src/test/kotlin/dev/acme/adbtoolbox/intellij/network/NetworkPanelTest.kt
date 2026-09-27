@@ -1,5 +1,8 @@
 package dev.acme.adbtoolbox.intellij.network
 
+import dev.acme.adbtoolbox.domain.network.NetworkThrottle
+import dev.acme.adbtoolbox.application.network.ThrottleAvailability
+import dev.acme.adbtoolbox.application.network.NetworkThrottleViewState
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import dev.acme.adbtoolbox.application.network.ProxyViewState
 import dev.acme.adbtoolbox.domain.network.ProxyEndpoint
@@ -31,6 +34,31 @@ class NetworkPanelTest : BasePlatformTestCase() {
         onReset: () -> Unit = {},
         onSelectRecent: (ProxyEndpoint) -> Unit = {},
     ) = NetworkPanel(onHostChange, onPortChange, onUseComputerIp, onEnable, onReset, onSelectRecent)
+
+    // ---- Network throttling ----
+
+    fun `test throttling chips apply a preset on an emulator and show the readback`() {
+        val applied = mutableListOf<NetworkThrottle>()
+        val p = NetworkPanel({}, {}, {}, {}, {}, {}, onApplyThrottle = { applied += it })
+        p.update(NetworkThrottleViewState(ThrottleAvailability.Emulator, current = NetworkThrottle.Off))
+
+        p.throttleChipRowForTest.chips.first { it.value == NetworkThrottle.Edge }.doClick()
+        assertEquals(listOf(NetworkThrottle.Edge), applied)
+
+        p.update(NetworkThrottleViewState(ThrottleAvailability.Emulator, current = NetworkThrottle.Edge))
+        assertEquals("EDGE", p.throttleMetaLabelForTest.text)
+        assertEquals(NetworkThrottle.Edge, p.throttleChipRowForTest.selectedValue)
+    }
+
+    fun `test a physical device disables throttling and explains why`() {
+        val p = panel()
+
+        p.update(NetworkThrottleViewState(ThrottleAvailability.PhysicalDevice))
+
+        assertTrue(p.throttleChipRowForTest.chips.none { it.isEnabled })
+        assertEquals("emulator only", p.throttleMetaLabelForTest.text)
+        assertTrue(p.throttleHelpForTest.text.contains("physical devices"))
+    }
 
     // ---- Off / ineligible-device state ----
 

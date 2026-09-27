@@ -1,5 +1,9 @@
 package dev.acme.adbtoolbox.intellij.apps
 
+import dev.acme.adbtoolbox.intellij.apps.details.AppDetailsPanel
+import dev.acme.adbtoolbox.application.appdetails.AppDetailsViewModel
+import dev.acme.adbtoolbox.application.appdetails.AppDetailsState
+import dev.acme.adbtoolbox.application.appdetails.AppDetailsIntent
 import com.intellij.openapi.Disposable
 import dev.acme.adbtoolbox.application.apps.AppLifecycleIntent
 import dev.acme.adbtoolbox.application.apps.AppLifecycleViewModel
@@ -41,7 +45,10 @@ class AppsCoordinator(
     private val uninstallViewModel: UninstallViewModel,
     private val scope: CoroutineScope,
     private val dispatchers: DispatcherProvider,
+    private val appDetailsViewModel: AppDetailsViewModel? = null,
 ) : Disposable {
+
+    val detailsPanel = AppDetailsPanel { intent -> appDetailsViewModel?.handle(intent) }
 
     val panel = AppsPanel(
         onQueryChange = { query -> viewModel.handle(AppsIntent.SetQuery(query)) },
@@ -53,6 +60,9 @@ class AppsCoordinator(
         onRestart = { appLifecycleViewModel.handle(AppLifecycleIntent.Restart) },
         onClearData = { clearDataViewModel.handle(ClearDataIntent.ClearData) },
         onUninstall = { uninstallViewModel.handle(UninstallIntent.Uninstall) },
+        onTogglePin = { packageName -> viewModel.handle(AppsIntent.TogglePin(packageName)) },
+        onOpenDetails = { packageName -> openDetails(packageName) },
+        detailsPanel = detailsPanel,
     )
 
     init {
@@ -68,6 +78,20 @@ class AppsCoordinator(
         uninstallViewModel.state
             .onEach { state -> withContext(dispatchers.main) { renderUninstall(state) } }
             .launchIn(scope)
+        appDetailsViewModel?.state
+            ?.onEach { state -> withContext(dispatchers.main) { renderDetails(state) } }
+            ?.launchIn(scope)
+    }
+
+    private fun openDetails(packageName: String) {
+        val row = viewModel.state.value.rows.firstOrNull { it.packageName == packageName }
+        appDetailsViewModel?.handle(AppDetailsIntent.Open(packageName, row?.label ?: packageName, row?.icon))
+    }
+
+    /** Production code always reaches this already marshaled onto [dispatchers]' `main` context. */
+    internal fun renderDetails(state: AppDetailsState) {
+        detailsPanel.update(state)
+        panel.showDetails(state.isOpen)
     }
 
     /** Production code always reaches this already marshaled onto [dispatchers]' `main` context. */

@@ -12,6 +12,7 @@ plugins {
 dependencies {
     implementation(project(":domain"))
     implementation(libs.kotlinx.coroutines.core)
+    implementation(libs.sqlite.jdbc)
 
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.kotest.assertions.core)

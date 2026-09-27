@@ -14,6 +14,9 @@ sealed interface LogcatControlsIntent {
     /** Toggles the package-filter chip between the Apps-selected package's pid(s) and "all packages". */
     data object TogglePackageFilter : LogcatControlsIntent
 
+    /** Logcat's own package picker: narrows to [packageName], or shows every package when `null`. */
+    data class SelectPackage(val packageName: String?) : LogcatControlsIntent
+
     /** Toggles wrapped-line presentation. */
     data object ToggleWrap : LogcatControlsIntent
 

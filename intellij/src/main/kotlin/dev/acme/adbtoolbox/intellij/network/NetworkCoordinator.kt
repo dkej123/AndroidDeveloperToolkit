@@ -1,5 +1,7 @@
 package dev.acme.adbtoolbox.intellij.network
 
+import dev.acme.adbtoolbox.application.network.NetworkThrottleViewModel
+import dev.acme.adbtoolbox.application.network.NetworkThrottleIntent
 import com.intellij.openapi.Disposable
 import dev.acme.adbtoolbox.application.devicecontext.DeviceContextAggregator
 import dev.acme.adbtoolbox.application.network.NetworkBadgeContributor
@@ -34,6 +36,7 @@ class NetworkCoordinator(
     private val dispatchers: DispatcherProvider,
     badgeContributor: BadgeContributor = NetworkBadgeContributor(controller),
     overrideContributor: OverrideSummaryContributor = ProxyOverrideSummaryContributor(controller),
+    private val throttleViewModel: NetworkThrottleViewModel? = null,
 ) : Disposable {
 
     val panel = NetworkPanel(
@@ -46,6 +49,7 @@ class NetworkCoordinator(
         },
         onReset = { controller.handle(ProxyIntent.Reset) },
         onSelectRecent = { endpoint -> controller.handle(ProxyIntent.SelectRecent(endpoint)) },
+        onApplyThrottle = { throttle -> throttleViewModel?.handle(NetworkThrottleIntent.Apply(throttle)) },
     )
 
     private val badgeRegistration = aggregator.registerBadgeContributor(badgeContributor)
@@ -55,6 +59,9 @@ class NetworkCoordinator(
         controller.state
             .onEach { state -> withContext(dispatchers.main) { render(state) } }
             .launchIn(scope)
+        throttleViewModel?.state
+            ?.onEach { state -> withContext(dispatchers.main) { panel.update(state) } }
+            ?.launchIn(scope)
     }
 
     /** Production code always reaches this already marshaled onto [dispatchers]' `main` context. */

@@ -88,8 +88,11 @@ class NavigationRailPanel : JBPanel<NavigationRailPanel>(BorderLayout()) {
         border = javax.swing.BorderFactory.createEmptyBorder(
             AdbToolboxTheme.Spacing.s2, 0, AdbToolboxTheme.Spacing.s3, 0,
         )
-        cellRenderer = RailCellRenderer({ badgeFor(it) }, { settingsRowHeight() })
+        cellRenderer = RailCellRenderer({ badgeFor(it) }, { settingsRowHeight() }, { hoveredIndex })
     }
+
+    /** The row under the mouse (-1 for none, including the spacer above Settings). */
+    private var hoveredIndex = -1
 
     private var suppressSelectionEvents = false
 
@@ -99,10 +102,22 @@ class NavigationRailPanel : JBPanel<NavigationRailPanel>(BorderLayout()) {
         isOpaque = true
         background = AdbToolboxTheme.Colors.panel
         add(list, BorderLayout.CENTER)
+        val hoverTracker = object : java.awt.event.MouseAdapter() {
+            override fun mouseMoved(e: MouseEvent) = hover(list.locationToIndex(e.point))
+            override fun mouseExited(e: MouseEvent) = hover(-1)
+        }
+        list.addMouseMotionListener(hoverTracker)
+        list.addMouseListener(hoverTracker)
         list.addListSelectionListener { event ->
             if (event.valueIsAdjusting || suppressSelectionEvents) return@addListSelectionListener
             list.selectedValue?.let { onSelect(it) }
         }
+    }
+
+    private fun hover(index: Int) {
+        if (index == hoveredIndex) return
+        hoveredIndex = index
+        list.repaint()
     }
 
     /** Programmatically selects [viewId] without triggering [onSelect]. Idempotent. */
@@ -139,9 +154,8 @@ private val RAIL_ROW_HEIGHT: () -> Int = { AdbToolboxTheme.Sizes.railButton + Ad
 
 /** Shared by [NavigationRailPanel]'s mouse-hover tooltip and [RailCellRenderer]'s per-row accessible name. */
 private val TOOLTIPS: Map<ViewId, String> = mapOf(
-    ViewId.Device to "Device — mirroring, capture, facts",
+    ViewId.Device to "Device — mirroring, capture, facts, display, quick toggles",
     ViewId.Apps to "Apps — restart, clear data, uninstall",
-    ViewId.Display to "Display — font scale and density",
     ViewId.Network to "Network — global proxy",
     ViewId.Logcat to "Logcat — severity, filters, search",
     ViewId.Settings to "Settings",
@@ -155,10 +169,12 @@ private val TOOLTIPS: Map<ViewId, String> = mapOf(
 private class RailCellRenderer(
     private val badgeFor: (ViewId) -> NavigationBadge,
     private val settingsRowHeight: () -> Int,
+    private val hoveredIndex: () -> Int,
 ) : JLabel(), ListCellRenderer<ViewId> {
 
     private var badge: NavigationBadge = NavigationBadge.None
     private var selected = false
+    private var hovered = false
     private var pinnedToBottom = false
 
     init {
@@ -177,6 +193,7 @@ private class RailCellRenderer(
         preferredSize = java.awt.Dimension(AdbToolboxTheme.Sizes.rail, height)
         badge = badgeFor(value)
         selected = isSelected
+        hovered = index == hoveredIndex()
         background = if (isSelected) AdbToolboxTheme.Colors.accentBg else AdbToolboxTheme.Colors.panel
 
         val glyphColor = if (isSelected) AdbToolboxTheme.Colors.accent else AdbToolboxTheme.Colors.textDim
@@ -192,6 +209,11 @@ private class RailCellRenderer(
     override fun paintComponent(g: Graphics) {
         val g2 = g.create() as Graphics2D
         try {
+            // The platform list UI has already filled the whole cell on hover/selection; the
+            // Settings cell is the stretched spacer, so that fill covered half the rail. Only the
+            // 26px button below may show a fill.
+            g2.color = AdbToolboxTheme.Colors.panel
+            g2.fillRect(0, 0, width, height)
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
             val size = AdbToolboxTheme.Sizes.railButton
             val x = (width - size) / 2
@@ -202,6 +224,9 @@ private class RailCellRenderer(
                 g2.fillRoundRect(x, y, size, size, arc, arc)
                 g2.color = AdbToolboxTheme.Colors.accentBorder
                 g2.drawRoundRect(x, y, size - 1, size - 1, arc, arc)
+            } else if (hovered) {
+                g2.color = AdbToolboxTheme.Colors.hover
+                g2.fillRoundRect(x, y, size, size, arc, arc)
             }
             icon?.let { glyph ->
                 glyph.paintIcon(this, g2, x + (size - glyph.iconWidth) / 2, y + (size - glyph.iconHeight) / 2)

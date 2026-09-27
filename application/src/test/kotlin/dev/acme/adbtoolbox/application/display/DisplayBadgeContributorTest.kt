@@ -17,8 +17,8 @@ private class FixedOverrides(private val summaries: List<OverrideSummary>) : Ove
 class DisplayBadgeContributorTest {
 
     @Test
-    fun `targets the Display view`() {
-        DisplayBadgeContributor(FixedOverrides(emptyList()), FixedOverrides(emptyList())).viewId shouldBe ViewId.Display
+    fun `badges the Device view, where the display controls live`() {
+        DisplayBadgeContributor(FixedOverrides(emptyList()), FixedOverrides(emptyList())).viewId shouldBe ViewId.Device
     }
 
     @Test

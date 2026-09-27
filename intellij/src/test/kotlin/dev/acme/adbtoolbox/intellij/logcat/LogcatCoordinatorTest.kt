@@ -128,6 +128,22 @@ class LogcatCoordinatorTest : BasePlatformTestCase() {
         coordinator.dispose()
     }
 
+    fun `test a render queued while the user keeps typing does not roll the search field back`() {
+        val f = fixture()
+        val coordinator = coordinator(f)
+        val field = coordinator.panel.searchFieldForTest
+
+        field.text = "tim"
+        // The collector sees "tim" off the EDT and queues its render behind this test body.
+        Thread.sleep(300)
+        field.text = "timeout"
+        com.intellij.util.ui.UIUtil.dispatchAllInvocationEvents()
+
+        assertEquals("timeout", field.text)
+        assertEquals("timeout", f.controller.state.value.query)
+        coordinator.dispose()
+    }
+
     fun `test clicking Pause toggles the controller's pause state`() {
         val f = fixture()
         val coordinator = coordinator(f)
@@ -148,13 +164,16 @@ class LogcatCoordinatorTest : BasePlatformTestCase() {
         coordinator.dispose()
     }
 
-    fun `test clicking the package filter chip toggles it off`() {
+    fun `test the package chip opens a picker instead of toggling, and a pick selects that package`() {
         val f = fixture()
         val coordinator = coordinator(f)
-        assertTrue(f.controller.state.value.packageFilterOn)
+        val before = f.controller.state.value.packageFilterOn
 
         coordinator.panel.packageFilterChipForTest.doClick()
+        assertEquals(before, f.controller.state.value.packageFilterOn)
 
+        val step = coordinator.packagePickerStep()
+        step.onChosen(step.values.first(), true) // "All packages"
         assertFalse(f.controller.state.value.packageFilterOn)
         coordinator.dispose()
     }

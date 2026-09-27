@@ -25,8 +25,8 @@ class DesignIconResourcesTest : BasePlatformTestCase() {
                 requireNotNull(IconLoader.toImage(icon)) { "IconLoader did not render $icon" }
             }
 
-            assertEquals(20, icons.size)
-            assertEquals(20, icons.distinct().size)
+            assertEquals(22, icons.size)
+            assertEquals(22, icons.distinct().size)
             assertSame(AdbToolboxIcons.toolWindow, icons.first())
             assertEquals(20, loadedImages.first().getWidth(null))
             assertEquals(20, loadedImages.first().getHeight(null))
@@ -113,6 +113,8 @@ class DesignIconResourcesTest : BasePlatformTestCase() {
                 "mirror",
                 "options",
                 "pause",
+                "pin",
+                "pinned",
                 "proxy",
                 "record",
                 "refresh",

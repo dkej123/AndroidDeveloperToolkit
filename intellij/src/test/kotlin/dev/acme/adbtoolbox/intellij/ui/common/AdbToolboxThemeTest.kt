@@ -67,10 +67,10 @@ class AdbToolboxThemeTest : BasePlatformTestCase() {
         })
         assertEquals(JBUI.scale(16), AdbToolboxTheme.Spacing.s6)
         assertEquals(
-            listOf(22, 24, 26, 26, 26, 34, 32, 30, 22, 26, 34, 28, 28, 16, 104).map { JBUI.scale(it) },
+            listOf(22, 24, 26, 26, 26, 34, 32, 30, 28, 26, 34, 28, 28, 16, 104, 22).map { JBUI.scale(it) },
             with(AdbToolboxTheme.Sizes) {
                 listOf(iconButton, field, secondaryButton, primaryButton, railButton, rail, titleBar,
-                    deviceBar, statusBar, toolbarRow, appRow, listRow, toggleRow, logLineHeight, logTagColumn)
+                    deviceBar, statusBar, toolbarRow, appRow, listRow, toggleRow, logLineHeight, logTagColumn, logcatFooter)
             },
         )
         assertEquals(listOf(4, 5, 5, 6, 8, 999).map { JBUI.scale(it) }, with(AdbToolboxTheme.Radii) {

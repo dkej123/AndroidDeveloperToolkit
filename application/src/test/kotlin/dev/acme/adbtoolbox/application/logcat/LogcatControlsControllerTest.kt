@@ -124,6 +124,10 @@ class LogcatControlsControllerTest {
         val persistence = FakeLogcatControlsPersistence(persisted)
         val controller = LogcatControlsController(
             scope, dispatchers, selectedDevice, selectedPackage, sessionManager, pidTracker, persistence,
+            selectPackage = { name ->
+                selectedPackage.value = name?.let { SelectedPackageState.Selected(SelectedPackage(SERIAL_A, it)) }
+                    ?: SelectedPackageState.None
+            },
         )
         return Harness(scope, selectedDevice, selectedPackage, transport, sessionManager, pidTracker, persistence, controller)
     }
@@ -222,6 +226,27 @@ class LogcatControlsControllerTest {
 
         h.controller.state.value.visibleCount shouldBe 1
         h.controller.state.value.packageFilterLabel shouldBe "com.acme.shop"
+    }
+
+    @Test
+    fun `picking a package in logcat's own picker narrows to it, and All packages shows everything`() = runTest {
+        val h = harness(pidLookup = { AdbTextResult(AdbOutcome.Completed(0), "2000", "") })
+        h.scope.runCurrent()
+        h.transport.emit(record(pid = 2000, message = "target"))
+        h.transport.emit(record(pid = 3000, message = "other"))
+        h.scope.runCurrent()
+
+        h.controller.handle(LogcatControlsIntent.SelectPackage("com.acme.shop"))
+        h.scope.runCurrent()
+        h.controller.state.value.packageFilterOn shouldBe true
+        h.controller.state.value.packageFilterLabel shouldBe "com.acme.shop"
+        h.controller.state.value.visibleCount shouldBe 1
+
+        h.controller.handle(LogcatControlsIntent.SelectPackage(null))
+        h.scope.runCurrent()
+        h.controller.state.value.packageFilterOn shouldBe false
+        // Same count as the toggle-off test: every emitted process line is visible again.
+        h.controller.state.value.visibleCount shouldBe 4
     }
 
     @Test

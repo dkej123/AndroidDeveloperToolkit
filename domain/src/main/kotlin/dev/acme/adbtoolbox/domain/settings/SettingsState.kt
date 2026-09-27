@@ -4,7 +4,8 @@ package dev.acme.adbtoolbox.domain.settings
  * The four user-editable settings this task's Configurable persists (ADR 0006: project scope for
  * every field, since none of them is legitimately IDE-wide today): an approved override path for
  * `adb`/`scrcpy` (falls back to normal discovery, task 004, when `null`), the capture directory,
- * and the local Logcat ring-buffer size. Structurally always valid by construction — out-of-range
+ * the local Logcat ring-buffer size, and optional custom TalkBack on/off command lines (`null` = the
+ * detected vendor's default, see [dev.acme.adbtoolbox.domain.display.TalkBackCommand]). Structurally always valid by construction — out-of-range
  * or unreachable values are rejected by [validateSettings] before ever reaching this type via a
  * persisted write, so a caller holding a [SettingsState] never needs to re-check it.
  */
@@ -13,6 +14,8 @@ data class SettingsState(
     val scrcpyPathOverride: String? = null,
     val captureDirectory: String? = null,
     val logcatBufferSizeKb: Int = DEFAULT_LOGCAT_BUFFER_SIZE_KB,
+    val talkBackOnCommand: String? = null,
+    val talkBackOffCommand: String? = null,
 ) {
     companion object {
         /** `design/designs/ADB Toolbox IA.dc.html`'s Logcat footer default: "buffer 16 MB". */

@@ -36,6 +36,9 @@ These rules apply to every session in this repository.
   the prototypes under `design/designs/`, and production assets under `design/icons/` as specified.
 - Do not invent visual rules or copy visual design from `as_plugin`. `design/designs/support.js` is
   prototype runtime only and must not be ported or packaged.
+- There is no Display view: font scale, display scale and the quick toggles are sections of the
+  Device view (user decision, 2026-09-25). Do not re-add a Display rail entry, `ViewId`, or view —
+  even if an older task file (026–029, 046) or ADR still describes one; those are superseded.
 
 ## Reference repository
 - `/Users/dkwasniak/Workspace/as_plugin` is READ-ONLY. Use it only as a technical reference for

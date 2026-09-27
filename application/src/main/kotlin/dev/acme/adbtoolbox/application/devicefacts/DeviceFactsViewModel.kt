@@ -1,5 +1,8 @@
 package dev.acme.adbtoolbox.application.devicefacts
 
+import dev.acme.adbtoolbox.domain.devicefacts.DeviceFactId
+import kotlin.time.Duration
+import kotlinx.coroutines.delay
 import dev.acme.adbtoolbox.domain.adb.DeviceSerial
 import dev.acme.adbtoolbox.domain.device.DeviceCommandContext
 import dev.acme.adbtoolbox.domain.device.SelectedDeviceState
@@ -21,6 +24,9 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+
+/** Facts that change without any action in the plugin, so they are worth re-reading periodically. */
+private val VOLATILE_FACTS = listOf(DeviceFactId.Battery, DeviceFactId.Uptime)
 
 /**
  * Owns the Device view's facts section (task 015, ADR 0004's MVI shape, mirroring
@@ -46,6 +52,12 @@ class DeviceFactsViewModel(
     selectedDeviceState: StateFlow<SelectedDeviceState>,
     private val loadDeviceFacts: LoadDeviceFactsUseCase,
     private val clipboard: ClipboardPort,
+    /**
+     * How often the facts that change on their own ([VOLATILE_FACTS]: battery, uptime) are
+     * re-read while a device is selected; `null` disables it. Everything else is re-read only on
+     * [DeviceFactsIntent.Refresh].
+     */
+    private val volatileRefreshInterval: Duration? = null,
 ) {
     private val _snapshot = MutableStateFlow<DeviceFactsSnapshot?>(null)
 
@@ -61,7 +73,27 @@ class DeviceFactsViewModel(
             selectedDeviceState
                 .map { (it.toCommandContext() as? DeviceCommandContext.Eligible)?.serial }
                 .distinctUntilChanged()
-                .collectLatest { serial -> loadFacts(serial) }
+                .collectLatest { serial ->
+                    loadFacts(serial)
+                    if (serial != null && volatileRefreshInterval != null) {
+                        while (true) {
+                            delay(volatileRefreshInterval)
+                            refreshFacts(serial, VOLATILE_FACTS)
+                        }
+                    }
+                }
+        }
+    }
+
+    /**
+     * Re-reads [facts] for [serial], replacing each value as it arrives. Unlike [loadFacts] the
+     * snapshot is not reset to loading, so the grid keeps showing the previous values meanwhile.
+     */
+    private suspend fun refreshFacts(serial: DeviceSerial, facts: Collection<DeviceFactId>) {
+        loadDeviceFacts.execute(serial, facts).collect { (factId, factState) ->
+            val current = _snapshot.value
+            if (current == null || current.serial != serial) return@collect
+            _snapshot.value = current.copy(facts = current.facts + (factId to factState))
         }
     }
 
@@ -81,6 +113,10 @@ class DeviceFactsViewModel(
     fun handle(intent: DeviceFactsIntent) {
         when (intent) {
             DeviceFactsIntent.CopyReport -> copyReport()
+            DeviceFactsIntent.Refresh -> {
+                val serial = _snapshot.value?.serial ?: return
+                scope.launch(dispatchers.default) { refreshFacts(serial, DeviceFactId.entries) }
+            }
         }
     }
 

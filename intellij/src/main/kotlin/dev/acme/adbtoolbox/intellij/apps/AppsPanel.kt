@@ -57,6 +57,10 @@ class AppsPanel(
     onRestart: () -> Unit = {},
     onClearData: () -> Unit = {},
     onUninstall: () -> Unit = {},
+    onTogglePin: (String) -> Unit = {},
+    private val onOpenDetails: (String) -> Unit = {},
+    /** The detail page shown instead of the list while an app's details are open. */
+    detailsPanel: javax.swing.JComponent? = null,
 ) : JBPanel<AppsPanel>(BorderLayout()) {
 
     private val searchIconLabel = JBLabel(AdbToolboxIcons.Actions.search)
@@ -121,7 +125,7 @@ class AppsPanel(
         )
     }
 
-    private val list = AppsVirtualList(onSelect = onSelect)
+    private val list = AppsVirtualList(onSelect = onSelect, onTogglePin = onTogglePin, onOpenDetails = onOpenDetails)
     private val scrollPane = JScrollPane(list).apply {
         border = BorderFactory.createEmptyBorder()
         viewport.background = AdbToolboxTheme.Colors.bg
@@ -169,13 +173,23 @@ class AppsPanel(
         font = AdbToolboxTheme.Typography.monoMeta
         foreground = AdbToolboxTheme.Colors.textFaint
     }
-    private val selectedAppRow = JPanel().apply {
-        layout = javax.swing.BoxLayout(this, javax.swing.BoxLayout.Y_AXIS)
-        isOpaque = false
+    private var selectedPackageName: String? = null
+    private val detailsLink = DesignButton("Details", DesignButtonStyle.LINK).apply {
+        toolTipText = "App info, shared preferences and databases"
+        isEnabled = false
+        addActionListener { selectedPackageName?.let(onOpenDetails) }
+    }
+    private val selectedAppRow = run {
+        val names = JPanel().apply {
+            layout = javax.swing.BoxLayout(this, javax.swing.BoxLayout.Y_AXIS)
+            isOpaque = false
+            add(selectedAppLabel)
+            add(selectedAppPackageLabel)
+        }
+        flexRow(AdbToolboxTheme.Spacing.s3, names, detailsLink, fill = names)
+    }.apply {
         alignmentX = Component.LEFT_ALIGNMENT
         border = JBUI.Borders.empty(0, AdbToolboxTheme.Spacing.sectionInset)
-        add(selectedAppLabel)
-        add(selectedAppPackageLabel)
     }
 
     private val restartButton = DesignButton("Restart", DesignButtonStyle.PRIMARY).apply {
@@ -242,11 +256,27 @@ class AppsPanel(
         add(destructiveZone)
     }
 
-    init {
+    private val listCard = JPanel(BorderLayout()).apply {
         add(toolbar, BorderLayout.NORTH)
         add(centerContainer, BorderLayout.CENTER)
         add(actionFooterPanel, BorderLayout.SOUTH)
     }
+
+    private val cards = JPanel(java.awt.CardLayout()).apply {
+        add(listCard, LIST_CARD)
+        detailsPanel?.let { add(it, DETAILS_CARD) }
+    }
+
+    init {
+        add(cards, BorderLayout.CENTER)
+    }
+
+    /** Swaps between the app list and the detail page. */
+    fun showDetails(show: Boolean) {
+        (cards.layout as java.awt.CardLayout).show(cards, if (show) DETAILS_CARD else LIST_CARD)
+    }
+
+    internal val detailsLinkForTest: JButton get() = detailsLink
 
     /** Test-only visibility hooks so a test can drive real Swing interactions without a live display. */
     internal val searchFieldForTest: JTextField get() = searchField
@@ -299,6 +329,8 @@ class AppsPanel(
         val selectedRow = state.rows.firstOrNull { it.packageName == state.selectedPackageName }
         selectedAppLabel.text = selectedRow?.label.orEmpty()
         selectedAppPackageLabel.text = selectedRow?.packageName.orEmpty()
+        selectedPackageName = selectedRow?.packageName
+        detailsLink.isEnabled = selectedRow != null
     }
 
     /**
@@ -431,3 +463,6 @@ private class DashedTopBorder(private val color: Color) : AbstractBorder() {
         }
     }
 }
+
+private const val LIST_CARD = "list"
+private const val DETAILS_CARD = "details"

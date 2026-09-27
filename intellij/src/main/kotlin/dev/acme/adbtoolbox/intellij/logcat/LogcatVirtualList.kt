@@ -1,5 +1,6 @@
 package dev.acme.adbtoolbox.intellij.logcat
 
+import javax.swing.plaf.basic.BasicListUI
 import com.intellij.ui.components.JBList
 import com.intellij.util.ui.JBUI
 import dev.acme.adbtoolbox.intellij.ui.common.AdbToolboxTheme
@@ -28,6 +29,66 @@ class LogcatVirtualList(
             revalidate()
             repaint()
         }
+
+    /**
+     * Swing's own variable-height layout asks the renderer for every row's preferred size — with
+     * wrapping on, that laid out the HTML of the whole buffer on the EDT after every appended batch
+     * and froze the IDE. This UI sizes wrapped rows by arithmetic instead (monospace cells, see
+     * [LogcatRowStyle.wrappedLineCount]); unwrapped rows keep the fixed line height.
+     */
+    private inner class WrapAwareListUI : BasicListUI() {
+        override fun updateLayoutState() {
+            // JList's constructor installs the UI before this class's fields are initialized.
+            @Suppress("SENSELESS_COMPARISON")
+            if (presentation == null || lineCounts == null || !presentation.wrapLines) return super.updateLayoutState()
+            val size = list.model.size
+            val cells = cellsPerLine()
+            val lineHeight = AdbToolboxTheme.Sizes.logLineHeight
+            cellHeight = -1
+            cellWidth = (list.width - list.insets.left - list.insets.right).coerceAtLeast(1)
+            cellHeights = IntArray(size) { index -> lineHeight * wrappedLines(list.model.getElementAt(index) as LogcatRenderRow, cells) }
+        }
+    }
+
+    /** Wrapped line counts per row sequence, valid for [lineCountKey]'s width and columns. */
+    private val lineCounts = HashMap<Long, Int>()
+    private var lineCountKey: Pair<Int, LogcatRenderPresentation>? = null
+
+    private fun wrappedLines(row: LogcatRenderRow, cells: Int): Int {
+        val key = cells to presentation
+        if (key != lineCountKey || lineCounts.size > virtualModel.size * 2 + 1024) {
+            lineCounts.clear()
+            lineCountKey = key
+        }
+        return lineCounts.getOrPut(row.sequence) { LogcatRowStyle.wrappedLineCount(row, presentation, cells) }
+    }
+
+    /** Monospace cells that fit on one wrapped line at the list's current width. */
+    internal fun cellsPerLine(): Int {
+        val charWidth = getFontMetrics(AdbToolboxTheme.Typography.mono).charWidth('m').coerceAtLeast(1)
+        val usable = width - insets.left - insets.right - AdbToolboxTheme.Spacing.s4 * 2
+        return (usable / charWidth).coerceAtLeast(MIN_WRAP_CELLS)
+    }
+
+    override fun updateUI() {
+        setUI(WrapAwareListUI())
+    }
+
+    override fun setBounds(x: Int, y: Int, width: Int, height: Int) {
+        val widthChanged = width != this.width
+        super.setBounds(x, y, width, height)
+        // Wrapped heights depend on the width; re-measure now (cheap arithmetic), not after a queued
+        // resize event, or the rows keep the line counts of the previous width.
+        @Suppress("SENSELESS_COMPARISON")
+        if (widthChanged && presentation != null && presentation.wrapLines) virtualModel.presentationChanged()
+    }
+
+    /** Wrapped rows fill the viewport: without this the list keeps the width of its widest unwrapped row. */
+    override fun getScrollableTracksViewportWidth(): Boolean {
+        // JList's constructor calls this before this class's fields are initialized.
+        @Suppress("SENSELESS_COMPARISON")
+        return if (presentation != null && presentation.wrapLines) true else super.getScrollableTracksViewportWidth()
+    }
 
     init {
         background = AdbToolboxTheme.Colors.bg
@@ -132,12 +193,8 @@ class LogcatVirtualList(
             // `rowStyle`: `padding: 0 8px`.
             component.border = JBUI.Borders.empty(0, AdbToolboxTheme.Spacing.s4)
 
-            val wrapWidthPx = if (options.wrapLines) {
-                list?.let { (it.width - it.insets.left - it.insets.right - AdbToolboxTheme.Spacing.s4 * 2).coerceAtLeast(1) }
-            } else {
-                null
-            }
-            setHtml(component, LogcatRowStyle.rowHtml(row, options, wrapWidthPx))
+            val wrapCells = if (options.wrapLines) (list as? LogcatVirtualList)?.cellsPerLine() else null
+            setHtml(component, LogcatRowStyle.rowHtml(row, options, wrapCells))
 
             component.isOpaque = true
             component.background = when {
@@ -151,6 +208,9 @@ class LogcatVirtualList(
 
 /** Covers bold (assert) rows and font-metric rounding in [LogcatVirtualList]'s width estimate. */
 private const val ROW_WIDTH_SLACK_CELLS = 2
+
+/** Even a very narrow Logcat keeps a few characters per wrapped line. */
+private const val MIN_WRAP_CELLS = 8
 
 /** Enough parsed rows for several screens of scrolling back and forth. */
 private const val HTML_CACHE_SIZE = 1024

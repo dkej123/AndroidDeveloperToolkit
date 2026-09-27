@@ -15,6 +15,8 @@ import kotlin.math.roundToInt
  */
 object LogcatRowStyle {
 
+    private val DATED_TIMESTAMP = Regex("""\d\d-\d\d\s+(\d\d:\d\d:\d\d\.\d{3})""")
+
     fun levelColor(severity: LogSeverity?): JBColor = paletteFor(severity).level
     fun messageColor(severity: LogSeverity?): JBColor = paletteFor(severity).message
     fun rowBackground(severity: LogSeverity?): JBColor? = paletteFor(severity).rowBg
@@ -50,36 +52,37 @@ object LogcatRowStyle {
     fun truncateTag(tag: String, maxChars: Int = 18): String =
         if (tag.length <= maxChars) tag else tag.take(maxChars - 1) + "…"
 
+    /** `threadtime`'s `MM-DD HH:MM:SS.mmm` shown without the date: within a session it is noise that costs 6 columns. */
+    fun displayTimestamp(raw: String): String = DATED_TIMESTAMP.matchEntire(raw)?.groupValues?.get(1) ?: raw
+
     /**
      * The fully-styled HTML body for one row's cell renderer text: level letter, optional
      * timestamp/tag columns per [presentation]'s [LogcatColumnVisibility], and the message with its
-     * search-match [LogcatRenderRow.matchSpans] highlighted. [wrapWidthPx] mirrors the existing
-     * "wrap uses the available list width" behavior; `null` renders unwrapped (single line,
-     * newlines rendered as spaces).
+     * search-match [LogcatRenderRow.matchSpans] highlighted. With [wrapCells] the text is broken
+     * by hand every [wrapCells] monospace cells and at newlines, so each row is exactly
+     * [wrappedLineCount] lines tall and Swing never has to measure or re-wrap it; `null` renders
+     * unwrapped (single line, newlines rendered as spaces).
      */
-    fun rowHtml(row: LogcatRenderRow, presentation: LogcatRenderPresentation, wrapWidthPx: Int?): String {
-        val segments = mutableListOf<String>()
-        row.severity?.let { severity ->
-            segments += htmlSpan(severity.name.first().toString(), levelColor(severity), bold = isBoldRow(severity))
+    fun rowHtml(row: LogcatRenderRow, presentation: LogcatRenderPresentation, wrapCells: Int?): String {
+        val runs = runsOf(row, presentation)
+        if (wrapCells == null || !presentation.wrapLines) {
+            return "<html>" + runs.joinToString("") { it.html(it.text.replace('\n', ' ')) } + "</html>"
         }
-        if (presentation.columns.timestamp) {
-            row.timestamp?.let { segments += htmlSpan(it, AdbToolboxTheme.LogSeverityColors.timestamp) }
-        }
-        if (presentation.columns.tag) {
-            row.tag?.let { tag ->
-                // Fixed-width mono column (`tagStyle`: 104px ≈ 15 cells of the 11px editor font), so
-                // messages start on one vertical edge instead of right after each tag.
-                val cell = truncateTag(tag, TAG_COLUMN_CHARS)
-                val padding = "&nbsp;".repeat(TAG_COLUMN_CHARS - cell.length)
-                segments += htmlSpanRaw(cell.htmlEscaped() + padding, AdbToolboxTheme.LogSeverityColors.tag, bold = false)
-            }
-        }
-        segments += messageHtml(row, presentation.wrapLines)
+        val lines = wrapRuns(runs, wrapCells.coerceAtLeast(1))
+        return "<html>" + lines.joinToString("<br>") { line -> line.joinToString("") { it.html(it.text) } } + "</html>"
+    }
 
-        // `rowStyle` gap 7 ≈ one cell of the 11px mono font.
-        val joined = segments.joinToString("&nbsp;")
-        val body = if (wrapWidthPx != null) "<div width=\"$wrapWidthPx\">$joined</div>" else joined
-        return "<html>$body</html>"
+    /** How many lines [rowHtml] produces for [row] at [cellsPerLine] — pure arithmetic, no HTML. */
+    fun wrappedLineCount(row: LogcatRenderRow, presentation: LogcatRenderPresentation, cellsPerLine: Int): Int {
+        val width = cellsPerLine.coerceAtLeast(1)
+        var lines = 0
+        var prefix = prefixCells(row, presentation)
+        row.message.split('\n').forEach { segment ->
+            val cells = prefix + segment.length
+            lines += maxOf(1, (cells + width - 1) / width)
+            prefix = 0
+        }
+        return lines
     }
 
     /** Upper bound of an unwrapped row's width in monospace cells: [rowHtml]'s visible text with
@@ -87,32 +90,90 @@ object LogcatRowStyle {
     fun unwrappedCells(row: LogcatRenderRow): Int {
         var cells = row.message.length
         if (row.severity != null) cells += 2
-        row.timestamp?.let { cells += it.length + 1 }
+        row.timestamp?.let { cells += displayTimestamp(it).length + 1 }
         if (row.tag != null) cells += TAG_COLUMN_CHARS + 1
         return cells
     }
 
-    private fun messageHtml(row: LogcatRenderRow, wrapLines: Boolean): String {
-        val highlighted = highlightedEscaped(row.message, row.matchSpans)
-        val withLineBreaks = if (wrapLines) highlighted.replace("\n", "<br>") else highlighted.replace("\n", " ")
-        return htmlSpanRaw(withLineBreaks, messageColor(row.severity), bold = isBoldRow(row.severity))
+    /** One styled stretch of a row's visible text; [text] is plain (unescaped). */
+    private data class Run(val text: String, val color: Color, val bold: Boolean, val hit: Boolean = false) {
+        fun html(visible: String): String {
+            // Non-breaking spaces keep monospace columns aligned (HTML collapses runs of spaces).
+            val escaped = visible.htmlEscaped().replace(" ", "&nbsp;")
+            val weight = if (bold) ";font-weight:bold" else ""
+            val background = if (hit) ";background-color:${colorHex(searchHitBackground())}" else ""
+            return "<span style='color:${colorHex(color)}$weight$background'>$escaped</span>"
+        }
     }
 
-    private fun highlightedEscaped(text: String, spans: List<LogcatMatchSpan>): String {
-        if (spans.isEmpty()) return text.htmlEscaped()
-        val sorted = spans.sortedBy { it.startInclusive }
-        val hitColor = colorHex(searchHitBackground())
-        val builder = StringBuilder()
-        var cursor = 0
-        sorted.forEach { span ->
-            builder.append(text.substring(cursor, span.startInclusive).htmlEscaped())
-            builder.append("<span style='background-color:$hitColor'>")
-            builder.append(text.substring(span.startInclusive, span.endExclusive).htmlEscaped())
-            builder.append("</span>")
-            cursor = span.endExclusive
+    private fun prefixCells(row: LogcatRenderRow, presentation: LogcatRenderPresentation): Int {
+        var cells = 0
+        if (row.severity != null) cells += 2
+        if (presentation.columns.timestamp) row.timestamp?.let { cells += displayTimestamp(it).length + 1 }
+        if (presentation.columns.tag && row.tag != null) cells += TAG_COLUMN_CHARS + 1
+        return cells
+    }
+
+    private fun runsOf(row: LogcatRenderRow, presentation: LogcatRenderPresentation): List<Run> = buildList {
+        val gap = Run(" ", AdbToolboxTheme.LogSeverityColors.timestamp, bold = false)
+        row.severity?.let { severity ->
+            add(Run(severity.name.first().toString(), levelColor(severity), bold = isBoldRow(severity)))
+            add(gap)
         }
-        builder.append(text.substring(cursor).htmlEscaped())
-        return builder.toString()
+        if (presentation.columns.timestamp) {
+            row.timestamp?.let {
+                add(Run(displayTimestamp(it), AdbToolboxTheme.LogSeverityColors.timestamp, bold = false))
+                add(gap)
+            }
+        }
+        if (presentation.columns.tag) {
+            row.tag?.let { tag ->
+                // Fixed-width mono column (`tagStyle`: 104px ≈ 15 cells of the 11px editor font), so
+                // messages start on one vertical edge instead of right after each tag.
+                add(Run(truncateTag(tag, TAG_COLUMN_CHARS).padEnd(TAG_COLUMN_CHARS), AdbToolboxTheme.LogSeverityColors.tag, bold = false))
+                add(gap)
+            }
+        }
+        val color = messageColor(row.severity)
+        val bold = isBoldRow(row.severity)
+        var cursor = 0
+        row.matchSpans.sortedBy { it.startInclusive }.forEach { span ->
+            val start = span.startInclusive.coerceIn(cursor, row.message.length)
+            val end = span.endExclusive.coerceIn(start, row.message.length)
+            if (start > cursor) add(Run(row.message.substring(cursor, start), color, bold))
+            if (end > start) add(Run(row.message.substring(start, end), color, bold, hit = true))
+            cursor = end
+        }
+        if (cursor < row.message.length || row.message.isEmpty()) add(Run(row.message.substring(cursor), color, bold))
+    }
+
+    /** Splits [runs] into lines of at most [width] cells, also breaking at every newline. */
+    private fun wrapRuns(runs: List<Run>, width: Int): List<List<Run>> {
+        val lines = mutableListOf<MutableList<Run>>(mutableListOf())
+        var used = 0
+        runs.forEach { run ->
+            var rest = run.text
+            while (true) {
+                val newline = rest.indexOf('\n')
+                val piece = if (newline >= 0) rest.substring(0, newline) else rest
+                var remaining = piece
+                while (remaining.isNotEmpty()) {
+                    if (used == width) {
+                        lines += mutableListOf<Run>()
+                        used = 0
+                    }
+                    val take = minOf(width - used, remaining.length)
+                    lines.last() += run.copy(text = remaining.substring(0, take))
+                    used += take
+                    remaining = remaining.substring(take)
+                }
+                if (newline < 0) break
+                lines += mutableListOf<Run>()
+                used = 0
+                rest = rest.substring(newline + 1)
+            }
+        }
+        return lines
     }
 
     /** A search-hit background solid enough for Swing's basic HTML `background-color` (which does
@@ -131,14 +192,6 @@ object LogcatRowStyle {
             return ((o * alpha) + (b * (1 - alpha))).roundToInt().coerceIn(0, 255)
         }
         return Color(channel(16), channel(8), channel(0))
-    }
-
-    private fun htmlSpan(text: String, color: Color, bold: Boolean = false): String =
-        htmlSpanRaw(text.htmlEscaped(), color, bold)
-
-    private fun htmlSpanRaw(rawHtml: String, color: Color, bold: Boolean): String {
-        val weight = if (bold) ";font-weight:bold" else ""
-        return "<span style='color:${colorHex(color)}$weight'>$rawHtml</span>"
     }
 
     private fun colorHex(color: Color): String = "#%06X".format(color.rgb and 0xFFFFFF)

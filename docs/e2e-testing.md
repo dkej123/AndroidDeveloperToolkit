@@ -140,6 +140,7 @@ Rules for new tests:
 | `ToolWindowSmokeE2ETest` (smoke) | tool window opens, emulator selected, every rail view renders, ddmlib transport active |
 | `DeviceE2ETest` | model name, all six facts vs `getprop`/`wm`/`dumpsys`, Copy report, refresh, picker, Wake, Open shell |
 | `CaptureAndMirroringE2ETest` | Screenshot PNG size, Record → MP4, scrcpy version label, start/stop mirroring, mirroring options passed to scrcpy |
+| `AppDetailsE2ETest` | details page, editing a shared preference and a database cell on the device (root path) |
 | `AppsE2ETest` | listing, app installed outside the plugin (Run) appears on return, labels and icons, filter, system packages, Launch, Force-stop, Restart, Clear data (cancel/confirm), Uninstall |
 | `DisplayE2ETest` | font presets/reset/custom + validation, density presets/reset/custom, dark theme, animations off, show touches, toggle values |
 | `NetworkE2ETest` | proxy enable/disable, invalid port, Recent fills the form (per design §6), host IP fill |

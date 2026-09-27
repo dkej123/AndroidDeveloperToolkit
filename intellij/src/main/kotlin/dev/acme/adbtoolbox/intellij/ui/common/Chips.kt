@@ -69,6 +69,12 @@ class PresetChipRow<T : Any>(
 
     var onSelectionChanged: (T) -> Unit = {}
 
+    /**
+     * True while a value the user chose is still being written: the selection then shows the last
+     * confirmed value, so a click on that selected chip is a real request (go back) and notifies too.
+     */
+    var applyPending: Boolean = false
+
     val chips: List<PresetChip<T>> = choices.map { choice ->
         PresetChip(choice).also { chip -> add(chip) }
     }
@@ -82,7 +88,7 @@ class PresetChipRow<T : Any>(
         chips.forEachIndexed { index, chip ->
             chip.isSelected = chip.value == selected
             chip.addActionListener {
-                choose(chip.value, notify = true)
+                if (applyPending && chip.value == selectedValue) onSelectionChanged(chip.value) else choose(chip.value, notify = true)
             }
             bindTraversal(chip, index, KeyEvent.VK_LEFT, -1)
             bindTraversal(chip, index, KeyEvent.VK_RIGHT, 1)

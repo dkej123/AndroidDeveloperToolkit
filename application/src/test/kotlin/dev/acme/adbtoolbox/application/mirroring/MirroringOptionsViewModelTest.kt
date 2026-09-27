@@ -26,11 +26,26 @@ class MirroringOptionsViewModelTest {
         val scope = TestScope()
         private val dispatcher = StandardTestDispatcher(scope.testScheduler)
         val repository = FakeMirroringOptionsRepository(initial)
+        val useCase = MirroringOptionsUseCase(repository)
         val viewModel = MirroringOptionsViewModel(
             scope = scope,
             dispatchers = TestDispatchers(dispatcher),
-            options = MirroringOptionsUseCase(repository),
+            options = useCase,
         )
+    }
+
+    @Test
+    fun `options applied through the shared use case elsewhere reach the next start`() = runTest {
+        // The Mirroring Options dialog applies through the use case directly, not this view model;
+        // a checked "Show touches" there must still be what the next scrcpy start() reads.
+        val h = Harness()
+        h.scope.runCurrent()
+
+        h.useCase.apply(MirroringOptionsDraft(showTouches = true))
+        h.scope.runCurrent()
+
+        h.viewModel.currentOptions.value shouldBe MirroringOptions(showTouches = true)
+        h.viewModel.state.value.draft shouldBe MirroringOptionsDraft(showTouches = true)
     }
 
     @Test

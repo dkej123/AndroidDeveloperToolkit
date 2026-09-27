@@ -11,6 +11,7 @@ import dev.acme.adbtoolbox.application.display.density.DensityViewModel
 import dev.acme.adbtoolbox.application.display.density.DensityViewState
 import dev.acme.adbtoolbox.application.display.fontscale.FontScaleIntent
 import dev.acme.adbtoolbox.application.display.fontscale.FontScaleViewModel
+import dev.acme.adbtoolbox.application.display.QuickToggleFieldState
 import dev.acme.adbtoolbox.application.feedback.FeedbackIntent
 import dev.acme.adbtoolbox.application.feedback.FeedbackViewModel
 import dev.acme.adbtoolbox.domain.devicecontext.OverrideSummaryContributor
@@ -18,8 +19,6 @@ import dev.acme.adbtoolbox.domain.display.fontscale.FontScaleState
 import dev.acme.adbtoolbox.domain.dispatch.DispatcherProvider
 import dev.acme.adbtoolbox.domain.feedback.FeedbackMessage
 import dev.acme.adbtoolbox.domain.feedback.FeedbackSeverity
-import dev.acme.adbtoolbox.domain.nav.ViewId
-import dev.acme.adbtoolbox.intellij.host.AdbToolboxHostPanel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.launchIn
@@ -27,8 +26,8 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.withContext
 
 /**
- * Connects task 026/027/028's font-scale, density, and quick-toggles view models to the Display
- * view (task 029), following [dev.acme.adbtoolbox.intellij.devicefacts.DeviceFactsCoordinator]'s
+ * Connects task 026/027/028's font-scale, density, and quick-toggles view models to the display
+ * sections, which live in the Device view (there is no separate Display view any more), following [dev.acme.adbtoolbox.intellij.devicefacts.DeviceFactsCoordinator]'s
  * established shape: [scope] is owned by the caller, every state is collected and marshaled onto
  * [dispatchers]' `main` context before touching Swing, and each `render*` method is
  * `internal`/non-suspend so it is directly unit-testable against constructed state values.
@@ -36,10 +35,11 @@ import kotlinx.coroutines.withContext
  * Registers [densityOverrideTracker]/[fontScaleViewModel]'s own [OverrideSummaryContributor] and a
  * [DisplayBadgeContributor] built from both with [aggregator] (task 014) here, in this feature's own
  * file, rather than the composition root editing a shared list — [dispose] unregisters both so a
- * disposed Display view never contributes stale badge/override state.
+ * disposed coordinator never contributes stale badge/override state.
  */
 class DisplayCoordinator(
-    host: AdbToolboxHostPanel,
+    /** Where the display sections are mounted: the Device view's [dev.acme.adbtoolbox.intellij.devicefacts.DeviceFactsPanel.displaySlot]. */
+    slot: javax.swing.JPanel,
     private val fontScaleViewModel: FontScaleViewModel,
     private val densityViewModel: DensityViewModel,
     private val quickTogglesViewModel: QuickTogglesViewModel,
@@ -50,18 +50,18 @@ class DisplayCoordinator(
     private val dispatchers: DispatcherProvider,
 ) : Disposable {
 
-    val panel: DisplayPanel = host.registerFeatureView(ViewId.Display.routeKey) {
-        DisplayPanel(
-            onApplyFontScale = { value -> fontScaleViewModel.handle(FontScaleIntent.Apply(value)) },
-            onResetFontScale = { fontScaleViewModel.handle(FontScaleIntent.Reset) },
-            onApplyDensityPreset = { percent -> densityViewModel.handle(DensityIntent.ApplyPreset(percent)) },
-            onApplyCustomDensity = { dpi -> densityViewModel.handle(DensityIntent.ApplyCustom(dpi)) },
-            onResetDensity = { densityViewModel.handle(DensityIntent.Reset) },
-            onSetDarkTheme = { enabled -> quickTogglesViewModel.handle(QuickTogglesIntent.SetDarkTheme(enabled)) },
-            onSetShowTouches = { enabled -> quickTogglesViewModel.handle(QuickTogglesIntent.SetShowTouches(enabled)) },
-            onSetAnimationsOff = { off -> quickTogglesViewModel.handle(QuickTogglesIntent.SetAnimationsOff(off)) },
-        )
-    } as DisplayPanel
+    val panel: DisplayPanel = DisplayPanel(
+        onApplyFontScale = { value -> fontScaleViewModel.handle(FontScaleIntent.Apply(value)) },
+        onResetFontScale = { fontScaleViewModel.handle(FontScaleIntent.Reset) },
+        onApplyDensityPreset = { percent -> densityViewModel.handle(DensityIntent.ApplyPreset(percent)) },
+        onApplyCustomDensity = { dpi -> densityViewModel.handle(DensityIntent.ApplyCustom(dpi)) },
+        onResetDensity = { densityViewModel.handle(DensityIntent.Reset) },
+        onSetDarkTheme = { enabled -> quickTogglesViewModel.handle(QuickTogglesIntent.SetDarkTheme(enabled)) },
+        onSetShowTouches = { enabled -> quickTogglesViewModel.handle(QuickTogglesIntent.SetShowTouches(enabled)) },
+        onSetAnimationsOff = { off -> quickTogglesViewModel.handle(QuickTogglesIntent.SetAnimationsOff(off)) },
+        onSetTalkBack = { enabled -> quickTogglesViewModel.handle(QuickTogglesIntent.SetTalkBack(enabled)) },
+        embedded = true,
+    ).also { slot.add(it, java.awt.BorderLayout.CENTER) }
 
     private val overrideRegistration = aggregator.registerOverrideSummaryContributor(densityOverrideTracker)
     private val fontScaleOverrideRegistration =
@@ -105,7 +105,14 @@ class DisplayCoordinator(
     /** Production code always reaches this already marshaled onto [dispatchers]' `main` context. */
     internal fun renderQuickToggles(state: QuickTogglesViewState) {
         panel.update(state)
+        // A TalkBack failure is usually actionable (no known TalkBack: set a command in Settings),
+        // so it is announced once per distinct error rather than only living in the toggle state.
+        val talkBackError = state.talkBack as? QuickToggleFieldState.Error
+        if (talkBackError != null && talkBackError != lastTalkBackError) postError(talkBackError.message)
+        lastTalkBackError = talkBackError
     }
+
+    private var lastTalkBackError: QuickToggleFieldState.Error<Boolean>? = null
 
     private fun postError(message: String) {
         feedback.handle(

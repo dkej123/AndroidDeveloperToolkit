@@ -1,5 +1,8 @@
 # 046 — Apply final design to Display
 
+> **Superseded placement (2026-09-25):** there is no Display view any more — these controls are
+> sections of the Device view. Do not re-add a Display rail entry or view (see `CLAUDE.md`).
+
 ## Goal
 
 Apply the delivered Display design to font, density, toggles, validation, overrides, and reset states.

@@ -56,6 +56,8 @@ internal fun resolveSettingsState(state: SettingsPersistenceState): SettingsStat
         scrcpyPathOverride = migrated.scrcpyPathOverride?.trim()?.takeIf { it.isNotBlank() },
         captureDirectory = migrated.captureDirectory?.trim()?.takeIf { it.isNotBlank() },
         logcatBufferSizeKb = bufferSize,
+        talkBackOnCommand = migrated.talkBackOnCommand?.trim()?.takeIf { it.isNotBlank() },
+        talkBackOffCommand = migrated.talkBackOffCommand?.trim()?.takeIf { it.isNotBlank() },
     )
 }
 
@@ -84,6 +86,8 @@ class SettingsPersistenceAdapter(
             scrcpyPathOverride = state.scrcpyPathOverride
             captureDirectory = state.captureDirectory
             logcatBufferSizeKb = state.logcatBufferSizeKb
+            talkBackOnCommand = state.talkBackOnCommand
+            talkBackOffCommand = state.talkBackOffCommand
         }
     }
 }

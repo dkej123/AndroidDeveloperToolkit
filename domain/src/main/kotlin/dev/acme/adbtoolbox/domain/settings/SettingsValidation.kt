@@ -1,5 +1,7 @@
 package dev.acme.adbtoolbox.domain.settings
 
+import dev.acme.adbtoolbox.domain.display.TalkBackCommand
+
 import dev.acme.adbtoolbox.domain.discovery.ExecutableFileProbe
 
 /** Why a candidate [SettingsState] was rejected by [validateSettings] — "invalid paths cannot
@@ -34,6 +36,8 @@ suspend fun validateSettings(
         adbPathOverride = candidate.adbPathOverride.normalizeOptionalPath(),
         scrcpyPathOverride = candidate.scrcpyPathOverride.normalizeOptionalPath(),
         captureDirectory = candidate.captureDirectory.normalizeOptionalPath(),
+        talkBackOnCommand = TalkBackCommand.normalizeCustom(candidate.talkBackOnCommand),
+        talkBackOffCommand = TalkBackCommand.normalizeCustom(candidate.talkBackOffCommand),
     )
     val errors = mutableSetOf<SettingsFieldError>()
 

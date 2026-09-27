@@ -1,5 +1,10 @@
 package dev.acme.adbtoolbox.intellij.network
 
+import dev.acme.adbtoolbox.intellij.ui.common.PresetChipChoice
+import dev.acme.adbtoolbox.intellij.ui.common.PresetChipRow
+import dev.acme.adbtoolbox.domain.network.NetworkThrottle
+import dev.acme.adbtoolbox.application.network.ThrottleAvailability
+import dev.acme.adbtoolbox.application.network.NetworkThrottleViewState
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBList
 import com.intellij.ui.components.JBPanel
@@ -56,6 +61,7 @@ class NetworkPanel(
     onEnable: () -> Unit,
     onReset: () -> Unit,
     private val onSelectRecent: (ProxyEndpoint) -> Unit,
+    onApplyThrottle: (NetworkThrottle) -> Unit = {},
 ) : JBPanel<NetworkPanel>(BorderLayout()) {
 
     // ---- Global HTTP proxy section (`design/README.md` §6.1) ----
@@ -168,11 +174,56 @@ class NetworkPanel(
 
     private val recentSection = DesignSections.section(recentHeader, recentsList)
 
+    // ---- Network throttling section (emulator console `network speed`/`delay`) ----
+
+    private val throttleMetaLabel = DesignSections.metaLabel()
+    private val throttleChipRow = PresetChipRow(
+        choices = NetworkThrottle.entries.map { PresetChipChoice(it, it.label, isDefault = it == NetworkThrottle.Off) },
+        selected = NetworkThrottle.Off,
+    ).apply {
+        onSelectionChanged = { throttle -> onApplyThrottle(throttle) }
+    }
+    private val throttleHelpLabel = DesignSections.helpText(THROTTLE_HELP_EMULATOR)
+    private val throttleSection = DesignSections.section(
+        DesignSections.header(DesignSections.titleLabel("Network throttling"), throttleMetaLabel),
+        DesignSections.inset(throttleChipRow),
+        throttleHelpLabel,
+    )
+
     private val contentPanel = ViewportWidthPanel().apply {
         layout = BoxLayout(this, BoxLayout.Y_AXIS)
         background = AdbToolboxTheme.Colors.bg
         add(proxySection)
+        add(throttleSection)
         add(recentSection)
+    }
+
+    internal val throttleChipRowForTest: PresetChipRow<NetworkThrottle> get() = throttleChipRow
+    internal val throttleMetaLabelForTest: JBLabel get() = throttleMetaLabel
+    internal val throttleHelpForTest: javax.swing.text.JTextComponent get() = throttleHelpLabel
+
+    /** Readback-driven like the proxy: the highlighted chip is what the emulator reports. */
+    fun update(state: NetworkThrottleViewState) {
+        val emulator = state.availability == ThrottleAvailability.Emulator
+        val current = state.current
+        throttleChipRow.chips.forEach { it.isEnabled = emulator && !state.busy }
+        current?.let(throttleChipRow::setSelectedValue)
+        throttleMetaLabel.text = when {
+            !emulator -> "emulator only"
+            state.busy -> "applying…"
+            current != null -> if (current == NetworkThrottle.Off) "off" else current.label
+            else -> state.customDescription ?: "—"
+        }
+        throttleMetaLabel.foreground = if (emulator && current != null && current != NetworkThrottle.Off) {
+            AdbToolboxTheme.Colors.amber
+        } else {
+            AdbToolboxTheme.Colors.textFaint
+        }
+        throttleHelpLabel.text = when {
+            state.error != null -> state.error
+            state.availability == ThrottleAvailability.PhysicalDevice -> THROTTLE_HELP_PHYSICAL
+            else -> THROTTLE_HELP_EMULATOR
+        }
     }
 
     private val scrollPane = JScrollPane(contentPanel).apply {
@@ -295,3 +346,8 @@ class NetworkPanel(
         }
     }
 }
+
+private const val THROTTLE_HELP_EMULATOR =
+    "Slows the emulator's connection (speed and latency). It stays throttled until you pick Off or restart the emulator."
+private const val THROTTLE_HELP_PHYSICAL =
+    "Only emulators can be throttled: Android has no throttling command for physical devices without root."

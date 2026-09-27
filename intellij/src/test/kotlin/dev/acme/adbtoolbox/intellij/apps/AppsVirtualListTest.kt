@@ -20,6 +20,68 @@ private fun pngIcon(color: Color): AppIcon {
 
 class AppsVirtualListTest : BasePlatformTestCase() {
 
+    private fun click(list: AppsVirtualList, x: Int, y: Int) {
+        for (listener in list.mouseListeners) {
+            listener.mouseClicked(MouseEvent(list, MouseEvent.MOUSE_CLICKED, System.currentTimeMillis(), 0, x, y, 1, false))
+        }
+    }
+
+    fun `test the list shrinks with its scroll pane when the tool window gets narrower`() {
+        val model = AppsVirtualListModel { true }
+        val list = AppsVirtualList(model, onSelect = {})
+        model.apply(listOf(row("com.acme.shop"), row("com.acme.wallet")))
+        val scrollPane = javax.swing.JScrollPane(list)
+        scrollPane.setSize(400, 300)
+        scrollPane.doLayout()
+        scrollPane.viewport.doLayout()
+        // Rows re-measured at the wide width (e.g. an icon or label update arrives).
+        model.apply(listOf(row("com.acme.shop", label = "Shop"), row("com.acme.wallet")))
+        scrollPane.viewport.doLayout()
+
+        scrollPane.setSize(200, 300)
+        scrollPane.doLayout()
+        scrollPane.viewport.doLayout()
+
+        assertEquals(scrollPane.viewport.width, list.width)
+        assertEquals(list.width - list.insets.left - list.insets.right, list.getCellBounds(0, 0).width)
+    }
+
+    fun `test clicking a row's pin toggles the pin instead of selecting the row`() {
+        var pinned: String? = null
+        var selected: String? = null
+        val model = AppsVirtualListModel { true }
+        val list = AppsVirtualList(model, onSelect = { selected = it }, onTogglePin = { pinned = it })
+        model.apply(listOf(row("com.acme.shop"), row("com.acme.wallet")))
+        list.setBounds(0, 0, 300, 200)
+        list.doLayout()
+
+        val bounds = list.getCellBounds(1, 1)
+        click(list, bounds.x + bounds.width - com.intellij.util.ui.JBUI.scale(14), bounds.y + bounds.height / 2)
+
+        assertEquals("com.acme.wallet", pinned)
+        assertNull(selected)
+    }
+
+    fun `test a row with a section header is taller and shows the header above the row`() {
+        val model = AppsVirtualListModel { true }
+        val list = AppsVirtualList(model, onSelect = {}).apply { setSize(320, 400) }
+        val first = row("com.acme.shop").copy(isPinned = true, sectionHeader = "Pinned")
+        val plain = row("com.acme.wallet")
+        model.apply(listOf(first, plain))
+        list.doLayout()
+        val renderer = list.rowRendererForTest
+
+        list.cellRenderer.getListCellRendererComponent(list, first, 0, false, false)
+        assertTrue(renderer.sectionHeaderForTest.isVisible)
+        assertEquals("PINNED", renderer.sectionHeaderForTest.text)
+        assertSame(dev.acme.adbtoolbox.intellij.icons.AdbToolboxIcons.Actions.pinned, renderer.pinForTest.icon)
+        assertTrue(list.getCellBounds(0, 0).height > list.getCellBounds(1, 1).height)
+
+        list.cellRenderer.getListCellRendererComponent(list, plain, 1, false, false)
+        assertFalse(renderer.sectionHeaderForTest.isVisible)
+        assertSame(dev.acme.adbtoolbox.intellij.icons.AdbToolboxIcons.Actions.pin, renderer.pinForTest.icon)
+    }
+
     fun `test a row with a launcher icon paints that icon in place of the colored tile`() {
         val model = AppsVirtualListModel { true }
         val list = AppsVirtualList(model, onSelect = {}).apply { setSize(320, 200) }

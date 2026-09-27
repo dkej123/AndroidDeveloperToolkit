@@ -18,6 +18,8 @@ object AdbToolboxIcons {
         val mirror: Icon get() = load("/icons/actions/mirror.svg")
         val options: Icon get() = load("/icons/actions/options.svg")
         val pause: Icon get() = load("/icons/actions/pause.svg")
+        val pin: Icon get() = load("/icons/actions/pin.svg")
+        val pinned: Icon get() = load("/icons/actions/pinned.svg")
         val proxy: Icon get() = load("/icons/actions/proxy.svg")
         val record: Icon get() = load("/icons/actions/record.svg")
         val refresh: Icon get() = load("/icons/actions/refresh.svg")
@@ -42,6 +44,8 @@ object AdbToolboxIcons {
         Actions.mirror,
         Actions.options,
         Actions.pause,
+        Actions.pin,
+        Actions.pinned,
         Actions.proxy,
         Actions.record,
         Actions.refresh,

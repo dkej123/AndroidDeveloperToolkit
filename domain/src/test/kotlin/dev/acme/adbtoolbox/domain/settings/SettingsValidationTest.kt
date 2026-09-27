@@ -15,6 +15,20 @@ class SettingsValidationTest {
     }
 
     @Test
+    fun `custom TalkBack commands are normalized and blank ones fall back to the vendor defaults`() = runTest {
+        val candidate = SettingsState(
+            talkBackOnCommand = " adb shell settings put secure a 1 && adb shell settings put secure b 2 ",
+            talkBackOffCommand = "   ",
+        )
+
+        val result = validateSettings(candidate, FakeExecutableFileProbe(), FakeDirectoryProbe())
+
+        result shouldBe SettingsValidationResult.Valid(
+            SettingsState(talkBackOnCommand = "settings put secure a 1 && settings put secure b 2", talkBackOffCommand = null),
+        )
+    }
+
+    @Test
     fun `blank path fields clear their overrides instead of failing validation`() = runTest {
         val candidate = SettingsState(
             adbPathOverride = "   ",

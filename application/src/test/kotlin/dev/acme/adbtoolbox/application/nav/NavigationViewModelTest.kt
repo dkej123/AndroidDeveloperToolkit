@@ -124,7 +124,7 @@ class NavigationViewModelTest {
         scope.advanceTimeBy(1)
         scope.runCurrent()
 
-        viewModel.handle(NavigationIntent.Select(ViewId.Display))
+        viewModel.handle(NavigationIntent.Select(ViewId.Network))
         scope.runCurrent()
         viewModel.handle(NavigationIntent.Select(ViewId.Settings))
         scope.advanceTimeBy(200)

@@ -33,6 +33,28 @@ class LogcatPanelTest : BasePlatformTestCase() {
         onManualScrollAway = {},
     )
 
+    // ---- Autoscroll ----
+
+    fun `test while following, rows appended to the list end up in view without any further state update`() {
+        val p = panel()
+        p.setSize(400, 300)
+        layoutTree(p)
+        val rows = (1L..200L).map { LogcatRenderRow(it, dev.acme.adbtoolbox.domain.logcat.LogSeverity.INFO, null, null, "line $it") }
+
+        p.virtualList.virtualModel.apply(LogcatRenderBatch(rows, reset = true))
+        com.intellij.util.ui.UIUtil.dispatchAllInvocationEvents()
+
+        assertEquals(rows.lastIndex, p.virtualList.lastVisibleIndex)
+        val last = p.virtualList.getCellBounds(rows.lastIndex, rows.lastIndex)
+        val visible = p.virtualList.visibleRect
+        assertTrue("the newest line is fully visible", last.y + last.height <= visible.y + visible.height)
+    }
+
+    private fun layoutTree(component: java.awt.Component) {
+        component.doLayout()
+        if (component is java.awt.Container) component.components.forEach(::layoutTree)
+    }
+
     // ---- Space toggles pause (virtualList's own registered ActionMap entry) ----
 
     fun `test Space on the virtual list toggles pause`() {
@@ -134,6 +156,6 @@ class LogcatPanelTest : BasePlatformTestCase() {
     fun `test the package filter chip exposes an accessible name`() {
         val p = panel()
 
-        assertEquals("Limit to selected app", p.packageFilterChipForTest.getAccessibleContext().accessibleName)
+        assertEquals("Logcat package", p.packageFilterChipForTest.getAccessibleContext().accessibleName)
     }
 }

@@ -225,64 +225,8 @@
                   <div style="{{ secondaryBtnStyle }}" style-hover="{{ hoverStyle }}">Wake</div>
                 </div>
               </div>
-            </sc-if>
-          </div>
-        </sc-if>
-
-        <!-- ============ APPS ============ -->
-        <sc-if value="{{ isAppsView }}" hint-placeholder-val="{{ false }}">
-          <div style="{{ appsToolbarStyle }}">
-            <div style="{{ searchWrapStyle }}">
-              <div style="{{ searchIconStyle }}"></div>
-              <input style="{{ searchInputStyle }}" placeholder="Filter packages…" value="{{ appQuery }}" onInput="{{ onAppQueryInput }}" />
-              <sc-if value="{{ hasAppQuery }}" hint-placeholder-val="{{ false }}">
-                <div style="{{ clearBtnStyle }}" onClick="{{ clearAppQuery }}">×</div>
-              </sc-if>
-            </div>
-            <div style="{{ iconBtnStyle }}" style-hover="{{ hoverStyle }}" title="Show system packages"><div style="{{ eyeIconStyle }}"></div></div>
-          </div>
-          <div style="{{ appListStyle }}">
-            <sc-for list="{{ appRows }}" as="a" hint-placeholder-count="6">
-              <div style="{{ a.rowStyle }}" style-hover="{{ a.hoverStyle }}" onClick="{{ a.onClick }}" title="{{ a.pkg }}">
-                <div style="{{ a.iconStyle }}"></div>
-                <div style="{{ a.textWrapStyle }}">
-                  <div style="{{ a.labelStyle }}">{{ a.label }}</div>
-                  <div style="{{ a.pkgStyle }}">{{ a.pkg }}</div>
-                </div>
-                <sc-if value="{{ a.isDebuggable }}" hint-placeholder-val="{{ false }}">
-                  <div style="{{ a.tagStyle }}">debug</div>
-                </sc-if>
-              </div>
-            </sc-for>
-            <sc-if value="{{ isAppListEmpty }}" hint-placeholder-val="{{ false }}">
-              <div style="{{ emptyWrapStyle }}">
-                <div style="{{ emptyTitleStyle }}">No packages match “{{ appQuery }}”</div>
-                <div style="{{ emptyBodyStyle }}">Search matches package name and app label.</div>
-                <div style="{{ linkStyle }}" onClick="{{ clearAppQuery }}">Clear filter</div>
-              </div>
-            </sc-if>
-          </div>
-          <div style="{{ appActionsStyle }}">
-            <div style="{{ selectedAppRowStyle }}">
-              <div style="{{ selectedAppLabelStyle }}">{{ selectedAppLabel }}</div>
-              <div style="{{ selectedAppPkgStyle }}">{{ selectedAppPkg }}</div>
-            </div>
-            <div style="{{ actionRowStyle }}">
-              <div style="{{ primaryBtnStyle }}" style-hover="{{ primaryHoverStyle }}" onClick="{{ onRestartApp }}" title="Force-stop, then launch the main activity  ⇧⌘R">Restart</div>
-              <div style="{{ secondaryBtnStyle }}" style-hover="{{ hoverStyle }}" onClick="{{ onForceStop }}" title="am force-stop — leaves data intact">Force-stop</div>
-              <div style="{{ secondaryBtnStyle }}" style-hover="{{ hoverStyle }}" onClick="{{ onLaunchApp }}" title="monkey launch of the main activity">Launch</div>
-            </div>
-            <div style="{{ dangerZoneStyle }}">
-              <div style="{{ dangerLabelStyle }}">Destructive</div>
-              <div style="{{ dangerBtnStyle }}" style-hover="{{ dangerHoverStyle }}" onClick="{{ onClearData }}" title="Deletes databases, prefs and caches. Cannot be undone.">Clear data</div>
-              <div style="{{ dangerBtnStyle }}" style-hover="{{ dangerHoverStyle }}" onClick="{{ onUninstall }}" title="Removes the app and all its data. Cannot be undone.">Uninstall</div>
-            </div>
-          </div>
-        </sc-if>
-
-        <!-- ============ DISPLAY ============ -->
-        <sc-if value="{{ isDisplayView }}" hint-placeholder-val="{{ false }}">
-          <div style="{{ viewScrollStyle }}">
+              <!-- Display controls (font scale, display scale, quick toggles) live in the Device view;
+                   there is no Display view (user decision, 2026-09-25). -->
             <div style="{{ sectionStyle }}">
               <div style="{{ sectionHeaderStyle }}">
                 <div style="{{ sectionTitleStyle }}">Font scale</div>
@@ -350,8 +294,61 @@
                 </div>
               </sc-for>
             </div>
+            </sc-if>
           </div>
         </sc-if>
+
+        <!-- ============ APPS ============ -->
+        <sc-if value="{{ isAppsView }}" hint-placeholder-val="{{ false }}">
+          <div style="{{ appsToolbarStyle }}">
+            <div style="{{ searchWrapStyle }}">
+              <div style="{{ searchIconStyle }}"></div>
+              <input style="{{ searchInputStyle }}" placeholder="Filter packages…" value="{{ appQuery }}" onInput="{{ onAppQueryInput }}" />
+              <sc-if value="{{ hasAppQuery }}" hint-placeholder-val="{{ false }}">
+                <div style="{{ clearBtnStyle }}" onClick="{{ clearAppQuery }}">×</div>
+              </sc-if>
+            </div>
+            <div style="{{ iconBtnStyle }}" style-hover="{{ hoverStyle }}" title="Show system packages"><div style="{{ eyeIconStyle }}"></div></div>
+          </div>
+          <div style="{{ appListStyle }}">
+            <sc-for list="{{ appRows }}" as="a" hint-placeholder-count="6">
+              <div style="{{ a.rowStyle }}" style-hover="{{ a.hoverStyle }}" onClick="{{ a.onClick }}" title="{{ a.pkg }}">
+                <div style="{{ a.iconStyle }}"></div>
+                <div style="{{ a.textWrapStyle }}">
+                  <div style="{{ a.labelStyle }}">{{ a.label }}</div>
+                  <div style="{{ a.pkgStyle }}">{{ a.pkg }}</div>
+                </div>
+                <sc-if value="{{ a.isDebuggable }}" hint-placeholder-val="{{ false }}">
+                  <div style="{{ a.tagStyle }}">debug</div>
+                </sc-if>
+              </div>
+            </sc-for>
+            <sc-if value="{{ isAppListEmpty }}" hint-placeholder-val="{{ false }}">
+              <div style="{{ emptyWrapStyle }}">
+                <div style="{{ emptyTitleStyle }}">No packages match “{{ appQuery }}”</div>
+                <div style="{{ emptyBodyStyle }}">Search matches package name and app label.</div>
+                <div style="{{ linkStyle }}" onClick="{{ clearAppQuery }}">Clear filter</div>
+              </div>
+            </sc-if>
+          </div>
+          <div style="{{ appActionsStyle }}">
+            <div style="{{ selectedAppRowStyle }}">
+              <div style="{{ selectedAppLabelStyle }}">{{ selectedAppLabel }}</div>
+              <div style="{{ selectedAppPkgStyle }}">{{ selectedAppPkg }}</div>
+            </div>
+            <div style="{{ actionRowStyle }}">
+              <div style="{{ primaryBtnStyle }}" style-hover="{{ primaryHoverStyle }}" onClick="{{ onRestartApp }}" title="Force-stop, then launch the main activity  ⇧⌘R">Restart</div>
+              <div style="{{ secondaryBtnStyle }}" style-hover="{{ hoverStyle }}" onClick="{{ onForceStop }}" title="am force-stop — leaves data intact">Force-stop</div>
+              <div style="{{ secondaryBtnStyle }}" style-hover="{{ hoverStyle }}" onClick="{{ onLaunchApp }}" title="monkey launch of the main activity">Launch</div>
+            </div>
+            <div style="{{ dangerZoneStyle }}">
+              <div style="{{ dangerLabelStyle }}">Destructive</div>
+              <div style="{{ dangerBtnStyle }}" style-hover="{{ dangerHoverStyle }}" onClick="{{ onClearData }}" title="Deletes databases, prefs and caches. Cannot be undone.">Clear data</div>
+              <div style="{{ dangerBtnStyle }}" style-hover="{{ dangerHoverStyle }}" onClick="{{ onUninstall }}" title="Removes the app and all its data. Cannot be undone.">Uninstall</div>
+            </div>
+          </div>
+        </sc-if>
+
 
         <!-- ============ NETWORK ============ -->
         <sc-if value="{{ isNetworkView }}" hint-placeholder-val="{{ false }}">
@@ -666,15 +663,14 @@ class Component extends DCLogic {
     const icon = (paths, color) => React.createElement('svg', { width: 16, height: 16, viewBox: '0 0 16 16', fill: 'none' },
       paths.map((p, i) => React.createElement('path', { key: i, d: p, stroke: color, strokeWidth: 1.35, strokeLinecap: 'round', strokeLinejoin: 'round' })));
     const RAIL = [
-      { id: 'device', label: 'Device', tip: 'Device — mirroring, capture, facts', d: ['M5.2 2.4h5.6a1.4 1.4 0 0 1 1.4 1.4v8.4a1.4 1.4 0 0 1-1.4 1.4H5.2a1.4 1.4 0 0 1-1.4-1.4V3.8a1.4 1.4 0 0 1 1.4-1.4Z', 'M6.9 11.9h2.2'] },
+      { id: 'device', label: 'Device', tip: 'Device — mirroring, capture, facts, display, quick toggles', d: ['M5.2 2.4h5.6a1.4 1.4 0 0 1 1.4 1.4v8.4a1.4 1.4 0 0 1-1.4 1.4H5.2a1.4 1.4 0 0 1-1.4-1.4V3.8a1.4 1.4 0 0 1 1.4-1.4Z', 'M6.9 11.9h2.2'] },
       { id: 'apps', label: 'Apps', tip: 'Apps — restart, clear data, uninstall', d: ['M2.7 2.7h4v4h-4z', 'M9.3 2.7h4v4h-4z', 'M2.7 9.3h4v4h-4z', 'M9.3 9.3h4v4h-4z'] },
-      { id: 'display', label: 'Display', tip: 'Display — font scale and density', d: ['M2 3.6h12v7H2z', 'M5.6 13.4h4.8'] },
       { id: 'network', label: 'Network', tip: 'Network — global proxy', d: ['M8 2.6a5.4 5.4 0 1 0 0 10.8A5.4 5.4 0 0 0 8 2.6Z', 'M2.7 8h10.6', 'M8 2.6c1.6 1.7 1.6 9.1 0 10.8', 'M8 2.6C6.4 4.3 6.4 11.7 8 13.4'] },
       { id: 'logcat', label: 'Logcat', tip: 'Logcat — severity, filters, search', d: ['M2.7 4.2h10.6', 'M2.7 8h7.2', 'M2.7 11.8h9'] },
     ];
     const railItems = RAIL.map(r => {
       const active = s.view === r.id;
-      const badgeAmber = (r.id === 'display' && (fontOverridden || densityOverridden)) || (r.id === 'network' && s.proxyEnabled);
+      const badgeAmber = (r.id === 'device' && (fontOverridden || densityOverridden)) || (r.id === 'network' && s.proxyEnabled);
       const badgeRed = r.id === 'logcat' && connected && !s.logCleared;
       return {
         tooltip: r.tip, onClick: () => this.setState({ view: r.id, pickerOpen: false }),
@@ -876,7 +872,7 @@ class Component extends DCLogic {
       viewColStyle: { flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0, position: 'relative' },
       viewScrollStyle: { flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column' },
 
-      isDeviceView: s.view === 'device', isAppsView: s.view === 'apps', isDisplayView: s.view === 'display',
+      isDeviceView: s.view === 'device', isAppsView: s.view === 'apps',
       isNetworkView: s.view === 'network', isLogcatView: s.view === 'logcat',
 
       showNoDeviceEmpty: !connected && s.deviceState !== 'loading' && !s.skeleton,

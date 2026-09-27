@@ -2,6 +2,11 @@
 
 package dev.acme.adbtoolbox.application.devicefacts
 
+import dev.acme.adbtoolbox.domain.devicefacts.DeviceFactValue
+import dev.acme.adbtoolbox.domain.devicefacts.DeviceFactId
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.launch
 import dev.acme.adbtoolbox.domain.adb.AdbDeviceRequest
 import dev.acme.adbtoolbox.domain.adb.AdbOperation
 import dev.acme.adbtoolbox.domain.adb.AdbOutcome
@@ -57,7 +62,69 @@ private fun wellFormedStdoutFor(commandLine: String): String = when (commandLine
     else -> error("unexpected command: $commandLine")
 }
 
+/** A device whose battery level the test can change, recording every command it is sent. */
+private class ChangingBatteryTransport(var level: Int = 72) {
+    val commands = mutableListOf<String>()
+    val transport = FakeAdbTransport(
+        textScript = { request ->
+            val commandLine = ((request as AdbDeviceRequest).operation as AdbOperation.Shell).command.render()
+            commands += commandLine
+            val stdout = if (commandLine == "dumpsys battery") "level: $level\nscale: 100\nstatus: 2\n" else wellFormedStdoutFor(commandLine)
+            AdbTextResult(AdbOutcome.Completed(0), stdout = stdout, stderr = "")
+        },
+    )
+}
+
+private fun DeviceFactsViewState.battery(): Any? =
+    ((this as? DeviceFactsViewState.Connected)?.snapshot?.facts?.get(DeviceFactId.Battery) as? DeviceFactState.Available)?.value
+
 class DeviceFactsViewModelTest {
+
+    private fun refreshingHarness(device: ChangingBatteryTransport, interval: kotlin.time.Duration?): Pair<TestScope, DeviceFactsViewModel> {
+        val scope = TestScope()
+        val dispatcher = StandardTestDispatcher(scope.testScheduler)
+        val viewModel = DeviceFactsViewModel(
+            scope = scope,
+            dispatchers = TestDispatcherProviderFixture(dispatcher),
+            selectedDeviceState = MutableStateFlow(SelectedDeviceState.Online(onlineDevice(serialA))),
+            loadDeviceFacts = LoadDeviceFactsUseCase(device.transport),
+            clipboard = FakeClipboardPort(),
+            volatileRefreshInterval = interval,
+        )
+        return scope to viewModel
+    }
+
+    @Test
+    fun `Refresh re-reads the facts in place without dropping back to Loading`() {
+        val device = ChangingBatteryTransport(level = 72)
+        val (scope, viewModel) = refreshingHarness(device, interval = null)
+        scope.runCurrent()
+        viewModel.state.value.battery() shouldBe DeviceFactValue.Battery(72, charging = true)
+
+        device.level = 80
+        val seen = mutableListOf<DeviceFactsViewState>()
+        scope.backgroundScope.launch(StandardTestDispatcher(scope.testScheduler)) { viewModel.state.collect { seen += it } }
+        viewModel.handle(DeviceFactsIntent.Refresh)
+        scope.runCurrent()
+
+        viewModel.state.value.battery() shouldBe DeviceFactValue.Battery(80, charging = true)
+        seen.none { it is DeviceFactsViewState.Loading || it is DeviceFactsViewState.Partial } shouldBe true
+    }
+
+    @Test
+    fun `battery and uptime are re-read periodically while a device is selected`() {
+        val device = ChangingBatteryTransport(level = 72)
+        val (scope, viewModel) = refreshingHarness(device, interval = 30.seconds)
+        scope.runCurrent()
+        device.commands.clear()
+
+        device.level = 73
+        scope.advanceTimeBy(30.seconds + 1.milliseconds)
+        scope.runCurrent()
+
+        viewModel.state.value.battery() shouldBe DeviceFactValue.Battery(73, charging = true)
+        device.commands.sorted() shouldBe listOf("dumpsys battery", "uptime")
+    }
 
     private fun harness(
         transport: FakeAdbTransport = FakeAdbTransport(

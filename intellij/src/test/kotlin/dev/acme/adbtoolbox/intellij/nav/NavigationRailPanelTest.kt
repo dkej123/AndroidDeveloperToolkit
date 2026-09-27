@@ -25,6 +25,14 @@ class NavigationRailPanelTest : BasePlatformTestCase() {
         assertEquals(ViewId.entries, items)
     }
 
+    fun `test there is no Display destination - its controls live in the Device view`() {
+        val panel = NavigationRailPanel()
+
+        val routes = (0 until panel.list.model.size).map { panel.list.model.getElementAt(it).routeKey }
+
+        assertEquals(listOf("device", "apps", "network", "logcat", "settings"), routes)
+    }
+
     fun `test clicking (selecting) a destination fires onSelect with that destination`() {
         val panel = NavigationRailPanel()
         var selected: ViewId? = null
@@ -90,7 +98,7 @@ class NavigationRailPanelTest : BasePlatformTestCase() {
         // The cell renderer is one shared, reused Swing component (the standard ListCellRenderer
         // pattern) — each result must be read before the next call re-styles the same instance.
         val activeBackground = (
-            panel.list.cellRenderer.getListCellRendererComponent(panel.list, ViewId.Display, 2, true, false) as JLabel
+            panel.list.cellRenderer.getListCellRendererComponent(panel.list, ViewId.Apps, 1, true, false) as JLabel
             ).background
         val inactiveBackground = (
             panel.list.cellRenderer.getListCellRendererComponent(panel.list, ViewId.Network, 3, false, false) as JLabel
@@ -113,7 +121,7 @@ class NavigationRailPanelTest : BasePlatformTestCase() {
     fun `test updateBadges does not throw and is readable by the cell renderer`() {
         val panel = NavigationRailPanel()
 
-        panel.updateBadges(mapOf(ViewId.Logcat to NavigationBadge.Attention, ViewId.Display to NavigationBadge.Count(1)))
+        panel.updateBadges(mapOf(ViewId.Logcat to NavigationBadge.Attention, ViewId.Network to NavigationBadge.Count(1)))
 
         // No crash on repaint with badges set, and re-rendering the cell for a badged destination succeeds.
         val cell = panel.list.cellRenderer.getListCellRendererComponent(
@@ -133,7 +141,7 @@ class NavigationRailPanelTest : BasePlatformTestCase() {
             MouseEvent(panel.list, MouseEvent.MOUSE_MOVED, System.currentTimeMillis(), 0, bounds.x + 1, bounds.y + 1, 0, false),
         )
 
-        assertEquals("Device — mirroring, capture, facts", tooltip)
+        assertEquals("Device — mirroring, capture, facts, display, quick toggles", tooltip)
     }
 
     fun `test each destination's rendered cell exposes the same descriptive text as an accessible name`() {
@@ -145,6 +153,38 @@ class NavigationRailPanelTest : BasePlatformTestCase() {
 
         assertEquals("Network — global proxy", cell.getAccessibleContext().accessibleName)
         assertEquals("Network — global proxy", cell.toolTipText)
+    }
+
+    fun `test hovering or selecting Settings fills only its button, not the spacer above it`() {
+        val panel = NavigationRailPanel()
+        panel.setBounds(0, 0, 34, 500)
+        panel.doLayout()
+        panel.list.doLayout()
+        val settingsIndex = ViewId.entries.indexOf(ViewId.Settings)
+        val bounds = panel.list.getCellBounds(settingsIndex, settingsIndex)
+        val bottom = panel.list.height - panel.list.insets.bottom
+        val railButton = dev.acme.adbtoolbox.intellij.ui.common.AdbToolboxTheme.Sizes.railButton
+        val idle = paint(panel)
+
+        panel.list.selectedIndex = settingsIndex
+        panel.list.dispatchEvent(MouseEvent(panel.list, MouseEvent.MOUSE_MOVED, 0, 0, 17, bottom - railButton / 2, 0, false))
+        val active = paint(panel)
+
+        for (y in listOf(bounds.y + 4, (bounds.y + bottom - railButton) / 2, bottom - railButton - 3)) {
+            for (x in listOf(2, 17, 31)) {
+                assertEquals("spacer pixel ($x, $y)", Integer.toHexString(idle.getRGB(x, y)), Integer.toHexString(active.getRGB(x, y)))
+            }
+        }
+        val insideButton = 17 - railButton / 2 + 3 to bottom - railButton / 2
+        assertFalse("the button itself is filled", idle.getRGB(insideButton.first, insideButton.second) == active.getRGB(insideButton.first, insideButton.second))
+    }
+
+    private fun paint(panel: NavigationRailPanel): java.awt.image.BufferedImage {
+        val image = java.awt.image.BufferedImage(panel.width, panel.height, java.awt.image.BufferedImage.TYPE_INT_RGB)
+        val g = image.createGraphics()
+        panel.paint(g)
+        g.dispose()
+        return image
     }
 
     fun `test Settings is pinned to the rail bottom and only its button area is a hit target`() {

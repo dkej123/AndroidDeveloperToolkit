@@ -2,6 +2,7 @@ package dev.acme.adbtoolbox.intellij.logcat
 
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import dev.acme.adbtoolbox.domain.logcat.LogSeverity
+import dev.acme.adbtoolbox.intellij.ui.common.AdbToolboxTheme
 import javax.swing.JLabel
 
 class LogcatVirtualListTest : BasePlatformTestCase() {
@@ -65,6 +66,22 @@ class LogcatVirtualListTest : BasePlatformTestCase() {
         assertTrue("wrapped=$wrapped, unwrapped=$unwrapped", wrapped > unwrapped)
     }
 
+    fun `test turning wrap on inside a scroll pane fits rows to the viewport instead of the widest row`() {
+        val model = LogcatVirtualListModel { true }
+        val list = LogcatVirtualList(model)
+        val scrollPane = javax.swing.JScrollPane(list)
+        scrollPane.setSize(300, 400)
+        model.apply(LogcatRenderBatch(listOf(LogcatRenderRow(1, LogSeverity.INFO, null, null, "x".repeat(400))), reset = true))
+        layOut(scrollPane)
+        assertTrue("unwrapped, the list is as wide as its longest row", list.width > scrollPane.viewport.width)
+
+        list.presentation = list.presentation.copy(wrapLines = true)
+        layOut(scrollPane)
+
+        assertEquals(scrollPane.viewport.width, list.width)
+        assertTrue("the long row wraps onto several lines", list.getCellBounds(0, 0).height > AdbToolboxTheme.Sizes.logLineHeight)
+    }
+
     fun `test unwrapped layout does not render every row yet stays wide enough for the longest one`() {
         // Regression (docs/e2e-testing.md): without a fixed cell width, every model change made
         // JList measure all rows, i.e. parse every row's HTML on the EDT; with a few thousand
@@ -88,6 +105,32 @@ class LogcatVirtualListTest : BasePlatformTestCase() {
         assertTrue("rendered $renderedRows rows to lay out", renderedRows < 50)
         val longestWidth = renderer.getListCellRendererComponent(list, longest, 1_999, false, false).preferredSize.width
         assertTrue("list width $preferredWidth < longest row $longestWidth", preferredWidth >= longestWidth)
+    }
+
+    fun `test wrapped layout sizes rows without rendering every row`() {
+        // Regression: turning wrap on froze the IDE — variable row heights made JList render and
+        // lay out every buffered row's HTML on the EDT after each appended batch.
+        val model = LogcatVirtualListModel { true }
+        val list = LogcatVirtualList(model).apply { setSize(400, 400) }
+        list.presentation = LogcatRenderPresentation(wrapLines = true)
+        val long = LogcatRenderRow(2_000, LogSeverity.INFO, null, null, "y".repeat(500))
+        model.apply(LogcatRenderBatch((1L..1_999L).map { sequence ->
+            LogcatRenderRow(sequence, LogSeverity.DEBUG, "09-10 12:34:56.789", "Tag", "message-$sequence")
+        } + long, reset = true))
+        val renderer = list.cellRenderer
+        var renderedRows = 0
+        list.cellRenderer = javax.swing.ListCellRenderer { l, value, index, selected, focus ->
+            renderedRows++
+            renderer.getListCellRendererComponent(l, value, index, selected, focus)
+        }
+
+        list.preferredSize
+        val shortHeight = list.getCellBounds(0, 0).height
+        val longHeight = list.getCellBounds(1_999, 1_999).height
+
+        assertTrue("rendered $renderedRows rows to lay out", renderedRows < 50)
+        assertEquals(dev.acme.adbtoolbox.intellij.ui.common.AdbToolboxTheme.Sizes.logLineHeight, shortHeight)
+        assertTrue("long=$longHeight short=$shortHeight", longHeight > shortHeight * 5)
     }
 
     fun `test repainting a row reuses its parsed HTML instead of parsing it again`() {
@@ -134,5 +177,10 @@ class LogcatVirtualListTest : BasePlatformTestCase() {
         model.apply(LogcatRenderBatch(emptyList(), retainFromSequence = 3))
 
         assertEquals(4L, list.selectedValue.sequence)
+    }
+
+    private fun layOut(scrollPane: javax.swing.JScrollPane) {
+        scrollPane.doLayout()
+        scrollPane.viewport.doLayout()
     }
 }

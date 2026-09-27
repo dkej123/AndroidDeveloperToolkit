@@ -2,6 +2,9 @@
 
 package dev.acme.adbtoolbox.application.display
 
+import dev.acme.adbtoolbox.domain.display.TalkBackCustomCommands
+import dev.acme.adbtoolbox.domain.display.TalkBackProfile
+
 import dev.acme.adbtoolbox.domain.adb.AdbDeviceRequest
 import dev.acme.adbtoolbox.domain.adb.AdbOperation
 import dev.acme.adbtoolbox.domain.adb.AdbOutcome
@@ -47,7 +50,17 @@ private class FakeDeviceSettings(
     var window: Float = 1f,
     var transition: Float = 1f,
     var animatorDuration: Float = 1f,
+    var talkBackPackages: List<String> = emptyList(),
+    var enabledAccessibilityServices: String = "null",
+    val customCommandsRun: MutableList<String> = mutableListOf(),
 )
+
+private const val SAMSUNG_TALKBACK =
+    "com.samsung.android.accessibility.talkback/com.samsung.android.marvin.talkback.TalkBackService"
+private const val TALKBACK_ON_PREFIX =
+    "settings put secure accessibility_enabled 1 && settings put secure enabled_accessibility_services "
+private const val TALKBACK_OFF =
+    "settings put secure enabled_accessibility_services null && settings put secure accessibility_enabled 0"
 
 /**
  * A scripted [AdbTransport] double built for this test file: routes by (serial, rendered shell
@@ -90,7 +103,21 @@ private class ScriptedAdbTransport(
             "settings put global transition_animation_scale 0" -> { settings.transition = 0f; ok("") }
             "settings put global animator_duration_scale 1" -> { settings.animatorDuration = 1f; ok("") }
             "settings put global animator_duration_scale 0" -> { settings.animatorDuration = 0f; ok("") }
-            else -> error("unscripted command: $rendered")
+            "pm list packages talkback" -> ok(settings.talkBackPackages.joinToString("\n") { "package:$it" })
+            "settings get secure enabled_accessibility_services" -> ok(settings.enabledAccessibilityServices)
+            TALKBACK_OFF -> { settings.enabledAccessibilityServices = "null"; ok("") }
+            else -> when {
+                rendered.startsWith(TALKBACK_ON_PREFIX) -> {
+                    settings.enabledAccessibilityServices = rendered.removePrefix(TALKBACK_ON_PREFIX)
+                    ok("")
+                }
+                rendered.startsWith("custom ") -> {
+                    settings.customCommandsRun += rendered
+                    if (rendered == "custom on") settings.enabledAccessibilityServices = "com.vendor/.talkback.Service"
+                    ok("")
+                }
+                else -> error("unscripted command: $rendered")
+            }
         }
     }
 
@@ -107,6 +134,7 @@ class QuickTogglesViewModelTest {
     private fun harness(
         settingsBySerial: Map<DeviceSerial, FakeDeviceSettings> = mapOf(serialA to FakeDeviceSettings()),
         initial: SelectedDeviceState = onlineState(serialA),
+        customTalkBack: TalkBackCustomCommands = TalkBackCustomCommands(),
     ): Quintuple {
         val scope = TestScope()
         val dispatcher = StandardTestDispatcher(scope.testScheduler)
@@ -117,6 +145,7 @@ class QuickTogglesViewModelTest {
             dispatchers = TestDispatcherProviderFixture(dispatcher),
             transport = transport,
             selectedDeviceState = selectedDeviceState,
+            customTalkBackCommands = { customTalkBack },
         )
         return Quintuple(scope, transport, selectedDeviceState, viewModel, settingsBySerial)
     }
@@ -139,6 +168,74 @@ class QuickTogglesViewModelTest {
         viewModel.state.value.showTouches shouldBe QuickToggleFieldState.Idle(false)
         viewModel.state.value.animations shouldBe QuickToggleFieldState.Idle(AnimationsSummary.AllOn)
         transport.requests.filterIsInstance<AdbDeviceRequest>().forEach { it.serial shouldBe serialA }
+    }
+
+    @Test
+    fun `talkback toggles through the installed Samsung service and reflects the readback`() {
+        val settings = FakeDeviceSettings(talkBackPackages = listOf("com.samsung.android.accessibility.talkback"))
+        val (scope, _, _, viewModel) = harness(mapOf(serialA to settings))
+        scope.advanceUntilIdle()
+        viewModel.state.value.talkBack shouldBe QuickToggleFieldState.Idle(false)
+        viewModel.state.value.talkBackProfile shouldBe TalkBackProfile.Samsung
+
+        viewModel.handle(QuickTogglesIntent.SetTalkBack(true))
+        scope.advanceUntilIdle()
+
+        settings.enabledAccessibilityServices shouldBe SAMSUNG_TALKBACK
+        viewModel.state.value.talkBack shouldBe QuickToggleFieldState.Idle(true)
+
+        viewModel.handle(QuickTogglesIntent.SetTalkBack(false))
+        scope.advanceUntilIdle()
+
+        settings.enabledAccessibilityServices shouldBe "null"
+        viewModel.state.value.talkBack shouldBe QuickToggleFieldState.Idle(false)
+    }
+
+    @Test
+    fun `talkback uses Google's service when that is the one installed`() {
+        val settings = FakeDeviceSettings(talkBackPackages = listOf("com.google.android.marvin.talkback"))
+        val (scope, _, _, viewModel) = harness(mapOf(serialA to settings))
+        scope.advanceUntilIdle()
+
+        viewModel.handle(QuickTogglesIntent.SetTalkBack(true))
+        scope.advanceUntilIdle()
+
+        settings.enabledAccessibilityServices shouldBe
+            "com.google.android.marvin.talkback/com.google.android.marvin.talkback.TalkBackService"
+        viewModel.state.value.talkBackProfile shouldBe TalkBackProfile.Google
+    }
+
+    @Test
+    fun `custom talkback commands from settings replace the detected defaults`() {
+        val settings = FakeDeviceSettings(talkBackPackages = listOf("com.samsung.android.accessibility.talkback"))
+        val (scope, _, _, viewModel) = harness(
+            mapOf(serialA to settings),
+            customTalkBack = TalkBackCustomCommands(on = "custom on", off = "custom off"),
+        )
+        scope.advanceUntilIdle()
+
+        viewModel.handle(QuickTogglesIntent.SetTalkBack(true))
+        scope.advanceUntilIdle()
+
+        settings.customCommandsRun shouldBe listOf("custom on")
+        viewModel.state.value.talkBack shouldBe QuickToggleFieldState.Idle(true)
+        viewModel.state.value.talkBackProfile shouldBe TalkBackProfile.Custom
+    }
+
+    @Test
+    fun `without a known talkback, turning it on asks for a custom command instead of guessing`() {
+        val settings = FakeDeviceSettings(talkBackPackages = emptyList())
+        val (scope, transport, _, viewModel) = harness(mapOf(serialA to settings))
+        scope.advanceUntilIdle()
+        val before = transport.requests.size
+
+        viewModel.handle(QuickTogglesIntent.SetTalkBack(true))
+        scope.advanceUntilIdle()
+
+        val talkBack = viewModel.state.value.talkBack as QuickToggleFieldState.Error
+        talkBack.message shouldBe "No known TalkBack installed — set a custom TalkBack command in Settings"
+        talkBack.lastKnown shouldBe false
+        transport.requests.drop(before).none { (it as AdbDeviceRequest).operation.toString().contains("accessibility_enabled 1") } shouldBe true
     }
 
     @Test

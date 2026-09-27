@@ -8,8 +8,12 @@ mirror it with scrcpy, restart / clear / uninstall an app, change font scale and
 set a global HTTP proxy, capture screen, and read Logcat.
 
 Everything is scoped to one globally selected device, shown in a pinned bar at the top of the
-tool window. Five views live on a 34px vertical icon rail: **Device, Apps, Display, Network, Logcat**,
+tool window. Four views live on a 34px vertical icon rail: **Device, Apps, Network, Logcat**,
 plus Settings pinned to the rail bottom.
+
+> **There is no Display view.** Font scale, display scale (density) and the quick toggles are
+> sections of the Device view (user decision, 2026-09-25). Do not re-add a Display rail entry or a
+> separate Display view; §5 below describes those sections as they appear inside the Device view.
 
 ## About the design files
 
@@ -51,7 +55,7 @@ below are the *relative* intent: body = default label font, caption = small font
 │ 34px │                                       │
 │ rail │        active view (scrolls)           │
 │      │                                       │
-├──────────────────────────────────────────────┤ 22px  STATUS BAR  (pinned)
+├──────────────────────────────────────────────┤ 28px  STATUS BAR  (pinned)
 └──────────────────────────────────────────────┘
 ```
 
@@ -110,11 +114,11 @@ accent-colored glyph; inactive glyph `textDim`, hover fill only. Settings button
 via a flex spacer.
 
 Badges: 5px dot at `top: 2, right: 2`.
-- **amber** on Display when font scale != 1 or density != 100%; on Network when the proxy is enabled.
+- **amber** on Device when font scale != 1 or density != 100%; on Network when the proxy is enabled.
 - **red** on Logcat when errors are arriving.
 
-Tooltips: "Device — mirroring, capture, facts", "Apps — restart, clear data, uninstall",
-"Display — font scale and density", "Network — global proxy", "Logcat — severity, filters, search".
+Tooltips: "Device — mirroring, capture, facts, display, quick toggles", "Apps — restart, clear data,
+uninstall", "Network — global proxy", "Logcat — severity, filters, search".
 
 ### 3. Device view
 
@@ -172,6 +176,18 @@ gap 8, padding 12, `adb-pulse` 1.4s ease-in-out infinite).
   uppercase 9.5px/700 label "DESTRUCTIVE" on the left, then red outlined 24px buttons
   **Clear data** and **Uninstall** (hover fill `redBg`).
 
+- **Pins:** a pin glyph at the right edge of every row (`pinned` = accent filled, else outline
+  `textFaint`). Pinned apps are listed first under a "PINNED" header (9.5px/700 `textFaint`),
+  the rest under "ALL APPS"; headers appear only while something is pinned. Pins are per project,
+  by package name, and are also the top section of Logcat's package picker.
+- **App details:** clicking a row's app icon, or the footer's "Details" link, replaces the list
+  with a detail page: header (← Apps link, Refresh, 28px icon, label, package · version), then
+  tabs **Info** (key/value grid: version, SDKs, UID, debuggable, process, install/update times,
+  installer, ABI, paths, file access, flags; permissions table), **Shared prefs** (file picker,
+  Key/Type/Value table, Add / Remove / Revert / Save to device) and **Databases** (database and
+  table pickers, paged editable rows, SQL field with results, Revert / Save to device). Saving
+  force-stops the app first (ADR 0011).
+
 Confirmations (the only two modals in the plugin) — 300px max, `panel`, radius 8, padding 14,
 popup shadow; title 12.5px/700, body 11px `textDim`; actions right-aligned, gap 6:
 **Cancel** is focused by default (1px accent border = focus ring) and the red filled destructive
@@ -182,7 +198,10 @@ button is never the default. Esc = cancel.
 - Clear data — "Clear data for com.acme.shop?" / "Deletes databases, preferences and caches on
   Pixel 8 Pro, and signs the user out. This cannot be undone." / OK label "Clear data".
 
-### 5. Display view
+### 5. Display sections (inside the Device view)
+
+Shown in the Device view, below its Device section, while a device is connected — not a view of
+their own.
 
 1. **Font scale** — header meta mono 10px: "default" or "1.15× applied" (amber when overridden).
    Chip row (gap 4, wrap, padding 0 10px): `0.85× 1× 1.15× 1.3× 1.5× 2×` + dashed **"Custom…"**.
@@ -201,7 +220,9 @@ button is never the default. Esc = cancel.
    10px white knob, label 11.5px, right-aligned mono 10px value:
    "Dark theme / yes|no" (tooltip "cmd uimode night yes|no"),
    "Animations off / 1×|0×" (tooltip "Sets window, transition and animator scales to 0"),
-   "Show touches / on|off" (tooltip "Useful while recording").
+   "Show touches / on|off" (tooltip "Useful while recording"),
+   "TalkBack / on|off · Samsung|Google|custom" (the installed TalkBack is detected per device;
+   Settings → "TalkBack on/off command" overrides the commands).
 
 ### 6. Network view
 
@@ -219,6 +240,11 @@ button is never the default. Esc = cancel.
    `10.0.4.117:8888 · mitmproxy`, `10.0.4.117:8080 · Charles`, `proxy.acme.dev:3128 · staging`.
    Clicking a row fills host+port without enabling.
 
+**Network throttling** (emulator only, second section): chip row Off · LTE · HSPA · 3G · EDGE ·
+GPRS (each sets `emu network speed` + `delay`); header meta shows the emulator's readback (amber
+when throttled); on a physical device the chips are disabled with the explanation that Android has
+no throttling command without root.
+
 ### 7. Logcat view
 
 - **Toolbar** (padding 6px 6px 6px 8px, 1px bottom border): search field (placeholder "Search log…  ⌘F",
@@ -230,8 +256,9 @@ button is never the default. Esc = cancel.
 - **Filter row** (padding 0 8px 6px, gap 3, 1px bottom border): five 20px square level chips
   `V D I W E` — "min level and above"; the active chip is `accentBg` + `accentBorder` and takes the
   level's own color; then a right-aligned package filter chip (mono 10px, max-width 160, ellipsis)
-  showing the package selected in Apps, or "all packages" when off
-  (tooltip "Limit to the app selected in Apps").
+  showing the package chosen in Logcat's own picker + " ▾", or "all packages ▾"; clicking opens a
+  searchable popup: "All packages", a "Pinned" section (the Apps view's pins), then every other app.
+  The Apps selection never narrows Logcat (explicit user decision, 2026-09-25).
 - **Body** (`bg`, padding 4px 0 6px, scroll): rows are `display:flex; gap:7; padding:0 8px`,
   all cells mono 11px / line-height 16px. Level letter 7px wide; timestamp `logDim`; tag 104px
   `textDim` ellipsised (wide only); message flex, ellipsis or `pre-wrap` when wrap is on.
@@ -248,7 +275,8 @@ button is never the default. Esc = cancel.
 
 ### 8. Status bar (global)
 
-22px, `header`, 1px top border, padding 0 8px, gap 8:
+28px, `header`, 1px top border, padding 4px 8px, gap 8 (raised from 22px / 0 8px: the chips
+touched the bar's edges):
 - running-process chip (only while mirroring/recording): pulsing dot + mono 9px/700 label
   "scrcpy" (teal, `brandBg`) or "REC 00:42" (red, `redBg`);
 - last command message, 9.5px `textDim`, ellipsised;
@@ -269,8 +297,8 @@ button is never the default. Esc = cancel.
   status-bar message.
 - **Optimistic + confirm:** overrides apply immediately and are reversible via Reset; only uninstall
   and clear-data confirm first.
-- **Selection sharing:** the package selected in Apps is the default Logcat package filter; the device
-  in the bar scopes all five views. Both persist per project across IDE restarts.
+- **Selection sharing:** the device in the bar scopes every view. The Apps selection is *not*
+  shared with Logcat — Logcat has its own package picker (see §7); Apps pins are shared with it. The device selection and the pins persist per project.
 - **Device disconnect:** remember applied overrides per serial and offer to re-apply when that serial
   returns.
 - **Animations:** `adb-spin` 0.7s linear infinite (spinners); `adb-pulse` 1.2–1.6s ease-in-out infinite

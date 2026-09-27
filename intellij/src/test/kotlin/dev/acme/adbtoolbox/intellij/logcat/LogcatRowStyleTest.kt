@@ -85,7 +85,7 @@ class LogcatRowStyleTest : BasePlatformTestCase() {
         )
         val hiddenColumns = LogcatRenderPresentation(columns = LogcatColumnVisibility(timestamp = false, tag = false))
 
-        val html = LogcatRowStyle.rowHtml(row, hiddenColumns, wrapWidthPx = null)
+        val html = LogcatRowStyle.rowHtml(row, hiddenColumns, wrapCells = null)
 
         assertTrue(html.startsWith("<html>"))
         assertFalse(html.contains("12:34"))
@@ -94,20 +94,30 @@ class LogcatRowStyleTest : BasePlatformTestCase() {
         assertTrue(html.contains("background-color:"))
     }
 
-    fun `test wrap width wraps the message in a fixed-width div and turns newlines into breaks`() {
-        val row = LogcatRenderRow(1, LogSeverity.INFO, null, null, "line one\nline two")
+    fun `test wrapping hard-breaks at the cell width and at newlines, matching the computed line count`() {
+        val row = LogcatRenderRow(1, LogSeverity.INFO, null, null, "line one\n" + "x".repeat(25))
         val presentation = LogcatRenderPresentation(wrapLines = true)
 
-        val html = LogcatRowStyle.rowHtml(row, presentation, wrapWidthPx = 200)
+        // "I line one" fills exactly 10 cells; the 25 x's need three 10-cell lines.
+        assertEquals(4, LogcatRowStyle.wrappedLineCount(row, presentation, cellsPerLine = 10))
+        val html = LogcatRowStyle.rowHtml(row, presentation, wrapCells = 10)
+        assertEquals(3, Regex("<br>").findAll(html).count())
+        assertFalse("Swing must not re-wrap pre-broken lines", html.contains("width="))
+    }
 
-        assertTrue(html.contains("width=\"200\""))
-        assertTrue(html.contains("line one<br>line two"))
+    fun `test the timestamp column drops the date to save width`() {
+        assertEquals("12:34:56.789", LogcatRowStyle.displayTimestamp("09-10 12:34:56.789"))
+        assertEquals("1726000000.123", LogcatRowStyle.displayTimestamp("1726000000.123"))
+        val row = LogcatRenderRow(1, LogSeverity.INFO, "09-10 12:34:56.789", null, "m")
+        val html = LogcatRowStyle.rowHtml(row, LogcatRenderPresentation(), wrapCells = null)
+        assertTrue(html.contains("12:34:56.789"))
+        assertFalse(html.contains("09-10"))
     }
 
     fun `test assert row messages render bold`() {
         val row = LogcatRenderRow(1, LogSeverity.ASSERT, null, null, "FATAL EXCEPTION")
 
-        val html = LogcatRowStyle.rowHtml(row, LogcatRenderPresentation(), wrapWidthPx = null)
+        val html = LogcatRowStyle.rowHtml(row, LogcatRenderPresentation(), wrapCells = null)
 
         assertTrue(html.contains("font-weight:bold"))
     }

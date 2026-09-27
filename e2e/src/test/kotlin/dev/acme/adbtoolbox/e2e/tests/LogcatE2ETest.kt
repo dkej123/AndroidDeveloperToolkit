@@ -22,12 +22,10 @@ class LogcatE2ETest : E2eTest() {
     @BeforeEach
     fun openLogcatView() {
         studio.navigate(View.Logcat)
-        // "Limit to selected app" is on by default; after the Apps tests an app is selected and
-        // the stream would only show that app's lines. These tests need the whole stream.
-        val packageChip = studio.byName("Limit to selected app")
-        if (studio.textOf(packageChip) != "all packages") studio.click("Limit to selected app")
+        // Logcat has its own package picker (the Apps selection never narrows it); these tests need
+        // the whole stream, which is the default.
         awaitUntil(Duration.ofSeconds(5), Duration.ofMillis(200), "the package filter to be off") {
-            studio.textOf(studio.byName("Limit to selected app")) == "all packages"
+            studio.textOf(studio.byName("Logcat package")).startsWith("all packages")
         }
     }
 

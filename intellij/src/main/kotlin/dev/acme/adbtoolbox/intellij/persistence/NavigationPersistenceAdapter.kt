@@ -15,8 +15,12 @@ internal fun resolvePersistedViewId(state: NavigationPersistenceState): ViewId? 
     if (state.schemaVersion != NavigationPersistenceState.CURRENT_SCHEMA_VERSION) return null
     val raw = state.lastView ?: return null
     if (raw.isBlank()) return null
+    // The Display view was merged into Device; reopen its controls where they now live.
+    if (raw == LEGACY_DISPLAY_ROUTE) return ViewId.Device
     return ViewId.fromRouteKey(raw)
 }
+
+private const val LEGACY_DISPLAY_ROUTE = "display"
 
 /**
  * The `:intellij` [NavigationPersistence] adapter (ADR 0006, task 012): reads/writes only the

@@ -1,5 +1,15 @@
 package dev.acme.adbtoolbox.intellij.composition
 
+import dev.acme.adbtoolbox.adapters.jvm.sqlite.JdbcSqliteEngine
+import dev.acme.adbtoolbox.adapters.adb.appdata.AdbAppDatabaseTransfer
+import dev.acme.adbtoolbox.application.appdetails.AppDetailsViewModel
+import dev.acme.adbtoolbox.application.network.NetworkThrottleIntent
+import dev.acme.adbtoolbox.application.network.NetworkThrottleViewModel
+import dev.acme.adbtoolbox.domain.packages.PackageListState
+import dev.acme.adbtoolbox.application.logcat.LogcatPackageChoice
+import dev.acme.adbtoolbox.application.logcat.LogcatPackageSelection
+import dev.acme.adbtoolbox.intellij.persistence.PinnedAppsPersistenceAdapter
+import dev.acme.adbtoolbox.application.devicefacts.DeviceFactsIntent
 import com.intellij.ide.plugins.PluginManagerCore
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.components.Service
@@ -83,6 +93,7 @@ import dev.acme.adbtoolbox.application.wifi.WifiPairingUseCase
 import dev.acme.adbtoolbox.application.wifi.WifiPairingViewModel
 import dev.acme.adbtoolbox.domain.adb.AdbServerRequest
 import dev.acme.adbtoolbox.domain.adb.AdbTransport
+import dev.acme.adbtoolbox.domain.display.TalkBackCustomCommands
 import dev.acme.adbtoolbox.domain.adb.DeviceSerial
 import dev.acme.adbtoolbox.domain.apps.SelectedPackagePersistence
 import dev.acme.adbtoolbox.domain.capture.CaptureDestination
@@ -385,6 +396,7 @@ class AdbToolboxProjectService(private val project: Project) : Disposable {
         selectedDeviceState = selectedDeviceViewModel.state,
         loadDeviceFacts = loadDeviceFactsUseCase,
         clipboard = clipboardPort,
+        volatileRefreshInterval = 30.seconds,
     )
 
     /** Task 019's platform ports: a JVM filesystem capture destination and a Desktop Reveal action. */
@@ -534,6 +546,7 @@ class AdbToolboxProjectService(private val project: Project) : Disposable {
         packageRepository = packageRepository,
         selectedDeviceViewModel = selectedDeviceViewModel,
         selectedPackageViewModel = selectedPackageViewModel,
+        pinnedPackages = PinnedAppsPersistenceAdapter(project.service<AdbToolboxProjectState>()),
     )
 
     private val appLifecycleUseCase = AppLifecycleUseCase(adbTransport)
@@ -622,6 +635,9 @@ class AdbToolboxProjectService(private val project: Project) : Disposable {
         dispatchers = dispatcherProvider,
         transport = adbTransport,
         selectedDeviceState = selectedDeviceViewModel.state,
+        customTalkBackCommands = {
+            settingsRepository.readSettings().let { TalkBackCustomCommands(it.talkBackOnCommand, it.talkBackOffCommand) }
+        },
     )
 
     /** Task 032's host-LAN-IPv4 discovery port ("Use my computer IP") and persisted MRU recents adapter. */
@@ -640,18 +656,40 @@ class AdbToolboxProjectService(private val project: Project) : Disposable {
     )
 
     /** Entering (or returning to) Apps, Display or Network re-reads that view's device state. */
+    /** The Apps view's detail page: app info plus shared-preferences and database editors. */
+    val appDetailsViewModel: AppDetailsViewModel = AppDetailsViewModel(
+        scope = childScope(),
+        dispatchers = dispatcherProvider,
+        transport = adbTransport,
+        databases = AdbAppDatabaseTransfer(adbTransport),
+        sqlite = JdbcSqliteEngine(),
+        selectedDeviceState = selectedDeviceViewModel.state,
+    )
+
+    /** Emulator network throttling for the Network view (physical devices report it unsupported). */
+    val networkThrottleViewModel: NetworkThrottleViewModel = NetworkThrottleViewModel(
+        scope = childScope(),
+        dispatchers = dispatcherProvider,
+        transport = adbTransport,
+        selectedDeviceState = selectedDeviceViewModel.state,
+    )
+
     val viewEnterRefresher: ViewEnterRefresher = ViewEnterRefresher(
         scope = childScope(),
         dispatcher = dispatcherProvider.default,
         navigation = navigationViewModel.state,
         refreshers = mapOf(
-            ViewId.Apps to { appsViewModel.handle(AppsIntent.Refresh) },
-            ViewId.Display to {
+            ViewId.Device to {
+                deviceFactsViewModel.handle(DeviceFactsIntent.Refresh)
                 quickTogglesViewModel.handle(QuickTogglesIntent.Refresh)
                 fontScaleViewModel.handle(FontScaleIntent.Retry)
                 densityViewModel.handle(DensityIntent.Retry)
             },
-            ViewId.Network to { proxyController.handle(ProxyIntent.Refresh) },
+            ViewId.Apps to { appsViewModel.handle(AppsIntent.Refresh) },
+            ViewId.Network to {
+                proxyController.handle(ProxyIntent.Refresh)
+                networkThrottleViewModel.handle(NetworkThrottleIntent.Refresh)
+            },
         ),
     )
 
@@ -691,10 +729,22 @@ class AdbToolboxProjectService(private val project: Project) : Disposable {
 
     /** Task 035's package-pid resolver/tracker, driven by [selectedPackageViewModel] — the same
      * shared selection Apps writes to. */
+    /** The package Logcat is narrowed to — chosen in Logcat's own picker, never the Apps selection. */
+    val logcatPackageSelection: LogcatPackageSelection = LogcatPackageSelection(
+        scope = childScope(),
+        selectedDeviceState = selectedDeviceViewModel.state,
+    )
+
+    /** Logcat picker rows: the loaded app list with the Apps view's pins first. */
+    fun logcatPackageChoices(): List<LogcatPackageChoice> {
+        val packages = (packageRepository.state.value as? PackageListState.Content)?.packages.orEmpty()
+        return LogcatPackageChoice.from(packages, appsViewModel.pinned.value)
+    }
+
     val logcatPackagePidTracker: LogcatPackagePidTracker = LogcatPackagePidTracker(
         scope = childScope(),
         dispatchers = dispatcherProvider,
-        selectedPackageState = selectedPackageViewModel.state,
+        selectedPackageState = logcatPackageSelection.state,
         resolver = LogcatPidResolver(adbTransport),
     )
 
@@ -709,10 +759,11 @@ class AdbToolboxProjectService(private val project: Project) : Disposable {
         scope = childScope(),
         dispatchers = dispatcherProvider,
         selectedDeviceState = selectedDeviceViewModel.state,
-        selectedPackageState = selectedPackageViewModel.state,
+        selectedPackageState = logcatPackageSelection.state,
         sessionManager = logcatSessionManager,
         pidTracker = logcatPackagePidTracker,
         persistence = logcatControlsPersistence,
+        selectPackage = logcatPackageSelection::select,
     )
 
     /**

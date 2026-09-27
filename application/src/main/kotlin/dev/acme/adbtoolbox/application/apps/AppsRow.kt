@@ -15,4 +15,7 @@ data class AppsRow(
     val isDebuggable: Boolean?,
     val isSelected: Boolean,
     val icon: AppIcon? = null,
+    val isPinned: Boolean = false,
+    /** A section title to show above this row ("Pinned", "All apps"); only set when something is pinned. */
+    val sectionHeader: String? = null,
 )

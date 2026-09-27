@@ -41,6 +41,18 @@ class MirroringOptionsViewModel(
 
     init {
         load()
+        scope.launch(dispatchers.default) {
+            options.applied.collect { applied ->
+                val appliedDraft = applied.toDraft()
+                mutableState.update { current ->
+                    current.copy(
+                        persisted = appliedDraft,
+                        // Keep the user's in-progress edits; a clean draft follows the new values.
+                        draft = if (current.draft == current.persisted) appliedDraft else current.draft,
+                    )
+                }
+            }
+        }
     }
 
     fun handle(intent: MirroringOptionsIntent) {

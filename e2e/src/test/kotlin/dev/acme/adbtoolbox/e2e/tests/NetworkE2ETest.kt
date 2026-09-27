@@ -28,6 +28,23 @@ class NetworkE2ETest : E2eTest() {
     fun clearProxy() {
         Adb.putSetting("global", "http_proxy", ":0")
         Adb.deleteSetting("global", "http_proxy")
+        Adb.run("-s", E2eConfig.serial, "emu", "network", "speed", "full")
+        Adb.run("-s", E2eConfig.serial, "emu", "network", "delay", "none")
+    }
+
+    @Test
+    fun `a throttling preset slows the emulator network and Off restores full speed`() {
+        fun status() = Adb.run("-s", E2eConfig.serial, "emu", "network", "status").stdout
+
+        studio.click("EDGE", "PresetChip")
+        awaitUntil(E2eConfig.deviceTimeout(15), Duration.ofMillis(500), "EDGE speed and latency on the emulator") {
+            status().let { "473600 bits/s" in it && "maximum latency:  400 ms" in it }
+        }
+
+        studio.click("Off", "PresetChip")
+        awaitUntil(E2eConfig.deviceTimeout(15), Duration.ofMillis(500), "full speed again") {
+            status().let { "download speed:          0 bits/s" in it && "maximum latency:  0 ms" in it }
+        }
     }
 
     @Test

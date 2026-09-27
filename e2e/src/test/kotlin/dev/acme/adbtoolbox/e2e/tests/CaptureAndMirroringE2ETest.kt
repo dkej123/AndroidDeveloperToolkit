@@ -99,6 +99,37 @@ class CaptureAndMirroringE2ETest : E2eTest() {
         studio.click("Stop")
     }
 
+    @Test
+    fun `Show touches from the options dialog reaches scrcpy and the device`() {
+        // Regression: the dialog saved options the Start button never saw until an IDE restart.
+        Adb.putSetting("system", "show_touches", "0")
+        studio.click("Mirroring options")
+        val dialog = studio.dialog("Mirroring Options")
+        val checkBox = dialog.find(com.intellij.remoterobot.fixtures.JCheckboxFixture::class.java,
+            com.intellij.remoterobot.search.locators.byXpath("//div[@name='mirroringShowTouchesCheckBox']"), Duration.ofSeconds(5))
+        checkBox.select()
+        studio.dialogButton(dialog, "OK").click()
+
+        studio.click("Start mirroring")
+
+        awaitUntil(E2eConfig.deviceTimeout(15), Duration.ofMillis(500), "scrcpy started with --show-touches") {
+            scrcpyProcesses().any { "--show-touches" in it.info().arguments().orElse(emptyArray()) }
+        }
+        awaitUntil(E2eConfig.deviceTimeout(15), Duration.ofMillis(500), "show_touches on while mirroring") {
+            Adb.setting("system", "show_touches") == "1"
+        }
+        studio.click("Stop")
+        awaitUntil(E2eConfig.deviceTimeout(15), Duration.ofMillis(500), "scrcpy to exit") { scrcpyProcesses().isEmpty() }
+
+        // Leave the persisted options as the other tests expect them.
+        studio.click("Mirroring options")
+        val reopened = studio.dialog("Mirroring Options")
+        reopened.find(com.intellij.remoterobot.fixtures.JCheckboxFixture::class.java,
+            com.intellij.remoterobot.search.locators.byXpath("//div[@name='mirroringShowTouchesCheckBox']"), Duration.ofSeconds(5))
+            .setValue(false)
+        studio.dialogButton(reopened, "OK").click()
+    }
+
     private fun awaitNewFile(suffix: String, timeout: Duration): File {
         var found: File? = null
         awaitUntil(timeout, Duration.ofMillis(500), "a new *$suffix in $captureDir") {

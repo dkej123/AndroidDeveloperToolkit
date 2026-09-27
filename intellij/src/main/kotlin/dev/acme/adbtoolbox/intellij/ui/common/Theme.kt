@@ -91,7 +91,9 @@ object AdbToolboxTheme {
         val rail get() = JBUI.scale(34)
         val titleBar get() = JBUI.scale(32)
         val deviceBar get() = JBUI.scale(30)
-        val statusBar get() = JBUI.scale(22)
+        // 28, not the design's original 22: at 22 the override chip touched the bar's edges.
+        val statusBar get() = JBUI.scale(28)
+        val logcatFooter get() = JBUI.scale(22)
         val toolbarRow get() = JBUI.scale(26)
         val appRow get() = JBUI.scale(34)
         val listRow get() = JBUI.scale(28)

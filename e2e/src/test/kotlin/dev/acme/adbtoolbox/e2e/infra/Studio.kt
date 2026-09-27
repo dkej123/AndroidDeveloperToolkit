@@ -14,12 +14,12 @@ import javax.imageio.ImageIO
 enum class View(val railIndex: Int, val panelClass: String?) {
     Device(0, "DeviceFactsPanel"),
     Apps(1, "AppsPanel"),
-    Display(2, "DisplayPanel"),
-    Network(3, "NetworkPanel"),
-    Logcat(4, "LogcatPanel"),
+    // No Display view: its sections live in the Device view (see DisplayE2ETest).
+    Network(2, "NetworkPanel"),
+    Logcat(3, "LogcatPanel"),
 
     /** Opens the IDE Settings dialog instead of a panel. */
-    Settings(5, null),
+    Settings(4, null),
 }
 
 /**
@@ -112,7 +112,16 @@ class Studio(val robot: RemoteRobot = RemoteRobot(E2eConfig.robotUrl)) {
         var last: Throwable? = null
         repeat(3) {
             try {
-                find().click()
+                val fixture = find()
+                // Views scroll (the Device view holds mirroring, capture, facts and display
+                // sections); the robot clicks at screen coordinates, so bring the control into view.
+                fixture.runJs("component.scrollRectToVisible(new java.awt.Rectangle(0, 0, component.getWidth(), component.getHeight()))", true)
+                // Toasts and IDE balloons that appeared since the test started cover the bottom
+                // controls, and a screen-coordinate click would land on them instead; the balloons
+                // left over slide into the freed space, so let them settle first.
+                if (expireIdeNotifications() > 0) Thread.sleep(500)
+                dismissToasts()
+                fixture.click()
                 return
             } catch (failure: Exception) {
                 if (failure.message?.contains("must be showing on the screen") != true) throw failure
@@ -223,6 +232,19 @@ class Studio(val robot: RemoteRobot = RemoteRobot(E2eConfig.robotUrl)) {
             pressEscape()
             Thread.sleep(500)
         }
+        // Escape goes to the focused window, which under Xvfb is not always the dialog: cancel
+        // what is left directly.
+        robot.findAll(ContainerFixture::class.java, byXpath(dialogXpath())).forEach { dialog ->
+            runCatching {
+                dialog.runJs(
+                    """
+                    var wrapper = com.intellij.openapi.ui.DialogWrapper.findInstance(component);
+                    if (wrapper != null) wrapper.doCancelAction(); else component.dispose();
+                    """.trimIndent(),
+                    true,
+                )
+            }
+        }
     }
 
     // --- IDE services -------------------------------------------------------------------------
@@ -263,13 +285,18 @@ class Studio(val robot: RemoteRobot = RemoteRobot(E2eConfig.robotUrl)) {
         repeat(5) {
             val buttons = toolWindow().findAll(ComponentFixture::class.java, byXpath("//div[@accessiblename='Dismiss']")).filter { it.isShowing }
             if (buttons.isEmpty()) return
-            buttons.first().click()
+            // A toast can auto-dismiss between the lookup and the click; that is what we wanted anyway.
+            runCatching { buttons.first().click() }
             Thread.sleep(200)
         }
     }
 
-    /** Expires the IDE's own notification balloons (e.g. "Agent Mode now available"): they cover the bottom of the plugin panel. */
-    fun expireIdeNotifications() = robot.runJs(
+    /**
+     * Expires the IDE's own notification balloons (e.g. "Agent Mode now available") and clears
+     * "IDE error occurred" (kept by the error pool, not by expire()): they cover the bottom of the
+     * plugin panel. Returns how many balloons it expired.
+     */
+    fun expireIdeNotifications(): Int = robot.callJs<String>(
         PROJECT + """
         var type = java.lang.Class.forName("com.intellij.notification.Notification");
         var manager = com.intellij.notification.NotificationsManager.getNotificationsManager();
@@ -277,9 +304,11 @@ class Studio(val robot: RemoteRobot = RemoteRobot(E2eConfig.robotUrl)) {
         for (var i = 0; i < scoped.length; i++) scoped[i].expire();
         var global = manager.getNotificationsOfType(type, null);
         for (var i = 0; i < global.length; i++) global[i].expire();
+        try { com.intellij.diagnostic.MessagePool.getInstance().clearErrors(); } catch (e) {}
+        (scoped.length + global.length) + ""
         """.trimIndent(),
         true,
-    )
+    ).toInt()
 
     fun isToolWindowVisible(id: String): Boolean = robot.callJs(
         PROJECT + """

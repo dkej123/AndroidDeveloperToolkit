@@ -24,9 +24,9 @@ import kotlinx.coroutines.launch
  * **Single-device default** (`design/designs/ADB Toolbox IA.dc.html`: "with one device the bar is
  * a read-only summary"): once restore has resolved with nothing chosen, and the user has not
  * explicitly cleared the selection, exactly one *online* device is selected and persisted as the
- * explicit context. Every action still receives that exact serial (never a lazily resolved "current
- * device"); with two or more devices, or a persisted serial that is currently absent, nothing is
- * chosen on the user's behalf.
+ * explicit context — also replacing a selected serial that is gone, when that one device was never
+ * connected alongside it (see [autoSelection]). Every action still receives that exact serial (never
+ * a lazily resolved "current device"); with two or more devices nothing is chosen on the user's behalf.
  * [scope]/[dispatchers] follow the same feature-local-child-scope/dispatcher-injection seam as
  * [dev.acme.adbtoolbox.application.shell.ShellViewModel] (ADR 0004).
  *
@@ -68,10 +68,42 @@ class SelectedDeviceViewModel(
             writeRequests.collectLatest { serial -> persistence.writeSelectedSerial(serial) }
         }
         scope.launch(dispatchers.default) {
+            // Devices seen connected at the same time as the current selection; see [autoSelection].
+            var trackedSelection: DeviceSerial? = null
+            val companions = mutableSetOf<DeviceSerial>()
             combine(deviceRepository.devices, _selectedSerial, _restored) { devices, serial, restored ->
-                if (!restored || serial != null || selectionClearedByUser) return@combine null
-                devices.singleOrNull()?.takeIf { it.state == DeviceConnectionState.Online }?.serial
+                if (serial != trackedSelection) {
+                    trackedSelection = serial
+                    companions.clear()
+                }
+                if (serial != null && devices.any { it.serial == serial }) {
+                    companions += devices.map { it.serial } - serial
+                }
+                autoSelection(devices, serial, restored, companions)
             }.collect { single -> if (single != null) select(single) }
+        }
+    }
+
+    /**
+     * The single-device default: with exactly one device connected and online, select it when
+     * nothing is selected, or when the selected device is gone and that one device was never
+     * connected alongside it (the user swapped phones, or a stale serial was restored). A device
+     * that was already connected next to the selection is never switched to — the selected phone
+     * rebooting while an emulator runs must not move every action to the emulator.
+     */
+    private fun autoSelection(
+        devices: List<Device>,
+        serial: DeviceSerial?,
+        restored: Boolean,
+        companions: Set<DeviceSerial>,
+    ): DeviceSerial? {
+        if (!restored || selectionClearedByUser) return null
+        val single = devices.singleOrNull()?.takeIf { it.state == DeviceConnectionState.Online } ?: return null
+        return when {
+            serial == null -> single.serial
+            single.serial == serial -> null
+            single.serial in companions -> null
+            else -> single.serial
         }
     }
 

@@ -23,23 +23,23 @@ class ViewEnterRefresherTest {
         navigation = navigation,
         refreshers = mapOf(
             ViewId.Apps to { refreshed += ViewId.Apps },
-            ViewId.Display to { refreshed += ViewId.Display },
+            ViewId.Network to { refreshed += ViewId.Network },
         ),
     )
 
     @Test
     fun `entering a view re-reads its device state`() {
         // Regression (docs/e2e-testing.md): an app installed by Run in Android Studio never showed
-        // up in Apps, and toggles changed on the device kept their old values in Display.
+        // up in Apps, and toggles changed on the device kept their old values in Network.
         start()
         navigation.value = NavigationState.Ready(ViewId.Device)
         scope.runCurrent()
         navigation.value = NavigationState.Ready(ViewId.Apps)
         scope.runCurrent()
-        navigation.value = NavigationState.Ready(ViewId.Display)
+        navigation.value = NavigationState.Ready(ViewId.Network)
         scope.runCurrent()
 
-        refreshed shouldBe listOf(ViewId.Apps, ViewId.Display)
+        refreshed shouldBe listOf(ViewId.Apps, ViewId.Network)
     }
 
     @Test

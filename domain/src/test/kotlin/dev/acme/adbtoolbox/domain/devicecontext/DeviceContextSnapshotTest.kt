@@ -47,7 +47,7 @@ class DeviceContextSnapshotTest {
     @Test
     fun `multiple contributors of each kind combine into one snapshot`() {
         val logcatBadge = FakeBadgeContributor(ViewId.Logcat, mapOf(serialA to NavigationBadge.Attention))
-        val displayBadge = FakeBadgeContributor(ViewId.Display, mapOf(serialA to NavigationBadge.Count(2)))
+        val displayBadge = FakeBadgeContributor(ViewId.Network, mapOf(serialA to NavigationBadge.Count(2)))
         val scrcpy = FakeRunningProcessContributor(mapOf(serialA to listOf(RunningProcessInfo("scrcpy", "Mirroring"))))
         val recording =
             FakeRunningProcessContributor(mapOf(serialA to listOf(RunningProcessInfo("screen-record", "REC 00:42"))))
@@ -63,7 +63,7 @@ class DeviceContextSnapshotTest {
 
         snapshot shouldBe DeviceContextSnapshot(
             serial = serialA,
-            badges = mapOf(ViewId.Logcat to NavigationBadge.Attention, ViewId.Display to NavigationBadge.Count(2)),
+            badges = mapOf(ViewId.Logcat to NavigationBadge.Attention, ViewId.Network to NavigationBadge.Count(2)),
             runningProcesses = listOf(
                 RunningProcessInfo("scrcpy", "Mirroring"),
                 RunningProcessInfo("screen-record", "REC 00:42"),

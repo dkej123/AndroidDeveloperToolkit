@@ -9,6 +9,8 @@ import dev.acme.adbtoolbox.application.display.density.DensityUseCase
 import dev.acme.adbtoolbox.application.display.density.DensityViewModel
 import dev.acme.adbtoolbox.application.display.density.DensityViewState
 import dev.acme.adbtoolbox.application.display.fontscale.FontScaleViewModel
+import dev.acme.adbtoolbox.application.display.QuickToggleFieldState
+import dev.acme.adbtoolbox.application.display.QuickTogglesViewState
 import dev.acme.adbtoolbox.application.feedback.FeedbackViewModel
 import dev.acme.adbtoolbox.domain.adb.AdbOutcome
 import dev.acme.adbtoolbox.domain.adb.AdbTextResult
@@ -93,8 +95,10 @@ class DisplayCoordinatorTest : BasePlatformTestCase() {
         )
     }
 
+    private val slots = mutableMapOf<AdbToolboxHostPanel, javax.swing.JPanel>()
+
     private fun coordinator(host: AdbToolboxHostPanel, fixture: Fixture): DisplayCoordinator = DisplayCoordinator(
-        host = host,
+        slot = slots.getOrPut(host) { javax.swing.JPanel(java.awt.BorderLayout()) },
         fontScaleViewModel = fixture.fontScaleViewModel,
         densityViewModel = fixture.densityViewModel,
         quickTogglesViewModel = fixture.quickTogglesViewModel,
@@ -105,14 +109,14 @@ class DisplayCoordinatorTest : BasePlatformTestCase() {
         dispatchers = fixture.dispatchers,
     )
 
-    fun `test construction registers the Display view into the host's active view host`() {
+    fun `test construction mounts the display sections into the given slot instead of a view of their own`() {
         val host = AdbToolboxHostPanel()
         val fixture = fixture()
 
         val coord = coordinator(host, fixture)
 
-        assertTrue(host.activeViewHost.isRegistered(ViewId.Display.routeKey))
-        assertSame(coord.panel, host.activeViewHost.componentFor(ViewId.Display.routeKey))
+        assertSame(coord.panel, slots.getValue(host).components.single())
+        assertFalse(host.activeViewHost.isRegistered("display"))
         coord.dispose()
     }
 
@@ -141,6 +145,19 @@ class DisplayCoordinatorTest : BasePlatformTestCase() {
         coord.dispose()
     }
 
+    fun `test a TalkBack error is announced once, not on every re-render`() {
+        val host = AdbToolboxHostPanel()
+        val fixture = fixture()
+        val coord = coordinator(host, fixture)
+        val error = QuickTogglesViewState(talkBack = QuickToggleFieldState.Error("No known TalkBack installed", lastKnown = false))
+
+        coord.renderQuickToggles(error)
+        coord.renderQuickToggles(error.copy(darkTheme = QuickToggleFieldState.Idle(true)))
+
+        assertEquals(listOf("No known TalkBack installed"), fixture.feedback.state.value.toasts.map { it.text })
+        coord.dispose()
+    }
+
     fun `test rendering a non-error FontScale state posts no toast`() {
         val host = AdbToolboxHostPanel()
         val fixture = fixture()
@@ -156,14 +173,14 @@ class DisplayCoordinatorTest : BasePlatformTestCase() {
         val host = AdbToolboxHostPanel()
         val fixture = fixture()
         val coord = coordinator(host, fixture)
-        assertEquals(NavigationBadge.None, fixture.aggregator.state.value.badges[ViewId.Display] ?: NavigationBadge.None)
+        assertEquals(NavigationBadge.None, fixture.aggregator.state.value.badges[ViewId.Device] ?: NavigationBadge.None)
 
         // A real DensityViewModel readback would call this same record() before emitting Idle;
         // renderDensity's aggregator.refresh() is what the badge/override chip depend on afterward.
         fixture.densityOverrideTracker.record(serialA, DensityReading(420, 480))
         coord.renderDensity(DensityViewState.Idle(DensityReading(420, 480)))
 
-        assertEquals(NavigationBadge.Attention, fixture.aggregator.state.value.badges[ViewId.Display])
+        assertEquals(NavigationBadge.Attention, fixture.aggregator.state.value.badges[ViewId.Device])
         assertTrue(fixture.aggregator.state.value.overrides.isNotEmpty())
 
         coord.dispose()
@@ -175,25 +192,12 @@ class DisplayCoordinatorTest : BasePlatformTestCase() {
         val coord = coordinator(host, fixture)
         fixture.densityOverrideTracker.record(serialA, DensityReading(420, 480))
         coord.renderDensity(DensityViewState.Idle(DensityReading(420, 480)))
-        assertEquals(NavigationBadge.Attention, fixture.aggregator.state.value.badges[ViewId.Display])
+        assertEquals(NavigationBadge.Attention, fixture.aggregator.state.value.badges[ViewId.Device])
 
         coord.dispose()
 
         assertFalse(fixture.scope.isActive)
-        assertNull(fixture.aggregator.state.value.badges[ViewId.Display])
+        assertNull(fixture.aggregator.state.value.badges[ViewId.Device])
         assertTrue(fixture.aggregator.state.value.overrides.isEmpty())
-    }
-
-    fun `test registering twice does not recreate the panel`() {
-        val host = AdbToolboxHostPanel()
-        val fixtureA = fixture()
-        val fixtureB = fixture()
-        val first = coordinator(host, fixtureA)
-
-        val second = coordinator(host, fixtureB)
-
-        assertSame(first.panel, second.panel)
-        first.dispose()
-        second.dispose()
     }
 }

@@ -164,8 +164,8 @@ class LogcatPanel(
     private val levelChipGroup = ButtonGroup().also { group -> levelChips.values.forEach(group::add) }
 
     private val packageFilterChip = PackageFilterChip().apply {
-        toolTipText = "Limit to the app selected in Apps"
-        getAccessibleContext().accessibleName = "Limit to selected app"
+        toolTipText = "Show Logcat for one app (pinned apps first) or all packages"
+        getAccessibleContext().accessibleName = "Logcat package"
         addActionListener { onTogglePackageFilter() }
     }
 
@@ -269,7 +269,7 @@ class LogcatPanel(
         flexRow(AdbToolboxTheme.Spacing.s4, footerLabel, spacer, footerBufferLabel, fill = spacer)
     }.apply {
         isOpaque = true
-        preferredSize = Dimension(0, AdbToolboxTheme.Sizes.statusBar)
+        preferredSize = Dimension(0, AdbToolboxTheme.Sizes.logcatFooter)
         background = AdbToolboxTheme.Colors.header
         border = BorderFactory.createCompoundBorder(
             BorderFactory.createMatteBorder(1, 0, 0, 0, AdbToolboxTheme.Colors.border),
@@ -288,6 +288,13 @@ class LogcatPanel(
             val scrolledAway = followTracker.onAdjusted(bar.value, bar.visibleAmount, bar.maximum)
             if (programmaticScroll || !isShowing) return@AdjustmentListener
             if (scrolledAway) onManualScrollAway()
+        })
+        // Autoscroll follows the rows themselves: they reach the list separately from (and often
+        // after) the controller state that triggers a render. One catch-up per EDT burst.
+        virtualList.model.addListDataListener(object : javax.swing.event.ListDataListener {
+            override fun intervalAdded(e: javax.swing.event.ListDataEvent) = followNewRows()
+            override fun intervalRemoved(e: javax.swing.event.ListDataEvent) = Unit
+            override fun contentsChanged(e: javax.swing.event.ListDataEvent) = Unit
         })
         // Rows keep arriving while another view is shown; catch up when Logcat becomes visible.
         addHierarchyListener { event ->
@@ -340,9 +347,23 @@ class LogcatPanel(
     /** Whether the last rendered state follows the newest line (not paused, autoscroll on). */
     private var following = true
 
+    private var followScheduled = false
+
+    private fun followNewRows() {
+        if (!following || followScheduled) return
+        followScheduled = true
+        SwingUtilities.invokeLater {
+            followScheduled = false
+            if (following) scrollToBottom()
+        }
+    }
+
     fun scrollToBottom() {
         if (!SwingUtilities.isEventDispatchThread()) return
         programmaticScroll = true
+        // Rows appended since the last layout are not in the scroll range until the viewport has
+        // taken the list's new size.
+        scrollPane.viewport.doLayout()
         val bar = scrollPane.verticalScrollBar
         bar.value = bar.maximum
         followTracker.reset(bar.value)
@@ -363,6 +384,9 @@ class LogcatPanel(
     internal val clearQueryButtonForTest: JButton get() = clearQueryButton
     internal val levelButtonsForTest: Map<LogSeverity, JToggleButton> get() = levelChips
     internal val packageFilterChipForTest: JToggleButton get() = packageFilterChip
+
+    /** Where the package picker opens. */
+    val packageFilterAnchor: javax.swing.JComponent get() = packageFilterChip
     internal val pauseButtonForTest: JToggleButton get() = pauseButton
     internal val followButtonForTest: JToggleButton get() = followButton
     internal val wrapButtonForTest: JToggleButton get() = wrapButton
@@ -381,12 +405,10 @@ class LogcatPanel(
 
         levelChips.forEach { (level, chip) -> chip.isSelected = LogcatRowStyle.isChipActive(level, state.minSeverity) }
 
-        packageFilterChip.text = if (state.packageFilterOn) {
-            state.packageFilterLabel ?: "all packages"
-        } else {
-            "all packages"
-        }
-        if (packageFilterChip.isSelected != state.packageFilterOn) packageFilterChip.isSelected = state.packageFilterOn
+        // Opens Logcat's own package picker (the ▾ says so); on only while a package is chosen.
+        val narrowed = state.packageFilterOn && state.packageFilterLabel != null
+        packageFilterChip.text = (if (narrowed) state.packageFilterLabel else "all packages") + " ▾"
+        if (packageFilterChip.isSelected != narrowed) packageFilterChip.isSelected = narrowed
         presentPackageFilterChip()
 
         val paused = state.pauseState is LogcatPauseState.Paused

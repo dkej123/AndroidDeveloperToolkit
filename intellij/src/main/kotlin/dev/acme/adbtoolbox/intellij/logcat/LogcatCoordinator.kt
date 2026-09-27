@@ -1,5 +1,7 @@
 package dev.acme.adbtoolbox.intellij.logcat
 
+import dev.acme.adbtoolbox.application.logcat.LogcatPackageChoice
+import com.intellij.openapi.ui.popup.JBPopupFactory
 import dev.acme.adbtoolbox.domain.diagnostics.DiagnosticsLog
 import dev.acme.adbtoolbox.domain.diagnostics.NoOpDiagnosticsLog
 import com.intellij.openapi.Disposable
@@ -19,6 +21,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /**
@@ -46,13 +49,15 @@ class LogcatCoordinator(
     diagnosticsLog: DiagnosticsLog = NoOpDiagnosticsLog,
     private val edtBatcher: LogcatEdtBatcher = LogcatEdtBatcher(virtualList.virtualModel, log = diagnosticsLog),
     badgeContributor: BadgeContributor = LogcatBadgeContributor(controller),
+    /** Apps offered by the package chip's picker (pinned first), read when the picker opens. */
+    private val packageChoices: () -> List<LogcatPackageChoice> = { emptyList() },
 ) : Disposable {
 
     val panel = LogcatPanel(
         virtualList = virtualList,
         onQueryChange = { text -> controller.handle(LogcatControlsIntent.SetQuery(text)) },
         onSetMinSeverity = { level -> controller.handle(LogcatControlsIntent.SetMinSeverity(level)) },
-        onTogglePackageFilter = { controller.handle(LogcatControlsIntent.TogglePackageFilter) },
+        onTogglePackageFilter = { showPackagePicker() },
         onTogglePause = { controller.handle(LogcatControlsIntent.TogglePause) },
         onToggleFollow = { controller.handle(LogcatControlsIntent.ToggleFollow) },
         onToggleWrap = { controller.handle(LogcatControlsIntent.ToggleWrap) },
@@ -66,12 +71,24 @@ class LogcatCoordinator(
     private var wasPaused = false
 
     init {
-        controller.state
-            .onEach { state -> withContext(dispatchers.main) { render(state) } }
-            .launchIn(scope)
+        // Collected on the main context itself, so each render reads the state as it is on the EDT:
+        // a value captured off the EDT could be older than what the user has typed since, and
+        // rendering it would roll the search field back.
+        scope.launch(dispatchers.main) { controller.state.collect { state -> render(state) } }
         controller.filterUpdates
             .onEach { update -> withContext(dispatchers.main) { onFilterUpdate(update) } }
             .launchIn(scope)
+    }
+
+    internal fun packagePickerStep(): LogcatPackagePickerStep = LogcatPackagePickerStep(packageChoices()) { packageName ->
+        controller.handle(LogcatControlsIntent.SelectPackage(packageName))
+    }
+
+    private fun showPackagePicker() {
+        val anchor = panel.packageFilterAnchor
+        if (anchor.isShowing) JBPopupFactory.getInstance().createListPopup(packagePickerStep()).showUnderneathOf(anchor)
+        // The chip is a toggle button; its pressed state comes from the controller, not the click.
+        panel.update(controller.state.value)
     }
 
     /** Production code always reaches this already marshaled onto [dispatchers]' `main` context. */

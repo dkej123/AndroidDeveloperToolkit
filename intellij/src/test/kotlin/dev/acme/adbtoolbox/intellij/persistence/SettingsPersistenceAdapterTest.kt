@@ -26,6 +26,8 @@ class SettingsPersistenceAdapterTest : BasePlatformTestCase() {
             scrcpyPathOverride = "/opt/tools/scrcpy",
             captureDirectory = "/home/user/captures",
             logcatBufferSizeKb = 32768,
+            talkBackOnCommand = "settings put secure a 1",
+            talkBackOffCommand = "settings put secure a 0",
         )
 
         adapter.writeSettingsNow(settings)

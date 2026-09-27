@@ -8,5 +8,7 @@ sealed interface QuickTogglesIntent {
 
     data class SetAnimationsOff(val off: Boolean) : QuickTogglesIntent
 
+    data class SetTalkBack(val enabled: Boolean) : QuickTogglesIntent
+
     data object Refresh : QuickTogglesIntent
 }

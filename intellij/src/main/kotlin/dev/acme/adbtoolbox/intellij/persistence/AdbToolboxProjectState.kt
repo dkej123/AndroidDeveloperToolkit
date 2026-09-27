@@ -27,6 +27,7 @@ class AdbToolboxProjectState : PersistentStateComponent<AdbToolboxProjectState.S
         var navigation: NavigationPersistenceState = NavigationPersistenceState()
         var settings: SettingsPersistenceState = SettingsPersistenceState()
         var apps: AppsSelectionState = AppsSelectionState()
+        var pinnedApps: PinnedAppsState = PinnedAppsState()
         var mirroringOptions: MirroringOptionsPersistenceState = MirroringOptionsPersistenceState()
         var network: NetworkState = NetworkState()
         var logcatControls: LogcatControlsPersistenceState = LogcatControlsPersistenceState()

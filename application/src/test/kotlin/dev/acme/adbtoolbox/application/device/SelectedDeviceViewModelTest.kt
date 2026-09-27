@@ -29,6 +29,7 @@ private class TestDispatcherProviderFixture(dispatcher: kotlinx.coroutines.Corou
 
 private val serialA = DeviceSerial.of("AAAA111")
 private val serialB = DeviceSerial.of("BBBB222")
+private val serialC = DeviceSerial.of("CCCC333")
 
 private fun device(serial: DeviceSerial, state: DeviceConnectionState = DeviceConnectionState.Online) =
     Device(serial = serial, state = state)
@@ -189,10 +190,10 @@ class SelectedDeviceViewModelTest {
     }
 
     @Test
-    fun `on startup, a persisted serial not present in the live list restores as Disconnected, never substituted`() =
+    fun `on startup, a persisted serial not present among several devices restores as Disconnected, never substituted`() =
         runTest {
             val persistence = FakeDeviceSelectionPersistence(initial = serialA)
-            val repository = FakeDeviceRepository(listOf(device(serialB)))
+            val repository = FakeDeviceRepository(listOf(device(serialB), device(serialC)))
             val (scope, _, viewModel) = harness(persistence = persistence, repository = repository)
 
             scope.advanceTimeBy(1)
@@ -241,9 +242,62 @@ class SelectedDeviceViewModelTest {
     }
 
     @Test
-    fun `a persisted serial that is disconnected is never replaced by the only online device`() = runTest {
+    fun `on startup, a persisted serial that is gone is replaced by the only online device`() = runTest {
+        // The user switched phones since the last session: showing the old one as disconnected
+        // while the new one sits unselected is not useful.
         val persistence = FakeDeviceSelectionPersistence(initial = serialA)
         val repository = FakeDeviceRepository(listOf(device(serialB)))
+        val (scope, _, viewModel) = harness(persistence = persistence, repository = repository)
+
+        scope.advanceTimeBy(1)
+        scope.runCurrent()
+
+        viewModel.state.value shouldBe SelectedDeviceState.Online(device(serialB))
+        persistence.writeCompletions.last() shouldBe serialB
+    }
+
+    @Test
+    fun `unplugging the selected phone and plugging in another one selects the new phone`() = runTest {
+        val repository = FakeDeviceRepository(listOf(device(serialA)))
+        val (scope, repo, viewModel) = harness(repository = repository)
+        scope.advanceTimeBy(1)
+        scope.runCurrent()
+        viewModel.state.value shouldBe SelectedDeviceState.Online(device(serialA))
+
+        repo.emit(emptyList())
+        scope.runCurrent()
+        viewModel.state.value shouldBe SelectedDeviceState.Disconnected(serialA)
+
+        repo.emit(listOf(device(serialB)))
+        scope.runCurrent()
+        viewModel.state.value shouldBe SelectedDeviceState.Online(device(serialB))
+    }
+
+    @Test
+    fun `a device that was connected alongside the selected one is not switched to when the selected one drops`() =
+        runTest {
+            // e.g. the selected phone reboots while an emulator is running: stay on the phone.
+            val repository = FakeDeviceRepository(listOf(device(serialA), device(serialB)))
+            val (scope, repo, viewModel) = harness(repository = repository)
+            scope.advanceTimeBy(1)
+            scope.runCurrent()
+            viewModel.handle(SelectedDeviceIntent.Select(serialA))
+            scope.runCurrent()
+
+            repo.emit(listOf(device(serialB)))
+            scope.runCurrent()
+            repo.emit(listOf(device(serialB, DeviceConnectionState.Offline)))
+            scope.runCurrent()
+            repo.emit(listOf(device(serialB)))
+            scope.runCurrent()
+
+            viewModel.state.value shouldBe SelectedDeviceState.Disconnected(serialA)
+        }
+
+    @Test
+    fun `a gone selection is not replaced by an unauthorized device`() = runTest {
+        val persistence = FakeDeviceSelectionPersistence(initial = serialA)
+        val repository = FakeDeviceRepository(listOf(device(serialB, DeviceConnectionState.Unauthorized)))
         val (scope, _, viewModel) = harness(persistence = persistence, repository = repository)
 
         scope.advanceTimeBy(1)

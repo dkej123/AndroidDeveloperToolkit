@@ -4,6 +4,7 @@ package dev.acme.adbtoolbox.application.apps
 
 import dev.acme.adbtoolbox.application.device.SelectedDeviceViewModel
 import dev.acme.adbtoolbox.domain.adb.DeviceSerial
+import dev.acme.adbtoolbox.domain.apps.FakePinnedPackagesPersistence
 import dev.acme.adbtoolbox.domain.apps.FakeSelectedPackagePersistence
 import dev.acme.adbtoolbox.domain.apps.SelectedPackage
 import dev.acme.adbtoolbox.domain.device.Device
@@ -55,6 +56,7 @@ private fun harness(
     devices: List<Device> = listOf(Device(serialA, DeviceConnectionState.Online)),
     packageState: PackageListState = PackageListState.Loading,
     selectedPackagePersistence: FakeSelectedPackagePersistence = FakeSelectedPackagePersistence(),
+    pinnedPersistence: FakePinnedPackagesPersistence = FakePinnedPackagesPersistence(),
 ): Harness {
     val scope = TestScope()
     val dispatcher = StandardTestDispatcher(scope.testScheduler)
@@ -78,6 +80,7 @@ private fun harness(
         packageRepository = packageRepository,
         selectedDeviceViewModel = selectedDeviceViewModel,
         selectedPackageViewModel = selectedPackageViewModel,
+        pinnedPackages = pinnedPersistence,
     )
     return Harness(scope, deviceRepository, packageRepository, selectedDeviceViewModel, selectedPackageViewModel, viewModel)
 }
@@ -134,6 +137,65 @@ class AppsViewModelTest {
         h.settle()
 
         h.viewModel.state.value.rows.single().icon shouldBe icon
+    }
+
+    private fun Harness.showPackages(vararg entries: PackageEntry) {
+        settle()
+        selectedDeviceViewModel.handle(dev.acme.adbtoolbox.application.device.SelectedDeviceIntent.Select(serialA))
+        settle()
+        packageRepository.emit(PackageListState.Content(serialA, PackageListScope.User, entries.toList()))
+        settle()
+    }
+
+    @Test
+    fun `pinned apps come first under a Pinned header, the rest follow under All apps`() = runTest {
+        val h = harness(pinnedPersistence = FakePinnedPackagesPersistence(setOf("com.acme.zebra")))
+
+        h.showPackages(entry("com.acme.alpha", "Alpha"), entry("com.acme.beta", "Beta"), entry("com.acme.zebra", "Zebra"))
+
+        val rows = h.viewModel.state.value.rows
+        rows.map { it.packageName } shouldBe listOf("com.acme.zebra", "com.acme.alpha", "com.acme.beta")
+        rows.map { it.isPinned } shouldBe listOf(true, false, false)
+        rows.map { it.sectionHeader } shouldBe listOf("Pinned", "All apps", null)
+    }
+
+    @Test
+    fun `without pins there are no section headers`() = runTest {
+        val h = harness()
+
+        h.showPackages(entry("com.acme.alpha", "Alpha"), entry("com.acme.beta", "Beta"))
+
+        h.viewModel.state.value.rows.map { it.sectionHeader } shouldBe listOf(null, null)
+    }
+
+    @Test
+    fun `TogglePin pins and unpins an app and persists the pinned set`() = runTest {
+        val pins = FakePinnedPackagesPersistence()
+        val h = harness(pinnedPersistence = pins)
+        h.showPackages(entry("com.acme.alpha", "Alpha"), entry("com.acme.beta", "Beta"))
+
+        h.viewModel.handle(AppsIntent.TogglePin("com.acme.beta"))
+        h.settle()
+
+        h.viewModel.state.value.rows.first().packageName shouldBe "com.acme.beta"
+        pins.writes.last() shouldBe setOf("com.acme.beta")
+
+        h.viewModel.handle(AppsIntent.TogglePin("com.acme.beta"))
+        h.settle()
+
+        h.viewModel.state.value.rows.map { it.packageName } shouldBe listOf("com.acme.alpha", "com.acme.beta")
+        pins.writes.last() shouldBe emptySet()
+    }
+
+    @Test
+    fun `a pinned app that does not match the filter is hidden like any other`() = runTest {
+        val h = harness(pinnedPersistence = FakePinnedPackagesPersistence(setOf("com.acme.zebra")))
+        h.showPackages(entry("com.acme.alpha", "Alpha"), entry("com.acme.zebra", "Zebra"))
+
+        h.viewModel.handle(AppsIntent.SetQuery("alpha"))
+        h.settle()
+
+        h.viewModel.state.value.rows.map { it.packageName to it.sectionHeader } shouldBe listOf("com.acme.alpha" to null)
     }
 
     @Test

@@ -5,6 +5,7 @@ import com.intellij.ui.components.JBList
 import com.intellij.util.ui.JBUI
 import dev.acme.adbtoolbox.application.apps.AppsRow
 import dev.acme.adbtoolbox.domain.packages.AppIcon
+import dev.acme.adbtoolbox.intellij.icons.AdbToolboxIcons
 import dev.acme.adbtoolbox.intellij.ui.common.AdbToolboxTheme
 import dev.acme.adbtoolbox.intellij.ui.common.FlexRowLayout
 import dev.acme.adbtoolbox.intellij.ui.common.RoundedSurface
@@ -37,13 +38,28 @@ import javax.swing.ListCellRenderer
 class AppsVirtualList(
     val virtualModel: AppsVirtualListModel = AppsVirtualListModel(),
     private val onSelect: (String) -> Unit,
+    private val onTogglePin: (String) -> Unit = {},
+    private val onOpenDetails: (String) -> Unit = {},
 ) : JBList<AppsRow>(virtualModel) {
+
+    /** Rows are as wide as the list itself, so the list must follow the viewport or it never shrinks. */
+    override fun getScrollableTracksViewportWidth(): Boolean = true
 
     private val clickListener = object : MouseAdapter() {
         override fun mouseClicked(e: MouseEvent) {
             val index = locationToIndex(e.point)
-            if (index in 0 until model.size) {
-                onSelect(model.getElementAt(index).packageName)
+            if (index !in 0 until model.size) return
+            val bounds = getCellBounds(index, index) ?: return
+            val row = model.getElementAt(index)
+            // The app icon (left edge) opens its details, the pin (right edge) toggles it; anywhere
+            // else selects the row (see AppsRowRenderer).
+            when {
+                e.x >= bounds.x + bounds.width - PIN_HIT_WIDTH() -> onTogglePin(row.packageName)
+                e.x < bounds.x + ICON_HIT_WIDTH() && e.y >= bounds.y + bounds.height - AdbToolboxTheme.Sizes.appRow -> {
+                    onSelect(row.packageName)
+                    onOpenDetails(row.packageName)
+                }
+                else -> onSelect(row.packageName)
             }
         }
     }
@@ -52,8 +68,9 @@ class AppsVirtualList(
 
     init {
         cellRenderer = rowRenderer
-        // `appListStyle`: `padding: 4px 6px` around 34px rows.
-        fixedCellHeight = AdbToolboxTheme.Sizes.appRow
+        // `appListStyle`: `padding: 4px 6px` around 34px rows. Heights vary: a row that starts a
+        // "Pinned"/"All apps" section also carries that section's header.
+        fixedCellHeight = -1
         border = JBUI.Borders.empty(AdbToolboxTheme.Spacing.s2, AdbToolboxTheme.Spacing.s3)
         isOpaque = false
         addMouseListener(clickListener)
@@ -88,11 +105,28 @@ class AppsVirtualList(
  * [dev.acme.adbtoolbox.intellij.ui.common.PresetChip]'s selected treatment for the same design
  * system rather than inventing a new one.
  */
+/** Width, from the row's right edge, that a click treats as a click on the pin. */
+private val PIN_HIT_WIDTH: () -> Int = { JBUI.scale(28) }
+
+/** Width, from the row's left edge, that a click treats as a click on the app icon. */
+private val ICON_HIT_WIDTH: () -> Int = { JBUI.scale(30) }
+
 internal class AppsRowRenderer : ListCellRenderer<AppsRow> {
+
+    private val sectionHeader = JBLabel().apply {
+        font = AdbToolboxTheme.Typography.body.deriveFont(Font.BOLD, JBUI.scale(9.5f))
+        foreground = AdbToolboxTheme.Colors.textFaint
+        border = JBUI.Borders.empty(6, 8, 2, 8)
+    }
+
+    private val pin = JBLabel().apply {
+        border = JBUI.Borders.emptyLeft(2)
+    }
 
     // `iconStyle`: 16px square tile, radius 4 — replaced by the app's own launcher icon when known.
     private val tile = AppIconTile().apply {
         preferredSize = Dimension(JBUI.scale(16), JBUI.scale(16))
+        toolTipText = "App details"
     }
 
     private val iconCache = AppIconImageCache()
@@ -124,6 +158,16 @@ internal class AppsRowRenderer : ListCellRenderer<AppsRow> {
         add(tile)
         add(textStack, FlexRowLayout.FILL)
         add(debugTag)
+        add(pin)
+    }
+
+    // Opaque with the list's own background: JList paints its selection color behind a non-opaque
+    // renderer, which would tint a section header sitting above the selected row.
+    private val cell = JPanel(BorderLayout()).apply {
+        isOpaque = true
+        background = AdbToolboxTheme.Colors.bg
+        add(sectionHeader, BorderLayout.NORTH)
+        add(root, BorderLayout.CENTER)
     }
 
     internal val tileForTest: AppIconTile get() = tile
@@ -131,6 +175,8 @@ internal class AppsRowRenderer : ListCellRenderer<AppsRow> {
     internal val packageLabelForTest: JBLabel get() = packageLabel
     internal val debugTagForTest: JComponent get() = debugTag
     internal val rootForTest: RoundedSurface get() = root
+    internal val sectionHeaderForTest: JBLabel get() = sectionHeader
+    internal val pinForTest: JBLabel get() = pin
 
     override fun getListCellRendererComponent(
         list: JList<out AppsRow>,
@@ -170,13 +216,21 @@ internal class AppsRowRenderer : ListCellRenderer<AppsRow> {
         // JList's CellRendererPane paints renderer components without validating nested layout
         // managers. Give this compound renderer its final row bounds explicitly so its tile,
         // two-line text stack and debug tag are paintable in both the IDE and off-screen tests.
+        pin.icon = if (value.isPinned) AdbToolboxIcons.Actions.pinned else AdbToolboxIcons.Actions.pin
+        pin.toolTipText = if (value.isPinned) "Unpin" else "Pin to the top"
+        sectionHeader.isVisible = value.sectionHeader != null
+        sectionHeader.text = value.sectionHeader?.uppercase().orEmpty()
+
         val rowWidth = (list.width - list.insets.left - list.insets.right).coerceAtLeast(1)
-        root.setSize(rowWidth, AdbToolboxTheme.Sizes.appRow)
+        val headerHeight = if (sectionHeader.isVisible) sectionHeader.preferredSize.height else 0
+        cell.preferredSize = Dimension(rowWidth, headerHeight + AdbToolboxTheme.Sizes.appRow)
+        cell.setSize(rowWidth, headerHeight + AdbToolboxTheme.Sizes.appRow)
+        cell.doLayout()
         root.doLayout()
         textStack.doLayout()
         debugTag.doLayout()
 
-        return root
+        return cell
     }
 }
 

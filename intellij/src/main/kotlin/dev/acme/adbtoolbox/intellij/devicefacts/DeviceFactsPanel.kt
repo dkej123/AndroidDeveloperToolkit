@@ -78,6 +78,12 @@ class DeviceFactsPanel(
     val captureSlot: JBPanel<Nothing> = slot(FlexRowLayout(AdbToolboxTheme.Spacing.s3))
     val deviceActionsSlot: JBPanel<Nothing> = slot(FlexRowLayout(AdbToolboxTheme.Spacing.s3))
 
+    /** The former Display view's sections (font scale, display scale, quick toggles), full width. */
+    val displaySlot: JBPanel<Nothing> = JBPanel<Nothing>(BorderLayout()).apply {
+        isOpaque = false
+        alignmentX = Component.LEFT_ALIGNMENT
+    }
+
     private val factLabels: Map<DeviceFactId, JBLabel> = DeviceFactId.entries.associateWith {
         JBLabel("Loading…").apply {
             font = AdbToolboxTheme.Typography.mono
@@ -109,6 +115,7 @@ class DeviceFactsPanel(
             add(section("Mirroring", mirroringMetaLabel, mirroringSlot))
             add(section("Capture", captureMetaLabel, captureSlot))
             add(deviceSection())
+            add(displaySlot)
         }, BorderLayout.NORTH)
     }
 

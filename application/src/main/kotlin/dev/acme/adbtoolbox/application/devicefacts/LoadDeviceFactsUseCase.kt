@@ -33,8 +33,11 @@ import kotlinx.coroutines.launch
  */
 class LoadDeviceFactsUseCase(private val transport: AdbTransport) {
 
-    fun execute(serial: DeviceSerial): Flow<Pair<DeviceFactId, DeviceFactState>> = channelFlow {
-        DeviceFactId.entries.forEach { factId ->
+    fun execute(
+        serial: DeviceSerial,
+        facts: Collection<DeviceFactId> = DeviceFactId.entries,
+    ): Flow<Pair<DeviceFactId, DeviceFactState>> = channelFlow {
+        facts.forEach { factId ->
             launch {
                 send(factId to fetchFact(serial, factId))
             }

@@ -68,6 +68,8 @@ class LogcatControlsController(
     private val pidTracker: LogcatPackagePidTracker,
     private val persistence: LogcatControlsPersistence,
     private val filterEngine: LogcatFilterEngine = LogcatFilterEngine(),
+    /** Changes the package behind [selectedPackageState] (Logcat's own [LogcatPackageSelection], not the Apps selection). */
+    private val selectPackage: (String?) -> Unit = {},
 ) {
     private val _state = MutableStateFlow(LogcatControlsState())
     val state: StateFlow<LogcatControlsState> = _state.asStateFlow()
@@ -118,6 +120,12 @@ class LogcatControlsController(
             is LogcatControlsIntent.SetQuery -> setQuery(intent.text)
             is LogcatControlsIntent.SetMinSeverity -> setMinSeverity(intent.level)
             LogcatControlsIntent.TogglePackageFilter -> togglePackageFilter()
+            is LogcatControlsIntent.SelectPackage -> {
+                selectPackage(intent.packageName)
+                packageFilterOn = intent.packageName != null
+                recomputePids()
+                persist()
+            }
             LogcatControlsIntent.ToggleWrap -> toggleWrap()
             LogcatControlsIntent.TogglePause -> togglePause()
             LogcatControlsIntent.ManualScrollAway -> turnFollowOff()

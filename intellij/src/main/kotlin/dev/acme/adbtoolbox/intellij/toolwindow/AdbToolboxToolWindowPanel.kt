@@ -98,10 +98,10 @@ import kotlinx.coroutines.withContext
  * [networkScope] child scope, registering its own [ViewId.Network] route into
  * [AdbToolboxHostPanel.activeViewHost] the same way [appsCoordinator] registers [ViewId.Apps].
  *
- * [fontScaleViewModel]/[densityViewModel]/[quickTogglesViewModel] drive task 029's Display view via
- * [DisplayCoordinator], on its own [displayScope] child scope, registering its own [ViewId.Display]
- * route the same way [networkCoordinator] registers [ViewId.Network]; [deviceContextAggregator]
- * (task 014) is where it publishes its badge/override contributions.
+ * [fontScaleViewModel]/[densityViewModel]/[quickTogglesViewModel] drive the display sections via
+ * [DisplayCoordinator], on its own [displayScope] child scope, mounted into the Device view's
+ * display slot (there is no Display view); [deviceContextAggregator] (task 014) is where it
+ * publishes its badge/override contributions.
  *
  * [logcatControlsController] drives task 037's Logcat view via [LogcatCoordinator], on its own
  * [logcatScope] child scope, registering its own [ViewId.Logcat] route the same way
@@ -133,10 +133,13 @@ class AdbToolboxToolWindowPanel(
     clearDataViewModel: ClearDataViewModel,
     uninstallViewModel: UninstallViewModel,
     private val appsScope: CoroutineScope,
+    appDetailsViewModel: dev.acme.adbtoolbox.application.appdetails.AppDetailsViewModel? = null,
     proxyController: ProxyController,
     private val networkScope: CoroutineScope,
     logcatControlsController: LogcatControlsController,
+    networkThrottleViewModel: dev.acme.adbtoolbox.application.network.NetworkThrottleViewModel? = null,
     private val logcatScope: CoroutineScope,
+    logcatPackageChoices: () -> List<dev.acme.adbtoolbox.application.logcat.LogcatPackageChoice> = { emptyList() },
     fontScaleViewModel: FontScaleViewModel,
     densityViewModel: DensityViewModel,
     quickTogglesViewModel: QuickTogglesViewModel,
@@ -224,6 +227,7 @@ class AdbToolboxToolWindowPanel(
         uninstallViewModel = uninstallViewModel,
         scope = appsScope,
         dispatchers = dispatchers,
+        appDetailsViewModel = appDetailsViewModel,
     )
 
     init {
@@ -235,6 +239,7 @@ class AdbToolboxToolWindowPanel(
         aggregator = deviceContextAggregator,
         scope = networkScope,
         dispatchers = dispatchers,
+        throttleViewModel = networkThrottleViewModel,
     )
 
     init {
@@ -247,14 +252,16 @@ class AdbToolboxToolWindowPanel(
         scope = logcatScope,
         dispatchers = dispatchers,
         diagnosticsLog = diagnosticsLog,
+        packageChoices = logcatPackageChoices,
     )
 
     init {
         host.activeViewHost.registerFeatureView(ViewId.Logcat.routeKey) { logcatCoordinator.panel }
     }
 
+    // Mounted after deviceFactsCoordinator, into the Device view's displaySlot (there is no Display view).
     private val displayCoordinator = DisplayCoordinator(
-        host = host,
+        slot = deviceFactsCoordinator.panel.displaySlot,
         fontScaleViewModel = fontScaleViewModel,
         densityViewModel = densityViewModel,
         quickTogglesViewModel = quickTogglesViewModel,

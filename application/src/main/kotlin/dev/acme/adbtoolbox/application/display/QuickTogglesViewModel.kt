@@ -1,5 +1,9 @@
 package dev.acme.adbtoolbox.application.display
 
+import dev.acme.adbtoolbox.domain.display.TalkBackCommand
+import dev.acme.adbtoolbox.domain.display.TalkBackCommands
+import dev.acme.adbtoolbox.domain.display.TalkBackCustomCommands
+
 import dev.acme.adbtoolbox.domain.adb.AdbOutcome
 import dev.acme.adbtoolbox.domain.adb.AdbTransport
 import dev.acme.adbtoolbox.domain.adb.DeviceSerial
@@ -26,8 +30,8 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 /**
- * Owns the Display view's three quick toggles (task 028): dark theme, show touches, and animations
- * off — the last of which writes all three independent Android animation-scale settings and always
+ * Owns the Display view's quick toggles (task 028): dark theme, show touches, TalkBack (commands
+ * from [TalkBackCommand], or the user's own from Settings), and animations off — the last of which writes all three independent Android animation-scale settings and always
  * trusts a final readback over the writes it just issued, so a partial multi-command failure never
  * gets reported as a flattened success (`design/README.md` §5, task 028's #1 acceptance criterion).
  *
@@ -45,6 +49,8 @@ class QuickTogglesViewModel(
     private val dispatchers: DispatcherProvider,
     private val transport: AdbTransport,
     selectedDeviceState: StateFlow<SelectedDeviceState>,
+    /** The user's custom TalkBack command lines, read fresh on every refresh/toggle (Settings may change them any time). */
+    private val customTalkBackCommands: suspend () -> TalkBackCustomCommands = { TalkBackCustomCommands() },
 ) {
     private val _state = MutableStateFlow(QuickTogglesViewState())
     val state: StateFlow<QuickTogglesViewState> = _state.asStateFlow()
@@ -54,6 +60,7 @@ class QuickTogglesViewModel(
     private val darkThemeRequests = MutableSharedFlow<Boolean>(extraBufferCapacity = 1)
     private val showTouchesRequests = MutableSharedFlow<Boolean>(extraBufferCapacity = 1)
     private val animationsRequests = MutableSharedFlow<Boolean>(extraBufferCapacity = 1)
+    private val talkBackRequests = MutableSharedFlow<Boolean>(extraBufferCapacity = 1)
 
     init {
         scope.launch(dispatchers.io) {
@@ -69,6 +76,7 @@ class QuickTogglesViewModel(
         scope.launch(dispatchers.io) { darkThemeRequests.collectLatest(::applyDarkTheme) }
         scope.launch(dispatchers.io) { showTouchesRequests.collectLatest(::applyShowTouches) }
         scope.launch(dispatchers.io) { animationsRequests.collectLatest(::applyAnimationsOff) }
+        scope.launch(dispatchers.io) { talkBackRequests.collectLatest(::applyTalkBack) }
     }
 
     fun handle(intent: QuickTogglesIntent) {
@@ -76,6 +84,7 @@ class QuickTogglesViewModel(
             is QuickTogglesIntent.SetDarkTheme -> darkThemeRequests.tryEmit(intent.enabled)
             is QuickTogglesIntent.SetShowTouches -> showTouchesRequests.tryEmit(intent.enabled)
             is QuickTogglesIntent.SetAnimationsOff -> animationsRequests.tryEmit(intent.off)
+            is QuickTogglesIntent.SetTalkBack -> talkBackRequests.tryEmit(intent.enabled)
             QuickTogglesIntent.Refresh -> {
                 val serial = eligibleSerialOrNull() ?: return
                 scope.launch(dispatchers.io) { refreshAll(serial) }
@@ -95,6 +104,40 @@ class QuickTogglesViewModel(
         val animations = readAnimations(serial)
         if (!isCurrentSerial(serial)) return
         _state.value = _state.value.copy(animations = animations.toFieldState(QuickToggleFieldState.Loading))
+
+        val talkBackCommands = resolveTalkBack(serial)
+        val talkBack = TalkBackCommand.parseRead(transport.executeText(TalkBackCommand.readRequest(serial)))
+        if (!isCurrentSerial(serial)) return
+        _state.value = _state.value.copy(
+            talkBack = talkBack.toFieldState(QuickToggleFieldState.Loading),
+            talkBackProfile = talkBackCommands.profile,
+        )
+    }
+
+    /** Detects the installed TalkBack each time rather than caching it: installing one must not need a device reconnect. */
+    private suspend fun resolveTalkBack(serial: DeviceSerial): TalkBackCommands {
+        val vendor = TalkBackCommand.vendorOf(transport.executeText(TalkBackCommand.detectionRequest(serial)))
+        return TalkBackCommand.resolve(vendor, customTalkBackCommands())
+    }
+
+    private suspend fun applyTalkBack(enabled: Boolean) {
+        val serial = eligibleSerialOrNull() ?: return
+        val previous = _state.value.talkBack
+        _state.value = _state.value.copy(talkBack = QuickToggleFieldState.Applying(enabled))
+        val commands = resolveTalkBack(serial)
+        if (!isCurrentSerial(serial)) return
+        val line = if (enabled) commands.on else commands.off
+        if (line == null) {
+            _state.value = _state.value.copy(
+                talkBack = QuickToggleFieldState.Error(NO_TALKBACK_MESSAGE, previous.valueOrNull()),
+                talkBackProfile = commands.profile,
+            )
+            return
+        }
+        transport.executeText(TalkBackCommand.writeRequest(serial, line))
+        val read = TalkBackCommand.parseRead(transport.executeText(TalkBackCommand.readRequest(serial)))
+        if (!isCurrentSerial(serial)) return
+        _state.value = _state.value.copy(talkBack = read.toFieldState(previous), talkBackProfile = commands.profile)
     }
 
     private suspend fun applyDarkTheme(enabled: Boolean) {
@@ -155,6 +198,8 @@ class QuickTogglesViewModel(
 
     private fun isCurrentSerial(serial: DeviceSerial): Boolean = eligibleSerialOrNull() == serial
 }
+
+private const val NO_TALKBACK_MESSAGE = "No known TalkBack installed — set a custom TalkBack command in Settings"
 
 private fun <T> DisplaySettingRead<T>.toFieldState(previous: QuickToggleFieldState<T>): QuickToggleFieldState<T> =
     when (this) {

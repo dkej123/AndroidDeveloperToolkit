@@ -67,6 +67,24 @@ class AdbToolboxSettingsConfigurableTest : BasePlatformTestCase() {
         configurable.disposeUIResources()
     }
 
+    fun `test custom TalkBack commands are shown, mark the form modified and are applied`() {
+        val backend = FakeSettingsEditorBackend(persisted = SettingsState(talkBackOnCommand = "settings put secure a 1"))
+        val configurable = AdbToolboxSettingsConfigurable(backend)
+        val component = configurable.createComponent()
+        val onField = field(component, "talkBackOnCommandField")
+        val offField = field(component, "talkBackOffCommandField")
+        assertEquals("settings put secure a 1", onField.text)
+        assertEquals("", offField.text)
+
+        offField.text = "settings put secure a 0"
+        assertTrue(configurable.isModified)
+        configurable.apply()
+
+        assertEquals("settings put secure a 1", backend.candidates.last().talkBackOnCommand)
+        assertEquals("settings put secure a 0", backend.candidates.last().talkBackOffCommand)
+        configurable.disposeUIResources()
+    }
+
     fun `test reset restores persisted values and clears modified state`() {
         val backend = FakeSettingsEditorBackend(persisted = SettingsState(logcatBufferSizeKb = 4096))
         val configurable = AdbToolboxSettingsConfigurable(backend)
@@ -103,6 +121,8 @@ class AdbToolboxSettingsConfigurableTest : BasePlatformTestCase() {
                     adbPathOverride = null,
                     scrcpyPathOverride = null,
                     captureDirectory = null,
+                    talkBackOnCommand = null,
+                    talkBackOffCommand = null,
                 ),
             )
         }

@@ -1,5 +1,7 @@
 package dev.acme.adbtoolbox.intellij.display
 
+import dev.acme.adbtoolbox.domain.display.TalkBackProfile
+
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBPanel
 import com.intellij.ui.components.JBTextField
@@ -56,6 +58,9 @@ class DisplayPanel(
     onSetDarkTheme: (Boolean) -> Unit,
     onSetShowTouches: (Boolean) -> Unit,
     onSetAnimationsOff: (Boolean) -> Unit,
+    onSetTalkBack: (Boolean) -> Unit = {},
+    /** Mounted inside another scrolling view (the Device view) rather than scrolling on its own. */
+    embedded: Boolean = false,
 ) : JBPanel<DisplayPanel>(BorderLayout()) {
 
     private sealed interface FontChoice {
@@ -191,6 +196,13 @@ class DisplayPanel(
     private val showTouchesValueLabel = toggleValueLabel()
     private val showTouchesRow = toggleRow(showTouchesToggle, "Show touches", showTouchesValueLabel)
 
+    private val talkBackToggle = ToggleSwitch().apply {
+        toolTipText = "Samsung or Google TalkBack, detected per device; custom commands in Settings"
+        addActionListener { onSetTalkBack(isSelected) }
+    }
+    private val talkBackValueLabel = toggleValueLabel()
+    private val talkBackRow = toggleRow(talkBackToggle, "TalkBack", talkBackValueLabel)
+
     private val animationsOffToggle = ToggleSwitch().apply {
         toolTipText = "Sets window, transition and animator scales to 0"
         addActionListener { onSetAnimationsOff(isSelected) }
@@ -203,6 +215,7 @@ class DisplayPanel(
         darkThemeRow,
         animationsRow,
         showTouchesRow,
+        talkBackRow,
     )
 
     private val contentPanel = ViewportWidthPanel().apply {
@@ -221,7 +234,12 @@ class DisplayPanel(
 
     init {
         background = AdbToolboxTheme.Colors.bg
-        add(scrollPane, BorderLayout.CENTER)
+        if (embedded) {
+            isOpaque = false
+            add(contentPanel, BorderLayout.CENTER)
+        } else {
+            add(scrollPane, BorderLayout.CENTER)
+        }
     }
 
     // ---- Test-only visibility hooks ----
@@ -247,6 +265,8 @@ class DisplayPanel(
     internal val darkThemeValueLabelForTest: JBLabel get() = darkThemeValueLabel
     internal val showTouchesValueLabelForTest: JBLabel get() = showTouchesValueLabel
     internal val animationsValueLabelForTest: JBLabel get() = animationsValueLabel
+    internal val talkBackToggleForTest: JToggleButton get() = talkBackToggle
+    internal val talkBackValueLabelForTest: JBLabel get() = talkBackValueLabel
 
     fun update(state: FontScaleState) {
         val current = when (state) {
@@ -266,6 +286,7 @@ class DisplayPanel(
             val selection = if (current in FontScalePresets.VALUES) FontChoice.Preset(current) else FontChoice.Custom
             fontChipRow.setSelectedValue(selection)
         }
+        fontChipRow.applyPending = state is FontScaleState.Applying
         fontOverrideRow.isVisible = overridden
         if (state is FontScaleState.Error) {
             fontCustomErrorLabel.text = state.message
@@ -314,6 +335,7 @@ class DisplayPanel(
             }
             densityChipRow.setSelectedValue(selection)
         }
+        densityChipRow.applyPending = state is DensityViewState.Applying
         densityOverrideRow.isVisible = overridden
         if (state is DensityViewState.Error) {
             densityCustomErrorLabel.text = state.message
@@ -325,6 +347,13 @@ class DisplayPanel(
     fun update(state: QuickTogglesViewState) {
         applyToggleState(darkThemeToggle, darkThemeValueLabel, state.darkTheme, toText = { if (it) "yes" else "no" })
         applyToggleState(showTouchesToggle, showTouchesValueLabel, state.showTouches, toText = { if (it) "on" else "off" })
+        val talkBackSource = when (state.talkBackProfile) {
+            TalkBackProfile.Samsung -> " · Samsung"
+            TalkBackProfile.Google -> " · Google"
+            TalkBackProfile.Custom -> " · custom"
+            null -> ""
+        }
+        applyToggleState(talkBackToggle, talkBackValueLabel, state.talkBack, toText = { (if (it) "on" else "off") + talkBackSource })
         applyToggleState(
             animationsOffToggle,
             animationsValueLabel,

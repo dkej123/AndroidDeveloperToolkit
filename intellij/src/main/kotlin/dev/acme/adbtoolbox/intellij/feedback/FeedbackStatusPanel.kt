@@ -83,7 +83,7 @@ class FeedbackStatusPanel(
         background = AdbToolboxTheme.Colors.header
         border = BorderFactory.createCompoundBorder(
             BorderFactory.createMatteBorder(1, 0, 0, 0, AdbToolboxTheme.Colors.border),
-            JBUI.Borders.empty(0, AdbToolboxTheme.Spacing.s4),
+            JBUI.Borders.empty(AdbToolboxTheme.Spacing.s2, AdbToolboxTheme.Spacing.s4),
         )
         // `statusBarStyle`: one vertically centered flex row with an 8px gap. The message is the
         // only flexible child, so a long last-command message ellipsises instead of pushing the

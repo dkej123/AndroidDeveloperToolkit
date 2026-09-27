@@ -13,13 +13,15 @@ import javax.swing.JButton
  */
 class AppsConfirmationDialogTest : BasePlatformTestCase() {
 
-    fun `test the destructive button gets a red fill and white text`() {
+    fun `test the destructive button gets a red fill and white text through the IDE's rounded button painter`() {
         val button = JButton("Uninstall")
 
         styleDestructiveButton(button)
 
-        assertTrue(button.isOpaque)
-        assertEquals(dev.acme.adbtoolbox.intellij.ui.common.AdbToolboxTheme.Colors.red, button.background)
+        // An opaque button would paint a square red block behind the rounded IDE button.
+        assertFalse(button.isOpaque)
+        assertEquals(dev.acme.adbtoolbox.intellij.ui.common.AdbToolboxTheme.Colors.red, button.getClientProperty("JButton.backgroundColor"))
+        assertEquals(Color.WHITE, button.getClientProperty("JButton.textColor"))
         assertEquals(Color.WHITE, button.foreground)
     }
 }

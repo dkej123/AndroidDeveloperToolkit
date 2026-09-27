@@ -1,5 +1,7 @@
 package dev.acme.adbtoolbox.intellij.display
 
+import dev.acme.adbtoolbox.domain.display.TalkBackProfile
+
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import dev.acme.adbtoolbox.application.display.QuickToggleFieldState
 import dev.acme.adbtoolbox.application.display.QuickTogglesViewState
@@ -29,9 +31,10 @@ class DisplayPanelTest : BasePlatformTestCase() {
         onSetDarkTheme: (Boolean) -> Unit = {},
         onSetShowTouches: (Boolean) -> Unit = {},
         onSetAnimationsOff: (Boolean) -> Unit = {},
+        onSetTalkBack: (Boolean) -> Unit = {},
     ) = DisplayPanel(
         onApplyFontScale, onResetFontScale, onApplyDensityPreset, onApplyCustomDensity, onResetDensity,
-        onSetDarkTheme, onSetShowTouches, onSetAnimationsOff,
+        onSetDarkTheme, onSetShowTouches, onSetAnimationsOff, onSetTalkBack,
     )
 
     // ---- Font scale ----
@@ -43,6 +46,29 @@ class DisplayPanelTest : BasePlatformTestCase() {
         p.fontChipRowForTest.chips.first { it.label == "1.3×" }.doClick()
 
         assertEquals(1.3, applied)
+    }
+
+    fun `test clicking the still-confirmed chip while another scale is being applied applies it again`() {
+        val applied = mutableListOf<Double>()
+        val p = panel(onApplyFontScale = { applied += it })
+        p.update(FontScaleState.Idle(current = 1.0))
+        p.fontChipRowForTest.chips.first { it.label == "1.5×" }.doClick()
+        // Until the readback confirms 1.5, the row still shows the confirmed 1× as selected.
+        p.update(FontScaleState.Applying(current = 1.0, target = 1.5))
+
+        p.fontChipRowForTest.chips.first { it.label == "1×" }.doClick()
+
+        assertEquals(listOf(1.5, 1.0), applied)
+    }
+
+    fun `test clicking the already-selected font-scale chip when nothing is pending applies nothing`() {
+        val applied = mutableListOf<Double>()
+        val p = panel(onApplyFontScale = { applied += it })
+        p.update(FontScaleState.Idle(current = 1.0))
+
+        p.fontChipRowForTest.chips.first { it.label == "1×" }.doClick()
+
+        assertEquals(emptyList<Double>(), applied)
     }
 
     fun `test clicking the font-scale Custom chip reveals the custom disclosure row without applying`() {
@@ -140,6 +166,18 @@ class DisplayPanelTest : BasePlatformTestCase() {
         assertEquals(125, applied)
     }
 
+    fun `test clicking the still-confirmed density chip while another density is being applied applies it again`() {
+        val applied = mutableListOf<Int>()
+        val p = panel(onApplyDensityPreset = { applied += it })
+        p.update(DensityViewState.Idle(DensityReading(420, null)))
+        p.densityChipRowForTest.chips.first { it.label == "125%" }.doClick()
+        p.update(DensityViewState.Applying(DensityReading(420, null)))
+
+        p.densityChipRowForTest.chips.first { it.label == "100%" }.doClick()
+
+        assertEquals(listOf(125, 100), applied)
+    }
+
     fun `test pressing Enter in the density custom field applies the parsed dpi`() {
         var applied: Int? = null
         val p = panel(onApplyCustomDensity = { applied = it })
@@ -208,6 +246,20 @@ class DisplayPanelTest : BasePlatformTestCase() {
         p.showTouchesToggleForTest.doClick()
 
         assertEquals(true, enabled)
+    }
+
+    fun `test toggling TalkBack invokes onSetTalkBack and shows which commands it uses`() {
+        var enabled: Boolean? = null
+        val p = panel(onSetTalkBack = { enabled = it })
+        p.update(QuickTogglesViewState(talkBack = QuickToggleFieldState.Idle(false), talkBackProfile = TalkBackProfile.Samsung))
+        assertEquals("off · Samsung", p.talkBackValueLabelForTest.text)
+
+        p.talkBackToggleForTest.doClick()
+        assertEquals(true, enabled)
+
+        p.update(QuickTogglesViewState(talkBack = QuickToggleFieldState.Idle(true), talkBackProfile = TalkBackProfile.Custom))
+        assertTrue(p.talkBackToggleForTest.isSelected)
+        assertEquals("on · custom", p.talkBackValueLabelForTest.text)
     }
 
     fun `test toggling animations off invokes onSetAnimationsOff with the new selection`() {

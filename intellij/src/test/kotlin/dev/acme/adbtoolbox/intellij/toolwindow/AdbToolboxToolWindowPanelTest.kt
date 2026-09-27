@@ -399,12 +399,16 @@ class AdbToolboxToolWindowPanelTest : BasePlatformTestCase() {
         panel.dispose()
     }
 
-    fun `test the Display view is registered in the feature host`() {
+    fun `test the display sections live inside the Device view, with no Display view of their own`() {
         val dispatchers = dispatchers()
         val harness = Harness(dispatchers)
         val panel = panel(dispatchers, harness)
 
-        assertTrue(panel.host.activeViewHost.isRegistered(ViewId.Display.routeKey))
+        assertFalse(panel.host.activeViewHost.isRegistered("display"))
+        val device = panel.host.activeViewHost.componentFor(ViewId.Device.routeKey) as java.awt.Container
+        fun descendants(c: java.awt.Component): List<java.awt.Component> =
+            listOf(c) + ((c as? java.awt.Container)?.components?.flatMap(::descendants) ?: emptyList())
+        assertTrue(descendants(device).any { it is dev.acme.adbtoolbox.intellij.display.DisplayPanel })
 
         panel.dispose()
     }

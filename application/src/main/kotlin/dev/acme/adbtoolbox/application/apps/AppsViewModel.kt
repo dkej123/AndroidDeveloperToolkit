@@ -1,5 +1,11 @@
 package dev.acme.adbtoolbox.application.apps
 
+import kotlinx.coroutines.flow.updateAndGet
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.MutableSharedFlow
+import dev.acme.adbtoolbox.domain.apps.FakePinnedPackagesPersistence
+import dev.acme.adbtoolbox.domain.apps.PinnedPackagesPersistence
 import dev.acme.adbtoolbox.application.device.SelectedDeviceViewModel
 import dev.acme.adbtoolbox.domain.adb.DeviceSerial
 import dev.acme.adbtoolbox.domain.apps.SelectedPackageState
@@ -18,6 +24,9 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+
+private const val PINNED_HEADER = "Pinned"
+private const val ALL_APPS_HEADER = "All apps"
 
 /**
  * Task 022's Apps presenter: reduces [packageRepository]'s [PackageListState] (task 021),
@@ -45,8 +54,14 @@ class AppsViewModel(
     private val packageRepository: PackageRepository,
     private val selectedDeviceViewModel: SelectedDeviceViewModel,
     private val selectedPackageViewModel: SelectedPackageViewModel,
+    private val pinnedPackages: PinnedPackagesPersistence = FakePinnedPackagesPersistence(),
 ) {
     private val _query = MutableStateFlow("")
+    private val _pinned = MutableStateFlow<Set<String>>(emptySet())
+
+    /** Pinned package names (by name, on every device), shared with other package pickers such as Logcat's. */
+    val pinned: StateFlow<Set<String>> = _pinned.asStateFlow()
+    private val pinWrites = MutableSharedFlow<Set<String>>(extraBufferCapacity = 1)
     private val _currentPackageScope = MutableStateFlow(PackageListScope.User)
 
     /** The scope selected by the Apps toggle, updated synchronously when its intent is handled. */
@@ -56,12 +71,17 @@ class AppsViewModel(
         selectedDeviceViewModel.state,
         packageRepository.state,
         selectedPackageViewModel.state,
-        _query,
+        combine(_query, _pinned, ::Pair),
         _currentPackageScope,
-        ::reduce,
-    ).stateIn(scope, SharingStarted.Eagerly, AppsViewState())
+    ) { deviceState, packageState, selectionState, (query, pinned), packageScope ->
+        reduce(deviceState, packageState, selectionState, query, pinned, packageScope)
+    }.stateIn(scope, SharingStarted.Eagerly, AppsViewState())
 
     init {
+        scope.launch(dispatchers.io) {
+            runCatching { pinnedPackages.readPinnedPackages() }.onSuccess { loaded -> _pinned.update { it + loaded } }
+        }
+        scope.launch(dispatchers.io) { pinWrites.collectLatest { pinnedPackages.writePinnedPackages(it) } }
         scope.launch(dispatchers.default) {
             combine(selectedDeviceViewModel.state, _currentPackageScope) { deviceState, packageScope ->
                 serialOf(deviceState) to packageScope
@@ -92,6 +112,12 @@ class AppsViewModel(
                 PackageListScope.All -> PackageListScope.User
             }
             is AppsIntent.SelectPackage -> selectPackage(intent.packageName)
+            is AppsIntent.TogglePin -> {
+                val updated = _pinned.updateAndGet { pins ->
+                    if (intent.packageName in pins) pins - intent.packageName else pins + intent.packageName
+                }
+                pinWrites.tryEmit(updated)
+            }
             AppsIntent.Refresh -> refresh()
         }
     }
@@ -123,6 +149,7 @@ class AppsViewModel(
         packageState: PackageListState,
         selectionState: SelectedPackageState,
         query: String,
+        pinned: Set<String>,
         packageScope: PackageListScope,
     ): AppsViewState {
         val showSystemPackages = packageScope == PackageListScope.All
@@ -161,18 +188,7 @@ class AppsViewModel(
                     showSystemPackages = showSystemPackages,
                     hasDevice = true,
                     isLoading = false,
-                    rows = packageState.packages
-                        .filter { matches(it, query) }
-                        .map { entry ->
-                            AppsRow(
-                                packageName = entry.packageName,
-                                label = entry.label,
-                                labelResolved = entry.labelResolved,
-                                isDebuggable = entry.isDebuggable,
-                                isSelected = entry.packageName == selectedPackageName,
-                                icon = entry.icon,
-                            )
-                        },
+                    rows = rowsOf(packageState.packages.filter { matches(it, query) }, pinned, selectedPackageName),
                     selectedPackageName = selectedPackageName,
                 )
 
@@ -186,6 +202,27 @@ class AppsViewModel(
                 selectedPackageName = selectedPackageName,
             )
         }
+    }
+
+    /**
+     * Pinned apps first, each group in the repository's (label) order. Section headers are only
+     * added when a pinned app is visible, so an unpinned list looks exactly as before.
+     */
+    private fun rowsOf(entries: List<PackageEntry>, pinned: Set<String>, selectedPackageName: String?): List<AppsRow> {
+        val (pinnedEntries, others) = entries.partition { it.packageName in pinned }
+        fun row(entry: PackageEntry, header: String?) = AppsRow(
+            packageName = entry.packageName,
+            label = entry.label,
+            labelResolved = entry.labelResolved,
+            isDebuggable = entry.isDebuggable,
+            isSelected = entry.packageName == selectedPackageName,
+            icon = entry.icon,
+            isPinned = entry.packageName in pinned,
+            sectionHeader = header,
+        )
+        if (pinnedEntries.isEmpty()) return others.map { row(it, null) }
+        return pinnedEntries.mapIndexed { i, entry -> row(entry, if (i == 0) PINNED_HEADER else null) } +
+            others.mapIndexed { i, entry -> row(entry, if (i == 0) ALL_APPS_HEADER else null) }
     }
 
     private fun matches(entry: PackageEntry, query: String): Boolean {

@@ -68,9 +68,15 @@ internal class AppsConfirmationDialog(
     override fun getPreferredFocusedComponent(): JComponent? = getButton(cancelAction)
 }
 
-/** The destructive action's red-filled treatment — pulled out so it is unit-testable on a plain [javax.swing.JButton]. */
+/**
+ * The destructive action's red-filled treatment — pulled out so it is unit-testable on a plain
+ * [javax.swing.JButton]. The colors go through the IDE button UI's own client properties so it
+ * paints its usual rounded shape in red; making the button opaque with a red background instead
+ * paints a square block behind that shape.
+ */
 internal fun styleDestructiveButton(button: javax.swing.JButton) {
-    button.isOpaque = true
-    button.background = AdbToolboxTheme.Colors.red
+    button.isOpaque = false
+    button.putClientProperty("JButton.backgroundColor", AdbToolboxTheme.Colors.red)
+    button.putClientProperty("JButton.textColor", Color.WHITE)
     button.foreground = Color.WHITE
 }

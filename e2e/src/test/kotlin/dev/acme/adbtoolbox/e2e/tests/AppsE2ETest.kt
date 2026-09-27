@@ -65,6 +65,28 @@ class AppsE2ETest : E2eTest() {
     }
 
     @Test
+    fun `pinning an app moves it to the top under Pinned, unpinning restores the order`() {
+        val last = packageRows().last()
+        val lastIndex = packageRows().indexOf(last)
+        // The pin is the rightmost 28px of the row.
+        val bounds = appsList().callJs<String>(
+            "var b = component.getCellBounds($lastIndex, $lastIndex); (b.x + b.width - 12) + ',' + (b.y + b.height / 2)", true,
+        ).split(',').map { it.toDouble().toInt() }
+        appsList().click(java.awt.Point(bounds[0], bounds[1]))
+
+        awaitUntil(Duration.ofSeconds(10), Duration.ofMillis(300), "$last to be pinned first") {
+            studio.listModelItems(appsList()).first().let { "packageName=$last," in it && "isPinned=true" in it && "sectionHeader=Pinned" in it }
+        }
+
+        val first = appsList().callJs<String>("var b = component.getCellBounds(0, 0); (b.x + b.width - 12) + ',' + (b.y + b.height - 10)", true)
+            .split(',').map { it.toDouble().toInt() }
+        appsList().click(java.awt.Point(first[0], first[1]))
+        awaitUntil(Duration.ofSeconds(10), Duration.ofMillis(300), "$last to be unpinned") {
+            studio.listModelItems(appsList()).none { "isPinned=true" in it }
+        }
+    }
+
+    @Test
     fun `filter narrows the list by package name`() {
         studio.typeInto(studio.byName("Filter packages"), "markor")
 

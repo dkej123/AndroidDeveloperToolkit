@@ -18,6 +18,7 @@ Format: Title, Status, Context, Decision, Consequences, Rejected alternatives.
 | [0008](0008-design-source-of-truth.md) | Design source of truth and secondary-flow treatment |
 | [0009](0009-reference-repository-usage.md) | Reference repository usage (ADBHelper, as_plugin) |
 | [0010](0010-app-labels-and-icons-via-device-helper.md) | Application labels and icons via an on-device helper |
+| [0011](0011-app-data-access-and-editing.md) | Reading and editing an app's private files (shared prefs, databases) |
 
 ## Status legend
 

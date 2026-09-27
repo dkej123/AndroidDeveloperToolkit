@@ -13,13 +13,14 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.time.Duration
 
-/** Display view: font scale, density (presets, custom, reset) and quick toggles, checked on-device. */
+/** Display controls — font scale, density (presets, custom, reset) and quick toggles — which live in
+ * the Device view (there is no Display view), checked on-device. */
 class DisplayE2ETest : E2eTest() {
 
     @BeforeEach
     fun openDisplayView() {
         resetDevice()
-        studio.navigate(View.Display)
+        studio.navigate(View.Device)
         // The reset above happened outside the plugin, like a change from a terminal.
         studio.leaveAndReturnToToolWindow()
     }
@@ -30,6 +31,7 @@ class DisplayE2ETest : E2eTest() {
         Adb.shell("wm density reset")
         Adb.shell("cmd uimode night no")
         Adb.putSetting("system", "show_touches", "0")
+        Adb.shell("settings delete secure enabled_accessibility_services")
         listOf("window_animation_scale", "transition_animation_scale", "animator_duration_scale")
             .forEach { Adb.putSetting("global", it, "1.0") }
     }
@@ -53,16 +55,16 @@ class DisplayE2ETest : E2eTest() {
 
     @Test
     fun `custom font scale is applied and invalid input is rejected`() {
-        customChips()[0].click()
+        studio.clickWhenShowing { customChips()[0] }
         val field = visibleCustomField()
 
         studio.typeInto(field, "9")
-        visibleApply().click()
+        studio.clickWhenShowing { visibleApply() }
         studio.waitForText("must be between")
         Adb.setting("system", "font_scale").toFloat() shouldBe 1.0f
 
         studio.typeInto(field, "1.7")
-        visibleApply().click()
+        studio.clickWhenShowing { visibleApply() }
         awaitDevice("font_scale 1.7") { Adb.setting("system", "font_scale").toFloat() == 1.7f }
     }
 
@@ -79,9 +81,9 @@ class DisplayE2ETest : E2eTest() {
 
     @Test
     fun `custom density in dpi is applied`() {
-        customChips()[1].click()
+        studio.clickWhenShowing { customChips()[1] }
         studio.typeInto(visibleCustomField(), "400")
-        visibleApply().click()
+        studio.clickWhenShowing { visibleApply() }
 
         awaitDevice("override density 400") { overrideDensity() == 400 }
     }
@@ -113,10 +115,26 @@ class DisplayE2ETest : E2eTest() {
     }
 
     @Test
+    fun `TalkBack without a known TalkBack installed asks for a custom command and changes nothing`() {
+        // The API 28 emulator image ships no TalkBack at all (like a device without GMS).
+        check(!Adb.shell("pm list packages talkback").contains("talkback")) { "fixture device unexpectedly has TalkBack" }
+        awaitUntil(E2eConfig.deviceTimeout(10), Duration.ofMillis(500), "TalkBack value to load") {
+            studio.valueAfterCaption("TalkBack") == "off"
+        }
+
+        studio.click("TalkBack", "ToggleSwitch")
+
+        awaitUntil(E2eConfig.deviceTimeout(15), Duration.ofMillis(500), "the missing-TalkBack message") {
+            studio.visibleTexts().any { "No known TalkBack installed" in it }
+        }
+        Adb.setting("secure", "enabled_accessibility_services").contains("talkback", ignoreCase = true) shouldBe false
+    }
+
+    @Test
     fun `quick toggle values reflect the device state`() {
         // The value column next to each toggle shows the device's current value, never a placeholder.
         awaitUntil(E2eConfig.deviceTimeout(10), Duration.ofMillis(500), "toggle values to load") {
-            listOf("Animations off", "Show touches").none { studio.valueAfterCaption(it) == "—" }
+            listOf("Animations off", "Show touches", "TalkBack").none { studio.valueAfterCaption(it) == "—" }
         }
     }
 

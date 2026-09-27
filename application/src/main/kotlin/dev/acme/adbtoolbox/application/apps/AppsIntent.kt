@@ -15,6 +15,9 @@ sealed interface AppsIntent {
     /** Selects exactly [packageName] (`null` deselects) — never inferred from a row index. */
     data class SelectPackage(val packageName: String?) : AppsIntent
 
+    /** The row's pin control: pins [packageName] to the top of the list, or unpins it. */
+    data class TogglePin(val packageName: String) : AppsIntent
+
     /** The toolbar/action footer's refresh control. */
     data object Refresh : AppsIntent
 }

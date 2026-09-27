@@ -14,7 +14,7 @@ src/main/kotlin/dev/acme/adbtoolbox/
   ui/Rail.kt                        5 view buttons + badges + settings
   ui/views/DeviceView.kt            mirroring, capture, facts, reboot/shell/wake
   ui/views/AppsView.kt              package list + actions + confirmations
-  ui/views/DisplayView.kt           font scale, density, quick toggles
+  (no DisplayView: font scale, density and quick toggles are Device view sections — do not re-add)
   ui/views/NetworkView.kt           proxy form, recents
   ui/views/LogcatView.kt            toolbar, filters, virtualized log list
   ui/common/Chips.kt                PresetChipRow, LevelChip
@@ -147,7 +147,7 @@ Notes for correctness:
 
 ## 5. Definition of done
 
-1. Five views reachable from the rail; device bar and status bar pinned and always visible.
+1. Four views (Device, Apps, Network, Logcat) reachable from the rail; device bar and status bar pinned and always visible.
 2. All four device states render as specified, including the amber unauthorized banner.
 3. Every device-mutating control is disabled at 45% with a reason tooltip when no device is online.
 4. Font scale and density: presets, custom with validation, reset, amber override badge on the rail,

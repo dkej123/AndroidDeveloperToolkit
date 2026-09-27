@@ -49,10 +49,6 @@ class RailGlyphIcon(private val viewId: ViewId, private val color: Color) : Icon
                     g2.drawRect(sx(2.7f), sy(9.3f), side, side)
                     g2.drawRect(sx(9.3f), sy(9.3f), side, side)
                 }
-                ViewId.Display -> {
-                    g2.drawRect(sx(2f), sy(3.6f), sx(14f) - sx(2f), sy(10.6f) - sy(3.6f))
-                    g2.drawLine(sx(5.6f), sy(13.4f), sx(10.4f), sy(13.4f))
-                }
                 ViewId.Network -> {
                     val d = sx(13.4f) - sx(2.6f)
                     g2.drawOval(sx(2.6f), sy(2.6f), d, d)

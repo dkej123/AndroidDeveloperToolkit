@@ -58,6 +58,21 @@ class GlobalChromeLayoutTest : BasePlatformTestCase() {
         }
     }
 
+    fun `test the status bar keeps breathing room above and below its override chip`() {
+        val status = FeedbackStatusPanel().apply {
+            update(dev.acme.adbtoolbox.domain.feedback.StatusState(message = "Ready"))
+            updateOverrideCount(2)
+            setSize(AdbToolboxTheme.Breakpoints.defaultDock, AdbToolboxTheme.Sizes.statusBar)
+        }
+        layoutTree(status)
+
+        val chip = status.overrideChipComponentForTest
+        val bounds = javax.swing.SwingUtilities.convertRectangle(chip.parent, chip.bounds, status)
+        assertEquals(com.intellij.util.ui.JBUI.scale(28), status.height)
+        assertTrue("chip too close to the top: $bounds", bounds.y >= com.intellij.util.ui.JBUI.scale(5))
+        assertTrue("chip too close to the bottom: $bounds", status.height - bounds.maxY >= com.intellij.util.ui.JBUI.scale(4))
+    }
+
     private fun layoutTree(component: Component) {
         if (component is Container) {
             component.doLayout()
