@@ -7,6 +7,7 @@ import dev.acme.adbtoolbox.domain.appdata.PrefEntry
 import dev.acme.adbtoolbox.domain.appdata.PrefType
 import dev.acme.adbtoolbox.domain.appdata.SqlResult
 import dev.acme.adbtoolbox.domain.appdata.SqlRows
+import dev.acme.adbtoolbox.domain.deeplinks.DeepLinkAnalysis
 import dev.acme.adbtoolbox.domain.packages.AppIcon
 
 /** Whether (and how) the app's private files can be read and written. */
@@ -49,6 +50,12 @@ data class AppDetailsState(
     val icon: AppIcon? = null,
     val details: AppDetails? = null,
     val detailsError: String? = null,
+    val androidUserId: Int = 0,
+    val dangerousPermissions: Set<String> = emptySet(),
+    val permissionBusy: String? = null,
+    val deepLinks: DeepLinkAnalysis? = null,
+    val deepLinksLoading: Boolean = false,
+    val deepLinksError: String? = null,
     val runningPid: String? = null,
     val access: FileAccessState = FileAccessState.Checking,
     val sharedPrefsFiles: List<String> = emptyList(),
@@ -65,6 +72,11 @@ sealed interface AppDetailsIntent {
     data class Open(val packageName: String, val label: String, val icon: AppIcon?) : AppDetailsIntent
     data object Close : AppDetailsIntent
     data object Refresh : AppDetailsIntent
+    data object AnalyzeDeepLinks : AppDetailsIntent
+    data class OpenDeepLink(val uri: String) : AppDetailsIntent
+    data class GrantPermission(val name: String) : AppDetailsIntent
+    data class RevokePermission(val name: String) : AppDetailsIntent
+    data class ResetPermission(val name: String) : AppDetailsIntent
 
     data class OpenPrefs(val fileName: String) : AppDetailsIntent
     /** Replaces the entry keyed [originalKey] (or adds one when `null`) — [valueInput] is parsed as [type]. */

@@ -13,6 +13,14 @@ import dev.acme.adbtoolbox.domain.appdata.PrefType
 import dev.acme.adbtoolbox.domain.appdata.PrefValue
 import dev.acme.adbtoolbox.domain.appdata.SqlRows
 import dev.acme.adbtoolbox.domain.appdata.SqlValue
+import dev.acme.adbtoolbox.domain.deeplinks.DeepLinkAnalysis
+import dev.acme.adbtoolbox.domain.deeplinks.DeepLinkCatalog
+import dev.acme.adbtoolbox.domain.deeplinks.DeepLinkTarget
+import dev.acme.adbtoolbox.domain.deeplinks.DeepLinkTargetKind
+import dev.acme.adbtoolbox.domain.deeplinks.DeepLinkSource
+import dev.acme.adbtoolbox.domain.deeplinks.AppLinkVerification
+import dev.acme.adbtoolbox.domain.deeplinks.DeviceLinkState
+import dev.acme.adbtoolbox.domain.deeplinks.UriPattern
 
 class AppDetailsPanelTest : BasePlatformTestCase() {
 
@@ -101,5 +109,47 @@ class AppDetailsPanelTest : BasePlatformTestCase() {
         panel.update(fresh)
 
         assertEquals(listOf(AppDetailsIntent.OpenPrefs("prefs.xml"), AppDetailsIntent.OpenDatabase("app.db")), intents)
+    }
+
+    fun `test details expose deep links and permissions as dedicated tabs`() {
+        val panel = AppDetailsPanel {}
+        panel.update(state().copy(deepLinks = DeepLinkAnalysis(DeepLinkCatalog("com.acme.shop", listOf(
+            DeepLinkTarget("com.acme.shop.Main", DeepLinkTargetKind.ACTIVITY, patterns = listOf(UriPattern(schemes = setOf("https"), hosts = setOf("example.com"))), hasDefaultCategory = true),
+        )))))
+
+        assertEquals(listOf("Info", "Deep Links", "Permissions", "Shared prefs", "Databases"),
+            (0 until panel.tabsForTest.tabCount).map(panel.tabsForTest::getTitleAt))
+        assertEquals(1, panel.deepLinksRowCountForTest)
+        assertEquals(0, panel.permissionsRowCountForTest)
+    }
+
+    fun `test analyze APK forwards an explicit on demand intent`() {
+        val intents = mutableListOf<AppDetailsIntent>()
+        val panel = AppDetailsPanel { intents += it }
+        panel.update(state())
+
+        panel.analyzeDeepLinksForTest.doClick()
+
+        assertTrue(intents.contains(AppDetailsIntent.AnalyzeDeepLinks))
+    }
+
+    fun `test deep link rows expose source badges runtime uncertainty and stale validation error`() {
+        val panel = AppDetailsPanel {}
+        val target = DeepLinkTarget(
+            "com.acme.shop.Main",
+            DeepLinkTargetKind.ACTIVITY,
+            patterns = listOf(UriPattern(schemes = setOf("https"), hosts = setOf("example.com"))),
+            hasDefaultCategory = true,
+            sources = setOf(DeepLinkSource.PROJECT, DeepLinkSource.RUNTIME_UNKNOWN),
+        )
+        panel.update(state().copy(deepLinks = DeepLinkAnalysis(
+            DeepLinkCatalog("com.acme.shop", listOf(target)),
+            verifications = listOf(AppLinkVerification("example.com", DeviceLinkState.VERIFIED,
+                remoteValid = true, validatedAtEpochMillis = 1234L, stale = true, error = "offline")),
+        )))
+
+        assertEquals("Project · Runtime unknown", panel.deepLinksValueForTest(0, 3))
+        assertTrue(panel.deepLinksValueForTest(0, 5).contains("Stale validation"))
+        assertTrue(panel.deepLinksValueForTest(0, 5).contains("offline"))
     }
 }

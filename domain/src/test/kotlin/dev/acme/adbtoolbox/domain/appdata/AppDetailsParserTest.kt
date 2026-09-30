@@ -58,10 +58,38 @@ class AppDetailsParserTest {
     @Test
     fun `permissions combine requested, install and runtime grants`() {
         AppDetailsParser.parse("com.acme.shop", DUMP).permissions shouldBe listOf(
-            AppPermission("android.permission.CAMERA", granted = false, runtime = true),
-            AppPermission("android.permission.INTERNET", granted = true, runtime = false),
-            AppPermission("android.permission.POST_NOTIFICATIONS", granted = true, runtime = true),
+            AppPermission("android.permission.CAMERA", PermissionKind.RUNTIME, PermissionState.DENIED, setOf(PermissionFlag.USER_SET)),
+            AppPermission("android.permission.INTERNET", PermissionKind.INSTALL, PermissionState.GRANTED),
+            AppPermission("android.permission.POST_NOTIFICATIONS", PermissionKind.RUNTIME, PermissionState.GRANTED),
         )
+    }
+
+    @Test
+    fun `requested dangerous permission absent from runtime block is not requested but remains mutable`() {
+        val dump = DUMP.replace("        android.permission.CAMERA: granted=false, flags=[ USER_SET ]\n", "")
+
+        val permission = AppDetailsParser.parse("com.acme.shop", dump, dangerousPermissions = setOf("android.permission.CAMERA"))
+            .permissions.first { it.name == "android.permission.CAMERA" }
+
+        permission.kind shouldBe PermissionKind.RUNTIME
+        permission.state shouldBe PermissionState.NOT_REQUESTED
+        permission.mutable shouldBe true
+    }
+
+    @Test
+    fun `permission state honors one time permanent and fixed flags`() {
+        val dump = DUMP.replace(
+            "android.permission.POST_NOTIFICATIONS: granted=true",
+            """android.permission.POST_NOTIFICATIONS: granted=true, flags=[ ONE_TIME ]
+        android.permission.RECORD_AUDIO: granted=false, flags=[ USER_SET|USER_FIXED ]
+        android.permission.ACCESS_FINE_LOCATION: granted=false, flags=[ POLICY_FIXED ]""",
+        )
+
+        AppDetailsParser.parse("com.acme.shop", dump).permissions.associateBy { it.name }.let { permissions ->
+            permissions.getValue("android.permission.POST_NOTIFICATIONS").state shouldBe PermissionState.GRANTED_ONE_TIME
+            permissions.getValue("android.permission.RECORD_AUDIO").state shouldBe PermissionState.DENIED_PERMANENTLY
+            permissions.getValue("android.permission.ACCESS_FINE_LOCATION").state shouldBe PermissionState.FIXED_READ_ONLY
+        }
     }
 
     @Test
@@ -73,5 +101,21 @@ class AppDetailsParserTest {
         details.primaryAbi shouldBe null
         details.isDebuggable shouldBe false
         details.permissions shouldBe emptyList()
+    }
+
+    @Test
+    fun `runtime grants and stopped state belong to selected Android user`() {
+        val dump = DUMP.replace(
+            "User 0: ceDataInode=1 installed=true hidden=false suspended=false stopped=true notLaunched=false enabled=0",
+            """User 0: ceDataInode=1 installed=true stopped=true
+      runtime permissions:
+        android.permission.CAMERA: granted=false
+    User 10: ceDataInode=2 installed=true stopped=false""",
+        ).replace("android.permission.CAMERA: granted=false, flags=[ USER_SET ]", "android.permission.CAMERA: granted=true")
+
+        val details = AppDetailsParser.parse("com.acme.shop", dump, androidUserId = 10)
+
+        details.isStopped shouldBe false
+        details.permissions.first { it.name == "android.permission.CAMERA" }.state shouldBe PermissionState.GRANTED
     }
 }

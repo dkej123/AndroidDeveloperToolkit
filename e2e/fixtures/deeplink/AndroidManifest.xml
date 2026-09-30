@@ -1,0 +1,15 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="dev.acme.adbtoolbox.e2efixture">
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-sdk android:minSdkVersion="23" android:targetSdkVersion="35" />
+    <application android:label="ADB Toolbox E2E Deep Link" android:theme="@android:style/Theme.Material.Light">
+        <activity android:name=".MainActivity" android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="toolbox" android:host="e2e" android:pathPrefix="/open" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>

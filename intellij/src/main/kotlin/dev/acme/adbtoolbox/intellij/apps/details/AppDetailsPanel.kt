@@ -14,9 +14,11 @@ import dev.acme.adbtoolbox.application.appdetails.FileAccessState
 import dev.acme.adbtoolbox.application.appdetails.PrefsEditorState
 import dev.acme.adbtoolbox.domain.appdata.PrefEntry
 import dev.acme.adbtoolbox.domain.appdata.PrefType
+import dev.acme.adbtoolbox.domain.appdata.PermissionState
 import dev.acme.adbtoolbox.domain.appdata.SqlResult
 import dev.acme.adbtoolbox.domain.appdata.SqlRows
 import dev.acme.adbtoolbox.domain.appdata.SqlValue
+import dev.acme.adbtoolbox.domain.deeplinks.DeepLinkSource
 import dev.acme.adbtoolbox.intellij.ui.common.AdbToolboxTheme
 import dev.acme.adbtoolbox.intellij.ui.common.DesignButton
 import dev.acme.adbtoolbox.intellij.ui.common.DesignButtonStyle
@@ -40,6 +42,8 @@ import javax.swing.JPanel
 import javax.swing.JTable
 import javax.swing.JTextField
 import javax.swing.ListSelectionModel
+import javax.swing.event.DocumentEvent
+import javax.swing.event.DocumentListener
 import javax.swing.table.AbstractTableModel
 
 /**
@@ -106,6 +110,66 @@ class AppDetailsPanel(
         background = AdbToolboxTheme.Colors.bg
         add(infoGrid, BorderLayout.NORTH)
         add(JBScrollPane(permissionsTable), BorderLayout.CENTER)
+    }
+
+    // ---- Deep links tab ----
+
+    private val analyzeDeepLinks = DesignButton("Analyze APK", DesignButtonStyle.PRIMARY).apply {
+        name = "appDetailsAnalyzeDeepLinks"
+        addActionListener { onIntent(AppDetailsIntent.AnalyzeDeepLinks) }
+    }
+    private val deepLinksStatus = statusText()
+    private val deepLinkSearch = JTextField().apply {
+        name = "appDetailsDeepLinkSearch"
+        emptyText("Filter by activity or domain")
+        document.addDocumentListener(object : DocumentListener {
+            override fun insertUpdate(e: DocumentEvent?) = refresh()
+            override fun removeUpdate(e: DocumentEvent?) = refresh()
+            override fun changedUpdate(e: DocumentEvent?) = refresh()
+            private fun refresh() { if (!rendering) lastState?.let(::renderDeepLinks) }
+        })
+    }
+    private val deepLinkUri = JTextField().apply { name = "appDetailsDeepLinkUri"; emptyText("https://example.com/path") }
+    private val openDeepLink = DesignButton("Open", DesignButtonStyle.SECONDARY).apply {
+        name = "appDetailsOpenDeepLink"
+        addActionListener { deepLinkUri.text.trim().takeIf(String::isNotEmpty)?.let { onIntent(AppDetailsIntent.OpenDeepLink(it)) } }
+    }
+    private val deepLinksModel = RowsModel(listOf("Activity", "Domain", "URI matcher", "Source", "Device", "Warnings"))
+    private val deepLinksTable = readOnlyTable(deepLinksModel).apply { name = "appDetailsDeepLinksTable" }
+    private val deepLinksTab = JPanel(BorderLayout()).apply {
+        background = AdbToolboxTheme.Colors.bg
+        add(column(
+            flexRow(AdbToolboxTheme.Spacing.s3, analyzeDeepLinks).apply { border = inset() },
+            flexRow(AdbToolboxTheme.Spacing.s3, deepLinkSearch, fill = deepLinkSearch).apply { border = inset() },
+            flexRow(AdbToolboxTheme.Spacing.s3, deepLinkUri, openDeepLink, fill = deepLinkUri).apply { border = inset() },
+            deepLinksStatus,
+        ), BorderLayout.NORTH)
+        add(JBScrollPane(deepLinksTable), BorderLayout.CENTER)
+    }
+
+    // ---- Permissions tab ----
+
+    private val managedPermissionsModel = RowsModel(listOf("Permission", "Type", "State", "Flags"))
+    private val managedPermissionsTable = readOnlyTable(managedPermissionsModel).apply {
+        name = "appDetailsPermissionsTable"
+        setSelectionMode(ListSelectionModel.SINGLE_SELECTION)
+        selectionModel.addListSelectionListener { event -> if (!event.valueIsAdjusting) updatePermissionActions(lastState) }
+    }
+    private val grantPermission = DesignButton("Grant", DesignButtonStyle.SECONDARY).apply {
+        addActionListener { selectedPermission()?.let { onIntent(AppDetailsIntent.GrantPermission(it)) } }
+    }
+    private val revokePermission = DesignButton("Revoke", DesignButtonStyle.SECONDARY).apply {
+        addActionListener { selectedPermission()?.let { onIntent(AppDetailsIntent.RevokePermission(it)) } }
+    }
+    private val resetPermission = DesignButton("Reset decision", DesignButtonStyle.SECONDARY).apply {
+        addActionListener { selectedPermission()?.let { onIntent(AppDetailsIntent.ResetPermission(it)) } }
+    }
+    private val permissionsStatus = statusText()
+    private val permissionsTab = JPanel(BorderLayout()).apply {
+        background = AdbToolboxTheme.Colors.bg
+        add(permissionsStatus, BorderLayout.NORTH)
+        add(JBScrollPane(managedPermissionsTable), BorderLayout.CENTER)
+        add(buttonRow(grantPermission, revokePermission, null, resetPermission), BorderLayout.SOUTH)
     }
 
     // ---- Shared prefs tab ----
@@ -215,6 +279,8 @@ class AppDetailsPanel(
     private val tabs = JBTabbedPane().apply {
         name = "appDetailsTabs"
         addTab("Info", infoTab)
+        addTab("Deep Links", deepLinksTab)
+        addTab("Permissions", permissionsTab)
         addTab("Shared prefs", prefsTab)
         addTab("Databases", databaseTab)
     }
@@ -232,17 +298,23 @@ class AppDetailsPanel(
     internal val databaseSaveForTest: DesignButton get() = databaseSave
     internal val titleForTest: String get() = titleLabel.text
     internal val tabsForTest: JBTabbedPane get() = tabs
+    internal val analyzeDeepLinksForTest: DesignButton get() = analyzeDeepLinks
+    internal val deepLinksRowCountForTest: Int get() = deepLinksModel.rowCount
+    internal fun deepLinksValueForTest(row: Int, column: Int): String = deepLinksModel.getValueAt(row, column).toString()
+    internal val permissionsRowCountForTest: Int get() = managedPermissionsModel.rowCount
     internal fun accessMessageForTest(): String = (prefsTab.getClientProperty(ACCESS_MESSAGE) as WrappingText).text
     internal val infoTextForTest: String
         get() = infoGrid.components.filterIsInstance<JBLabel>().joinToString("\n") { it.text }
 
     /** Set while [update] writes into the controls, so their listeners do not echo intents back. */
     private var rendering = false
+    private var lastState: AppDetailsState? = null
 
     /** The package whose first prefs file / database was already opened automatically. */
     private var autoOpenedFor: String? = null
 
     fun update(state: AppDetailsState) {
+        lastState = state
         rendering = true
         try {
             render(state)
@@ -273,12 +345,73 @@ class AppDetailsPanel(
         noticeLabel.text = state.notice.orEmpty()
         noticeLabel.isVisible = state.notice != null
         renderInfo(state)
+        renderDeepLinks(state)
+        renderPermissions(state)
         renderAccess(state.access)
         renderPrefs(state.sharedPrefsFiles, state.prefs)
         renderDatabase(state.databaseFiles, state.database)
         revalidate()
         repaint()
     }
+
+    private fun renderDeepLinks(state: AppDetailsState) {
+        val analysis = state.deepLinks
+        val query = deepLinkSearch.text.trim().lowercase()
+        deepLinksModel.setRows(analysis?.catalog?.targets.orEmpty().flatMap { target ->
+            target.patterns.map { pattern ->
+                val authority = pattern.hosts.joinToString(" | ")
+                val uri = "${pattern.schemes.joinToString(" | ")}://$authority" +
+                    pattern.paths.joinToString(" | ") { it.value }
+                val verifications = pattern.hosts.mapNotNull { host -> analysis?.verifications?.firstOrNull { it.host == host } }
+                val device = verifications.map { it.deviceState.name.lowercase().replaceFirstChar(Char::uppercase) }
+                    .distinct().joinToString()
+                val warnings = buildList {
+                    if (!target.hasDefaultCategory) add("Missing DEFAULT")
+                    if (DeepLinkSource.RUNTIME_UNKNOWN in target.sources) add("Runtime unknown")
+                    verifications.filter { it.stale }.forEach { verification ->
+                        add("Stale validation${verification.validatedAtEpochMillis?.let { " from $it" }.orEmpty()}")
+                    }
+                    addAll(verifications.mapNotNull { it.error })
+                }.distinct().joinToString(" · ")
+                val sources = target.sources.sortedBy(DeepLinkSource::ordinal).joinToString(" · ") { source ->
+                    source.name.lowercase().replace('_', ' ').replaceFirstChar(Char::uppercase)
+                }
+                listOf(target.componentName, authority, uri, sources, device, warnings)
+            }
+        }.filter { row -> query.isEmpty() || row.any { it.lowercase().contains(query) } })
+        analyzeDeepLinks.isEnabled = !state.deepLinksLoading
+        openDeepLink.isEnabled = !state.deepLinksLoading && analysis != null
+        deepLinksStatus.text = when {
+            state.deepLinksLoading -> "Reading installed APK and split manifests…"
+            state.deepLinksError != null -> state.deepLinksError
+            analysis == null -> "Analysis runs only on demand. Cached results are restored when available."
+            else -> "${analysis.catalog.targets.size} targets · ${if (analysis.fromCache) "cached" else "analyzed"}"
+        }
+        deepLinksStatus.foreground = if (state.deepLinksError != null) AdbToolboxTheme.Colors.red else AdbToolboxTheme.Colors.textFaint
+    }
+
+    private fun renderPermissions(state: AppDetailsState) {
+        managedPermissionsModel.setRows(state.details?.permissions.orEmpty().map { permission ->
+            listOf(permission.name, permission.kind.name.lowercase(), permission.state.name.lowercase().replace('_', ' '), permission.flags.joinToString { it.name })
+        })
+        val selected = selectedPermission()?.let { name -> state.details?.permissions?.firstOrNull { it.name == name } }
+        updatePermissionActions(state)
+        permissionsStatus.text = when {
+            state.permissionBusy != null -> "Applying ${state.permissionBusy}…"
+            else -> "Android user ${state.androidUserId} · fixed install/signature/policy permissions are read-only"
+        }
+    }
+
+    private fun updatePermissionActions(state: AppDetailsState?) {
+        val selected = selectedPermission()?.let { name -> state?.details?.permissions?.firstOrNull { it.name == name } }
+        val mutable = selected?.mutable == true && state?.permissionBusy == null
+        grantPermission.isEnabled = mutable && selected?.state !in setOf(PermissionState.GRANTED, PermissionState.GRANTED_ONE_TIME)
+        revokePermission.isEnabled = mutable && selected?.state in setOf(PermissionState.GRANTED, PermissionState.GRANTED_ONE_TIME)
+        resetPermission.isEnabled = mutable
+    }
+
+    private fun selectedPermission(): String? = managedPermissionsTable.selectedRow.takeIf { it >= 0 }
+        ?.let { managedPermissionsModel.getValueAt(it, 0) as? String }
 
     private fun renderInfo(state: AppDetailsState) {
         val d = state.details

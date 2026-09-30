@@ -48,7 +48,7 @@ class AppDetailsE2ETest : E2eTest() {
 
     @Test
     fun `the info tab shows the version and that files are reachable`() {
-        selectTab(0)
+        selectTab("Info")
         awaitUntil(E2eConfig.deviceTimeout(20), Duration.ofMillis(500), "version and file access") {
             studio.visibleTexts().let { texts -> texts.any { it == "root shell" } && texts.any { it.startsWith("v") || it.contains("·") } }
         }
@@ -56,7 +56,7 @@ class AppDetailsE2ETest : E2eTest() {
 
     @Test
     fun `a shared preference edited in the table is written to the device`() {
-        selectTab(1)
+        selectTab("Shared prefs")
         chooseInCombo("appDetailsPrefsFiles", "e2e.xml")
         val table = named("appDetailsPrefsTable")
         awaitUntil(E2eConfig.deviceTimeout(20), Duration.ofMillis(500), "the e2e.xml entries") {
@@ -78,7 +78,7 @@ class AppDetailsE2ETest : E2eTest() {
 
     @Test
     fun `a database cell edited in the table is written to the device`() {
-        selectTab(2)
+        selectTab("Databases")
         chooseInCombo("appDetailsDatabaseFiles", "e2e.db")
         val table = named("appDetailsRowsTable")
         awaitUntil(E2eConfig.deviceTimeout(30), Duration.ofMillis(500), "the notes rows") {
@@ -101,8 +101,11 @@ class AppDetailsE2ETest : E2eTest() {
 
     private fun named(name: String) = studio.component("//div[@name='$name']")
 
-    private fun selectTab(index: Int) {
-        named("appDetailsTabs").runJs("component.setSelectedIndex($index)", true)
+    private fun selectTab(title: String) {
+        named("appDetailsTabs").runJs(
+            "var i = component.indexOfTab(${dev.acme.adbtoolbox.e2e.infra.Studio.quoteJs(title)}); if (i < 0) throw 'Missing tab: $title'; component.setSelectedIndex(i)",
+            true,
+        )
     }
 
     private fun chooseInCombo(name: String, item: String) {

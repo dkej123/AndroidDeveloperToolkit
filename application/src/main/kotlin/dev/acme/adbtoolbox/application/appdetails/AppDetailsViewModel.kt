@@ -12,6 +12,8 @@ import dev.acme.adbtoolbox.domain.appdata.AppDatabaseTransfer
 import dev.acme.adbtoolbox.domain.appdata.AppDetailsParser
 import dev.acme.adbtoolbox.domain.appdata.DatabaseCopy
 import dev.acme.adbtoolbox.domain.appdata.PrefEntry
+import dev.acme.adbtoolbox.domain.appdata.PermissionCommands
+import dev.acme.adbtoolbox.domain.appdata.PermissionKind
 import dev.acme.adbtoolbox.domain.appdata.PrefValue
 import dev.acme.adbtoolbox.domain.appdata.SharedPrefsParse
 import dev.acme.adbtoolbox.domain.appdata.SharedPrefsXml
@@ -24,6 +26,11 @@ import dev.acme.adbtoolbox.domain.device.selectedSerialOrNull
 import dev.acme.adbtoolbox.domain.dispatch.DispatcherProvider
 import dev.acme.adbtoolbox.domain.logcat.LogcatPidCommand
 import dev.acme.adbtoolbox.domain.packages.PackageMetadataCommand
+import dev.acme.adbtoolbox.domain.deeplinks.DeepLinkAnalysisResult
+import dev.acme.adbtoolbox.domain.deeplinks.DeepLinkAnalyzer
+import dev.acme.adbtoolbox.domain.deeplinks.DeepLinkCommands
+import dev.acme.adbtoolbox.domain.deeplinks.matches
+import dev.acme.adbtoolbox.domain.deeplinks.allows
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -61,6 +68,7 @@ class AppDetailsViewModel(
     private val databases: AppDatabaseTransfer,
     private val sqlite: SqliteEngine,
     selectedDeviceState: StateFlow<SelectedDeviceState>,
+    private val deepLinkAnalyzer: DeepLinkAnalyzer? = null,
 ) {
     private val _state = MutableStateFlow(AppDetailsState())
     val state: StateFlow<AppDetailsState> = _state.asStateFlow()
@@ -88,6 +96,11 @@ class AppDetailsViewModel(
                 enqueue { closeSession() }
             }
             AppDetailsIntent.Refresh -> _state.value.packageName?.let { open(AppDetailsIntent.Open(it, _state.value.label ?: it, _state.value.icon)) }
+            AppDetailsIntent.AnalyzeDeepLinks -> analyzeDeepLinks()
+            is AppDetailsIntent.OpenDeepLink -> openDeepLink(intent.uri)
+            is AppDetailsIntent.GrantPermission -> changePermission(intent.name, PermissionChange.GRANT)
+            is AppDetailsIntent.RevokePermission -> changePermission(intent.name, PermissionChange.REVOKE)
+            is AppDetailsIntent.ResetPermission -> changePermission(intent.name, PermissionChange.RESET)
             is AppDetailsIntent.OpenPrefs -> enqueue { openPrefs(intent.fileName) }
             is AppDetailsIntent.PutPref -> putPref(intent)
             is AppDetailsIntent.RemovePref -> updatePrefs { entries -> entries.filterNot { it.key == intent.key } }
@@ -110,16 +123,31 @@ class AppDetailsViewModel(
         scope.launch(dispatchers.io) {
             work.withLock {
                 closeSession()
+                val userResult = transport.executeText(AdbDeviceRequest(serial, AdbOperation.Shell(
+                    dev.acme.adbtoolbox.domain.adb.AdbShellCommand.of(
+                        dev.acme.adbtoolbox.domain.adb.ShellToken.Literal("am"),
+                        dev.acme.adbtoolbox.domain.adb.ShellToken.Literal("get-current-user"),
+                    ),
+                )))
+                val androidUserId = userResult.stdout.trim().toIntOrNull() ?: 0
+                val dangerousResult = transport.executeText(PermissionCommands.listDangerous(serial))
+                val dangerousPermissions = if (dangerousResult.completed()) {
+                    PermissionCommands.parseDangerous(dangerousResult.stdout)
+                } else emptySet()
                 val dump = transport.executeText(PackageMetadataCommand.request(serial, intent.packageName))
                 val pid = transport.executeText(AdbDeviceRequest(serial, AdbOperation.Shell(LogcatPidCommand.pidOf(intent.packageName))))
                 if (myGeneration != generation) return@withLock
                 _state.update {
                     it.copy(
-                        details = if (dump.completed()) AppDetailsParser.parse(intent.packageName, dump.stdout) else null,
+                        details = if (dump.completed()) AppDetailsParser.parse(intent.packageName, dump.stdout, androidUserId,
+                            dangerousPermissions) else null,
+                        androidUserId = androidUserId,
+                        dangerousPermissions = dangerousPermissions,
                         detailsError = if (dump.completed()) null else "dumpsys package failed: ${dump.outcome}",
                         runningPid = pid.stdout.trim().takeIf { pid.completed() && it.isNotEmpty() },
                     )
                 }
+                restoreDeepLinksFromCache(myGeneration)
                 val access = probeAccess(serial, intent.packageName)
                 if (myGeneration != generation) return@withLock
                 if (access == null) {
@@ -132,6 +160,106 @@ class AppDetailsViewModel(
                     it.copy(access = FileAccessState.Available(access), sharedPrefsFiles = listing.sharedPrefs, databaseFiles = listing.databases)
                 }
             }
+        }
+    }
+
+    private suspend fun restoreDeepLinksFromCache(expectedGeneration: Long) {
+        val analyzer = deepLinkAnalyzer ?: return
+        val snapshot = _state.value
+        val serial = snapshot.serial ?: return
+        val packageName = snapshot.packageName ?: return
+        val result = analyzer.analyze(serial, snapshot.androidUserId, packageName, snapshot.details?.versionCode,
+            snapshot.details?.lastUpdateTime, snapshot.details?.codePath, refresh = false)
+        if (expectedGeneration != generation) return
+        if (result is DeepLinkAnalysisResult.Success) _state.update { it.copy(deepLinks = result.analysis) }
+    }
+
+    private enum class PermissionChange { GRANT, REVOKE, RESET }
+
+    private fun changePermission(name: String, change: PermissionChange) {
+        val snapshot = _state.value
+        val serial = snapshot.serial ?: return
+        val packageName = snapshot.packageName ?: return
+        val permission = snapshot.details?.permissions?.firstOrNull { it.name == name } ?: return
+        if (permission.kind != PermissionKind.RUNTIME || !permission.mutable) return
+        val myGeneration = generation
+        scope.launch(dispatchers.io) {
+            work.withLock {
+                if (myGeneration != generation) return@withLock
+                _state.update { it.copy(permissionBusy = name, notice = null) }
+                val requests = when (change) {
+                    PermissionChange.GRANT -> listOf(PermissionCommands.grant(serial, packageName, name, snapshot.androidUserId))
+                    PermissionChange.REVOKE -> listOf(PermissionCommands.revoke(serial, packageName, name, snapshot.androidUserId))
+                    PermissionChange.RESET -> PermissionCommands.reset(serial, packageName, name, snapshot.androidUserId)
+                }
+                var failure: AdbTextResult? = null
+                for (request in requests) {
+                    val result = transport.executeText(request)
+                    if (!result.completed()) {
+                        failure = result
+                        break
+                    }
+                }
+                if (myGeneration != generation) return@withLock
+                if (failure != null) {
+                    _state.update { it.copy(permissionBusy = null, notice = "Permission change failed: ${(failure.stderr + failure.stdout).trim().ifEmpty { failure.outcome.toString() }}") }
+                    return@withLock
+                }
+                val dump = transport.executeText(PackageMetadataCommand.request(serial, packageName))
+                if (myGeneration != generation) return@withLock
+                _state.update {
+                    it.copy(
+                        permissionBusy = null,
+                        details = if (dump.completed()) AppDetailsParser.parse(packageName, dump.stdout, snapshot.androidUserId,
+                            snapshot.dangerousPermissions) else it.details,
+                        notice = if (dump.completed()) "Permission state refreshed" else "Permission changed, but refresh failed",
+                    )
+                }
+            }
+        }
+    }
+
+    private fun analyzeDeepLinks() {
+        val analyzer = deepLinkAnalyzer ?: run {
+            _state.update { it.copy(deepLinksError = "Android SDK apkanalyzer is not available") }
+            return
+        }
+        val snapshot = _state.value
+        val serial = snapshot.serial ?: return
+        val packageName = snapshot.packageName ?: return
+        val myGeneration = generation
+        _state.update { it.copy(deepLinksLoading = true, deepLinksError = null) }
+        scope.launch(dispatchers.io) {
+            val result = analyzer.analyze(serial, snapshot.androidUserId, packageName, snapshot.details?.versionCode,
+                snapshot.details?.lastUpdateTime, snapshot.details?.codePath, refresh = true)
+            if (myGeneration != generation) return@launch
+            _state.update { state -> when (result) {
+                is DeepLinkAnalysisResult.Success -> state.copy(deepLinks = result.analysis, deepLinksLoading = false)
+                is DeepLinkAnalysisResult.Failure -> state.copy(deepLinksLoading = false, deepLinksError = result.message)
+                DeepLinkAnalysisResult.NoCache -> state.copy(deepLinksLoading = false)
+            } }
+        }
+    }
+
+    private fun openDeepLink(uri: String) {
+        val snapshot = _state.value
+        val serial = snapshot.serial ?: return
+        val packageName = snapshot.packageName ?: return
+        if (snapshot.deepLinks?.catalog?.targets.orEmpty().flatMap { it.patterns }.none { it.matches(uri) }) {
+            _state.update { it.copy(notice = "URI does not match an exported static intent filter") }
+            return
+        }
+        val host = Regex("""^[A-Za-z][A-Za-z0-9+.-]*://([^/:?#]+)""").find(uri)?.groupValues?.get(1)
+        val verification = snapshot.deepLinks?.verifications?.firstOrNull { it.host.equals(host, true) }
+        if (verification != null && !verification.allows(uri)) {
+            _state.update { it.copy(notice = "URI is excluded by the active Dynamic App Links rules") }
+            return
+        }
+        val myGeneration = generation
+        scope.launch(dispatchers.io) {
+            val result = transport.executeText(DeepLinkCommands.open(serial, packageName, uri))
+            if (myGeneration != generation) return@launch
+            _state.update { it.copy(notice = if (result.completed()) "Deep link opened" else "Open failed: ${(result.stderr + result.stdout).trim()}") }
         }
     }
 

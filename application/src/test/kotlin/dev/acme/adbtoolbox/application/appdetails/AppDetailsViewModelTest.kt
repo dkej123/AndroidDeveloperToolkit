@@ -52,6 +52,7 @@ private const val PREFS = "<map><int name=\"launches\" value=\"3\" /><string nam
 private class FakeDevice(var root: Boolean = true, var runAs: Boolean = false) {
     val log = mutableListOf<String>()
     var prefsFile = PREFS
+    var packageDump = "Packages:\n  Package [$PKG] (1):\n    versionName=2.0\n    flags=[ DEBUGGABLE ]\n"
     val transport = FakeAdbTransport(textScript = { request ->
         val op = (request as AdbDeviceRequest).operation
         val line = when (op) {
@@ -64,7 +65,10 @@ private class FakeDevice(var root: Boolean = true, var runAs: Boolean = false) {
             line == "id -u" -> ok(if (root) "0" else "2000")
             line.startsWith("run-as '$PKG' id -u") -> ok(if (runAs) "10081" else "run-as: package not debuggable: $PKG")
             line == "su 0 id -u" -> ok("/system/bin/sh: su: not found")
-            line.startsWith("dumpsys package") -> ok("Packages:\n  Package [$PKG] (1):\n    versionName=2.0\n    flags=[ DEBUGGABLE ]\n")
+            line == "am get-current-user" -> ok("0")
+            line.startsWith("pm grant --user") -> { packageDump = packageDump.replace("granted=false", "granted=true"); ok() }
+            line.startsWith("pm revoke --user") -> { packageDump = packageDump.replace("granted=true", "granted=false"); ok() }
+            line.startsWith("dumpsys package") -> ok(packageDump)
             line.startsWith("pidof") -> ok("4242")
             line.contains("ls -1 shared_prefs") -> ok("prefs.xml\n---\napp.db\napp.db-wal\n")
             line.contains("cat '\\''shared_prefs/prefs.xml'\\''") -> ok(prefsFile)
@@ -221,5 +225,30 @@ class AppDetailsViewModelTest {
         h.scope.advanceUntilIdle()
 
         h.state().isOpen shouldBe false
+    }
+
+    @Test
+    fun `grant executes for current user and trusts only refreshed dumpsys state`() {
+        val h = Harness()
+        h.device.packageDump = """
+            Packages:
+              Package [$PKG] (1):
+                requested permissions:
+                  android.permission.CAMERA
+                User 0: installed=true
+                  runtime permissions:
+                    android.permission.CAMERA: granted=false, flags=[ USER_SET ]
+        """.trimIndent()
+        h.open()
+        h.device.log.clear()
+
+        h.viewModel.handle(AppDetailsIntent.GrantPermission("android.permission.CAMERA"))
+        h.scope.advanceUntilIdle()
+
+        h.device.log.take(2) shouldBe listOf(
+            "pm grant --user '0' '$PKG' 'android.permission.CAMERA'",
+            "dumpsys package '$PKG'",
+        )
+        h.state().details?.permissions?.single()?.state shouldBe dev.acme.adbtoolbox.domain.appdata.PermissionState.GRANTED
     }
 }

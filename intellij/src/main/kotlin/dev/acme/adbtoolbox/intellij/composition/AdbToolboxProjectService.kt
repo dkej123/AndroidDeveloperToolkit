@@ -1,6 +1,8 @@
 package dev.acme.adbtoolbox.intellij.composition
 
 import dev.acme.adbtoolbox.adapters.jvm.sqlite.JdbcSqliteEngine
+import dev.acme.adbtoolbox.adapters.jvm.deeplinks.JvmApkDeepLinkAnalyzer
+import dev.acme.adbtoolbox.adapters.jvm.deeplinks.JvmAssetLinksFetcher
 import dev.acme.adbtoolbox.adapters.adb.appdata.AdbAppDatabaseTransfer
 import dev.acme.adbtoolbox.application.appdetails.AppDetailsViewModel
 import dev.acme.adbtoolbox.application.network.NetworkThrottleIntent
@@ -16,7 +18,9 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.extensions.PluginId
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.application.PathManager
 import com.intellij.util.EnvironmentUtil
+import com.intellij.util.net.HttpConfigurable
 import dev.acme.adbtoolbox.adapters.adb.binary.BinaryAdbTransport
 import dev.acme.adbtoolbox.adapters.adb.ddmlib.DdmlibAdbTransport
 import dev.acme.adbtoolbox.adapters.adb.device.AdbDeviceRepository
@@ -129,6 +133,7 @@ import dev.acme.adbtoolbox.domain.settings.SettingsInvalidationPort
 import dev.acme.adbtoolbox.domain.settings.SettingsRepository
 import dev.acme.adbtoolbox.domain.time.SystemMonotonicClock
 import dev.acme.adbtoolbox.intellij.adb.IdeAndroidDebugBridgeDeviceSource
+import dev.acme.adbtoolbox.intellij.apps.details.AndroidProjectDeepLinkProvider
 import dev.acme.adbtoolbox.intellij.apps.ClearDataConfirmationPresenter
 import dev.acme.adbtoolbox.intellij.apps.UninstallConfirmationPresenter
 import dev.acme.adbtoolbox.intellij.clipboard.ClipboardPortAdapter
@@ -158,6 +163,9 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.isActive
+import java.nio.file.Files
+import java.nio.file.Path
+import java.security.MessageDigest
 
 private val ANDROID_PLUGIN_ID = PluginId.getId("org.jetbrains.android")
 private val TERMINAL_PLUGIN_ID = PluginId.getId("org.jetbrains.plugins.terminal")
@@ -664,7 +672,42 @@ class AdbToolboxProjectService(private val project: Project) : Disposable {
         databases = AdbAppDatabaseTransfer(adbTransport),
         sqlite = JdbcSqliteEngine(),
         selectedDeviceState = selectedDeviceViewModel.state,
+        deepLinkAnalyzer = createDeepLinkAnalyzer(),
     )
+
+    private fun createDeepLinkAnalyzer(): JvmApkDeepLinkAnalyzer? {
+        val sdk = sequenceOf(
+            shellEnvironment("ANDROID_SDK_ROOT"),
+            shellEnvironment("ANDROID_HOME"),
+            project.basePath?.let { base -> runCatching {
+                Files.readAllLines(Path.of(base, "local.properties")).firstOrNull { it.startsWith("sdk.dir=") }
+                    ?.substringAfter('=')?.replace("\\:", ":")?.replace("\\\\", "\\")
+            }.getOrNull() },
+            System.getProperty("user.home")?.let { "$it/Android/Sdk" },
+        ).filterNotNull().map(Path::of).firstOrNull(Files::isDirectory) ?: return null
+        fun latestTool(folder: String, name: String): Path? {
+            val root = sdk.resolve(folder)
+            if (!Files.isDirectory(root)) return null
+            return Files.list(root).use { versions -> versions.filter(Files::isDirectory).sorted(Comparator.reverseOrder()).toList() }
+                .asSequence().flatMap { sequenceOf(it.resolve("bin").resolve(name), it.resolve(name)) }.firstOrNull(Files::isExecutable)
+                ?: root.resolve(name).takeIf(Files::isExecutable)
+        }
+        val analyzer = latestTool("cmdline-tools", if (System.getProperty("os.name").startsWith("Windows")) "apkanalyzer.bat" else "apkanalyzer")
+            ?: return null
+        val signer = latestTool("build-tools", if (System.getProperty("os.name").startsWith("Windows")) "apksigner.bat" else "apksigner")
+        val projectKey = MessageDigest.getInstance("SHA-256").digest((project.basePath ?: project.name).toByteArray())
+            .joinToString("") { "%02x".format(it) }
+        return JvmApkDeepLinkAnalyzer(
+            transport = adbTransport,
+            processes = processExecutor,
+            apkanalyzer = analyzer.toString(),
+            apksigner = signer?.toString(),
+            cacheRoot = Path.of(PathManager.getSystemPath(), "adb-toolbox", "deep-links"),
+            projectHash = projectKey,
+            assetLinksFetcher = JvmAssetLinksFetcher(proxySelector = HttpConfigurable.getInstance().onlyBySettingsSelector),
+            projectDeepLinks = if (androidPluginPresent) AndroidProjectDeepLinkProvider(project) else null,
+        )
+    }
 
     /** Emulator network throttling for the Network view (physical devices report it unsupported). */
     val networkThrottleViewModel: NetworkThrottleViewModel = NetworkThrottleViewModel(
