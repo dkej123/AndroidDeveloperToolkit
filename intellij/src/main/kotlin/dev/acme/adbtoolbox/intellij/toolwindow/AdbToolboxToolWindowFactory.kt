@@ -6,6 +6,7 @@ import com.intellij.openapi.actionSystem.DefaultActionGroup
 import com.intellij.openapi.wm.ex.ToolWindowEx
 import com.intellij.openapi.wm.ex.ToolWindowManagerListener
 import com.intellij.openapi.components.service
+import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.ToolWindow
 import com.intellij.openapi.wm.ToolWindowFactory
@@ -21,8 +22,11 @@ import dev.acme.adbtoolbox.intellij.ui.mirroring.MirroringOptionsDialog
  * [AdbToolboxProjectService]; this class only asks the platform for that service and hands its
  * `shellViewModel`/`dispatcherProvider`/`navigationViewModel`/`feedbackViewModel` to
  * [AdbToolboxToolWindowPanel].
+ *
+ * [DumbAware]: nothing in the tool window needs project indexes (it only talks to adb), so the
+ * platform must not swap its content for the "waiting for indexing" placeholder.
  */
-class AdbToolboxToolWindowFactory : ToolWindowFactory {
+class AdbToolboxToolWindowFactory : ToolWindowFactory, DumbAware {
     override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
         val composition = project.service<AdbToolboxProjectService>()
         val panel = AdbToolboxToolWindowPanel(
@@ -60,6 +64,7 @@ class AdbToolboxToolWindowFactory : ToolWindowFactory {
             fontScaleViewModel = composition.fontScaleViewModel,
             densityViewModel = composition.densityViewModel,
             quickTogglesViewModel = composition.quickTogglesViewModel,
+            developerOptionsViewModel = composition.developerOptionsViewModel,
             densityOverrideTracker = composition.densityOverrideTracker,
             deviceContextAggregator = composition.deviceContextAggregator,
             displayScope = composition.childScope(),
