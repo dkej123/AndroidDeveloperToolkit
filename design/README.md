@@ -131,6 +131,12 @@ Three sections, each `padding: 10px 0 12px` with a 1px bottom border; section he
      (tooltip "Mirroring options — bitrate, resolution, stay awake").
      Help text (10.5px `textFaint`, padding 0 10px 2px): "Launches Genymobile scrcpy. Turn on
      “stay awake” and “show touches” in options."
+   - scrcpy missing (user decision, 2026-09-29 — supersedes the toast-only story below): resolved
+     up front; **"Start mirroring"** is disabled (grey) and both its tooltip and the help text say why
+     and how to fix it, e.g. "scrcpy is not installed, or not on PATH. Install it (brew install
+     scrcpy) or set its path in Settings." (per OS: `brew install scrcpy`, `winget install --exact
+     Genymobile.scrcpy`, `sudo apt install scrcpy`; a broken Settings path says "Fix or clear it in
+     Settings."). Below it, link buttons **Open Settings · Check again · Install guide**.
    - running: teal banner row (margin 0 10px, padding 6px 8px, radius 5, `brandBg`, 1px `brandBorder`):
      pulsing 7px teal dot + "Mirroring · 1080×2400 @ 60 fps" (11.5px/600 teal) + outlined red
      **"Stop"** (24px). Help text: "Window is open on your desktop. Closing it also stops this session."
@@ -216,13 +222,27 @@ their own.
    Preset tooltips show the resolved value, e.g. 125% → "535 dpi"; 100% → "Physical density — 428 dpi".
    Help: "Percentages are relative to the physical density (428 dpi). Values outside 60–200% can make
    the UI unusable." When overridden: "Physical density is 428 dpi" + **"Reset to physical"** link.
-3. **Quick toggles** — 28px rows, 24×13 track (radius 999; on = accent, off = `borderStrong`) with a
-   10px white knob, label 11.5px, right-aligned mono 10px value:
-   "Dark theme / yes|no" (tooltip "cmd uimode night yes|no"),
-   "Animations off / 1×|0×" (tooltip "Sets window, transition and animator scales to 0"),
+3. **Quick toggles** — tile redesign (2026-09-30, user-supplied prototype revision). Header meta
+   mono 10px `textFaint` "N of 8 on" ("—" until loaded). Two groups, each a caption (9.5px/700
+   uppercase `textFaint`) above a grid `repeat(auto-fill, minmax(150px, 1fr))`, gap 5, 10px inset:
+   **Appearance & accessibility** — "Dark theme / night yes|no" (tooltip "cmd uimode night yes|no"),
+   "Animations off / scale 1×|0×|mixed" (tooltip "Sets window, transition and animator scales to 0"),
    "Show touches / on|off" (tooltip "Useful while recording"),
    "TalkBack / on|off · Samsung|Google|custom" (the installed TalkBack is detected per device;
-   Settings → "TalkBack on/off command" overrides the commands).
+   Settings → "TalkBack on/off command" overrides the commands);
+   **Developer** (user request, 2026-09-29) — "Stay awake", "Don't keep activities",
+   "Show view updates", "Show surface updates" (needs `adb root` on most devices), value "on|off"
+   ("n/a" with the reason as tooltip when the device refuses).
+   Tile: padding 7/8/7/9, radius 6, label 11.5px + 22×12 switch (9px knob) on top, mono 9.5px value
+   below (gap 3). On = `accentBg` + `accentBorder`, bold label, `accent` value; off = transparent,
+   `border` outline, hover fill. Clicking anywhere on the tile flips it.
+   Then **Background process limit** caption (same group style) with the value at the right
+   (mono 10px: "standard" `textFaint` / "N max" amber) over a segmented control: `field` track,
+   1px `borderStrong`, radius 6, padding 2, gap 2, 22px segments **Standard** (2 parts, UI font) ·
+   **0 · 1 · 2 · 3 · 4** (1 part each, mono 11). Selected Standard = `header` fill + `borderStrong`;
+   selected number = `amberBg` + amber outline/text; tooltips use Android's wording
+   ("At most 2 processes").
+   Errors from a read stay inline; an error ending the user's own change is also a toast.
 
 ### 6. Network view
 

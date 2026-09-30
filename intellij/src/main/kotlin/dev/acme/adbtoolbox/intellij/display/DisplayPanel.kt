@@ -8,6 +8,10 @@ import com.intellij.ui.components.JBTextField
 import com.intellij.util.ui.JBUI
 import dev.acme.adbtoolbox.application.display.QuickToggleFieldState
 import dev.acme.adbtoolbox.application.display.QuickTogglesViewState
+import dev.acme.adbtoolbox.application.display.developer.DeveloperOptionsViewState
+import dev.acme.adbtoolbox.application.display.developer.DeveloperToggle
+import dev.acme.adbtoolbox.application.display.valueOrNull
+import dev.acme.adbtoolbox.domain.display.developer.BackgroundProcessLimit
 import dev.acme.adbtoolbox.application.display.density.DensityViewState
 import dev.acme.adbtoolbox.domain.display.AnimationsSummary
 import dev.acme.adbtoolbox.domain.display.density.DensityPresets
@@ -20,6 +24,7 @@ import dev.acme.adbtoolbox.intellij.ui.common.AdbToolboxTheme
 import dev.acme.adbtoolbox.intellij.ui.common.PresetChipChoice
 import dev.acme.adbtoolbox.intellij.ui.common.PresetChipKind
 import dev.acme.adbtoolbox.intellij.ui.common.PresetChipRow
+import dev.acme.adbtoolbox.intellij.ui.common.PresetChipRowStyle
 import dev.acme.adbtoolbox.intellij.ui.common.DesignButton
 import dev.acme.adbtoolbox.intellij.ui.common.DesignButtonStyle
 import dev.acme.adbtoolbox.intellij.ui.common.DesignSections
@@ -59,6 +64,8 @@ class DisplayPanel(
     onSetShowTouches: (Boolean) -> Unit,
     onSetAnimationsOff: (Boolean) -> Unit,
     onSetTalkBack: (Boolean) -> Unit = {},
+    private val onSetDeveloperToggle: (DeveloperToggle, Boolean) -> Unit = { _, _ -> },
+    private val onSetProcessLimit: (Int) -> Unit = {},
     /** Mounted inside another scrolling view (the Device view) rather than scrolling on its own. */
     embedded: Boolean = false,
 ) : JBPanel<DisplayPanel>(BorderLayout()) {
@@ -180,42 +187,78 @@ class DisplayPanel(
 
     private val densitySection = section(densityHeader, densityChipRow, densityCustomRow, densityHelpLabel, densityOverrideRow)
 
-    // ---- Quick toggles section (`design/README.md` §5.3) ----
+    // ---- Quick toggles section (`design/README.md` §5.3; tile redesign 2026-09-30) ----
 
-    private val darkThemeToggle = ToggleSwitch().apply {
+    private val darkThemeToggle = ToggleSwitch(compact = true).apply {
         toolTipText = "cmd uimode night yes|no"
         addActionListener { onSetDarkTheme(isSelected) }
     }
     private val darkThemeValueLabel = toggleValueLabel()
-    private val darkThemeRow = toggleRow(darkThemeToggle, "Dark theme", darkThemeValueLabel)
+    private val darkThemeTile = QuickToggleTile("Dark theme", darkThemeToggle, darkThemeValueLabel)
 
-    private val showTouchesToggle = ToggleSwitch().apply {
+    private val showTouchesToggle = ToggleSwitch(compact = true).apply {
         toolTipText = "Useful while recording"
         addActionListener { onSetShowTouches(isSelected) }
     }
     private val showTouchesValueLabel = toggleValueLabel()
-    private val showTouchesRow = toggleRow(showTouchesToggle, "Show touches", showTouchesValueLabel)
+    private val showTouchesTile = QuickToggleTile("Show touches", showTouchesToggle, showTouchesValueLabel)
 
-    private val talkBackToggle = ToggleSwitch().apply {
+    private val talkBackToggle = ToggleSwitch(compact = true).apply {
         toolTipText = "Samsung or Google TalkBack, detected per device; custom commands in Settings"
         addActionListener { onSetTalkBack(isSelected) }
     }
     private val talkBackValueLabel = toggleValueLabel()
-    private val talkBackRow = toggleRow(talkBackToggle, "TalkBack", talkBackValueLabel)
+    private val talkBackTile = QuickToggleTile("TalkBack", talkBackToggle, talkBackValueLabel)
 
-    private val animationsOffToggle = ToggleSwitch().apply {
+    private val animationsOffToggle = ToggleSwitch(compact = true).apply {
         toolTipText = "Sets window, transition and animator scales to 0"
         addActionListener { onSetAnimationsOff(isSelected) }
     }
     private val animationsValueLabel = toggleValueLabel()
-    private val animationsRow = toggleRow(animationsOffToggle, "Animations off", animationsValueLabel)
+    private val animationsTile = QuickToggleTile("Animations off", animationsOffToggle, animationsValueLabel)
+
+    // Developer-options switches (user request, 2026-09-29), rendered from DeveloperOptionsViewState.
+    private val developerToggles: Map<DeveloperToggle, ToggleSwitch> = DeveloperToggle.entries.associateWith { toggle ->
+        ToggleSwitch(compact = true).apply {
+            toolTipText = developerTooltip(toggle)
+            addActionListener { onSetDeveloperToggle(toggle, isSelected) }
+        }
+    }
+    private val developerValueLabels: Map<DeveloperToggle, JBLabel> =
+        DeveloperToggle.entries.associateWith { toggleValueLabel() }
+    private val developerTiles = DeveloperToggle.entries.map { toggle ->
+        QuickToggleTile(developerLabel(toggle), developerToggles.getValue(toggle), developerValueLabels.getValue(toggle))
+    }
+
+    private val allToggles: List<ToggleSwitch> =
+        listOf(darkThemeToggle, animationsOffToggle, showTouchesToggle, talkBackToggle) + developerToggles.values
+
+    private val togglesMetaLabel = sectionMetaLabel()
+
+    private val processLimitValueLabel = toggleValueLabel()
+    private val processLimitRow = labeledValueRow(groupLabel("Background process limit"), processLimitValueLabel)
+    private val processLimitChipRow: PresetChipRow<Int> = PresetChipRow(
+        choices = BackgroundProcessLimit.PRESETS.map { limit ->
+            PresetChipChoice(
+                value = limit,
+                label = if (limit == BackgroundProcessLimit.STANDARD) "Standard" else limit.toString(),
+                isDefault = limit == BackgroundProcessLimit.STANDARD,
+            )
+        },
+        selected = BackgroundProcessLimit.STANDARD,
+        style = PresetChipRowStyle.SEGMENTED,
+    ).apply {
+        border = JBUI.Borders.empty(0, AdbToolboxTheme.Spacing.sectionInset)
+        chips.forEach { chip -> chip.toolTipText = BackgroundProcessLimit.label(chip.value) }
+        onSelectionChanged = { limit -> onSetProcessLimit(limit) }
+    }
 
     private val togglesSection = section(
-        sectionHeader(sectionTitleLabel("Quick toggles"), null),
-        darkThemeRow,
-        animationsRow,
-        showTouchesRow,
-        talkBackRow,
+        sectionHeader(sectionTitleLabel("Quick toggles"), togglesMetaLabel),
+        toggleGroup("Appearance & accessibility", listOf(darkThemeTile, animationsTile, showTouchesTile, talkBackTile)),
+        toggleGroup("Developer", developerTiles),
+        processLimitRow,
+        processLimitChipRow,
     )
 
     private val contentPanel = ViewportWidthPanel().apply {
@@ -267,6 +310,12 @@ class DisplayPanel(
     internal val animationsValueLabelForTest: JBLabel get() = animationsValueLabel
     internal val talkBackToggleForTest: JToggleButton get() = talkBackToggle
     internal val talkBackValueLabelForTest: JBLabel get() = talkBackValueLabel
+    internal fun developerToggleForTest(toggle: DeveloperToggle): JToggleButton = developerToggles.getValue(toggle)
+    internal fun developerValueLabelForTest(toggle: DeveloperToggle): JBLabel = developerValueLabels.getValue(toggle)
+    internal val processLimitChipRowForTest: PresetChipRow<Int> get() = processLimitChipRow
+    internal val processLimitValueLabelForTest: JBLabel get() = processLimitValueLabel
+    internal val togglesMetaLabelForTest: JBLabel get() = togglesMetaLabel
+    internal val darkThemeTileForTest: QuickToggleTile get() = darkThemeTile
 
     fun update(state: FontScaleState) {
         val current = when (state) {
@@ -345,7 +394,7 @@ class DisplayPanel(
     }
 
     fun update(state: QuickTogglesViewState) {
-        applyToggleState(darkThemeToggle, darkThemeValueLabel, state.darkTheme, toText = { if (it) "yes" else "no" })
+        applyToggleState(darkThemeToggle, darkThemeValueLabel, state.darkTheme, toText = { if (it) "night yes" else "night no" })
         applyToggleState(showTouchesToggle, showTouchesValueLabel, state.showTouches, toText = { if (it) "on" else "off" })
         val talkBackSource = when (state.talkBackProfile) {
             TalkBackProfile.Samsung -> " · Samsung"
@@ -361,12 +410,54 @@ class DisplayPanel(
             toSelected = { it != AnimationsSummary.AllOn },
             toText = { summary ->
                 when (summary) {
-                    AnimationsSummary.AllOn -> "1×"
-                    AnimationsSummary.AllOff -> "0×"
+                    AnimationsSummary.AllOn -> "scale 1×"
+                    AnimationsSummary.AllOff -> "scale 0×"
                     is AnimationsSummary.Mixed -> "mixed"
                 }
             },
         )
+        refreshTogglesMeta()
+    }
+
+    /** The row label of [toggle], as shown to the user. */
+    fun developerLabelFor(toggle: DeveloperToggle): String = developerLabel(toggle)
+
+    fun update(state: DeveloperOptionsViewState) {
+        DeveloperToggle.entries.forEach { toggle ->
+            val field = state.toggles[toggle] ?: QuickToggleFieldState.Loading
+            val valueLabel = developerValueLabels.getValue(toggle)
+            applyToggleState(developerToggles.getValue(toggle), valueLabel, field, toText = { if (it) "on" else "off" })
+            if (field is QuickToggleFieldState.Error) {
+                if (field.lastKnown == null) valueLabel.text = "n/a"
+                valueLabel.toolTipText = field.message
+            } else {
+                valueLabel.toolTipText = null
+            }
+        }
+
+        val limitField = state.processLimit
+        val limit = limitField.valueOrNull()
+        processLimitValueLabel.text = when {
+            limit == null -> if (limitField is QuickToggleFieldState.Error) "n/a" else "—"
+            limit < 0 -> "standard"
+            else -> "$limit max"
+        }
+        processLimitValueLabel.foreground =
+            if (limit != null && limit >= 0) AdbToolboxTheme.Colors.amber else AdbToolboxTheme.Colors.textFaint
+        processLimitValueLabel.toolTipText = (limitField as? QuickToggleFieldState.Error)?.message
+        if (limit != null && limit in BackgroundProcessLimit.PRESETS) processLimitChipRow.setSelectedValue(limit)
+        processLimitChipRow.applyPending = limitField is QuickToggleFieldState.Applying
+        processLimitChipRow.chips.forEach { it.isEnabled = limitField !is QuickToggleFieldState.Loading }
+        refreshTogglesMeta()
+    }
+
+    /** Header meta "N of 8 on", counted from device readbacks only; "—" until any toggle has loaded. */
+    private fun refreshTogglesMeta() {
+        togglesMetaLabel.text = if (allToggles.none { it.isEnabled }) {
+            "—"
+        } else {
+            "${allToggles.count { it.isSelected }} of ${allToggles.size} on"
+        }
     }
 
     private fun <T> applyToggleState(
@@ -486,19 +577,43 @@ class DisplayPanel(
             foreground = AdbToolboxTheme.Colors.textFaint
         }
 
-        // `toggleRow`: 28px, `padding: 0 10px`, gap 8: track · label · spacer · mono value.
-        fun toggleRow(toggle: ToggleSwitch, label: String, valueLabel: JBLabel): JPanel {
-            toggle.getAccessibleContext().accessibleName = label
-            val labelComponent = JBLabel(label).apply {
-                font = AdbToolboxTheme.Typography.body.deriveFont(JBUI.scale(11.5f))
-                foreground = AdbToolboxTheme.Colors.text
-            }
+        // Group caption: 9.5 bold uppercase `textFaint`; the accessible name keeps the readable casing.
+        fun groupLabel(text: String) = JBLabel(text.uppercase()).apply {
+            font = AdbToolboxTheme.Typography.groupLabel
+            foreground = AdbToolboxTheme.Colors.textFaint
+            getAccessibleContext().accessibleName = text
+        }
+
+        // `groupWrap`: caption above a tile grid, 5px apart.
+        internal fun toggleGroup(label: String, tiles: List<QuickToggleTile>): JPanel = JPanel().apply {
+            layout = BoxLayout(this, BoxLayout.Y_AXIS)
+            isOpaque = false
+            alignmentX = java.awt.Component.LEFT_ALIGNMENT
+            add(DesignSections.inset(groupLabel(label)))
+            add(javax.swing.Box.createVerticalStrut(JBUI.scale(5)))
+            add(QuickToggleGrid(tiles))
+        }
+
+        // Caption · spacer · mono value.
+        fun labeledValueRow(caption: JBLabel, valueLabel: JBLabel): JPanel {
             val spacer = flexSpacer()
-            return flexRow(AdbToolboxTheme.Spacing.s4, toggle, labelComponent, spacer, valueLabel, fill = spacer).apply {
-                preferredSize = Dimension(0, AdbToolboxTheme.Sizes.toggleRow)
-                maximumSize = Dimension(Int.MAX_VALUE, AdbToolboxTheme.Sizes.toggleRow)
-                border = JBUI.Borders.empty(0, AdbToolboxTheme.Spacing.sectionInset)
+            return flexRow(AdbToolboxTheme.Spacing.s4, caption, spacer, valueLabel, fill = spacer).apply {
+                border = JBUI.Borders.empty(AdbToolboxTheme.Spacing.s1, AdbToolboxTheme.Spacing.sectionInset, 0, AdbToolboxTheme.Spacing.sectionInset)
             }
+        }
+
+        fun developerLabel(toggle: DeveloperToggle): String = when (toggle) {
+            DeveloperToggle.StayAwake -> "Stay awake"
+            DeveloperToggle.DontKeepActivities -> "Don't keep activities"
+            DeveloperToggle.ShowViewUpdates -> "Show view updates"
+            DeveloperToggle.ShowSurfaceUpdates -> "Show surface updates"
+        }
+
+        fun developerTooltip(toggle: DeveloperToggle): String = when (toggle) {
+            DeveloperToggle.StayAwake -> "Screen never sleeps while charging"
+            DeveloperToggle.DontKeepActivities -> "Destroy every activity as soon as the user leaves it"
+            DeveloperToggle.ShowViewUpdates -> "Flash views inside windows when they redraw"
+            DeveloperToggle.ShowSurfaceUpdates -> "Flash entire window surfaces when they update — needs adb root on most devices"
         }
 
         fun fontChipLabel(value: Double): String {

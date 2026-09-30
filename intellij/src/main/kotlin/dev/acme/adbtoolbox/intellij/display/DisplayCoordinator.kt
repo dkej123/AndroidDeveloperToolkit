@@ -9,6 +9,10 @@ import dev.acme.adbtoolbox.application.display.QuickTogglesViewState
 import dev.acme.adbtoolbox.application.display.density.DensityIntent
 import dev.acme.adbtoolbox.application.display.density.DensityViewModel
 import dev.acme.adbtoolbox.application.display.density.DensityViewState
+import dev.acme.adbtoolbox.application.display.developer.DeveloperOptionsIntent
+import dev.acme.adbtoolbox.application.display.developer.DeveloperOptionsViewModel
+import dev.acme.adbtoolbox.application.display.developer.DeveloperOptionsViewState
+import dev.acme.adbtoolbox.application.display.developer.DeveloperToggle
 import dev.acme.adbtoolbox.application.display.fontscale.FontScaleIntent
 import dev.acme.adbtoolbox.application.display.fontscale.FontScaleViewModel
 import dev.acme.adbtoolbox.application.display.QuickToggleFieldState
@@ -48,6 +52,7 @@ class DisplayCoordinator(
     private val aggregator: DeviceContextAggregator,
     private val scope: CoroutineScope,
     private val dispatchers: DispatcherProvider,
+    developerOptionsViewModel: DeveloperOptionsViewModel? = null,
 ) : Disposable {
 
     val panel: DisplayPanel = DisplayPanel(
@@ -60,6 +65,10 @@ class DisplayCoordinator(
         onSetShowTouches = { enabled -> quickTogglesViewModel.handle(QuickTogglesIntent.SetShowTouches(enabled)) },
         onSetAnimationsOff = { off -> quickTogglesViewModel.handle(QuickTogglesIntent.SetAnimationsOff(off)) },
         onSetTalkBack = { enabled -> quickTogglesViewModel.handle(QuickTogglesIntent.SetTalkBack(enabled)) },
+        onSetDeveloperToggle = { toggle, enabled ->
+            developerOptionsViewModel?.handle(DeveloperOptionsIntent.SetToggle(toggle, enabled))
+        },
+        onSetProcessLimit = { limit -> developerOptionsViewModel?.handle(DeveloperOptionsIntent.SetProcessLimit(limit)) },
         embedded = true,
     ).also { slot.add(it, java.awt.BorderLayout.CENTER) }
 
@@ -80,6 +89,9 @@ class DisplayCoordinator(
         quickTogglesViewModel.state
             .onEach { state -> withContext(dispatchers.main) { renderQuickToggles(state) } }
             .launchIn(scope)
+        developerOptionsViewModel?.state
+            ?.onEach { state -> withContext(dispatchers.main) { renderDeveloperOptions(state) } }
+            ?.launchIn(scope)
     }
 
     /**
@@ -111,6 +123,29 @@ class DisplayCoordinator(
         if (talkBackError != null && talkBackError != lastTalkBackError) postError(talkBackError.message)
         lastTalkBackError = talkBackError
     }
+
+    /**
+     * Production code always reaches this already marshaled onto [dispatchers]' `main` context. A
+     * failure is announced only when it ends the user's own change (Applying → Error); a failing read
+     * on device selection — e.g. surface updates on a non-root phone — stays inline in the row.
+     */
+    internal fun renderDeveloperOptions(state: DeveloperOptionsViewState) {
+        panel.update(state)
+        state.toggles.forEach { (toggle, field) ->
+            if (field is QuickToggleFieldState.Error && lastDeveloperFields[toggle] is QuickToggleFieldState.Applying) {
+                postError("${panel.developerLabelFor(toggle)}: ${field.message}")
+            }
+        }
+        val limit = state.processLimit
+        if (limit is QuickToggleFieldState.Error && lastProcessLimit is QuickToggleFieldState.Applying) {
+            postError("Background process limit: ${limit.message}")
+        }
+        lastDeveloperFields = state.toggles
+        lastProcessLimit = limit
+    }
+
+    private var lastDeveloperFields: Map<DeveloperToggle, QuickToggleFieldState<Boolean>> = emptyMap()
+    private var lastProcessLimit: QuickToggleFieldState<Int> = QuickToggleFieldState.Loading
 
     private var lastTalkBackError: QuickToggleFieldState.Error<Boolean>? = null
 

@@ -30,4 +30,6 @@ sealed interface MirroringPresentationState {
 data class MirroringViewState(
     val controlPolicy: ControlPolicy = ControlPolicy.Disabled(DeviceCommandContext.Disabled.Loading),
     val presentationState: MirroringPresentationState = MirroringPresentationState.Unavailable,
+    /** Whether scrcpy is usable; [ScrcpyAvailability.Missing] greys out starting and explains the fix. */
+    val scrcpy: ScrcpyAvailability = ScrcpyAvailability.Checking,
 )

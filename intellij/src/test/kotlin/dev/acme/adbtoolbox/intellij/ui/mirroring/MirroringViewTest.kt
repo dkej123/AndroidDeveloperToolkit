@@ -6,6 +6,8 @@ import dev.acme.adbtoolbox.application.mirroring.MirroringPresentationState
 import dev.acme.adbtoolbox.application.mirroring.MirroringSessionManager
 import dev.acme.adbtoolbox.application.mirroring.MirroringViewModel
 import dev.acme.adbtoolbox.application.mirroring.MirroringViewState
+import dev.acme.adbtoolbox.application.mirroring.ScrcpyAvailability
+import dev.acme.adbtoolbox.domain.discovery.ToolVersion
 import dev.acme.adbtoolbox.application.feedback.FeedbackViewModel
 import dev.acme.adbtoolbox.application.nav.NavigationViewModel
 import dev.acme.adbtoolbox.domain.adb.DeviceSerial
@@ -178,5 +180,57 @@ class MirroringViewTest : BasePlatformTestCase() {
         assertEquals(1, openCount)
         assertEquals(MirroringPresentationState.Idle, vm.state.value.presentationState)
         vmScope.cancel()
+    }
+
+    fun `test a missing scrcpy greys out Start and explains how to install or configure it`() {
+        val dispatchers = TestDispatchers()
+        val scope = CoroutineScope(SupervisorJob() + dispatchers.default)
+        val vm = viewModel(scope, dispatchers, MutableStateFlow(SelectedDeviceState.None))
+        val view = MirroringView(vm, scope, dispatchers)
+        val missing = ScrcpyAvailability.Missing(
+            reason = "scrcpy is not installed, or not on PATH.",
+            installCommand = "brew install scrcpy",
+            configuredPathInvalid = false,
+        )
+
+        view.render(MirroringViewState(controlPolicy = ControlPolicy.Enabled, presentationState = MirroringPresentationState.Idle, scrcpy = missing))
+
+        assertFalse(view.toggleButton.isEnabled)
+        assertTrue(view.optionsButton.isEnabled)
+        assertEquals(missing.fixHint(), view.toggleButton.toolTipText)
+        assertEquals(missing.fixHint(), view.helpLabel.text)
+        assertTrue(view.scrcpyFixRow.isVisible)
+
+        view.render(MirroringViewState(controlPolicy = ControlPolicy.Enabled, presentationState = MirroringPresentationState.Idle, scrcpy = ScrcpyAvailability.Available(ToolVersion.of("3.1"))))
+
+        assertTrue(view.toggleButton.isEnabled)
+        assertFalse(view.scrcpyFixRow.isVisible)
+        scope.cancel()
+    }
+
+    fun `test the fix links open Settings, re-check scrcpy and open the install guide`() {
+        val dispatchers = TestDispatchers()
+        val scope = CoroutineScope(SupervisorJob() + dispatchers.default)
+        val vm = viewModel(scope, dispatchers, MutableStateFlow(SelectedDeviceState.None))
+        var guideOpened = false
+        val view = MirroringView(vm, scope, dispatchers, openInstallGuide = { guideOpened = true })
+
+        view.installGuideLink.doClick()
+        assertTrue(guideOpened)
+        assertEquals(listOf("Open Settings", "Check again", "Install guide"), listOf(view.openSettingsLink, view.recheckLink, view.installGuideLink).map { it.text })
+        scope.cancel()
+    }
+
+    fun `test re-checking shows progress instead of the stale message`() {
+        val dispatchers = TestDispatchers()
+        val scope = CoroutineScope(SupervisorJob() + dispatchers.default)
+        val vm = viewModel(scope, dispatchers, MutableStateFlow(SelectedDeviceState.None))
+        val view = MirroringView(vm, scope, dispatchers)
+
+        view.render(MirroringViewState(controlPolicy = ControlPolicy.Enabled, presentationState = MirroringPresentationState.Idle, scrcpy = ScrcpyAvailability.Checking))
+
+        assertTrue(view.toggleButton.isEnabled)
+        assertFalse(view.scrcpyFixRow.isVisible)
+        scope.cancel()
     }
 }

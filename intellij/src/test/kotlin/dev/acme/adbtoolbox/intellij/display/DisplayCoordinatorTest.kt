@@ -1,5 +1,6 @@
 package dev.acme.adbtoolbox.intellij.display
 
+
 import com.intellij.openapi.application.EDT
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import dev.acme.adbtoolbox.application.devicecontext.DeviceContextAggregator
@@ -10,6 +11,8 @@ import dev.acme.adbtoolbox.application.display.density.DensityViewModel
 import dev.acme.adbtoolbox.application.display.density.DensityViewState
 import dev.acme.adbtoolbox.application.display.fontscale.FontScaleViewModel
 import dev.acme.adbtoolbox.application.display.QuickToggleFieldState
+import dev.acme.adbtoolbox.application.display.developer.DeveloperOptionsViewState
+import dev.acme.adbtoolbox.application.display.developer.DeveloperToggle
 import dev.acme.adbtoolbox.application.display.QuickTogglesViewState
 import dev.acme.adbtoolbox.application.feedback.FeedbackViewModel
 import dev.acme.adbtoolbox.domain.adb.AdbOutcome
@@ -155,6 +158,26 @@ class DisplayCoordinatorTest : BasePlatformTestCase() {
         coord.renderQuickToggles(error.copy(darkTheme = QuickToggleFieldState.Idle(true)))
 
         assertEquals(listOf("No known TalkBack installed"), fixture.feedback.state.value.toasts.map { it.text })
+        coord.dispose()
+    }
+
+    fun `test a developer-option error is announced only when it answers the user's own change`() {
+        val host = AdbToolboxHostPanel()
+        val fixture = fixture()
+        val coord = coordinator(host, fixture)
+        val rootError = QuickToggleFieldState.Error<Boolean>("Needs adb root", null)
+        fun state(field: QuickToggleFieldState<Boolean>) =
+            DeveloperOptionsViewState(toggles = mapOf(DeveloperToggle.ShowSurfaceUpdates to field))
+
+        // Selecting a device reads the value: a failing read is shown inline only.
+        coord.renderDeveloperOptions(state(rootError))
+        assertTrue(fixture.feedback.state.value.toasts.isEmpty())
+
+        coord.renderDeveloperOptions(state(QuickToggleFieldState.Applying(true)))
+        coord.renderDeveloperOptions(state(rootError))
+        coord.renderDeveloperOptions(state(rootError))
+
+        assertEquals(listOf("Show surface updates: Needs adb root"), fixture.feedback.state.value.toasts.map { it.text })
         coord.dispose()
     }
 

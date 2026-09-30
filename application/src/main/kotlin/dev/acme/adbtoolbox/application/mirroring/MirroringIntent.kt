@@ -8,4 +8,10 @@ package dev.acme.adbtoolbox.application.mirroring
  */
 sealed interface MirroringIntent {
     data object Toggle : MirroringIntent
+
+    /** "Check again": resolve scrcpy from scratch, e.g. right after installing it. */
+    data object RecheckScrcpy : MirroringIntent
+
+    /** "Open Settings": where the scrcpy path is configured. */
+    data object OpenSettings : MirroringIntent
 }

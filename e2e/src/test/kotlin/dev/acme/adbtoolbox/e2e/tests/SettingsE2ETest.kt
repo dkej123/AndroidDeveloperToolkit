@@ -27,6 +27,7 @@ class SettingsE2ETest : E2eTest() {
         openPluginSettings().let { dialog ->
             field(dialog, "captureDirectoryField").text = ""
             field(dialog, "adbPathField").text = ""
+            field(dialog, "scrcpyPathField").text = ""
             studio.dialogButton(dialog, "OK").click()
         }
         captureDir?.deleteRecursively()
@@ -73,6 +74,30 @@ class SettingsE2ETest : E2eTest() {
         }
         field(dialog, "adbPathField").text = ""
         studio.dialogButton(dialog, "Cancel").click()
+    }
+
+    @Test
+    fun `a scrcpy that cannot run greys out mirroring with a fix hint until the path is cleared`() {
+        // Executable, so Settings accepts it, but it prints no version: the same as a broken install.
+        openPluginSettings().let { dialog ->
+            field(dialog, "scrcpyPathField").text = "/bin/false"
+            studio.dialogButton(dialog, "OK").click()
+        }
+        studio.navigate(View.Device)
+
+        awaitUntil(Duration.ofSeconds(15), Duration.ofMillis(300), "Start mirroring to be greyed out") {
+            !studio.isEnabled(studio.byName("Start mirroring"))
+        }
+        studio.visibleTexts().any { "Fix or clear it in Settings." in it } shouldBe true
+        studio.byName("Check again")
+
+        openPluginSettings().let { dialog ->
+            field(dialog, "scrcpyPathField").text = ""
+            studio.dialogButton(dialog, "OK").click()
+        }
+        awaitUntil(Duration.ofSeconds(15), Duration.ofMillis(300), "Start mirroring to be enabled again") {
+            studio.isEnabled(studio.byName("Start mirroring"))
+        }
     }
 
     @Test

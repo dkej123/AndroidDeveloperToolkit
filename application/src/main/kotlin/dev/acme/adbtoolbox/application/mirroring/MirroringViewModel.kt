@@ -78,6 +78,8 @@ class MirroringViewModel(
      * this is only ever consulted on the start branch below.
      */
     private val currentOptions: () -> MirroringOptions = { MirroringOptions.DEFAULT },
+    /** Resolves scrcpy ahead of any click, so a missing install greys out starting (user decision, 2026-09-29). */
+    private val scrcpyAvailability: ScrcpyAvailabilityViewModel? = null,
 ) {
     private val _state = MutableStateFlow(MirroringViewState())
     val state: StateFlow<MirroringViewState> = _state.asStateFlow()
@@ -95,11 +97,16 @@ class MirroringViewModel(
         selectedDeviceState
             .onEach(::onSelectedDeviceState)
             .launchIn(scope)
+        scrcpyAvailability?.state
+            ?.onEach { availability -> _state.update { it.copy(scrcpy = availability) } }
+            ?.launchIn(scope)
     }
 
     fun handle(intent: MirroringIntent) {
         when (intent) {
             MirroringIntent.Toggle -> toggle()
+            MirroringIntent.RecheckScrcpy -> scrcpyAvailability?.recheck()
+            MirroringIntent.OpenSettings -> openSettings()
         }
     }
 
@@ -143,7 +150,14 @@ class MirroringViewModel(
     private fun onSessionState(sessionState: MirroringSessionState) {
         _state.update { it.copy(presentationState = sessionState.toPresentation()) }
         when (sessionState) {
-            is MirroringSessionState.Error -> postErrorFeedback(sessionState.error)
+            is MirroringSessionState.Error -> {
+                postErrorFeedback(sessionState.error)
+                // The up-front check may be stale: scrcpy was removed, or its path changed on disk.
+                when (sessionState.error) {
+                    is MirroringSessionError.ToolUnavailable -> scrcpyAvailability?.refresh()
+                    is MirroringSessionError.StartFailure -> scrcpyAvailability?.recheck()
+                }
+            }
             is MirroringSessionState.Exited -> postExitFeedback(sessionState.reason)
             else -> Unit
         }
@@ -165,9 +179,13 @@ class MirroringViewModel(
         }
 
         val serial = context.serial
+        val missing = scrcpyAvailability?.state?.value as? ScrcpyAvailability.Missing
         when (sessionManager.stateFor(serial).value) {
             is MirroringSessionState.Starting, is MirroringSessionState.Running -> sessionManager.stop(serial)
-            else -> sessionManager.start(serial, currentOptions())
+            else -> {
+                if (missing != null) return postMissingScrcpy(missing)
+                sessionManager.start(serial, currentOptions())
+            }
         }
 
         // MirroringSessionManager.start()/stop() both mutate their StateFlow synchronously before
@@ -189,6 +207,20 @@ class MirroringViewModel(
                     text = text,
                     severity = FeedbackSeverity.Error,
                     action = action,
+                ),
+            ),
+        )
+    }
+
+    /** The global shortcut can still ask for mirroring while the button is greyed out. */
+    private fun postMissingScrcpy(missing: ScrcpyAvailability.Missing) {
+        feedback.handle(
+            FeedbackIntent.Post(
+                FeedbackMessage(
+                    id = "mirroring-missing-${clock.now()}",
+                    text = missing.fixHint(),
+                    severity = FeedbackSeverity.Error,
+                    action = FeedbackAction(label = "Open Settings") { openSettings() },
                 ),
             ),
         )

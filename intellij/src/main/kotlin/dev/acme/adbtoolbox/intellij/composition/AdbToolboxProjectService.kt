@@ -28,6 +28,8 @@ import dev.acme.adbtoolbox.adapters.adb.device.DdmlibDeviceChangeListenerSource
 import dev.acme.adbtoolbox.adapters.adb.discovery.DefaultToolLocator
 import dev.acme.adbtoolbox.adapters.adb.packages.AdbPackageRepository
 import dev.acme.adbtoolbox.adapters.adb.packages.AppInfoHelper
+import dev.acme.adbtoolbox.adapters.adb.packages.DevOptionsHelper
+import dev.acme.adbtoolbox.adapters.adb.packages.DeviceHelperDeployment
 import dev.acme.adbtoolbox.adapters.jvm.capture.DesktopRevealInFileManager
 import dev.acme.adbtoolbox.adapters.jvm.capture.SettingsBackedCaptureDestination
 import dev.acme.adbtoolbox.adapters.jvm.discovery.DefaultSdkLocationPlatformToolsSource
@@ -67,6 +69,8 @@ import dev.acme.adbtoolbox.application.diagnostics.LoggingProcessExecutor
 import dev.acme.adbtoolbox.application.diagnostics.LoggingToolLocator
 import dev.acme.adbtoolbox.application.display.QuickTogglesIntent
 import dev.acme.adbtoolbox.application.display.QuickTogglesViewModel
+import dev.acme.adbtoolbox.application.display.developer.DeveloperOptionsIntent
+import dev.acme.adbtoolbox.application.display.developer.DeveloperOptionsViewModel
 import dev.acme.adbtoolbox.application.display.density.DensityOverrideResetUseCase
 import dev.acme.adbtoolbox.application.display.density.DensityIntent
 import dev.acme.adbtoolbox.application.display.density.DensityOverrideTracker
@@ -83,6 +87,7 @@ import dev.acme.adbtoolbox.application.mirroring.MirroringOptionsUseCase
 import dev.acme.adbtoolbox.application.mirroring.MirroringOptionsViewModel
 import dev.acme.adbtoolbox.application.mirroring.MirroringSessionManager
 import dev.acme.adbtoolbox.application.mirroring.MirroringViewModel
+import dev.acme.adbtoolbox.application.mirroring.ScrcpyAvailabilityViewModel
 import dev.acme.adbtoolbox.application.nav.NavigationViewModel
 import dev.acme.adbtoolbox.application.nav.ViewEnterRefresher
 import dev.acme.adbtoolbox.application.network.ProxyController
@@ -232,6 +237,7 @@ class AdbToolboxProjectService(private val project: Project) : Disposable {
         if (SettingsDependency.ScrcpyPath in changed || SettingsDependency.CaptureDirectory in changed) {
             deviceSectionMetaViewModel.refresh()
         }
+        if (SettingsDependency.ScrcpyPath in changed) scrcpyAvailabilityViewModel.refresh()
         // Capture reads the repository for each new target, so it has no cache to invalidate.
         // The Logcat runtime is composed by its own feature task and consumes the persisted size.
     }
@@ -479,6 +485,14 @@ class AdbToolboxProjectService(private val project: Project) : Disposable {
         options = mirroringOptionsUseCase,
     )
 
+    /** Resolves scrcpy ahead of any click so the Device view can grey out mirroring when it is missing. */
+    val scrcpyAvailabilityViewModel: ScrcpyAvailabilityViewModel = ScrcpyAvailabilityViewModel(
+        scope = childScope(),
+        dispatchers = dispatcherProvider,
+        toolLocator = toolLocator,
+        hostPlatform = hostPlatformProvider,
+    )
+
     /**
      * Task 018's Device-view mirroring binding and global-shortcut action, driven by
      * [selectedDeviceViewModel] and [mirroringSessionManager]; missing-tool errors route to
@@ -494,6 +508,7 @@ class AdbToolboxProjectService(private val project: Project) : Disposable {
         feedback = feedbackViewModel,
         navigation = navigationViewModel,
         currentOptions = { mirroringOptionsViewModel.currentOptions.value },
+        scrcpyAvailability = scrcpyAvailabilityViewModel,
     )
 
     /**
@@ -539,12 +554,15 @@ class AdbToolboxProjectService(private val project: Project) : Disposable {
         persistence = selectedPackagePersistence,
     )
 
+    /** Pushes the on-device helper jar once per device, shared by every helper entry point (ADR 0010/0012). */
+    private val deviceHelperDeployment = DeviceHelperDeployment(adbTransport)
+
     /** Task 021's serial-scoped package repository, shared by Apps and post-action refreshes. */
     val packageRepository: PackageRepository = AdbPackageRepository(
         scope = childScope(),
         dispatchers = dispatcherProvider,
         transport = adbTransport,
-        appInfoHelper = AppInfoHelper(adbTransport),
+        appInfoHelper = AppInfoHelper(adbTransport, deployment = deviceHelperDeployment),
     )
 
     /** Task 022's searchable package presentation, composed once per project. */
@@ -648,6 +666,15 @@ class AdbToolboxProjectService(private val project: Project) : Disposable {
         },
     )
 
+    /** Developer-options switches and the background process limit of the Quick toggles section (ADR 0012). */
+    val developerOptionsViewModel: DeveloperOptionsViewModel = DeveloperOptionsViewModel(
+        scope = childScope(),
+        dispatchers = dispatcherProvider,
+        transport = adbTransport,
+        activityManager = DevOptionsHelper(adbTransport, deviceHelperDeployment),
+        selectedDeviceState = selectedDeviceViewModel.state,
+    )
+
     /** Task 032's host-LAN-IPv4 discovery port ("Use my computer IP") and persisted MRU recents adapter. */
     val hostNetworkInfo: HostNetworkInfo = JvmHostNetworkInfo()
     val networkRecentsPersistence: NetworkRecentsPersistence =
@@ -725,6 +752,7 @@ class AdbToolboxProjectService(private val project: Project) : Disposable {
             ViewId.Device to {
                 deviceFactsViewModel.handle(DeviceFactsIntent.Refresh)
                 quickTogglesViewModel.handle(QuickTogglesIntent.Refresh)
+                developerOptionsViewModel.handle(DeveloperOptionsIntent.Refresh)
                 fontScaleViewModel.handle(FontScaleIntent.Retry)
                 densityViewModel.handle(DensityIntent.Retry)
             },

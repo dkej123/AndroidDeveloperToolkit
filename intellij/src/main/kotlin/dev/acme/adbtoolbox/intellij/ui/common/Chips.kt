@@ -33,14 +33,25 @@ data class PresetChipChoice<T : Any>(
 enum class PresetChipKind { PRESET, CUSTOM }
 
 /**
+ * [WRAP]: free-standing chips that wrap onto new rows. [SEGMENTED]: one full-width `field` track
+ * (`borderStrong` outline, 2px padding and gap) whose chips share the width — the default choice two
+ * parts, every other one part — as in the Quick toggles "Background process limit" control.
+ */
+enum class PresetChipRowStyle { WRAP, SEGMENTED }
+
+/**
  * The compact, wrapping single-choice row supplied by the design-system prototype section 06.
  * It intentionally models only presets; validation and custom-value disclosure remain feature logic.
  */
 class PresetChipRow<T : Any>(
     choices: List<PresetChipChoice<T>>,
     selected: T,
+    private val style: PresetChipRowStyle = PresetChipRowStyle.WRAP,
 ) : JBPanel<PresetChipRow<T>>(
-    WrappingFlowLayout(FlowLayout.LEADING, AdbToolboxTheme.Spacing.s2, 0),
+    when (style) {
+        PresetChipRowStyle.WRAP -> WrappingFlowLayout(FlowLayout.LEADING, AdbToolboxTheme.Spacing.s2, 0)
+        PresetChipRowStyle.SEGMENTED -> SegmentedLayout()
+    },
 ) {
     private var publishedPreferredHeight = -1
 
@@ -76,7 +87,28 @@ class PresetChipRow<T : Any>(
     var applyPending: Boolean = false
 
     val chips: List<PresetChip<T>> = choices.map { choice ->
-        PresetChip(choice).also { chip -> add(chip) }
+        PresetChip(choice, segmented = style == PresetChipRowStyle.SEGMENTED).also { chip -> add(chip) }
+    }
+
+    override fun paintComponent(graphics: Graphics) {
+        super.paintComponent(graphics)
+        if (style != PresetChipRowStyle.SEGMENTED) return
+        val copy = graphics.create() as Graphics2D
+        try {
+            copy.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
+            val insets = insets
+            val x = insets.left
+            val y = insets.top
+            val w = width - insets.left - insets.right
+            val h = height - insets.top - insets.bottom
+            val arc = JBUI.scale(6) * 2
+            copy.color = AdbToolboxTheme.Colors.field
+            copy.fillRoundRect(x, y, w, h, arc, arc)
+            copy.color = AdbToolboxTheme.Colors.borderStrong
+            copy.drawRoundRect(x, y, w - 1, h - 1, arc, arc)
+        } finally {
+            copy.dispose()
+        }
     }
 
     private val group = ButtonGroup().also { buttonGroup -> chips.forEach(buttonGroup::add) }
@@ -123,6 +155,42 @@ class PresetChipRow<T : Any>(
     }
 }
 
+/** [PresetChipRowStyle.SEGMENTED]: 22px chips inside a 1px track with 2px padding and gap; default chip weighs 2. */
+private class SegmentedLayout : java.awt.LayoutManager {
+    private val pad get() = JBUI.scale(1) + JBUI.scale(2)
+    private val gap get() = JBUI.scale(2)
+    private val chipHeight get() = JBUI.scale(22)
+
+    private fun weight(component: Component) = if ((component as? PresetChip<*>)?.isDefaultChoice == true) 2 else 1
+
+    override fun preferredLayoutSize(parent: Container): Dimension {
+        val insets = parent.insets
+        val minWidth = parent.components.sumOf { it.preferredSize.width } + gap * (parent.componentCount - 1).coerceAtLeast(0)
+        return Dimension(insets.left + insets.right + pad * 2 + minWidth, insets.top + insets.bottom + pad * 2 + chipHeight)
+    }
+
+    override fun minimumLayoutSize(parent: Container): Dimension = preferredLayoutSize(parent)
+
+    override fun layoutContainer(parent: Container) {
+        val insets = parent.insets
+        val components = parent.components
+        if (components.isEmpty()) return
+        val available = parent.width - insets.left - insets.right - pad * 2 - gap * (components.size - 1)
+        val totalWeight = components.sumOf(::weight)
+        // Edges come from the cumulative weight, so rounding spreads over all segments.
+        var weightBefore = 0
+        components.forEachIndexed { index, component ->
+            val start = available * weightBefore / totalWeight
+            weightBefore += weight(component)
+            val end = available * weightBefore / totalWeight
+            component.setBounds(insets.left + pad + start + index * gap, insets.top + pad, end - start, chipHeight)
+        }
+    }
+
+    override fun addLayoutComponent(name: String?, comp: Component?) = Unit
+    override fun removeLayoutComponent(comp: Component?) = Unit
+}
+
 /** FlowLayout with a preferred height that reflects the rows required by the current viewport. */
 private class WrappingFlowLayout(align: Int, hgap: Int, vgap: Int) : FlowLayout(align, hgap, vgap) {
     override fun preferredLayoutSize(target: Container): Dimension = wrappingSize(target)
@@ -162,9 +230,11 @@ private class WrappingFlowLayout(align: Int, hgap: Int, vgap: Int) : FlowLayout(
 
 class PresetChip<T : Any> internal constructor(
     private val choice: PresetChipChoice<T>,
+    private val segmented: Boolean = false,
 ) : JToggleButton(choice.label) {
     val value: T get() = choice.value
     val kind: PresetChipKind get() = choice.kind
+    internal val isDefaultChoice: Boolean get() = choice.isDefault
 
     /**
      * Chips paint their own surface and border, so they keep the plain Basic UI. A theme's button UI
@@ -180,18 +250,32 @@ class PresetChip<T : Any> internal constructor(
         isContentAreaFilled = false
         isFocusPainted = false
         font = AdbToolboxTheme.Typography.body
-        margin = Insets(0, JBUI.scale(9), 0, JBUI.scale(9))
-        val widestFont = AdbToolboxTheme.Typography.body.deriveFont(java.awt.Font.BOLD)
+        margin = Insets(0, JBUI.scale(if (segmented) 6 else 9), 0, JBUI.scale(if (segmented) 6 else 9))
+        val widestFont = baseFont().deriveFont(java.awt.Font.BOLD)
         preferredSize = Dimension(
             getFontMetrics(widestFont).stringWidth(text) + margin.left + margin.right,
-            AdbToolboxTheme.Sizes.iconButton,
+            if (segmented) JBUI.scale(22) else AdbToolboxTheme.Sizes.iconButton,
         )
         addItemListener { refreshPresentation() }
         getAccessibleContext().accessibleName = choice.label
         refreshPresentation()
     }
 
+    /** Segmented numbers are mono 11 and the default ("Standard") is UI 11, per the prototype. */
+    private fun baseFont(): java.awt.Font = when {
+        !segmented -> AdbToolboxTheme.Typography.body
+        choice.isDefault -> AdbToolboxTheme.Typography.body.deriveFont(JBUI.scale(11f))
+        else -> AdbToolboxTheme.Typography.mono.deriveFont(JBUI.scale(11f))
+    }
+
+    private val highlighted: Boolean
+        get() = isSelected && !choice.isDefault && choice.kind == PresetChipKind.PRESET
+
     internal fun refreshPresentation() {
+        if (segmented) {
+            refreshSegmentedPresentation()
+            return
+        }
         when {
             isSelected && !choice.isDefault && choice.kind == PresetChipKind.PRESET -> {
                 foreground = AdbToolboxTheme.Colors.amber
@@ -216,13 +300,38 @@ class PresetChip<T : Any> internal constructor(
         repaint()
     }
 
+    private fun refreshSegmentedPresentation() {
+        val radius = { AdbToolboxTheme.Radii.field }
+        when {
+            highlighted -> {
+                foreground = AdbToolboxTheme.Colors.amber
+                background = AdbToolboxTheme.Colors.amberBg
+                border = SolidChipBorder(AdbToolboxTheme.Colors.amber, radius)
+            }
+            isSelected -> {
+                foreground = AdbToolboxTheme.Colors.text
+                background = AdbToolboxTheme.Colors.header
+                border = SolidChipBorder(AdbToolboxTheme.Colors.borderStrong, radius)
+            }
+            else -> {
+                foreground = AdbToolboxTheme.Colors.textDim
+                background = null
+                border = JBUI.Borders.empty(1)
+            }
+        }
+        font = baseFont().deriveFont(if (isSelected) java.awt.Font.BOLD else java.awt.Font.PLAIN)
+        isContentAreaFilled = false
+        repaint()
+    }
+
     override fun paintComponent(graphics: Graphics) {
-        if (isSelected && !choice.isDefault && choice.kind == PresetChipKind.PRESET) {
+        val fill = highlighted || (segmented && isSelected)
+        if (fill && background != null) {
             val copy = graphics.create() as Graphics2D
             try {
                 copy.color = background
                 copy.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
-                val arc = AdbToolboxTheme.Radii.chip * 2
+                val arc = (if (segmented) AdbToolboxTheme.Radii.field else AdbToolboxTheme.Radii.chip) * 2
                 copy.fillRoundRect(0, 0, width, height, arc, arc)
             } finally {
                 copy.dispose()

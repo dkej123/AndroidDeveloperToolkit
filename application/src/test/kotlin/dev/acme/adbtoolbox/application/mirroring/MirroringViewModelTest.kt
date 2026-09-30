@@ -12,7 +12,9 @@ import dev.acme.adbtoolbox.domain.devicecontext.ControlPolicy
 import dev.acme.adbtoolbox.domain.discovery.DiscoveredTool
 import dev.acme.adbtoolbox.domain.discovery.DiscoveryError
 import dev.acme.adbtoolbox.domain.discovery.DiscoveryOutcome
+import dev.acme.adbtoolbox.domain.discovery.FakeHostPlatformProvider
 import dev.acme.adbtoolbox.domain.discovery.FakeToolLocator
+import dev.acme.adbtoolbox.domain.discovery.OperatingSystem
 import dev.acme.adbtoolbox.domain.discovery.ToolExecutablePath
 import dev.acme.adbtoolbox.domain.discovery.ToolId
 import dev.acme.adbtoolbox.domain.discovery.ToolSource
@@ -83,6 +85,7 @@ class MirroringViewModelTest {
         toolOutcome: (ToolId) -> DiscoveryOutcome = { DiscoveryOutcome.Found(discoveredScrcpy()) },
         script: (ProcessRequest) -> Flow<ProcessEvent> = { runningForeverFlow() },
         currentOptions: () -> dev.acme.adbtoolbox.domain.mirroring.MirroringOptions = { dev.acme.adbtoolbox.domain.mirroring.MirroringOptions.DEFAULT },
+        withAvailability: Boolean = false,
     ) {
         val scope = TestScope()
         val dispatcher = StandardTestDispatcher(scope.testScheduler)
@@ -91,9 +94,14 @@ class MirroringViewModelTest {
         val sessionManager = MirroringSessionManager(
             scope = scope,
             dispatchers = dispatchers,
-            toolLocator = FakeToolLocator(toolOutcome),
+            toolLocator = FakeToolLocator { toolOutcome(it) },
             processExecutor = executor,
         )
+        val availability = if (withAvailability) {
+            ScrcpyAvailabilityViewModel(scope, dispatchers, FakeToolLocator { toolOutcome(it) }, FakeHostPlatformProvider(OperatingSystem.MacOs))
+        } else {
+            null
+        }
         val selectedDeviceState = MutableStateFlow<SelectedDeviceState>(SelectedDeviceState.None)
         val feedback = FeedbackViewModel(scope = scope, dispatchers = dispatchers)
         val navigation = NavigationViewModel(scope, dispatchers, FakeNavigationPersistence(), ViewId.Device)
@@ -105,6 +113,7 @@ class MirroringViewModelTest {
             feedback = feedback,
             navigation = navigation,
             currentOptions = currentOptions,
+            scrcpyAvailability = availability,
         )
     }
 
@@ -416,5 +425,81 @@ class MirroringViewModelTest {
 
         h.viewModel.state.value.presentationState shouldBe MirroringPresentationState.Unavailable
         h.viewModel.state.value.controlPolicy.shouldBeInstanceOf<ControlPolicy.Disabled>()
+    }
+
+    @Test
+    fun `a missing scrcpy is known before any click and blocks starting with the fix in the toast`() = runTest {
+        val discoveryError = DiscoveryError.ToolNotFound(ToolId.Scrcpy, listOf(ToolSource.PathFallback))
+        val h = Harness(toolOutcome = { DiscoveryOutcome.Failed(discoveryError) }, withAvailability = true)
+        h.selectedDeviceState.value = SelectedDeviceState.Online(onlineDevice(serialA))
+        h.scope.runCurrent()
+
+        h.viewModel.state.value.scrcpy.shouldBeInstanceOf<ScrcpyAvailability.Missing>()
+
+        h.viewModel.handle(MirroringIntent.Toggle)
+        h.scope.runCurrent()
+
+        h.executor.requests shouldBe emptyList()
+        h.viewModel.state.value.presentationState shouldBe MirroringPresentationState.Idle
+        val toast = h.feedback.state.value.toasts.single()
+        toast.text shouldBe "scrcpy is not installed, or not on PATH. Install it (brew install scrcpy) or set its path in Settings."
+        toast.action?.label shouldBe "Open Settings"
+    }
+
+    @Test
+    fun `check again re-resolves scrcpy and re-enables mirroring once it is installed`() = runTest {
+        var installed = false
+        val h = Harness(
+            toolOutcome = {
+                if (installed) {
+                    DiscoveryOutcome.Found(discoveredScrcpy())
+                } else {
+                    DiscoveryOutcome.Failed(DiscoveryError.ToolNotFound(ToolId.Scrcpy, emptyList()))
+                }
+            },
+            withAvailability = true,
+        )
+        h.scope.runCurrent()
+
+        installed = true
+        h.viewModel.handle(MirroringIntent.RecheckScrcpy)
+        h.scope.runCurrent()
+
+        h.viewModel.state.value.scrcpy shouldBe ScrcpyAvailability.Available(scrcpyVersion)
+    }
+
+    @Test
+    fun `open settings navigates to the Settings view`() = runTest {
+        val h = Harness(withAvailability = true)
+        h.scope.runCurrent()
+
+        h.viewModel.handle(MirroringIntent.OpenSettings)
+        h.scope.runCurrent()
+
+        h.navigation.state.value shouldBe NavigationState.Ready(ViewId.Settings)
+    }
+
+    @Test
+    fun `scrcpy disappearing after the check is noticed by the failed start`() = runTest {
+        var installed = true
+        val h = Harness(
+            toolOutcome = {
+                if (installed) {
+                    DiscoveryOutcome.Found(discoveredScrcpy())
+                } else {
+                    DiscoveryOutcome.Failed(DiscoveryError.ToolNotFound(ToolId.Scrcpy, emptyList()))
+                }
+            },
+            withAvailability = true,
+        )
+        h.selectedDeviceState.value = SelectedDeviceState.Online(onlineDevice(serialA))
+        h.scope.runCurrent()
+        h.viewModel.state.value.scrcpy.shouldBeInstanceOf<ScrcpyAvailability.Available>()
+
+        installed = false
+        h.viewModel.handle(MirroringIntent.Toggle)
+        h.scope.runCurrent()
+
+        h.viewModel.state.value.scrcpy.shouldBeInstanceOf<ScrcpyAvailability.Missing>()
     }
 }

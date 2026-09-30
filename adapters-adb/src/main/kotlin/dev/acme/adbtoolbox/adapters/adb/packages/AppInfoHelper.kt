@@ -46,18 +46,49 @@ class AppInfoHelperBundle(val version: String, val localPath: () -> String?) {
 }
 
 /**
- * Deploys and runs the on-device app-info helper (ADR 0007) through [transport]: the jar is pushed
- * to each device once per session (skipped when a previous session already left the same version
- * there), then run with `app_process`, and its records are delivered to the caller as they stream in.
+ * Pushes the helper jar (ADR 0010) to each device once per session — skipped when a previous session
+ * already left the same version there. Shared by every helper entry point ([AppInfoHelper],
+ * [DevOptionsHelper]) so they never push the same file concurrently.
+ */
+class DeviceHelperDeployment(
+    private val transport: AdbTransport,
+    private val bundle: AppInfoHelperBundle = AppInfoHelperBundle.fromClasspath(),
+) {
+    private val deployed = mutableSetOf<DeviceSerial>()
+    private val lock = Mutex()
+
+    /** The helper's path on [serial], or `null` when it could not be deployed. */
+    suspend fun ensureDeployed(serial: DeviceSerial): String? = lock.withLock {
+        val remotePath = AppInfoCommand.remotePath(bundle.version)
+        if (serial in deployed) return@withLock remotePath
+        val present = AppInfoCommand.isPresent(transport.executeText(AppInfoCommand.presenceRequest(serial, remotePath)))
+        if (!present) {
+            val localPath = bundle.localPath() ?: return@withLock null
+            val outcome = transport.executeText(AppInfoCommand.pushRequest(serial, localPath, remotePath)).outcome
+            if (outcome !is AdbOutcome.Completed || (outcome.exitCode != null && outcome.exitCode != 0)) {
+                return@withLock null
+            }
+        }
+        deployed += serial
+        remotePath
+    }
+
+    /** The pushed file may have been removed or be unusable; check it again next time. */
+    suspend fun forget(serial: DeviceSerial) {
+        lock.withLock { deployed -= serial }
+    }
+}
+
+/**
+ * Runs the on-device app-info helper (ADR 0007) through [transport], deployed by [deployment], and
+ * delivers its records to the caller as they stream in.
  */
 class AppInfoHelper(
     private val transport: AdbTransport,
-    private val bundle: AppInfoHelperBundle = AppInfoHelperBundle.fromClasspath(),
+    bundle: AppInfoHelperBundle = AppInfoHelperBundle.fromClasspath(),
     private val iconSizePx: Int = DEFAULT_ICON_SIZE_PX,
+    private val deployment: DeviceHelperDeployment = DeviceHelperDeployment(transport, bundle),
 ) {
-    private val deployed = mutableSetOf<DeviceSerial>()
-    private val deployLock = Mutex()
-
     /**
      * Reports [AppInfo] for [packages] (possibly for more, when the list is long enough that every
      * installed app is requested instead). Returns `false` when the helper could not be deployed or
@@ -65,8 +96,7 @@ class AppInfoHelper(
      * still returns `true` — whatever was reported stays valid.
      */
     suspend fun query(serial: DeviceSerial, packages: List<String>, onInfo: suspend (AppInfo) -> Unit): Boolean {
-        val remotePath = AppInfoCommand.remotePath(bundle.version)
-        if (!ensureDeployed(serial, remotePath)) return false
+        val remotePath = deployment.ensureDeployed(serial) ?: return false
 
         val arguments = if (packages.size > MAX_PACKAGE_ARGUMENTS) emptyList() else packages
         var started = false
@@ -78,24 +108,7 @@ class AppInfoHelper(
                 else -> Unit
             }
         }
-        if (!started) {
-            // The pushed file may have been removed or be unusable; check it again next time.
-            deployLock.withLock { deployed -= serial }
-        }
+        if (!started) deployment.forget(serial)
         return started
-    }
-
-    private suspend fun ensureDeployed(serial: DeviceSerial, remotePath: String): Boolean = deployLock.withLock {
-        if (serial in deployed) return@withLock true
-        val present = AppInfoCommand.isPresent(transport.executeText(AppInfoCommand.presenceRequest(serial, remotePath)))
-        if (!present) {
-            val localPath = bundle.localPath() ?: return@withLock false
-            val outcome = transport.executeText(AppInfoCommand.pushRequest(serial, localPath, remotePath)).outcome
-            if (outcome !is AdbOutcome.Completed || (outcome.exitCode != null && outcome.exitCode != 0)) {
-                return@withLock false
-            }
-        }
-        deployed += serial
-        true
     }
 }

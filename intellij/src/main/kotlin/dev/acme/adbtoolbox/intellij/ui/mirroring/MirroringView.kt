@@ -7,6 +7,7 @@ import dev.acme.adbtoolbox.intellij.ui.common.FlexRowLayout
 import dev.acme.adbtoolbox.intellij.ui.common.RoundedSurface
 import dev.acme.adbtoolbox.intellij.ui.common.WrappingText
 import dev.acme.adbtoolbox.intellij.ui.common.flexRow
+import com.intellij.ide.BrowserUtil
 import com.intellij.openapi.Disposable
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBPanel
@@ -15,6 +16,7 @@ import dev.acme.adbtoolbox.application.mirroring.MirroringIntent
 import dev.acme.adbtoolbox.application.mirroring.MirroringPresentationState
 import dev.acme.adbtoolbox.application.mirroring.MirroringViewModel
 import dev.acme.adbtoolbox.application.mirroring.MirroringViewState
+import dev.acme.adbtoolbox.application.mirroring.ScrcpyAvailability
 import dev.acme.adbtoolbox.domain.devicecontext.ControlPolicy
 import dev.acme.adbtoolbox.domain.dispatch.DispatcherProvider
 import dev.acme.adbtoolbox.intellij.icons.AdbToolboxIcons
@@ -37,6 +39,7 @@ class MirroringView(
     private val scope: CoroutineScope,
     private val dispatchers: DispatcherProvider,
     private val openOptions: () -> Unit = {},
+    private val openInstallGuide: () -> Unit = { BrowserUtil.browse(INSTALL_GUIDE_URL) },
 ) : JBPanel<MirroringView>(BorderLayout()), Disposable {
 
     private val startButton = DesignButton("Start mirroring", DesignButtonStyle.PRIMARY).apply {
@@ -88,10 +91,27 @@ class MirroringView(
         border = JBUI.Borders.empty(6, 0, 2, 0)
     }
 
+    // Shown only while scrcpy is missing (user decision, 2026-09-29): links to fix it in place.
+    val openSettingsLink = DesignButton("Open Settings", DesignButtonStyle.LINK).apply {
+        addActionListener { viewModel.handle(MirroringIntent.OpenSettings) }
+    }
+    val recheckLink = DesignButton("Check again", DesignButtonStyle.LINK).apply {
+        toolTipText = "Look for scrcpy again, e.g. after installing it"
+        addActionListener { viewModel.handle(MirroringIntent.RecheckScrcpy) }
+    }
+    val installGuideLink = DesignButton("Install guide", DesignButtonStyle.LINK).apply {
+        toolTipText = INSTALL_GUIDE_URL
+        addActionListener { openInstallGuide() }
+    }
+    val scrcpyFixRow = flexRow(AdbToolboxTheme.Spacing.s4, openSettingsLink, recheckLink, installGuideLink).apply {
+        isVisible = false
+    }
+
     init {
         isOpaque = false
         add(stateCards, BorderLayout.NORTH)
         add(helpLabel, BorderLayout.CENTER)
+        add(scrcpyFixRow, BorderLayout.SOUTH)
         viewModel.state
             .onEach { state -> withContext(dispatchers.main) { render(state) } }
             .launchIn(scope)
@@ -99,7 +119,8 @@ class MirroringView(
 
     internal fun render(state: MirroringViewState) {
         val enabled = state.controlPolicy is ControlPolicy.Enabled
-        startButton.isEnabled = enabled
+        val missing = state.scrcpy as? ScrcpyAvailability.Missing
+        startButton.isEnabled = enabled && missing == null
         stopButton.isEnabled = enabled
         optionsButton.isEnabled = enabled
         optionsButton.toolTipText = OPTIONS_TOOLTIP.withDisabledReason(enabled)
@@ -113,9 +134,15 @@ class MirroringView(
             MirroringPresentationState.Stopping -> "Stopping…"
             else -> "Start mirroring"
         }
-        startButton.toolTipText = (state.presentationState as? MirroringPresentationState.Error)?.message
+        startButton.toolTipText = missing?.fixHint()
+            ?: (state.presentationState as? MirroringPresentationState.Error)?.message
             ?: START_TOOLTIP.withDisabledReason(enabled)
-        helpLabel.text = if (isRunning) RUNNING_HELP else IDLE_HELP
+        helpLabel.text = when {
+            isRunning -> RUNNING_HELP
+            missing != null -> missing.fixHint()
+            else -> IDLE_HELP
+        }
+        scrcpyFixRow.isVisible = !isRunning && missing != null
     }
 
     override fun dispose() = scope.cancel()
@@ -126,6 +153,7 @@ class MirroringView(
         val START_TOOLTIP: String get() = ShortcutHints.withAction("Start scrcpy for the selected device", "dev.acme.adbtoolbox.ToggleMirroring")
         const val OPTIONS_TOOLTIP = "Mirroring options — bitrate, resolution, stay awake"
         const val IDLE_HELP = "Launches Genymobile scrcpy. Turn on “stay awake” and “show touches” in options."
+        const val INSTALL_GUIDE_URL = "https://github.com/Genymobile/scrcpy#get-the-app"
         const val RUNNING_HELP = "Window is open on your desktop. Closing it also stops this session."
 
         /** `design/README.md` Interactions: every device-mutating control "keeps its tooltip and

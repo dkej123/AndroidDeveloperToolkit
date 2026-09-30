@@ -15,6 +15,9 @@ import dev.acme.adbtoolbox.application.devicebar.DeviceBarPresentation
 import dev.acme.adbtoolbox.application.devicefacts.DeviceFactsViewState
 import dev.acme.adbtoolbox.application.display.QuickToggleFieldState
 import dev.acme.adbtoolbox.application.display.QuickTogglesViewState
+import dev.acme.adbtoolbox.application.mirroring.ScrcpyAvailability
+import dev.acme.adbtoolbox.application.display.developer.DeveloperOptionsViewState
+import dev.acme.adbtoolbox.application.display.developer.DeveloperToggle
 import dev.acme.adbtoolbox.application.display.density.DensityViewState
 import dev.acme.adbtoolbox.application.logcat.LogcatControlsState
 import dev.acme.adbtoolbox.application.network.ProxyViewState
@@ -104,6 +107,14 @@ class VisualRegressionTest : BasePlatformTestCase() {
         Scenario("device-connected-dark-dock", 380, 620, dark = true, selected = ViewId.Device, view = {
             DeviceViewFixture.connected(SERIAL).apply { applyResponsiveLayout(380 - AdbToolboxTheme.Sizes.rail) }
         }),
+        Scenario("device-scrcpy-missing-light-dock", 380, 620, dark = false, selected = ViewId.Device, view = {
+            val missing = ScrcpyAvailability.Missing(
+                reason = "scrcpy is not installed, or not on PATH.",
+                installCommand = "brew install scrcpy",
+                configuredPathInvalid = false,
+            )
+            DeviceViewFixture.connected(SERIAL, scrcpy = missing).apply { applyResponsiveLayout(380 - AdbToolboxTheme.Sizes.rail) }
+        }),
         Scenario("apps-dark-dock", 380, 620, dark = true, selected = ViewId.Apps, view = {
             AppsPanel({}, {}, {}, {}).apply {
                 update(
@@ -136,8 +147,26 @@ class VisualRegressionTest : BasePlatformTestCase() {
                         talkBackProfile = TalkBackProfile.Samsung,
                     ),
                 )
+                update(developerOptionsFixture())
             }
         }, overrideCount = 2),
+        // Taller, so the Developer-options rows and the process-limit chips are in the golden too.
+        Scenario("display-toggles-light-tall", 380, 1040, dark = false, selected = ViewId.Device, view = {
+            DisplayPanel({}, {}, {}, {}, {}, {}, {}, {}).apply {
+                update(FontScaleState.Idle(1.0))
+                update(DensityViewState.Idle(DensityReading(428, null)))
+                update(
+                    QuickTogglesViewState(
+                        darkTheme = QuickToggleFieldState.Idle(false),
+                        showTouches = QuickToggleFieldState.Idle(true),
+                        animations = QuickToggleFieldState.Idle(AnimationsSummary.AllOn),
+                        talkBack = QuickToggleFieldState.Idle(false),
+                        talkBackProfile = TalkBackProfile.Google,
+                    ),
+                )
+                update(developerOptionsFixture())
+            }
+        }),
         Scenario("network-dark-dock", 380, 620, dark = true, selected = ViewId.Network, view = {
             val active = endpoint("10.0.4.117", 8888)
             NetworkPanel({}, {}, {}, {}, {}, {}).apply {
@@ -413,3 +442,13 @@ private object GoldenImages {
         }
     }
 }
+
+private fun developerOptionsFixture() = DeveloperOptionsViewState(
+    toggles = mapOf(
+        DeveloperToggle.StayAwake to QuickToggleFieldState.Idle(true),
+        DeveloperToggle.DontKeepActivities to QuickToggleFieldState.Idle(false),
+        DeveloperToggle.ShowViewUpdates to QuickToggleFieldState.Idle(false),
+        DeveloperToggle.ShowSurfaceUpdates to QuickToggleFieldState.Error("Needs adb root", null),
+    ),
+    processLimit = QuickToggleFieldState.Idle(2),
+)

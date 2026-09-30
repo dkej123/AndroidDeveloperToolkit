@@ -143,6 +143,7 @@ class AdbToolboxToolWindowPanel(
     fontScaleViewModel: FontScaleViewModel,
     densityViewModel: DensityViewModel,
     quickTogglesViewModel: QuickTogglesViewModel,
+    developerOptionsViewModel: dev.acme.adbtoolbox.application.display.developer.DeveloperOptionsViewModel? = null,
     densityOverrideTracker: OverrideSummaryContributor,
     deviceContextAggregator: DeviceContextAggregator,
     private val displayScope: CoroutineScope,
@@ -270,6 +271,7 @@ class AdbToolboxToolWindowPanel(
         aggregator = deviceContextAggregator,
         scope = displayScope,
         dispatchers = dispatchers,
+        developerOptionsViewModel = developerOptionsViewModel,
     )
 
     private val navigationCoordinator = NavigationRoutingCoordinator(

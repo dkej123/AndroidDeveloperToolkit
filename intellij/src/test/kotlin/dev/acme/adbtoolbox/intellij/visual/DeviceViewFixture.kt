@@ -13,6 +13,8 @@ import dev.acme.adbtoolbox.application.mirroring.MirroringPresentationState
 import dev.acme.adbtoolbox.application.mirroring.MirroringSessionManager
 import dev.acme.adbtoolbox.application.mirroring.MirroringViewModel
 import dev.acme.adbtoolbox.application.mirroring.MirroringViewState
+import dev.acme.adbtoolbox.application.mirroring.ScrcpyAvailability
+import dev.acme.adbtoolbox.domain.discovery.ToolVersion
 import dev.acme.adbtoolbox.application.nav.NavigationViewModel
 import dev.acme.adbtoolbox.application.recording.RecordingPresentationState
 import dev.acme.adbtoolbox.application.recording.RecordingSessionManager
@@ -68,7 +70,10 @@ internal object DeviceViewFixture {
         override val main = Dispatchers.Default
     }
 
-    fun connected(serial: DeviceSerial): DeviceFactsPanel {
+    fun connected(
+        serial: DeviceSerial,
+        scrcpy: ScrcpyAvailability = ScrcpyAvailability.Available(ToolVersion.of("2.7")),
+    ): DeviceFactsPanel {
         // A pre-cancelled scope: no view/view-model collector can asynchronously re-render the
         // views after the explicit design-state `render` calls below.
         val scope = CoroutineScope(SupervisorJob().apply { cancel() })
@@ -93,7 +98,7 @@ internal object DeviceViewFixture {
             scope,
             TestDispatchers,
         )
-        mirroring.render(MirroringViewState(controlPolicy = ControlPolicy.Enabled, presentationState = MirroringPresentationState.Idle))
+        mirroring.render(MirroringViewState(controlPolicy = ControlPolicy.Enabled, presentationState = MirroringPresentationState.Idle, scrcpy = scrcpy))
         panel.mirroringSlot.add(mirroring)
 
         val transport = FakeAdbTransport(

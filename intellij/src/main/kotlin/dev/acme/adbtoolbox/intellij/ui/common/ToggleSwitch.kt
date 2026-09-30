@@ -12,15 +12,16 @@ import javax.swing.JToggleButton
  * The 24×13 pill track / 10px knob switch supplied by `design/README.md` §5's Quick toggles rows
  * (on = `accent` track, off = `borderStrong` track, white knob sliding via `left`). No text/border
  * chrome of its own — a caller supplies the row's label/value text around it, the same way
- * [PresetChip] only draws its own chip rather than a whole row.
+ * [PresetChip] only draws its own chip rather than a whole row. Quick-toggle tiles use the smaller
+ * 22×12 track with a 9px knob ([compact]).
  */
-class ToggleSwitch : JToggleButton() {
+class ToggleSwitch(private val compact: Boolean = false) : JToggleButton() {
     init {
         isOpaque = false
         isContentAreaFilled = false
         isFocusPainted = false
         isBorderPainted = false
-        preferredSize = Dimension(JBUI.scale(24), JBUI.scale(13))
+        preferredSize = if (compact) Dimension(JBUI.scale(22), JBUI.scale(12)) else Dimension(JBUI.scale(24), JBUI.scale(13))
         addItemListener { repaint() }
         getAccessibleContext().accessibleName = "Toggle"
     }
@@ -32,7 +33,7 @@ class ToggleSwitch : JToggleButton() {
             g2.color = if (isSelected) AdbToolboxTheme.Colors.accent else AdbToolboxTheme.Colors.borderStrong
             g2.fillRoundRect(0, 0, width, height, height, height)
 
-            val knobSize = JBUI.scale(10)
+            val knobSize = JBUI.scale(if (compact) 9 else 10)
             val knobInset = (height - knobSize) / 2
             val knobLeft = if (isSelected) width - knobSize - knobInset else knobInset
             g2.color = Color.WHITE

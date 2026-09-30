@@ -173,4 +173,37 @@ class PresetChipRowTest : BasePlatformTestCase() {
             // expected
         }
     }
+
+    fun `test segmented row shares the full width with the default choice taking two parts`() {
+        val row = PresetChipRow(
+            choices = listOf(PresetChipChoice(-1, "Standard", isDefault = true)) + (0..4).map { PresetChipChoice(it, it.toString()) },
+            selected = -1,
+            style = PresetChipRowStyle.SEGMENTED,
+        )
+        row.setSize(com.intellij.util.ui.JBUI.scale(400), row.preferredSize.height)
+        row.doLayout()
+
+        val widths = row.chips.map { it.width }
+        val one = widths[1]
+        assertTrue(widths.drop(1).all { kotlin.math.abs(it - one) <= 1 })
+        assertTrue(kotlin.math.abs(widths[0] - 2 * one) <= 2)
+        val last = row.chips.last()
+        assertEquals(row.width - com.intellij.util.ui.JBUI.scale(3), last.x + last.width)
+        assertEquals(com.intellij.util.ui.JBUI.scale(22), last.height)
+    }
+
+    fun `test segmented numeric choice highlights in amber and the default stays neutral`() {
+        val row = PresetChipRow(
+            choices = listOf(PresetChipChoice(-1, "Standard", isDefault = true), PresetChipChoice(2, "2")),
+            selected = -1,
+            style = PresetChipRowStyle.SEGMENTED,
+        )
+        assertEquals(AdbToolboxTheme.Colors.text, row.chips[0].foreground)
+        assertEquals(AdbToolboxTheme.Colors.textDim, row.chips[1].foreground)
+
+        row.chips[1].doClick()
+
+        assertEquals(AdbToolboxTheme.Colors.amber, row.chips[1].foreground)
+        assertEquals(AdbToolboxTheme.Colors.textDim, row.chips[0].foreground)
+    }
 }

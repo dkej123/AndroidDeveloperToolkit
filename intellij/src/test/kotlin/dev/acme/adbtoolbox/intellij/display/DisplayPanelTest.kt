@@ -6,6 +6,8 @@ import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import dev.acme.adbtoolbox.application.display.QuickToggleFieldState
 import dev.acme.adbtoolbox.application.display.QuickTogglesViewState
 import dev.acme.adbtoolbox.application.display.density.DensityViewState
+import dev.acme.adbtoolbox.application.display.developer.DeveloperOptionsViewState
+import dev.acme.adbtoolbox.application.display.developer.DeveloperToggle
 import dev.acme.adbtoolbox.domain.display.AnimationsSummary
 import dev.acme.adbtoolbox.domain.display.density.DensityReading
 import dev.acme.adbtoolbox.domain.display.fontscale.FontScaleState
@@ -32,9 +34,13 @@ class DisplayPanelTest : BasePlatformTestCase() {
         onSetShowTouches: (Boolean) -> Unit = {},
         onSetAnimationsOff: (Boolean) -> Unit = {},
         onSetTalkBack: (Boolean) -> Unit = {},
+        onSetDeveloperToggle: (DeveloperToggle, Boolean) -> Unit = { _, _ -> },
+        onSetProcessLimit: (Int) -> Unit = {},
     ) = DisplayPanel(
         onApplyFontScale, onResetFontScale, onApplyDensityPreset, onApplyCustomDensity, onResetDensity,
         onSetDarkTheme, onSetShowTouches, onSetAnimationsOff, onSetTalkBack,
+        onSetDeveloperToggle = onSetDeveloperToggle,
+        onSetProcessLimit = onSetProcessLimit,
     )
 
     // ---- Font scale ----
@@ -283,11 +289,11 @@ class DisplayPanelTest : BasePlatformTestCase() {
         )
 
         assertTrue(p.darkThemeToggleForTest.isSelected)
-        assertEquals("yes", p.darkThemeValueLabelForTest.text)
+        assertEquals("night yes", p.darkThemeValueLabelForTest.text)
         assertFalse(p.showTouchesToggleForTest.isSelected)
         assertEquals("off", p.showTouchesValueLabelForTest.text)
         assertTrue(p.animationsOffToggleForTest.isSelected)
-        assertEquals("0×", p.animationsValueLabelForTest.text)
+        assertEquals("scale 0×", p.animationsValueLabelForTest.text)
         assertTrue(p.darkThemeToggleForTest.isEnabled)
     }
 
@@ -313,6 +319,138 @@ class DisplayPanelTest : BasePlatformTestCase() {
         )
 
         assertEquals("mixed", p.animationsValueLabelForTest.text)
+    }
+
+    fun `test clicking anywhere on a tile flips its switch`() {
+        var enabled: Boolean? = null
+        val p = panel(onSetDarkTheme = { enabled = it })
+        p.update(QuickTogglesViewState(darkTheme = QuickToggleFieldState.Idle(false)))
+        val tile = p.darkThemeTileForTest
+
+        tile.dispatchEvent(java.awt.event.MouseEvent(tile, java.awt.event.MouseEvent.MOUSE_CLICKED, 0L, 0, 5, 5, 1, false))
+
+        assertEquals(true, enabled)
+    }
+
+    fun `test clicking a loading tile does nothing`() {
+        var enabled: Boolean? = null
+        val p = panel(onSetDarkTheme = { enabled = it })
+        p.update(QuickTogglesViewState())
+        val tile = p.darkThemeTileForTest
+
+        tile.dispatchEvent(java.awt.event.MouseEvent(tile, java.awt.event.MouseEvent.MOUSE_CLICKED, 0L, 0, 5, 5, 1, false))
+
+        assertNull(enabled)
+    }
+
+    fun `test the section header counts the toggles that are on`() {
+        val p = panel()
+        assertEquals("—", p.togglesMetaLabelForTest.text)
+
+        p.update(
+            QuickTogglesViewState(
+                darkTheme = QuickToggleFieldState.Idle(true),
+                showTouches = QuickToggleFieldState.Idle(false),
+                animations = QuickToggleFieldState.Idle(AnimationsSummary.AllOff),
+                talkBack = QuickToggleFieldState.Idle(false),
+            ),
+        )
+        assertEquals("2 of 8 on", p.togglesMetaLabelForTest.text)
+
+        p.update(
+            DeveloperOptionsViewState(
+                toggles = DeveloperToggle.entries.associateWith { QuickToggleFieldState.Idle(it == DeveloperToggle.StayAwake) },
+            ),
+        )
+        assertEquals("3 of 8 on", p.togglesMetaLabelForTest.text)
+    }
+
+    fun `test tiles are grouped under appearance and developer captions`() {
+        val p = panel()
+        val texts = mutableListOf<String>()
+        fun collect(component: java.awt.Component) {
+            if (component is javax.swing.JLabel) texts += component.text
+            if (component is java.awt.Container) component.components.forEach(::collect)
+        }
+        collect(p)
+
+        val appearance = texts.indexOf("APPEARANCE & ACCESSIBILITY")
+        val developer = texts.indexOf("DEVELOPER")
+        assertTrue(appearance >= 0 && developer > appearance)
+        assertEquals(
+            listOf("Dark theme", "Animations off", "Show touches", "TalkBack"),
+            texts.subList(appearance + 1, developer).filter { it in listOf("Dark theme", "Animations off", "Show touches", "TalkBack") },
+        )
+        assertTrue(texts.indexOf("Stay awake") > developer)
+    }
+
+    // ---- Developer-options toggles ----
+
+    fun `test each developer toggle reports its own switch and the new selection`() {
+        val set = mutableListOf<Pair<DeveloperToggle, Boolean>>()
+        val p = panel(onSetDeveloperToggle = { toggle, enabled -> set += toggle to enabled })
+        p.update(DeveloperOptionsViewState(toggles = DeveloperToggle.entries.associateWith { QuickToggleFieldState.Idle(false) }))
+
+        DeveloperToggle.entries.forEach { p.developerToggleForTest(it).doClick() }
+
+        assertEquals(DeveloperToggle.entries.map { it to true }, set)
+    }
+
+    fun `test developer toggles render the readback, Loading disables them`() {
+        val p = panel()
+        p.update(DeveloperOptionsViewState())
+        assertFalse(p.developerToggleForTest(DeveloperToggle.StayAwake).isEnabled)
+
+        p.update(
+            DeveloperOptionsViewState(
+                toggles = DeveloperToggle.entries.associateWith { QuickToggleFieldState.Idle(it == DeveloperToggle.StayAwake) },
+            ),
+        )
+
+        assertTrue(p.developerToggleForTest(DeveloperToggle.StayAwake).isSelected)
+        assertEquals("on", p.developerValueLabelForTest(DeveloperToggle.StayAwake).text)
+        assertFalse(p.developerToggleForTest(DeveloperToggle.DontKeepActivities).isSelected)
+        assertEquals("off", p.developerValueLabelForTest(DeveloperToggle.DontKeepActivities).text)
+    }
+
+    fun `test a developer toggle error stays clickable and explains itself in the tooltip`() {
+        val p = panel()
+
+        p.update(
+            DeveloperOptionsViewState(
+                toggles = mapOf(DeveloperToggle.ShowSurfaceUpdates to QuickToggleFieldState.Error("Needs adb root", null)),
+            ),
+        )
+
+        assertTrue(p.developerToggleForTest(DeveloperToggle.ShowSurfaceUpdates).isEnabled)
+        assertEquals("n/a", p.developerValueLabelForTest(DeveloperToggle.ShowSurfaceUpdates).text)
+        assertEquals("Needs adb root", p.developerValueLabelForTest(DeveloperToggle.ShowSurfaceUpdates).toolTipText)
+    }
+
+    fun `test background process limit chips apply their limit and follow the readback`() {
+        var applied: Int? = null
+        val p = panel(onSetProcessLimit = { applied = it })
+        p.update(DeveloperOptionsViewState(processLimit = QuickToggleFieldState.Idle(-1)))
+
+        assertEquals(listOf("Standard", "0", "1", "2", "3", "4"), p.processLimitChipRowForTest.chips.map { it.label })
+        assertEquals("standard", p.processLimitValueLabelForTest.text)
+        assertEquals(AdbToolboxTheme.Colors.textFaint, p.processLimitValueLabelForTest.foreground)
+
+        p.processLimitChipRowForTest.chips.first { it.label == "2" }.doClick()
+        assertEquals(2, applied)
+
+        p.update(DeveloperOptionsViewState(processLimit = QuickToggleFieldState.Idle(2)))
+        assertEquals("2 max", p.processLimitValueLabelForTest.text)
+        assertEquals(AdbToolboxTheme.Colors.amber, p.processLimitValueLabelForTest.foreground)
+        assertEquals(2, p.processLimitChipRowForTest.selectedValue)
+    }
+
+    fun `test a process limit outside the presets is shown without selecting a chip`() {
+        val p = panel()
+
+        p.update(DeveloperOptionsViewState(processLimit = QuickToggleFieldState.Idle(12)))
+
+        assertEquals("12 max", p.processLimitValueLabelForTest.text)
     }
 }
 
