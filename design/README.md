@@ -368,23 +368,29 @@ mono 11 (serials, packages, dpi, log) · mono 9–10 (meta).
 
 ## Assets
 
-`icons/` contains production SVGs, all drawn on a 1px grid with 1.3–1.35px strokes, round caps,
-no text, no gradients:
+`icons/` contains the production SVGs — icon set v2 (IntelliJ New UI spec, user handoff
+2026-10-01): 1px strokes on the half-pixel grid, exact New UI palette (`#6C707E` light,
+`#CED0D6` dark; red `#DB3B4B` / `#DB5C5C`) so the IDE recolors them on hover and selection, no
+separate selected files, no @2x files. Dark variants use the `_dark.svg` suffix.
 
-- `pluginIcon.svg` / `pluginIcon_dark.svg` — 40×40 Marketplace logo (filled; teal `#0e8a80` light,
-  `#16a79b` dark). Concept: a toolbox whose handle is an Android head. Eyes are dropped below 24px,
-  antennae below 20px — see `pluginIcon_16.svg`.
-- `adbToolbox.svg` / `adbToolbox_dark.svg` — 20×20 tool window (stripe) icon, stroke-only, monochrome,
-  no brand color, per New UI convention.
-- `adbToolbox_16.svg` / `adbToolbox_16_dark.svg` — 16×16 variants.
-- `actions/` — the 16×16 action icons (refresh, mirror, screenshot, record, restart, forceStop,
-  uninstall, clearData, proxy, fontScale, density, pause, resume, autoscroll, wrap, filter, search,
-  options). Only three carry color: record (red dot), uninstall and clearData (red) — the two
-  irreversible actions.
+- `pluginIcon.svg` / `pluginIcon_dark.svg` — 40×40 Marketplace logo, also bundled as
+  `META-INF/pluginIcon(_dark).svg`. No text, shapes clear of the edges.
+- `expui/toolwindow/adbToolbox.svg` (16) + `adbToolbox@20x20.svg` (the New UI stripe picks the
+  20px sibling automatically) — the logo silhouette in one color, tiles and slider cut out, the
+  two "off" tiles at 45%. Registered as `icon="/icons/expui/toolwindow/adbToolbox.svg"`.
+- `expui/views/` — rail glyphs: device, apps, network, logcat. The selected rail item recolors
+  its glyph to `accent`; rail badges are painted at runtime, never baked into the SVG.
+- `expui/actions/` — 16×16 action icons: mirror, screenshot, record, stopRecording, restartApp,
+  forceStop, clearData, uninstall, fontScale, density, resetOverrides, proxy, authorize, wifi, usb;
+  plus pin, pinned and options kept from set v1 (not covered by v2). Color only for meaning: red for
+  live recording and irreversible actions, amber for device overrides.
 
-Prefer platform `AllIcons` where an exact equivalent exists (search, filter, settings, trash);
-bundle the rest. Load with `IconLoader.getIcon("/icons/…", javaClass)`; the `_dark` suffix is picked
-up automatically.
+Not bundled — use the platform icon: refresh device list `AllIcons.Actions.Refresh`, launch app
+`Actions.Execute`, pause/resume stream `Actions.Pause`/`Actions.Resume`, autoscroll
+`RunConfigurations.Scroll_down`, wrap lines `Actions.ToggleSoftWrap`, filter `General.Filter`,
+search `Actions.Search`, clear log buffer `Actions.GC`, settings `General.Settings`, show system
+packages `Actions.Show`, more actions `Actions.More`. Load bundled ones with
+`IconLoader.getIcon("/icons/expui/…", javaClass)`.
 
 ## Files
 
@@ -395,6 +401,6 @@ designs/ADB Toolbox IA.dc.html              IA, rationale, keyboard, degradation
 designs/ADB Toolbox Icons.dc.html           icon specimens & rules
 designs/support.js                          prototype runtime only — not for implementation
 tokens/tokens.json                          machine-readable tokens
-icons/…                                     production SVGs
+icons/…                                     production SVGs (set v2 under icons/expui)
 IMPLEMENTATION.md                           IntelliJ Platform mapping + adb/scrcpy command reference
 ```

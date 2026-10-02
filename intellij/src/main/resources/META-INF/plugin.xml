@@ -1,11 +1,26 @@
 <idea-plugin>
-    <id>dev.acme.adbtoolbox</id>
+    <!-- Marketplace identity (user decision 2026-10-01). Version and change notes come from
+         gradle.properties and CHANGELOG.md (intellij/build.gradle.kts). -->
+    <id>com.github.dkwasniak.adbtoolbox</id>
     <name>ADB Toolbox</name>
-    <vendor>ADB Toolbox</vendor>
+    <vendor email="damian.kwasniak@gmail.com">dkwasniak</vendor>
 
     <description><![CDATA[
-        Device, app, display, network, and logcat controls for Android Studio / IntelliJ IDEA,
-        without leaving the IDE. UI, tool window, and feature actions land in later tasks.
+<p>Control your Android device from Android Studio or IntelliJ IDEA without opening a terminal.
+ADB Toolbox puts the adb commands you run every day into one tool window.</p>
+<ul>
+  <li><b>Device</b> &ndash; device facts, screenshots and screen recording, scrcpy mirroring,
+      font scale and display density presets, quick toggles for dark theme, animations, show
+      touches, TalkBack and common developer options.</li>
+  <li><b>Apps</b> &ndash; searchable package list with launcher icons and pins; restart,
+      force-stop, launch, clear data, uninstall; app details with shared preferences and
+      SQLite databases, runtime permissions and deep links.</li>
+  <li><b>Network</b> &ndash; device-wide HTTP proxy and emulator network throttling.</li>
+  <li><b>Logcat</b> &ndash; a fast, filterable stream with levels, search, package filter,
+      pause and wrap.</li>
+  <li>Wi-Fi pairing, multiple devices, light and dark themes.</li>
+</ul>
+<p>Requires adb (Android SDK platform-tools); mirroring requires scrcpy.</p>
     ]]></description>
 
     <depends>com.intellij.modules.platform</depends>
@@ -16,7 +31,7 @@
          which need no XML entry here. -->
     <extensions defaultExtensionNs="com.intellij">
         <toolWindow id="ADB Toolbox" anchor="right" secondary="false"
-                    icon="/icons/adbToolbox.svg"
+                    icon="/icons/expui/toolwindow/adbToolbox.svg"
                     factoryClass="dev.acme.adbtoolbox.intellij.toolwindow.AdbToolboxToolWindowFactory"/>
         <projectConfigurable parentId="tools"
                              instance="dev.acme.adbtoolbox.intellij.settings.AdbToolboxSettingsConfigurable"

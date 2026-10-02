@@ -1,5 +1,7 @@
 package dev.acme.adbtoolbox.intellij.apps
 
+import com.intellij.icons.AllIcons
+import dev.acme.adbtoolbox.intellij.icons.AdbToolboxIcons
 import dev.acme.adbtoolbox.intellij.ui.common.ShortcutHints
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBPanel
@@ -10,7 +12,6 @@ import dev.acme.adbtoolbox.application.apps.AppsViewState
 import dev.acme.adbtoolbox.application.apps.ClearDataViewState
 import dev.acme.adbtoolbox.application.apps.UninstallViewState
 import dev.acme.adbtoolbox.domain.devicecontext.ControlPolicy
-import dev.acme.adbtoolbox.intellij.icons.AdbToolboxIcons
 import dev.acme.adbtoolbox.intellij.ui.common.AdbToolboxTheme
 import dev.acme.adbtoolbox.intellij.ui.common.DesignButton
 import dev.acme.adbtoolbox.intellij.ui.common.DesignButtonStyle
@@ -63,7 +64,7 @@ class AppsPanel(
     detailsPanel: javax.swing.JComponent? = null,
 ) : JBPanel<AppsPanel>(BorderLayout()) {
 
-    private val searchIconLabel = JBLabel(AdbToolboxIcons.Actions.search)
+    private val searchIconLabel = JBLabel(AllIcons.Actions.Search)
 
     private val searchField = JBTextField().apply {
         isOpaque = false
@@ -102,7 +103,7 @@ class AppsPanel(
         add(clearQueryButton)
     }
 
-    private val systemToggle = JToggleButton(EyeGlyphIcon(AdbToolboxTheme.Colors.textDim)).apply {
+    private val systemToggle = JToggleButton(AllIcons.Actions.Show).apply {
         preferredSize = Dimension(AdbToolboxTheme.Sizes.iconButton, AdbToolboxTheme.Sizes.iconButton)
         toolTipText = "Show system packages"
         isContentAreaFilled = false
@@ -376,7 +377,7 @@ class AppsPanel(
     }
 
     private fun presentSystemToggle(button: JToggleButton, active: Boolean) {
-        button.icon = EyeGlyphIcon(if (active) AdbToolboxTheme.Colors.accent else AdbToolboxTheme.Colors.textDim)
+        button.icon = if (active) AdbToolboxIcons.tinted(AllIcons.Actions.Show, AdbToolboxTheme.Colors.accent) else AllIcons.Actions.Show
         button.background = if (active) AdbToolboxTheme.Colors.accentBg else AdbToolboxTheme.Colors.panel
         button.border = if (active) {
             SolidChipBorder(AdbToolboxTheme.Colors.accentBorder)
@@ -405,39 +406,6 @@ class AppsPanel(
         }
 
         fun String.withDisabledReason(reason: String?): String = if (reason == null) this else "$this — $reason"
-    }
-}
-
-/**
- * The prototype's inline "Show system packages" glyph (`design/designs/ADB Toolbox
- * Plugin.dc.html`'s `eyeIconStyle`: a 12×8 hollow ellipse, 1.4px stroke) — there is no delivered
- * SVG for it (unlike the toolbar/action icons under `design/icons/actions/`), so it is redrawn with
- * plain [Graphics2D] primitives the same way [dev.acme.adbtoolbox.intellij.ui.common.RailGlyphIcon]
- * redraws the rail glyphs task 042's icon set does not include.
- */
-private class EyeGlyphIcon(private val color: Color) : javax.swing.Icon {
-    override fun getIconWidth(): Int = JBUI.scale(12)
-    override fun getIconHeight(): Int = JBUI.scale(8)
-
-    override fun paintIcon(c: Component?, g: Graphics, x: Int, y: Int) {
-        val g2 = g.create() as Graphics2D
-        try {
-            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
-            g2.color = color
-            val strokeWidth = JBUI.scale(1.4f)
-            g2.stroke = BasicStroke(strokeWidth)
-            val inset = strokeWidth / 2f
-            g2.draw(
-                java.awt.geom.Ellipse2D.Float(
-                    x + inset,
-                    y + inset,
-                    iconWidth - strokeWidth,
-                    iconHeight - strokeWidth,
-                ),
-            )
-        } finally {
-            g2.dispose()
-        }
     }
 }
 

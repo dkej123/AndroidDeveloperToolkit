@@ -120,6 +120,11 @@ supported IDE, connect one online device, open every rail view, and smoke-test o
 action per view. Recording, screenshot output paths, external scrcpy launch and device-wide proxy
 effects require that environment.
 
+Platform icons (`AllIcons.*` — refresh, search, pause/resume, autoscroll, wrap, clear, show system
+packages, settings; icon set v2, 2026-10-01) render blank in the goldens: the IntelliJ test
+framework initializes `AllIcons` with placeholder `DummyIconImpl`s before any test can switch the
+icon manager. Bundled `/icons/expui/…` SVGs do render. Check the platform icons in the real IDE.
+
 ## Latest result
 
 After the 2026-09-23 side-by-side design pass, all 492 IntelliJ integration/UI tests (including

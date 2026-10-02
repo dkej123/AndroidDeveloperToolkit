@@ -1,5 +1,6 @@
 package dev.acme.adbtoolbox.intellij.logcat
 
+import com.intellij.icons.AllIcons
 import dev.acme.adbtoolbox.intellij.ui.common.ShortcutHints
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBPanel
@@ -8,7 +9,6 @@ import com.intellij.util.ui.JBUI
 import dev.acme.adbtoolbox.application.logcat.LogcatControlsState
 import dev.acme.adbtoolbox.domain.logcat.LogSeverity
 import dev.acme.adbtoolbox.domain.logcat.LogcatPauseState
-import dev.acme.adbtoolbox.intellij.icons.AdbToolboxIcons
 import dev.acme.adbtoolbox.intellij.ui.common.AdbToolboxTheme
 import dev.acme.adbtoolbox.intellij.ui.common.LevelChip
 import dev.acme.adbtoolbox.intellij.ui.common.DesignButton
@@ -79,7 +79,7 @@ class LogcatPanel(
 
     // ---- toolbar (`design/README.md` §7's toolbar row) ----
 
-    private val searchIconLabel = JBLabel(AdbToolboxIcons.Actions.search)
+    private val searchIconLabel = JBLabel(AllIcons.Actions.Search)
 
     private val searchField = JBTextField().apply {
         isOpaque = false
@@ -131,12 +131,12 @@ class LogcatPanel(
         add(clearQueryButton)
     }
 
-    private val pauseButton = iconToggleButton(AdbToolboxIcons.Actions.pause, "Pause the stream  Space") { onTogglePause() }
-    private val followButton = iconToggleButton(AdbToolboxIcons.Actions.autoscroll, "Autoscroll on — following the newest line") {
+    private val pauseButton = iconToggleButton(AllIcons.Actions.Pause, "Pause the stream  Space") { onTogglePause() }
+    private val followButton = iconToggleButton(AllIcons.RunConfigurations.Scroll_down, "Autoscroll on — following the newest line") {
         onToggleFollow()
     }
-    private val wrapButton = iconToggleButton(AdbToolboxIcons.Actions.wrap, "Wrap long lines") { onToggleWrap() }
-    private val clearButton = iconButton(TrashGlyphIcon(AdbToolboxTheme.Colors.textDim), "Clear the buffer — does not clear the device log").apply {
+    private val wrapButton = iconToggleButton(AllIcons.Actions.ToggleSoftWrap, "Wrap long lines") { onToggleWrap() }
+    private val clearButton = iconButton(AllIcons.Actions.GC, "Clear the buffer — does not clear the device log").apply {
         addActionListener { onClearLocal() }
     }
 
@@ -413,7 +413,7 @@ class LogcatPanel(
 
         val paused = state.pauseState is LogcatPauseState.Paused
         if (pauseButton.isSelected != paused) pauseButton.isSelected = paused
-        pauseButton.icon = if (paused) AdbToolboxIcons.Actions.resume else AdbToolboxIcons.Actions.pause
+        pauseButton.icon = if (paused) AllIcons.Actions.Resume else AllIcons.Actions.Pause
         pauseButton.toolTipText = if (paused) "Resume the stream  Space" else "Pause the stream  Space"
         presentIconToggle(pauseButton)
 
@@ -524,8 +524,7 @@ private fun actionOf(action: () -> Unit): javax.swing.Action = object : javax.sw
 }
 
 /** The toolbar's 1px×14px divider between the pause/autoscroll/wrap toggles and Clear
- * (`design/README.md` §7's toolbar; no delivered SVG for a bare rule, same "redraw with plain
- * primitives" simplification [dev.acme.adbtoolbox.intellij.apps.AppsPanel]'s `EyeGlyphIcon` uses). */
+ * (`design/README.md` §7's toolbar; no delivered SVG for a bare rule, so it is drawn directly). */
 private class DividerLine : JComponent() {
     init {
         preferredSize = Dimension(JBUI.scale(1), JBUI.scale(14))
@@ -535,44 +534,6 @@ private class DividerLine : JComponent() {
     override fun paintComponent(g: Graphics) {
         g.color = AdbToolboxTheme.Colors.border
         g.fillRect(0, (height - JBUI.scale(14)) / 2, width, JBUI.scale(14))
-    }
-}
-
-/** The Clear button's trash glyph — there is no delivered SVG for it (unlike the toolbar's
- * pause/autoscroll/wrap icons), so it is redrawn with plain [Graphics2D] primitives the same way
- * [dev.acme.adbtoolbox.intellij.apps.AppsPanel]'s `EyeGlyphIcon` redraws its own no-asset glyph. */
-private class TrashGlyphIcon(private val color: Color) : Icon {
-    override fun getIconWidth(): Int = JBUI.scale(9)
-    override fun getIconHeight(): Int = JBUI.scale(10)
-
-    override fun paintIcon(c: Component?, g: Graphics, x: Int, y: Int) {
-        val g2 = g.create() as Graphics2D
-        try {
-            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
-            g2.color = color
-
-            val lidStroke = JBUI.scale(2.4f)
-            g2.stroke = BasicStroke(lidStroke, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND)
-            val lidY = y + lidStroke / 2f
-            g2.draw(java.awt.geom.Line2D.Float(x.toFloat(), lidY, (x + iconWidth).toFloat(), lidY))
-
-            val bodyStroke = JBUI.scale(1.4f)
-            g2.stroke = BasicStroke(bodyStroke)
-            val bodyTop = y + lidStroke + JBUI.scale(1f)
-            val arc = JBUI.scale(2f)
-            g2.draw(
-                RoundRectangle2D.Float(
-                    x + bodyStroke / 2f,
-                    bodyTop,
-                    iconWidth - bodyStroke,
-                    (y + iconHeight) - bodyTop - bodyStroke / 2f,
-                    arc,
-                    arc,
-                ),
-            )
-        } finally {
-            g2.dispose()
-        }
     }
 }
 

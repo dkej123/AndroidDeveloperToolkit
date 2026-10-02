@@ -50,9 +50,7 @@ import javax.swing.event.DocumentListener
  * never from the host/port text a user last typed, so the view can never visually claim a proxy
  * state the device has not actually confirmed. The live dot in the active banner is a static
  * [StatusDotIcon] rather than the prototype's CSS pulse animation — the same documented,
- * no-invented-behavior simplification [dev.acme.adbtoolbox.intellij.ui.common.RailGlyphIcon] and
- * [dev.acme.adbtoolbox.intellij.apps.AppsPanel]'s `EyeGlyphIcon` already use for supplied visuals
- * with no native Swing/no bundled-asset equivalent.
+ * no-invented-behavior simplification for a supplied visual with no native Swing equivalent.
  */
 class NetworkPanel(
     onHostChange: (String) -> Unit,

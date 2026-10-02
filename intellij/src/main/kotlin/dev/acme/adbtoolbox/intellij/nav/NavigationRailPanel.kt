@@ -1,13 +1,13 @@
 package dev.acme.adbtoolbox.intellij.nav
 
 import com.intellij.icons.AllIcons
+import dev.acme.adbtoolbox.intellij.icons.AdbToolboxIcons
 import com.intellij.ui.components.JBList
 import com.intellij.ui.components.JBPanel
 import com.intellij.util.ui.JBUI
 import dev.acme.adbtoolbox.domain.nav.NavigationBadge
 import dev.acme.adbtoolbox.domain.nav.ViewId
 import dev.acme.adbtoolbox.intellij.ui.common.AdbToolboxTheme
-import dev.acme.adbtoolbox.intellij.ui.common.RailGlyphIcon
 import java.awt.BorderLayout
 import java.awt.Component
 import java.awt.Graphics
@@ -162,7 +162,7 @@ private val TOOLTIPS: Map<ViewId, String> = mapOf(
 )
 
 /**
- * Renders one 26px rail button: [RailGlyphIcon]/[AllIcons.General.Settings], the active/inactive
+ * Renders one 26px rail button: the icon set v2 view glyph/[AllIcons.General.Settings], the active/inactive
  * background+border+glyph-color combination, and the [NavigationBadge] dot (`design/README.md`
  * §2: "5px dot at top:2,right:2 ... amber ... red").
  */
@@ -196,8 +196,9 @@ private class RailCellRenderer(
         hovered = index == hoveredIndex()
         background = if (isSelected) AdbToolboxTheme.Colors.accentBg else AdbToolboxTheme.Colors.panel
 
-        val glyphColor = if (isSelected) AdbToolboxTheme.Colors.accent else AdbToolboxTheme.Colors.textDim
-        icon = if (value == ViewId.Settings) AllIcons.General.Settings else RailGlyphIcon(value, glyphColor)
+        // Icon set v2 view glyphs; the selected one is recolored to `accent` like the prototype.
+        val glyph = railIcon(value)
+        icon = if (isSelected && value != ViewId.Settings) AdbToolboxIcons.tinted(glyph, AdbToolboxTheme.Colors.accent) else glyph
 
         toolTipText = TOOLTIPS[value] ?: value.name
         getAccessibleContext().accessibleName = TOOLTIPS[value] ?: value.name
@@ -254,4 +255,12 @@ private class RailCellRenderer(
         is NavigationBadge.Attention -> AdbToolboxTheme.Colors.red
         else -> AdbToolboxTheme.Colors.amber
     }
+}
+
+private fun railIcon(viewId: ViewId): javax.swing.Icon = when (viewId) {
+    ViewId.Device -> AdbToolboxIcons.Views.device
+    ViewId.Apps -> AdbToolboxIcons.Views.apps
+    ViewId.Network -> AdbToolboxIcons.Views.network
+    ViewId.Logcat -> AdbToolboxIcons.Views.logcat
+    ViewId.Settings -> AllIcons.General.Settings
 }
