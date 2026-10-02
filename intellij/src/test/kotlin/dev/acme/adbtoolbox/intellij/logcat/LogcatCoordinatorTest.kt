@@ -242,8 +242,10 @@ class LogcatCoordinatorTest : BasePlatformTestCase() {
         val coordinator = coordinator(f)
         val contributor = LogcatBadgeContributor(f.controller)
 
+        // The session reconnects after a short delay (LogcatSessionManager), so it does not stay in
+        // Error: wait for the badge itself rather than reading it after the state was seen.
         val deadline = System.currentTimeMillis() + 5_000
-        while (f.controller.state.value.sessionState !is dev.acme.adbtoolbox.domain.logcat.LogcatSessionState.Error &&
+        while (contributor.badgeFor(SERIAL) != dev.acme.adbtoolbox.domain.nav.NavigationBadge.Attention &&
             System.currentTimeMillis() < deadline
         ) {
             // The controller marshals onto the EDT (dispatchers.main); let it run while waiting.

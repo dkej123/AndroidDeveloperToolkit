@@ -385,7 +385,10 @@ private const val GOLDEN_MONO_FONT = "JetBrains Mono"
 
 private object GoldenImages {
     private const val CHANNEL_TOLERANCE = 12
-    private const val MAX_DIFFERENT_PIXEL_RATIO = 0.0025
+    // Same fonts everywhere (JBR Inter / JetBrains Mono), but each OS's freetype hints small text a
+    // little differently: CI vs a dev machine measured 0.13–0.41 % of pixels (2026-10-02). A moved,
+    // resized or recolored control changes several percent.
+    private const val MAX_DIFFERENT_PIXEL_RATIO = 0.006
 
     fun verify(name: String, actual: BufferedImage): String? {
         val moduleDir = locateModuleDir()
