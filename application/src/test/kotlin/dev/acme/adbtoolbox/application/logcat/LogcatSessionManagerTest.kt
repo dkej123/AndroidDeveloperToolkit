@@ -32,6 +32,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runCurrent
@@ -339,5 +340,77 @@ class LogcatSessionManagerTest {
             .shouldBeInstanceOf<LogcatSessionError.StreamFailure>()
         error.reason shouldBe "receiver crashed"
         error.diagnostics.length shouldBe 8 * 1024
+    }
+
+    // ---- reconnect after a broken stream (E2E 2026-10-01: an I/O error left Logcat dead for good) ----
+
+    @Test
+    fun `a stream that breaks reconnects to the same device after a short delay and keeps history`() = runTest {
+        var calls = 0
+        val h = harness(initialSelection = online(logcatSerialA), script = {
+            calls++
+            if (calls == 1) {
+                flowOf(
+                    AdbStreamEvent.Line("09-10 12:34:56.789  123  456 I Sample: before"),
+                    AdbStreamEvent.Line("09-10 12:34:56.790  123  456 I Sample: break"),
+                    AdbStreamEvent.Completed(AdbOutcome.TransportFailure("I/O error executing shell command")),
+                )
+            } else {
+                runningLogcat()
+            }
+        })
+        h.scope.runCurrent()
+        h.manager.state.value.shouldBeInstanceOf<LogcatSessionState.Error>()
+
+        h.scope.advanceTimeBy(1_001)
+        h.scope.runCurrent()
+
+        h.transport.requests.shouldContainExactly(LogcatCommand.request(logcatSerialA), LogcatCommand.request(logcatSerialA))
+        h.manager.state.value shouldBe LogcatSessionState.Running(logcatSerialA)
+        h.manager.buffer.snapshot().entries.size shouldBe 3
+    }
+
+    @Test
+    fun `repeated failures back off before each new attempt`() = runTest {
+        val h = harness(initialSelection = online(logcatSerialA), script = {
+            flowOf(AdbStreamEvent.Completed(AdbOutcome.TransportFailure("device offline")))
+        })
+        h.scope.runCurrent()
+        h.transport.requests.size shouldBe 1
+
+        h.scope.advanceTimeBy(1_001); h.scope.runCurrent()
+        h.transport.requests.size shouldBe 2
+        h.scope.advanceTimeBy(1_500); h.scope.runCurrent()
+        h.transport.requests.size shouldBe 2
+        h.scope.advanceTimeBy(600); h.scope.runCurrent()
+        h.transport.requests.size shouldBe 3
+        h.scope.advanceTimeBy(4_100); h.scope.runCurrent()
+        h.transport.requests.size shouldBe 4
+    }
+
+    @Test
+    fun `no reconnect once the device is gone or the stream was stopped`() = runTest {
+        val h = harness(initialSelection = online(logcatSerialA), script = {
+            flowOf(AdbStreamEvent.Completed(AdbOutcome.TransportFailure("device offline")))
+        })
+        h.scope.runCurrent()
+
+        h.selected.value = SelectedDeviceState.None
+        h.scope.runCurrent()
+        h.scope.advanceTimeBy(60_000); h.scope.runCurrent()
+
+        h.transport.requests.size shouldBe 1
+        h.manager.state.value.shouldBeInstanceOf<LogcatSessionState.Stopped>()
+    }
+
+    @Test
+    fun `an unsupported device is not retried`() = runTest {
+        val h = harness(initialSelection = online(logcatSerialA), script = {
+            flowOf(AdbStreamEvent.Completed(AdbOutcome.Unsupported("no logcat")))
+        })
+        h.scope.runCurrent()
+        h.scope.advanceTimeBy(60_000); h.scope.runCurrent()
+
+        h.transport.requests.size shouldBe 1
     }
 }

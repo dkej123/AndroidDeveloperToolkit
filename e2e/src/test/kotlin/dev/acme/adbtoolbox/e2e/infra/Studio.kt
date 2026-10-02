@@ -141,9 +141,13 @@ class Studio(val robot: RemoteRobot = RemoteRobot(E2eConfig.robotUrl)) {
 
     fun isSelected(fixture: ComponentFixture): Boolean = fixture.callJs("component.isSelected()", true)
 
-    /** The value label rendered right after a caption label (Device facts, Display values …). */
+    /**
+     * The value label rendered after a caption label (Device facts, Display values, Quick toggle
+     * tiles …). The robot orders siblings by position, so in a tile the switch beside the caption
+     * comes first: take the next label, not the next component.
+     */
     fun valueAfterCaption(caption: String): String =
-        textOf(component("//div[@class='JBLabel' and @accessiblename=${quote(caption)}]/following-sibling::div[1]"))
+        textOf(component("//div[@class='JBLabel' and @accessiblename=${quote(caption)}]/following-sibling::div[@class='JBLabel'][1]"))
 
     /** Every non-empty label/button text currently showing inside [root] (default: the tool window). */
     fun visibleTexts(root: ComponentFixture = toolWindow()): List<String> {

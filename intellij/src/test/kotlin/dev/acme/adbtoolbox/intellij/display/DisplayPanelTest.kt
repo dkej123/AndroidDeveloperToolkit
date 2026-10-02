@@ -91,6 +91,8 @@ class DisplayPanelTest : BasePlatformTestCase() {
         val p = panel()
         p.setSize(346, 620)
         recursivelyLayout(p)
+        // The wrapped row publishes its new height after the layout pass (PresetChipRow.setBounds).
+        com.intellij.testFramework.PlatformTestUtil.dispatchAllEventsInIdeEventQueue()
         recursivelyLayout(p)
 
         val row = p.fontChipRowForTest

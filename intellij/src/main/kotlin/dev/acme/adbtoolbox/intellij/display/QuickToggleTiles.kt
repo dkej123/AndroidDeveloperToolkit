@@ -169,12 +169,16 @@ internal class QuickToggleGrid(tiles: List<QuickToggleTile>) : JPanel(null) {
         val columns = columnsFor(width)
         if (columns != publishedColumns) {
             publishedColumns = columns
-            var ancestor = parent
-            while (ancestor != null) {
-                ancestor.invalidate()
-                ancestor = ancestor.parent
+            // Not now: this runs inside the parent's layout pass, and invalidating a BoxLayout
+            // parent mid-pass nulls its child cache (NPE "this.xChildren is null", E2E 2026-10-01).
+            javax.swing.SwingUtilities.invokeLater {
+                var ancestor: java.awt.Container? = this
+                while (ancestor != null) {
+                    ancestor.invalidate()
+                    ancestor = ancestor.parent
+                }
+                revalidate()
             }
-            parent?.revalidate()
         }
     }
 

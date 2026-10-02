@@ -1,11 +1,11 @@
 package dev.acme.adbtoolbox.intellij.devicebar
 
+import com.intellij.icons.AllIcons
 import dev.acme.adbtoolbox.intellij.ui.common.ShortcutHints
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBPanel
 import dev.acme.adbtoolbox.application.devicebar.DeviceBarPresentation
 import dev.acme.adbtoolbox.domain.device.DeviceConnectionKind
-import dev.acme.adbtoolbox.intellij.icons.AdbToolboxIcons
 import dev.acme.adbtoolbox.intellij.ui.common.AdbToolboxTheme
 import dev.acme.adbtoolbox.intellij.ui.common.SolidChipBorder
 import dev.acme.adbtoolbox.intellij.ui.common.StatusDotIcon
@@ -94,7 +94,7 @@ class DeviceContextBarPanel(
         addActionListener { onRefresh() }
     }
 
-    private val refreshButton = JButton(AdbToolboxIcons.Actions.refresh).apply {
+    private val refreshButton = JButton(AllIcons.Actions.Refresh).apply {
         preferredSize = java.awt.Dimension(AdbToolboxTheme.Sizes.iconButton, AdbToolboxTheme.Sizes.iconButton)
         margin = java.awt.Insets(0, 0, 0, 0)
         toolTipText = ShortcutHints.withAction("Refresh device list", "AdbToolbox.RefreshDevices")
@@ -117,16 +117,24 @@ class DeviceContextBarPanel(
     // `caretIconStyle`: 5px chevron after the connection chip, marking the selector as a picker.
     private val caretLabel = JBLabel(CaretIcon(AdbToolboxTheme.Colors.textDim)).apply { isVisible = false }
 
+    /**
+     * The device selector as one toolbar-combo-style control (user request 2026-10-01, matching
+     * Android Studio's own device picker): device glyph with status dot, name, serial, connection
+     * chip and caret share one rounded hover/focus fill, and a click anywhere on it opens the picker.
+     */
+    private val selectorGroup = SelectorGroup(selectorLabel, listOf(serialLabel, chipLabel, caretLabel)) { onToggle() }
+
     private val row = run {
         val spacer = flexSpacer()
         flexRow(
             AdbToolboxTheme.Spacing.s3,
-            selectorLabel, serialLabel, chipLabel, caretLabel, retryLabel, spacer, onlineCountLabel, refreshButton,
+            selectorGroup, retryLabel, spacer, onlineCountLabel, refreshButton,
             fill = spacer,
-            shrink = selectorLabel,
+            shrink = selectorGroup,
         ).apply {
-            // `deviceBarStyle`: 30px row, `padding: 0 4px 0 8px`, gap 6, every child vertically centered.
-            border = JBUI.Borders.empty(0, AdbToolboxTheme.Spacing.s4, 0, AdbToolboxTheme.Spacing.s2)
+            // `deviceBarStyle`: 30px row, `padding: 0 4px 0 4px` (the selector's own 4px inset
+            // keeps its content at the prototype's 8px), gap 6, every child vertically centered.
+            border = JBUI.Borders.empty(0, AdbToolboxTheme.Spacing.s2, 0, AdbToolboxTheme.Spacing.s2)
             preferredSize = java.awt.Dimension(0, AdbToolboxTheme.Sizes.deviceBar - JBUI.scale(1))
         }
     }
@@ -186,6 +194,10 @@ class DeviceContextBarPanel(
 
     /** Test-only visibility hook so a test can simulate a real click/keyboard activation without a live display. */
     internal val selectorComponentForTest: JButton get() = selectorLabel
+    internal val selectorHoveredForTest: Boolean get() = selectorGroup.hovered
+    internal val selectorGroupForTest: javax.swing.JPanel get() = selectorGroup
+    internal val chipComponentForTest: JBLabel get() = chipLabel
+    internal val caretComponentForTest: JBLabel get() = caretLabel
 
     /** Test-only visibility hook for the unauthorized-state "Retry" button. */
     internal val retryComponentForTest: JButton get() = retryLabel
@@ -216,23 +228,23 @@ class DeviceContextBarPanel(
 
         when (bar) {
             DeviceBarPresentation.Loading -> {
-                selectorLabel.icon = StatusDotIcon(AdbToolboxTheme.Colors.brand, filled = true)
+                selectorLabel.icon = DeviceStatusIcon(AdbToolboxTheme.Colors.brand, filled = true)
                 selectorLabel.foreground = AdbToolboxTheme.Colors.textDim
                 selectorLabel.text = "Querying adb devices…"
             }
             is DeviceBarPresentation.SelectDevice -> {
-                selectorLabel.icon = StatusDotIcon(AdbToolboxTheme.Colors.green, filled = false)
+                selectorLabel.icon = DeviceStatusIcon(AdbToolboxTheme.Colors.green, filled = false)
                 selectorLabel.foreground = AdbToolboxTheme.Colors.text
                 selectorLabel.text = "${bar.deviceCount} devices — select one"
                 caretLabel.isVisible = true
             }
             DeviceBarPresentation.NoDevice -> {
-                selectorLabel.icon = StatusDotIcon(AdbToolboxTheme.Colors.textFaint, filled = false)
+                selectorLabel.icon = DeviceStatusIcon(AdbToolboxTheme.Colors.textFaint, filled = false)
                 selectorLabel.foreground = AdbToolboxTheme.Colors.textDim
                 selectorLabel.text = "No device connected"
             }
             is DeviceBarPresentation.Online -> {
-                selectorLabel.icon = StatusDotIcon(AdbToolboxTheme.Colors.green, filled = true)
+                selectorLabel.icon = DeviceStatusIcon(AdbToolboxTheme.Colors.green, filled = true)
                 selectorLabel.foreground = AdbToolboxTheme.Colors.text
                 selectorLabel.text = bar.device.displayName
                 chipLabel.text = connectionChipText(bar.device.connectionKind)
@@ -241,19 +253,19 @@ class DeviceContextBarPanel(
                 renderOnline(bar)
             }
             is DeviceBarPresentation.Unauthorized -> {
-                selectorLabel.icon = StatusDotIcon(AdbToolboxTheme.Colors.amber, filled = true)
+                selectorLabel.icon = DeviceStatusIcon(AdbToolboxTheme.Colors.amber, filled = true)
                 selectorLabel.foreground = AdbToolboxTheme.Colors.amber
                 selectorLabel.text = "${bar.device.displayName} — unauthorized"
                 retryLabel.isVisible = true
                 bannerLabel.isVisible = true
             }
             is DeviceBarPresentation.Offline -> {
-                selectorLabel.icon = StatusDotIcon(AdbToolboxTheme.Colors.textFaint, filled = true)
+                selectorLabel.icon = DeviceStatusIcon(AdbToolboxTheme.Colors.textFaint, filled = true)
                 selectorLabel.foreground = AdbToolboxTheme.Colors.textDim
                 selectorLabel.text = "${bar.device.displayName} — offline"
             }
             is DeviceBarPresentation.Error -> {
-                selectorLabel.icon = StatusDotIcon(AdbToolboxTheme.Colors.red, filled = true)
+                selectorLabel.icon = DeviceStatusIcon(AdbToolboxTheme.Colors.red, filled = true)
                 selectorLabel.foreground = AdbToolboxTheme.Colors.red
                 selectorLabel.text = bar.message
                 // Discovery errors can be long (tried sources, adb stderr); keep the full text reachable.
@@ -275,6 +287,92 @@ class DeviceContextBarPanel(
     private companion object {
         const val UNAUTHORIZED_BANNER_TEXT =
             "Accept the “Allow USB debugging” prompt on the device, then retry."
+    }
+}
+
+/** The rounded hover/focus surface around the selector button and its trailing labels. */
+private class SelectorGroup(
+    private val button: JButton,
+    trailing: List<javax.swing.JComponent>,
+    private val onClick: () -> Unit,
+) : JBPanel<SelectorGroup>(dev.acme.adbtoolbox.intellij.ui.common.FlexRowLayout(AdbToolboxTheme.Spacing.s3)) {
+    internal var hovered = false
+        private set
+
+    init {
+        isOpaque = false
+        border = JBUI.Borders.empty(0, AdbToolboxTheme.Spacing.s2)
+        cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
+        add(button, dev.acme.adbtoolbox.intellij.ui.common.FlexRowLayout.SHRINK)
+        trailing.forEach(::add)
+        val hover = object : java.awt.event.MouseAdapter() {
+            override fun mouseEntered(e: java.awt.event.MouseEvent) = setHovered(true)
+            override fun mouseExited(e: java.awt.event.MouseEvent) = setHovered(getMousePosition(true) != null)
+        }
+        val click = object : java.awt.event.MouseAdapter() {
+            override fun mouseClicked(e: java.awt.event.MouseEvent) = onClick()
+        }
+        (listOf<java.awt.Component>(this, button) + trailing).forEach { it.addMouseListener(hover) }
+        (listOf<java.awt.Component>(this) + trailing).forEach { it.addMouseListener(click) }
+        trailing.forEach { it.cursor = cursor }
+        button.addFocusListener(object : java.awt.event.FocusAdapter() {
+            override fun focusGained(e: java.awt.event.FocusEvent) = repaint()
+            override fun focusLost(e: java.awt.event.FocusEvent) = repaint()
+        })
+    }
+
+    private fun setHovered(value: Boolean) {
+        if (hovered == value) return
+        hovered = value
+        repaint()
+    }
+
+    override fun getPreferredSize(): java.awt.Dimension =
+        java.awt.Dimension(super.getPreferredSize().width, JBUI.scale(24))
+
+    override fun paintComponent(g: java.awt.Graphics) {
+        super.paintComponent(g)
+        if (!hovered && !button.isFocusOwner) return
+        val g2 = g.create() as java.awt.Graphics2D
+        try {
+            g2.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING, java.awt.RenderingHints.VALUE_ANTIALIAS_ON)
+            g2.color = AdbToolboxTheme.Colors.hover
+            val arc = AdbToolboxTheme.Radii.button * 2
+            g2.fillRoundRect(0, 0, width, height, arc, arc)
+        } finally {
+            g2.dispose()
+        }
+    }
+}
+
+/**
+ * The selector's leading icon: the device glyph (icon set v2) with the device-state dot at its
+ * bottom-right, knocked out of the glyph by a ring in the bar's `header` color — like Android
+ * Studio's own device picker.
+ */
+private class DeviceStatusIcon(private val color: java.awt.Color, private val filled: Boolean) : javax.swing.Icon {
+    private val glyph = dev.acme.adbtoolbox.intellij.icons.AdbToolboxIcons.Views.device
+
+    override fun getIconWidth(): Int = glyph.iconWidth
+    override fun getIconHeight(): Int = glyph.iconHeight
+
+    override fun paintIcon(c: java.awt.Component?, g: java.awt.Graphics, x: Int, y: Int) {
+        glyph.paintIcon(c, g, x, y)
+        val g2 = g.create() as java.awt.Graphics2D
+        try {
+            g2.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING, java.awt.RenderingHints.VALUE_ANTIALIAS_ON)
+            val dot = JBUI.scale(6)
+            val ring = JBUI.scale(2)
+            val dx = x + iconWidth - dot
+            val dy = y + iconHeight - dot
+            g2.color = AdbToolboxTheme.Colors.header
+            g2.fillOval(dx - ring, dy - ring, dot + 2 * ring, dot + 2 * ring)
+        } finally {
+            g2.dispose()
+        }
+        val dotX = x + iconWidth - JBUI.scale(6)
+        val dotY = y + iconHeight - JBUI.scale(6)
+        dev.acme.adbtoolbox.intellij.ui.common.StatusDotIcon(color, filled, diameter = 6).paintIcon(c, g, dotX, dotY)
     }
 }
 

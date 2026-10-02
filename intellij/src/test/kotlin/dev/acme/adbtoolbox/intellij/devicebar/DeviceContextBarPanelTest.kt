@@ -254,4 +254,28 @@ class DeviceContextBarPanelTest : BasePlatformTestCase() {
         assertTrue("selector ends at $selectorRight, refresh starts at $refreshLeft", selectorRight <= refreshLeft)
         assertTrue(refreshLeft + refresh.width <= panel.width)
     }
+
+    fun `test the whole selector opens the picker, like a toolbar combo box`() {
+        var toggles = 0
+        val panel = DeviceContextBarPanel(onToggle = { toggles++ }, onRefresh = {})
+        panel.update(DeviceBarPresentation.Online(device(), onlineCount = 1))
+
+        listOf(panel.chipComponentForTest, panel.caretComponentForTest, panel.selectorGroupForTest).forEach { target ->
+            target.dispatchEvent(java.awt.event.MouseEvent(target, java.awt.event.MouseEvent.MOUSE_CLICKED, 0L, 0, 2, 2, 1, false))
+        }
+        panel.selectorComponentForTest.doClick()
+
+        assertEquals(4, toggles)
+    }
+
+    fun `test hovering the selector shows its hover fill and a hand cursor`() {
+        val panel = DeviceContextBarPanel(onToggle = {}, onRefresh = {})
+        panel.update(DeviceBarPresentation.Online(device(), onlineCount = 1))
+        val group = panel.selectorGroupForTest
+
+        group.dispatchEvent(java.awt.event.MouseEvent(group, java.awt.event.MouseEvent.MOUSE_ENTERED, 0L, 0, 2, 2, 0, false))
+
+        assertTrue(panel.selectorHoveredForTest)
+        assertEquals(java.awt.Cursor.HAND_CURSOR, panel.caretComponentForTest.cursor.type)
+    }
 }

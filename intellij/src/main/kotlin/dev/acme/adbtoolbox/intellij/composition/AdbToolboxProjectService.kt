@@ -29,6 +29,7 @@ import dev.acme.adbtoolbox.adapters.adb.discovery.DefaultToolLocator
 import dev.acme.adbtoolbox.adapters.adb.packages.AdbPackageRepository
 import dev.acme.adbtoolbox.adapters.adb.packages.AppInfoHelper
 import dev.acme.adbtoolbox.adapters.adb.packages.DevOptionsHelper
+import dev.acme.adbtoolbox.application.adb.ConcurrencyLimitedAdbTransport
 import dev.acme.adbtoolbox.adapters.adb.packages.DeviceHelperDeployment
 import dev.acme.adbtoolbox.adapters.jvm.capture.DesktopRevealInFileManager
 import dev.acme.adbtoolbox.adapters.jvm.capture.SettingsBackedCaptureDestination
@@ -268,7 +269,9 @@ class AdbToolboxProjectService(private val project: Project) : Disposable {
     /** Describes the Android plugin's ddmlib bridge for the diagnostics bundle; null without it. */
     private var ddmlibBridgeState: (() -> String)? = null
 
-    val adbTransport: AdbTransport = if (androidPluginPresent) {
+    // At most a few one-shot reads per device at once (ConcurrencyLimitedAdbTransport): a slow
+    // device otherwise times out the burst of reads that entering the Device view fires.
+    val adbTransport: AdbTransport = ConcurrencyLimitedAdbTransport(if (androidPluginPresent) {
         val bridgeSource = IdeAndroidDebugBridgeDeviceSource(log = diagnosticsLog)
         ddmlibBridgeState = bridgeSource::describeState
         selectAdbTransport(
@@ -284,7 +287,7 @@ class AdbToolboxProjectService(private val project: Project) : Disposable {
         )
     } else {
         binaryTransport
-    }
+    })
 
     val shellViewModel: ShellViewModel = ShellViewModel(scope = childScope(), dispatchers = dispatcherProvider)
 

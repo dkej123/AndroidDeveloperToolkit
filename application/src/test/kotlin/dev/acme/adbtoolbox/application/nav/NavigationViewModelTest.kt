@@ -9,6 +9,7 @@ import dev.acme.adbtoolbox.domain.nav.ViewId
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceTimeBy
@@ -70,7 +71,8 @@ class NavigationViewModelTest {
         scope.advanceTimeBy(1)
         scope.runCurrent()
 
-        ViewId.entries.forEach { viewId ->
+        // Settings is an action, covered by its own test below.
+        ViewId.entries.filter { it != ViewId.Settings }.forEach { viewId ->
             viewModel.handle(NavigationIntent.Select(viewId))
             scope.runCurrent()
 
@@ -126,10 +128,42 @@ class NavigationViewModelTest {
 
         viewModel.handle(NavigationIntent.Select(ViewId.Network))
         scope.runCurrent()
-        viewModel.handle(NavigationIntent.Select(ViewId.Settings))
+        viewModel.handle(NavigationIntent.Select(ViewId.Logcat))
         scope.advanceTimeBy(200)
         scope.runCurrent()
 
-        persistence.writes.last() shouldBe ViewId.Settings
+        persistence.writes.last() shouldBe ViewId.Logcat
+    }
+
+    @Test
+    fun `selecting Settings asks to open it every time, keeping the current view selected and persisted`() = runTest {
+        val persistence = FakeNavigationPersistence()
+        val (scope, viewModel) = harness(persistence = persistence)
+        scope.advanceTimeBy(1)
+        scope.runCurrent()
+        viewModel.handle(NavigationIntent.Select(ViewId.Network))
+        scope.runCurrent()
+        val requests = mutableListOf<Unit>()
+        scope.backgroundScope.launch { viewModel.openSettingsRequests.collect { requests += it } }
+        scope.runCurrent()
+
+        viewModel.handle(NavigationIntent.Select(ViewId.Settings))
+        scope.runCurrent()
+        viewModel.handle(NavigationIntent.Select(ViewId.Settings))
+        scope.advanceTimeBy(10)
+        scope.runCurrent()
+
+        requests.size shouldBe 2
+        viewModel.state.value shouldBe NavigationState.Ready(ViewId.Network)
+        persistence.writes.last() shouldBe ViewId.Network
+    }
+
+    @Test
+    fun `a persisted Settings selection from an older version restores the default view`() = runTest {
+        val (scope, viewModel) = harness(persistence = FakeNavigationPersistence(initial = ViewId.Settings))
+        scope.advanceTimeBy(1)
+        scope.runCurrent()
+
+        viewModel.state.value shouldBe NavigationState.Ready(ViewId.Device)
     }
 }

@@ -2,6 +2,7 @@ package dev.acme.adbtoolbox.intellij.nav
 
 import com.intellij.openapi.application.EDT
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
+import dev.acme.adbtoolbox.application.nav.NavigationIntent
 import dev.acme.adbtoolbox.application.nav.NavigationViewModel
 import dev.acme.adbtoolbox.domain.devicecontext.DeviceContextSnapshot
 import dev.acme.adbtoolbox.domain.dispatch.DispatcherProvider
@@ -114,17 +115,27 @@ class NavigationRoutingCoordinatorTest : BasePlatformTestCase() {
         coordinator.dispose()
     }
 
-    fun `test routing to Settings opens the native project Configurable without requiring a feature card`() {
+    fun `test every Settings request opens the dialog and the rail keeps the current view`() {
         val host = AdbToolboxHostPanel()
         val rail = NavigationRailPanel()
         var opened = 0
-        val coordinator = coordinator(host, rail, openSettings = { opened++ })
+        val dispatchers = TestDispatchers()
+        val scope = CoroutineScope(SupervisorJob() + dispatchers.default)
+        val viewModel = NavigationViewModel(scope, dispatchers, FakeNavigationPersistence(), ViewId.Device)
+        val coordinator = NavigationRoutingCoordinator(host, rail, viewModel, scope, dispatchers, openSettings = { opened++ })
 
-        coordinator.route(NavigationState.Ready(ViewId.Settings))
+        // Like "Open Settings" in the missing-scrcpy hint, clicked again after closing the dialog.
+        repeat(2) { attempt ->
+            viewModel.handle(NavigationIntent.Select(ViewId.Settings))
+            val deadline = System.currentTimeMillis() + 5_000
+            while (opened <= attempt && System.currentTimeMillis() < deadline) {
+                com.intellij.testFramework.PlatformTestUtil.dispatchAllEventsInIdeEventQueue()
+                Thread.sleep(10)
+            }
+        }
 
-        assertEquals(ViewId.Settings, rail.list.selectedValue)
-        assertEquals(1, opened)
-        assertFalse(host.activeViewHost.isRegistered(ViewId.Settings.routeKey))
+        assertEquals(2, opened)
+        assertFalse(rail.list.selectedValue == ViewId.Settings)
         coordinator.dispose()
     }
 

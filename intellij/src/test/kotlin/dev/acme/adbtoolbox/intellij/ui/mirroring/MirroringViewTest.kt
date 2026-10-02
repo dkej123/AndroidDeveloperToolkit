@@ -182,7 +182,7 @@ class MirroringViewTest : BasePlatformTestCase() {
         vmScope.cancel()
     }
 
-    fun `test a missing scrcpy greys out Start and explains how to install or configure it`() {
+    fun `test a missing scrcpy greys out Start and options and explains how to install or configure it`() {
         val dispatchers = TestDispatchers()
         val scope = CoroutineScope(SupervisorJob() + dispatchers.default)
         val vm = viewModel(scope, dispatchers, MutableStateFlow(SelectedDeviceState.None))
@@ -196,7 +196,9 @@ class MirroringViewTest : BasePlatformTestCase() {
         view.render(MirroringViewState(controlPolicy = ControlPolicy.Enabled, presentationState = MirroringPresentationState.Idle, scrcpy = missing))
 
         assertFalse(view.toggleButton.isEnabled)
-        assertTrue(view.optionsButton.isEnabled)
+        // Options only configure scrcpy, so they are useless until it is installed (user request 2026-10-01).
+        assertFalse(view.optionsButton.isEnabled)
+        assertEquals(missing.fixHint(), view.optionsButton.toolTipText)
         assertEquals(missing.fixHint(), view.toggleButton.toolTipText)
         assertEquals(missing.fixHint(), view.helpLabel.text)
         assertTrue(view.scrcpyFixRow.isVisible)
@@ -204,6 +206,7 @@ class MirroringViewTest : BasePlatformTestCase() {
         view.render(MirroringViewState(controlPolicy = ControlPolicy.Enabled, presentationState = MirroringPresentationState.Idle, scrcpy = ScrcpyAvailability.Available(ToolVersion.of("3.1"))))
 
         assertTrue(view.toggleButton.isEnabled)
+        assertTrue(view.optionsButton.isEnabled)
         assertFalse(view.scrcpyFixRow.isVisible)
         scope.cancel()
     }
@@ -230,6 +233,7 @@ class MirroringViewTest : BasePlatformTestCase() {
         view.render(MirroringViewState(controlPolicy = ControlPolicy.Enabled, presentationState = MirroringPresentationState.Idle, scrcpy = ScrcpyAvailability.Checking))
 
         assertTrue(view.toggleButton.isEnabled)
+        assertTrue(view.optionsButton.isEnabled)
         assertFalse(view.scrcpyFixRow.isVisible)
         scope.cancel()
     }

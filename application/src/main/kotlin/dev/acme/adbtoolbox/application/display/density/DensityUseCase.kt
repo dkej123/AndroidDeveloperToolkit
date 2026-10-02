@@ -15,7 +15,8 @@ import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
-private val REQUEST_TIMEOUT = 5.seconds
+// Same budget as the other one-shot reads: 5 s timed out on slow devices (TCG emulator, E2E 2026-10-01).
+private val REQUEST_TIMEOUT = 10.seconds
 
 /**
  * Applies/reads/resets display density for one device at a time (task 027). Every mutation is

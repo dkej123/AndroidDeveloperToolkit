@@ -122,8 +122,9 @@ class MirroringView(
         val missing = state.scrcpy as? ScrcpyAvailability.Missing
         startButton.isEnabled = enabled && missing == null
         stopButton.isEnabled = enabled
-        optionsButton.isEnabled = enabled
-        optionsButton.toolTipText = OPTIONS_TOOLTIP.withDisabledReason(enabled)
+        // The options only configure scrcpy: useless until it is installed (user request 2026-10-01).
+        optionsButton.isEnabled = enabled && missing == null
+        optionsButton.toolTipText = missing?.fixHint() ?: OPTIONS_TOOLTIP.withDisabledReason(enabled)
         val isRunning = state.presentationState is MirroringPresentationState.Running
         (stateCards.layout as CardLayout).show(stateCards, if (isRunning) RUNNING else IDLE)
         runningBanner.isVisible = isRunning

@@ -110,7 +110,7 @@ class DiagnosticsService : PersistentStateComponent<DiagnosticsService.Settings>
     companion object {
         private val IDE_LOG = Logger.getInstance("#dev.acme.adbtoolbox")
         private const val STATS_PERIOD_SECONDS = 60L
-        const val PLUGIN_ID = "dev.acme.adbtoolbox"
+        const val PLUGIN_ID = "com.github.dkwasniak.adbtoolbox"
 
         fun getInstance(): DiagnosticsService = service()
 

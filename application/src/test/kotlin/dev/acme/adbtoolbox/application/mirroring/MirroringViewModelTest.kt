@@ -42,6 +42,7 @@ import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runCurrent
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Test
 
@@ -252,9 +253,12 @@ class MirroringViewModelTest {
         action.label shouldBe "Open Settings"
         h.viewModel.state.value.presentationState.shouldBeInstanceOf<MirroringPresentationState.Error>()
 
+        val settingsRequests = mutableListOf<Unit>()
+        h.scope.backgroundScope.launch { h.navigation.openSettingsRequests.collect { settingsRequests += it } }
+        h.scope.runCurrent()
         action.invoke()
         h.scope.runCurrent()
-        h.navigation.state.value shouldBe NavigationState.Ready(ViewId.Settings)
+        settingsRequests.size shouldBe 1
     }
 
     @Test
@@ -469,14 +473,20 @@ class MirroringViewModelTest {
     }
 
     @Test
-    fun `open settings navigates to the Settings view`() = runTest {
+    fun `open settings asks navigation to open Settings every time and keeps the current view`() = runTest {
         val h = Harness(withAvailability = true)
         h.scope.runCurrent()
-
-        h.viewModel.handle(MirroringIntent.OpenSettings)
+        val settingsRequests = mutableListOf<Unit>()
+        h.scope.backgroundScope.launch { h.navigation.openSettingsRequests.collect { settingsRequests += it } }
         h.scope.runCurrent()
 
-        h.navigation.state.value shouldBe NavigationState.Ready(ViewId.Settings)
+        repeat(2) {
+            h.viewModel.handle(MirroringIntent.OpenSettings)
+            h.scope.runCurrent()
+        }
+
+        settingsRequests.size shouldBe 2
+        h.navigation.state.value shouldBe NavigationState.Ready(ViewId.Device)
     }
 
     @Test

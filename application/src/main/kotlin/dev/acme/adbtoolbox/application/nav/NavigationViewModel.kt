@@ -7,8 +7,10 @@ import dev.acme.adbtoolbox.domain.nav.ViewId
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
@@ -39,6 +41,15 @@ class NavigationViewModel(
 
     private val writeRequests = MutableSharedFlow<ViewId>(extraBufferCapacity = 1)
 
+    private val _openSettingsRequests = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+
+    /**
+     * One emission per request to open the plugin settings. [ViewId.Settings] is an action, not a
+     * destination: it never becomes the selection, so asking again (e.g. "Open Settings" in the
+     * missing-scrcpy hint after the dialog was closed) always opens the dialog again.
+     */
+    val openSettingsRequests: SharedFlow<Unit> = _openSettingsRequests.asSharedFlow()
+
     val state: StateFlow<NavigationState> =
         combine(_selected, _restored, _error, ::reduce)
             .stateIn(scope, SharingStarted.Eagerly, NavigationState.Loading)
@@ -58,6 +69,10 @@ class NavigationViewModel(
     }
 
     private fun select(viewId: ViewId) {
+        if (viewId == ViewId.Settings) {
+            _openSettingsRequests.tryEmit(Unit)
+            return
+        }
         _selected.value = viewId
         _error.value = null
         writeRequests.tryEmit(viewId)
@@ -68,7 +83,8 @@ class NavigationViewModel(
             runCatching { persistence.readLastView() }
                 .onSuccess { persisted ->
                     _error.value = null
-                    _selected.value = persisted ?: defaultViewId
+                    // Older versions persisted Settings as a view; it is an action now.
+                    _selected.value = persisted?.takeIf { it != ViewId.Settings } ?: defaultViewId
                     _restored.value = true
                 }
                 .onFailure { failure ->

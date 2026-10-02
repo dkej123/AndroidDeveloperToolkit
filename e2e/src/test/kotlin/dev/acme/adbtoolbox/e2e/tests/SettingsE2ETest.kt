@@ -90,6 +90,18 @@ class SettingsE2ETest : E2eTest() {
         }
         studio.visibleTexts().any { "Fix or clear it in Settings." in it } shouldBe true
         studio.byName("Check again")
+        // The options only configure scrcpy (user request 2026-10-01).
+        studio.isEnabled(studio.byName("Mirroring options")) shouldBe false
+
+        // "Open Settings" opens the plugin page every time, also after the dialog was closed once.
+        repeat(2) {
+            studio.click("Open Settings")
+            val dialog = studio.dialog("Settings")
+            awaitUntil(Duration.ofSeconds(10), Duration.ofMillis(300), "the ADB Toolbox page") {
+                dialog.findAll(ContainerFixture::class.java, byXpath("//div[@name='scrcpyPathField']")).any { it.isShowing }
+            }
+            studio.dialogButton(dialog, "Cancel").click()
+        }
 
         openPluginSettings().let { dialog ->
             field(dialog, "scrcpyPathField").text = ""

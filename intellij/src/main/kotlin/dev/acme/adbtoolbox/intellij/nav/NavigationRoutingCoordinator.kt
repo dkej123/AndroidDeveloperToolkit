@@ -54,6 +54,10 @@ class NavigationRoutingCoordinator(
             .onEach { state -> withContext(dispatchers.main) { route(state) } }
             .launchIn(scope)
 
+        viewModel.openSettingsRequests
+            .onEach { withContext(dispatchers.main) { openSettings() } }
+            .launchIn(scope)
+
         // Task 043: paints the rail's amber/red override/attention badges (`design/README.md`
         // §2) from task 014's aggregated per-serial snapshot. Optional/nullable so every existing
         // caller/test that has no [DeviceContextSnapshot] source keeps working unchanged.
@@ -75,10 +79,6 @@ class NavigationRoutingCoordinator(
     internal fun route(state: NavigationState) {
         if (state !is NavigationState.Ready) return
         rail.setSelected(state.selected)
-        if (state.selected == ViewId.Settings) {
-            openSettings()
-            return
-        }
         val routeKey = state.selected.routeKey
         if (host.activeViewHost.isRegistered(routeKey)) {
             host.showFeatureView(routeKey)

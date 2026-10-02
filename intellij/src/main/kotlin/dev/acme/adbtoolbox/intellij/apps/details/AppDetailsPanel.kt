@@ -385,7 +385,8 @@ class AppDetailsPanel(
             state.deepLinksLoading -> "Reading installed APK and split manifests…"
             state.deepLinksError != null -> state.deepLinksError
             analysis == null -> "Analysis runs only on demand. Cached results are restored when available."
-            else -> "${analysis.catalog.targets.size} targets · ${if (analysis.fromCache) "cached" else "analyzed"}"
+            else -> analysis.catalog.targets.size.let { n -> "$n ${if (n == 1) "target" else "targets"}" } +
+                " · ${if (analysis.fromCache) "cached" else "analyzed"}"
         }
         deepLinksStatus.foreground = if (state.deepLinksError != null) AdbToolboxTheme.Colors.red else AdbToolboxTheme.Colors.textFaint
     }

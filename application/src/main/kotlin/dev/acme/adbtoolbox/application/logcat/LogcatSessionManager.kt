@@ -32,6 +32,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 
 /** Owns the selected device's single Logcat stream and bounded local history (task 034). */
@@ -131,11 +132,41 @@ class LogcatSessionManager(
             val serial = nextSerial ?: return
             activeSerial = serial
             mutableState.value = LogcatSessionState.Starting(serial)
-            sessionJob = scope.launch(dispatchers.io) { runSession(serial, replacementGeneration) }
+            sessionJob = scope.launch(dispatchers.io) { superviseSession(serial, replacementGeneration) }
         }
     }
 
-    private suspend fun runSession(serial: DeviceSerial, sessionGeneration: Long) {
+    /**
+     * Runs the stream and, while this generation is still current, reconnects after a recoverable
+     * end (I/O error, timeout, adb exiting): a dropped connection must not leave Logcat dead until
+     * the device is re-selected. Waits [RECONNECT_DELAYS_MS] between attempts, starting over once a
+     * session produced output; an unsupported device is not retried.
+     */
+    private suspend fun superviseSession(serial: DeviceSerial, sessionGeneration: Long) {
+        try {
+            var failures = 0
+            while (true) {
+                val result = runSession(serial, sessionGeneration)
+                if (!result.retriable || !isCurrent(sessionGeneration)) return
+                failures = if (result.sawOutput) 1 else failures + 1
+                delay(RECONNECT_DELAYS_MS[(failures - 1).coerceAtMost(RECONNECT_DELAYS_MS.lastIndex)])
+                if (!isCurrent(sessionGeneration)) return
+                updateStateIfCurrent(sessionGeneration, LogcatSessionState.Starting(serial))
+            }
+        } finally {
+            withContext(NonCancellable) {
+                lifecycleMutex.withLock {
+                    if (generation == sessionGeneration) sessionJob = null
+                }
+            }
+        }
+    }
+
+    private class SessionResult(val sawOutput: Boolean, val retriable: Boolean)
+
+    private suspend fun isCurrent(sessionGeneration: Long): Boolean = lifecycleMutex.withLock { generation == sessionGeneration }
+
+    private suspend fun runSession(serial: DeviceSerial, sessionGeneration: Long): SessionResult {
         val assembler = LogcatEntryAssembler()
         val diagnostics = BoundedDiagnostics()
         var sawOutput = false
@@ -163,6 +194,7 @@ class LogcatSessionManager(
                     ),
                 )
             updateStateIfCurrent(sessionGeneration, endState)
+            return SessionResult(sawOutput, retriable = endState is LogcatSessionState.Error && terminalOutcome !is AdbOutcome.Unsupported)
         } catch (cancelled: CancellationException) {
             withContext(NonCancellable) { appendAll(assembler.finish()) }
             throw cancelled
@@ -178,12 +210,7 @@ class LogcatSessionManager(
                     ),
                 ),
             )
-        } finally {
-            withContext(NonCancellable) {
-                lifecycleMutex.withLock {
-                    if (generation == sessionGeneration) sessionJob = null
-                }
-            }
+            return SessionResult(sawOutput, retriable = true)
         }
     }
 
@@ -245,6 +272,10 @@ class LogcatSessionManager(
                 }
             }
         }
+    }
+
+    private companion object {
+        val RECONNECT_DELAYS_MS = longArrayOf(1_000, 2_000, 4_000, 8_000, 15_000, 30_000)
     }
 
     private class BoundedDiagnostics(private val maxChars: Int = 8 * 1024) {
