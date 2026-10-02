@@ -101,10 +101,20 @@ intellijPlatform {
     instrumentCode = false
 
     pluginConfiguration {
+        version = providers.gradleProperty("pluginVersion")
+        // Marketplace "What's new": the CHANGELOG.md section of this version (release/README.md).
+        changeNotes = providers.gradleProperty("pluginVersion").map { changelogSectionHtml(rootProject.file("CHANGELOG.md"), it) }
         ideaVersion {
             sinceBuild = "242"
             untilBuild = provider { null }
         }
+    }
+
+    // release/publish.sh and .github/workflows/publish-plugin.yml: the token comes from the
+    // JETBRAINS_MARKETPLACE_TOKEN secret, `-PmarketplaceChannel=beta` targets the beta channel.
+    publishing {
+        token = providers.gradleProperty("intellijPlatformPublishingToken")
+        providers.gradleProperty("marketplaceChannel").orNull?.takeIf { it.isNotBlank() }?.let { channels = listOf(it) }
     }
 
     pluginVerification {
@@ -137,6 +147,47 @@ intellijPlatform {
 
 kotlin {
     jvmToolchain(21)
+}
+
+tasks.named<Zip>("buildPlugin") {
+    archiveBaseName.set("adb-toolbox")
+}
+
+/**
+ * The `## [version]` section of [changelog] as Marketplace change-notes HTML: `### Heading` lines
+ * become `<h3>`, `- item` lines `<li>`. Fails the build when the version has no entry, so a release
+ * can never ship without notes.
+ */
+fun changelogSectionHtml(changelog: File, version: String): String {
+    val lines = changelog.readLines()
+    val start = lines.indexOfFirst { it.startsWith("## [$version]") }
+    require(start >= 0) { "CHANGELOG.md has no '## [$version]' section" }
+    val body = lines.drop(start + 1).takeWhile { !it.startsWith("## ") }
+    fun inline(text: String) = text
+        .replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+        .replace(Regex("""\*\*(.+?)\*\*"""), "<b>$1</b>")
+        .replace(Regex("`(.+?)`"), "<code>$1</code>")
+    // Indented lines continue the previous bullet (CHANGELOG items wrap at ~100 columns).
+    val blocks = mutableListOf<String>()
+    body.filter(String::isNotBlank).forEach { line ->
+        if (line.startsWith(" ") && blocks.isNotEmpty()) blocks[blocks.lastIndex] += " " + line.trim() else blocks += line.trim()
+    }
+    val html = StringBuilder()
+    var inList = false
+    blocks.forEach { line ->
+        val item = line.startsWith("- ")
+        if (inList && !item) html.append("</ul>").also { inList = false }
+        when {
+            line.startsWith("### ") -> html.append("<h3>").append(inline(line.removePrefix("### "))).append("</h3>")
+            item -> {
+                if (!inList) html.append("<ul>").also { inList = true }
+                html.append("<li>").append(inline(line.removePrefix("- "))).append("</li>")
+            }
+            else -> html.append("<p>").append(inline(line)).append("</p>")
+        }
+    }
+    if (inList) html.append("</ul>")
+    return html.toString()
 }
 
 // Build with JDK 21 but emit Java 17 bytecode for the IntelliJ Platform 242+ baseline (docs/adr/0003).

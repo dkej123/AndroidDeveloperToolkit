@@ -47,9 +47,10 @@ val e2eTest = tasks.register<Test>("e2eTest") {
     classpath = sourceSets.test.get().runtimeClasspath
     useJUnitPlatform {
         // -Pe2e.tags=smoke,perf narrows the run; the default runs everything except `destructive`
-        // tests that reboot the device, which need -Pe2e.tags=destructive explicitly.
+        // tests that reboot the device and the `marketplace` screenshot capture
+        // (release/screenshots.sh), which both need -Pe2e.tags=… explicitly.
         val tags = providers.gradleProperty("e2e.tags").orNull
-        if (tags != null) includeTags(*tags.split(',').toTypedArray()) else excludeTags("destructive")
+        if (tags != null) includeTags(*tags.split(',').toTypedArray()) else excludeTags("destructive", "marketplace")
     }
     // One IDE and one device are shared: tests must run strictly one at a time.
     maxParallelForks = 1
@@ -64,5 +65,6 @@ val e2eTest = tasks.register<Test>("e2eTest") {
     // Everything the environment scripts export (e2e/scripts/lib.sh) is forwarded as-is.
     System.getenv().filterKeys { it.startsWith("E2E_") || it == "ANDROID_SDK_ROOT" }
         .forEach { (key, value) -> environment(key, value) }
+    environment("E2E_SCREENSHOT_DIR", providers.gradleProperty("e2e.screenshotDir").orNull ?: layout.buildDirectory.dir("e2e-report/marketplace").get().asFile.absolutePath)
     systemProperty("e2e.reportDir", layout.buildDirectory.dir("e2e-report").get().asFile.absolutePath)
 }
