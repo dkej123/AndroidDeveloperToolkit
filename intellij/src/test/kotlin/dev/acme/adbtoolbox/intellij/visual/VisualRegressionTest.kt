@@ -353,7 +353,16 @@ class VisualRegressionTest : BasePlatformTestCase() {
             // The bare test sandbox runs Metal, whose default control font is bold 12pt. IntelliJ's
             // New UI label font is regular 13pt; render with that so the goldens show the IDE's
             // text weight rather than a headless look-and-feel artifact.
-            val ideLabelFont = javax.swing.plaf.FontUIResource(java.awt.Font.DIALOG, java.awt.Font.PLAIN, 13)
+            // Inter and JetBrains Mono ship inside the JBR the tests run on (ideaIC/jbr/lib/fonts), so
+            // CI and a dev machine rasterize the same glyphs; the logical "Dialog" font resolved to a
+            // different system font on each and failed every golden on CI.
+            val ideLabelFont = javax.swing.plaf.FontUIResource(GOLDEN_UI_FONT, java.awt.Font.PLAIN, 13)
+            check(ideLabelFont.family == GOLDEN_UI_FONT) { "visual goldens need the JBR font $GOLDEN_UI_FONT, got ${ideLabelFont.family}" }
+            val scheme = com.intellij.openapi.editor.colors.EditorColorsManager.getInstance().globalScheme
+            scheme.editorFontName = GOLDEN_MONO_FONT
+            check(java.awt.Font(GOLDEN_MONO_FONT, java.awt.Font.PLAIN, 11).family == GOLDEN_MONO_FONT) {
+                "visual goldens need the JBR font $GOLDEN_MONO_FONT"
+            }
             listOf("Label.font", "Button.font", "ToggleButton.font", "TextField.font", "List.font")
                 .forEach { key -> UIManager.put(key, ideLabelFont) }
         }
@@ -370,6 +379,9 @@ class VisualRegressionTest : BasePlatformTestCase() {
         )
     }
 }
+
+private const val GOLDEN_UI_FONT = "Inter"
+private const val GOLDEN_MONO_FONT = "JetBrains Mono"
 
 private object GoldenImages {
     private const val CHANNEL_TOLERANCE = 12
