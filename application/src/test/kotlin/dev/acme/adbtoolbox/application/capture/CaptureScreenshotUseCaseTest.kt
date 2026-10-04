@@ -9,6 +9,8 @@ import dev.acme.adbtoolbox.domain.adb.DeviceSerial
 import dev.acme.adbtoolbox.domain.adb.FakeAdbTransport
 import dev.acme.adbtoolbox.domain.capture.FakeCaptureDestination
 import dev.acme.adbtoolbox.domain.capture.FileNamePolicy
+import dev.acme.adbtoolbox.domain.capture.FullShotRender
+import dev.acme.adbtoolbox.domain.capture.FullShotRenderer
 import dev.acme.adbtoolbox.domain.process.ByteSink
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
@@ -213,4 +215,73 @@ class CaptureScreenshotUseCaseTest {
 
         transport.binaryRequests.single().timeout shouldBe 7.seconds
     }
+
+    @Test
+    fun `a full screenshot streams the helper's rendered PNG under a -full file name, then removes it`() = runTest {
+        val transport = FakeAdbTransport(binaryScript = { AdbBinaryScript(listOf(PNG_BYTES), AdbOutcome.Completed(0)) })
+        val destination = FakeCaptureDestination()
+        val renderer = FakeFullShotRenderer(FullShotRender.Rendered(REMOTE_PNG, 1080, 5000, truncated = true))
+        val useCase = CaptureScreenshotUseCase(transport, destination, FIXED_FILE_NAME, FIXED_CLOCK, fullShotRenderer = renderer)
+
+        val result = useCase.capture(SERIAL, ScreenshotMode.FullContent)
+
+        result.shouldBeInstanceOf<CaptureScreenshotResult.Success>().truncated shouldBe true
+        renderer.serials shouldBe listOf(SERIAL)
+        (transport.binaryRequests.single() as AdbDeviceRequest).operation shouldBe AdbOperation.Exec(listOf("cat", REMOTE_PNG))
+        val target = destination.targets.single()
+        target.baseFileName shouldBe "screen-20260902-101530-full.png"
+        target.writtenBytes() shouldBe PNG_BYTES
+        target.committed shouldBe true
+        transport.textRequests.single().shellLine() shouldBe "rm -f '$REMOTE_PNG'"
+    }
+
+    @Test
+    fun `a full screenshot the helper could not render is its failure, with nothing written or read`() = runTest {
+        val transport = FakeAdbTransport()
+        val destination = FakeCaptureDestination()
+        val renderer = FakeFullShotRenderer(FullShotRender.Failed("Full screenshot failed: no app is in the foreground"))
+        val useCase = CaptureScreenshotUseCase(transport, destination, FIXED_FILE_NAME, FIXED_CLOCK, fullShotRenderer = renderer)
+
+        val result = useCase.capture(SERIAL, ScreenshotMode.FullContent)
+
+        result shouldBe CaptureScreenshotResult.Failure("Full screenshot failed: no app is in the foreground")
+        destination.targets shouldBe emptyList()
+        transport.binaryRequests shouldBe emptyList()
+    }
+
+    @Test
+    fun `a full screenshot whose read fails is discarded and still removed from the device`() = runTest {
+        val transport = FakeAdbTransport(binaryScript = { AdbBinaryScript(emptyList(), AdbOutcome.TimedOut) })
+        val destination = FakeCaptureDestination()
+        val renderer = FakeFullShotRenderer(FullShotRender.Rendered(REMOTE_PNG, 1080, 5000, truncated = false))
+        val useCase = CaptureScreenshotUseCase(transport, destination, FIXED_FILE_NAME, FIXED_CLOCK, fullShotRenderer = renderer)
+
+        val result = useCase.capture(SERIAL, ScreenshotMode.FullContent)
+
+        result.shouldBeInstanceOf<CaptureScreenshotResult.Failure>()
+        destination.targets.single().discarded shouldBe true
+        transport.textRequests.single().shellLine() shouldBe "rm -f '$REMOTE_PNG'"
+    }
+
+    @Test
+    fun `without a full-shot renderer a full screenshot is unavailable`() = runTest {
+        val useCase = CaptureScreenshotUseCase(FakeAdbTransport(), FakeCaptureDestination(), FIXED_FILE_NAME, FIXED_CLOCK)
+
+        useCase.capture(SERIAL, ScreenshotMode.FullContent) shouldBe
+            CaptureScreenshotResult.Failure("Full screenshots are not available")
+    }
 }
+
+private const val REMOTE_PNG = "/data/local/tmp/adbtoolbox-fullshot.png"
+
+private class FakeFullShotRenderer(private val render: FullShotRender) : FullShotRenderer {
+    val serials = mutableListOf<DeviceSerial>()
+
+    override suspend fun render(serial: DeviceSerial): FullShotRender {
+        serials += serial
+        return render
+    }
+}
+
+private fun dev.acme.adbtoolbox.domain.adb.AdbRequest.shellLine(): String? =
+    ((this as? AdbDeviceRequest)?.operation as? AdbOperation.Shell)?.command?.render()

@@ -8,6 +8,9 @@ import dev.acme.adbtoolbox.domain.adb.DeviceSerial
 import dev.acme.adbtoolbox.domain.capture.CaptureDestination
 import dev.acme.adbtoolbox.domain.capture.CaptureLocation
 import dev.acme.adbtoolbox.domain.capture.FileNamePolicy
+import dev.acme.adbtoolbox.domain.capture.FullShotHelperCommand
+import dev.acme.adbtoolbox.domain.capture.FullShotRender
+import dev.acme.adbtoolbox.domain.capture.FullShotRenderer
 import dev.acme.adbtoolbox.domain.process.ByteSink
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
@@ -21,9 +24,13 @@ private val SCREENCAP_ARGUMENTS = listOf("screencap", "-p")
 /** Bounded request/response default (ADR 0005); a screenshot is a one-shot call, not a stream. */
 val DEFAULT_SCREENSHOT_TIMEOUT: Duration = 15.seconds
 
+/** What a screenshot shows: the screen as it is, or the foreground app's whole scrolling content (ADR 0013). */
+enum class ScreenshotMode { Visible, FullContent }
+
 /** What [CaptureScreenshotUseCase.capture] produced. */
 sealed interface CaptureScreenshotResult {
-    data class Success(val location: CaptureLocation) : CaptureScreenshotResult
+    /** [truncated]: a full-content capture whose content may continue below what was captured. */
+    data class Success(val location: CaptureLocation, val truncated: Boolean = false) : CaptureScreenshotResult
     data class Failure(val reason: String) : CaptureScreenshotResult
 }
 
@@ -45,6 +52,10 @@ sealed interface CaptureScreenshotResult {
  * this use case wrote must still be discarded rather than left on disk — a plain `finally` block
  * alone would have its own suspend calls fail immediately once the enclosing job is already
  * cancelled.
+ *
+ * [ScreenshotMode.FullContent] first has [fullShotRenderer] render the app at its full content height
+ * on the device (ADR 0013), then streams that PNG with `exec-out cat` under the same commit/discard
+ * rules, saved as `<name>-full.png`; the device copy is removed whatever the outcome.
  */
 class CaptureScreenshotUseCase(
     private val adbTransport: AdbTransport,
@@ -52,9 +63,36 @@ class CaptureScreenshotUseCase(
     private val fileNamePolicy: FileNamePolicy,
     private val clock: Clock = Clock.System,
     private val timeout: Duration = DEFAULT_SCREENSHOT_TIMEOUT,
+    private val fullShotRenderer: FullShotRenderer? = null,
 ) {
-    suspend fun capture(serial: DeviceSerial): CaptureScreenshotResult {
+    suspend fun capture(serial: DeviceSerial, mode: ScreenshotMode = ScreenshotMode.Visible): CaptureScreenshotResult {
         val baseFileName = fileNamePolicy.baseFileName(clock.now())
+        return when (mode) {
+            ScreenshotMode.Visible -> save(baseFileName, AdbOperation.Exec(SCREENCAP_ARGUMENTS), serial)
+            ScreenshotMode.FullContent -> captureFullContent(serial, baseFileName)
+        }
+    }
+
+    private suspend fun captureFullContent(serial: DeviceSerial, baseFileName: String): CaptureScreenshotResult {
+        val renderer = fullShotRenderer ?: return CaptureScreenshotResult.Failure("Full screenshots are not available")
+        val render = when (val result = renderer.render(serial)) {
+            is FullShotRender.Failed -> return CaptureScreenshotResult.Failure(result.reason)
+            is FullShotRender.Rendered -> result
+        }
+        try {
+            val saved = save(fullContentFileName(baseFileName), FullShotHelperCommand.readRequest(serial, render.remotePath).operation, serial)
+            return if (saved is CaptureScreenshotResult.Success) saved.copy(truncated = render.truncated) else saved
+        } finally {
+            withContext(NonCancellable) { adbTransport.executeText(FullShotHelperCommand.removeRequest(serial, render.remotePath)) }
+        }
+    }
+
+    private fun fullContentFileName(baseFileName: String): String {
+        val dot = baseFileName.lastIndexOf('.')
+        return if (dot < 0) "$baseFileName-full" else "${baseFileName.substring(0, dot)}-full${baseFileName.substring(dot)}"
+    }
+
+    private suspend fun save(baseFileName: String, operation: AdbOperation, serial: DeviceSerial): CaptureScreenshotResult {
         val target = captureDestination.beginCapture(baseFileName)
         var bytesWritten = 0L
         val countingSink = ByteSink { chunk ->
@@ -64,11 +102,7 @@ class CaptureScreenshotUseCase(
         var committed = false
         try {
             val outcome = adbTransport.executeBinary(
-                AdbDeviceRequest(
-                    serial = serial,
-                    operation = AdbOperation.Exec(SCREENCAP_ARGUMENTS),
-                    timeout = timeout,
-                ),
+                AdbDeviceRequest(serial = serial, operation = operation, timeout = timeout),
                 countingSink,
             )
             if (outcome is AdbOutcome.Completed && outcome.exitCode.let { it == null || it == 0 } && bytesWritten > 0L) {

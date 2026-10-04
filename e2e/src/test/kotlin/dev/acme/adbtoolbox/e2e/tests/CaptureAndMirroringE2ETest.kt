@@ -6,9 +6,11 @@ import dev.acme.adbtoolbox.e2e.infra.E2eTest
 import dev.acme.adbtoolbox.e2e.infra.View
 import dev.acme.adbtoolbox.e2e.infra.awaitUntil
 import io.kotest.matchers.collections.shouldContain
+import io.kotest.matchers.ints.shouldBeGreaterThan
 import io.kotest.matchers.longs.shouldBeGreaterThan
 import io.kotest.matchers.shouldBe
 import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.Assumptions.assumeTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.io.File
@@ -42,6 +44,22 @@ class CaptureAndMirroringE2ETest : E2eTest() {
         val image = ImageIO.read(png)
         val (width, height) = Adb.shell("wm size").substringAfterLast(": ").trim().split("x").map(String::toInt)
         (image.width to image.height) shouldBe (width to height)
+    }
+
+    @Test
+    fun `Full page saves the foreground app's whole content and gives the app back`() {
+        assumeTrue(Adb.shell("getprop ro.build.version.sdk").trim().toInt() >= 29, "full-page screenshots need API 29+")
+        Adb.shell("am start -W -a android.settings.SETTINGS")
+        val screenHeight = Adb.shell("wm size").substringAfterLast(": ").trim().split("x")[1].toInt()
+
+        studio.click("Full page")
+
+        val png = awaitNewFile("-full.png", E2eConfig.deviceTimeout(60))
+        ImageIO.read(png).height shouldBeGreaterThan screenHeight
+        awaitUntil(E2eConfig.deviceTimeout(15), Duration.ofMillis(500), "Settings back on the main display") {
+            Adb.shell("dumpsys activity activities").substringAfter("Display #0").contains("com.android.settings")
+        }
+        Adb.shell("ls /data/local/tmp").contains("adbtoolbox-fullshot.png") shouldBe false
     }
 
     @Test

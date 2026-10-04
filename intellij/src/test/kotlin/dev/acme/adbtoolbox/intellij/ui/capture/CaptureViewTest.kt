@@ -73,9 +73,12 @@ class CaptureViewTest : BasePlatformTestCase() {
         view.render(CaptureViewState(controlPolicy = ControlPolicy.Enabled, isCapturing = false))
         assertTrue(view.screenshotButton.isEnabled)
         assertEquals("Screenshot", view.screenshotButton.text)
+        assertTrue(view.fullScreenshotButton.isEnabled)
+        assertEquals("Full page", view.fullScreenshotButton.text)
 
         view.render(CaptureViewState(controlPolicy = ControlPolicy.Enabled, isCapturing = true))
         assertFalse(view.screenshotButton.isEnabled)
+        assertFalse(view.fullScreenshotButton.isEnabled)
 
         view.dispose()
         assertFalse(scope.isActive)
@@ -90,6 +93,11 @@ class CaptureViewTest : BasePlatformTestCase() {
         view.setDestinationLabel("~/captures")
 
         assertEquals("Save a PNG to ~/captures", view.screenshotButton.toolTipText)
+        assertEquals(
+            "Save the app's whole scrolling content as a PNG to ~/captures. " +
+                "The app is briefly moved to a tall virtual screen, so its current screen is recreated.",
+            view.fullScreenshotButton.toolTipText,
+        )
         view.dispose()
     }
 
@@ -113,6 +121,21 @@ class CaptureViewTest : BasePlatformTestCase() {
 
         assertFalse(vm.state.value.isCapturing)
         view.screenshotButton.doClick()
+
+        assertTrue(vm.state.value.isCapturing)
+        vmScope.cancel()
+    }
+
+    fun `test clicking Full page forwards a CaptureFullScreenshot request through the real view model`() {
+        val dispatchers = TestDispatchers()
+        val vmScope = CoroutineScope(SupervisorJob() + dispatchers.default)
+        val selectedDeviceState = MutableStateFlow<SelectedDeviceState>(SelectedDeviceState.Online(onlineDevice("emulator-5554")))
+        val vm = viewModel(vmScope, dispatchers, selectedDeviceState)
+        val viewScope = CoroutineScope(SupervisorJob() + dispatchers.default)
+        val view = CaptureView(vm, viewScope, dispatchers)
+        viewScope.cancel()
+
+        view.fullScreenshotButton.doClick()
 
         assertTrue(vm.state.value.isCapturing)
         vmScope.cancel()

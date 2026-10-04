@@ -1,6 +1,7 @@
 package android.graphics;
 
 import java.io.OutputStream;
+import java.nio.Buffer;
 
 /** Compile-only stub of the platform class; the device provides the real one. */
 public final class Bitmap {
@@ -9,6 +10,14 @@ public final class Bitmap {
     public enum CompressFormat { PNG }
 
     public static Bitmap createBitmap(int width, int height, Config config) {
+        throw new UnsupportedOperationException("stub");
+    }
+
+    public static Bitmap createBitmap(Bitmap source, int x, int y, int width, int height) {
+        throw new UnsupportedOperationException("stub");
+    }
+
+    public void copyPixelsFromBuffer(Buffer source) {
         throw new UnsupportedOperationException("stub");
     }
 

@@ -20,6 +20,7 @@ Format: Title, Status, Context, Decision, Consequences, Rejected alternatives.
 | [0010](0010-app-labels-and-icons-via-device-helper.md) | Application labels and icons via an on-device helper |
 | [0011](0011-app-data-access-and-editing.md) | Reading and editing an app's private files (shared prefs, databases) |
 | [0012](0012-developer-options-via-device-helper.md) | Developer-options toggles, and the activity-manager ones via the device helper |
+| [0013](0013-full-page-screenshot-via-virtual-display.md) | Full-page screenshots on a tall virtual display via the device helper |
 
 ## Status legend
 

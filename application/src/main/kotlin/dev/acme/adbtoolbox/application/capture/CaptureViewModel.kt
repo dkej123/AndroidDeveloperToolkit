@@ -55,12 +55,13 @@ class CaptureViewModel(
 
     fun handle(intent: CaptureIntent) {
         when (intent) {
-            CaptureIntent.CaptureScreenshot -> captureScreenshot()
+            CaptureIntent.CaptureScreenshot -> captureScreenshot(ScreenshotMode.Visible)
+            CaptureIntent.CaptureFullScreenshot -> captureScreenshot(ScreenshotMode.FullContent)
             CaptureIntent.RevealLastCapture -> revealLastCapture()
         }
     }
 
-    private fun captureScreenshot() {
+    private fun captureScreenshot(mode: ScreenshotMode) {
         val context = selectedDeviceState.value.toCommandContext()
         if (context !is DeviceCommandContext.Eligible) {
             feedback.handle(
@@ -77,7 +78,7 @@ class CaptureViewModel(
         val serial = context.serial
         _state.update { it.copy(isCapturing = true) }
         scope.launch {
-            val result = withContext(dispatchers.io) { captureScreenshotUseCase.capture(serial) }
+            val result = withContext(dispatchers.io) { captureScreenshotUseCase.capture(serial, mode) }
             _state.update { it.copy(isCapturing = false) }
             when (result) {
                 is CaptureScreenshotResult.Success -> {
@@ -86,8 +87,12 @@ class CaptureViewModel(
                         FeedbackIntent.Post(
                             FeedbackMessage(
                                 id = "capture-success-${result.location.displayPath}",
-                                text = "Saved ${result.location.displayPath}",
-                                severity = FeedbackSeverity.Success,
+                                text = if (result.truncated) {
+                                    "Saved ${result.location.displayPath} — the content is longer and was cut off"
+                                } else {
+                                    "Saved ${result.location.displayPath}"
+                                },
+                                severity = if (result.truncated) FeedbackSeverity.Warning else FeedbackSeverity.Success,
                                 action = FeedbackAction("Reveal") { revealInFileManager.reveal(result.location) },
                             ),
                         ),

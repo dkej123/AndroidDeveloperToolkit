@@ -1,20 +1,15 @@
 package dev.acme.adbtoolbox.devicehelper;
 
-import android.content.Context;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.drawable.Drawable;
-import android.os.Looper;
 import android.util.Base64;
 import java.io.BufferedWriter;
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
@@ -47,7 +42,7 @@ public final class AppInfoMain {
         out.flush();
 
         int iconSize = Integer.parseInt(args[0]);
-        PackageManager packageManager = systemContext().getPackageManager();
+        PackageManager packageManager = SystemContext.get().getPackageManager();
 
         List<String> packages = new ArrayList<>();
         for (int i = 1; i < args.length; i++) {
@@ -105,23 +100,5 @@ public final class AppInfoMain {
 
     private static String encode(byte[] bytes) {
         return Base64.encodeToString(bytes, Base64.NO_WRAP);
-    }
-
-    /**
-     * A process started by {@code app_process} has no application context. The system context of
-     * a freshly constructed {@code ActivityThread} is enough for read-only {@code PackageManager}
-     * queries as the shell user; both are hidden APIs, hence the reflection.
-     */
-    private static Context systemContext() throws Exception {
-        Looper.prepareMainLooper();
-        Class<?> activityThreadClass = Class.forName("android.app.ActivityThread");
-        Constructor<?> constructor = activityThreadClass.getDeclaredConstructor();
-        constructor.setAccessible(true);
-        Object activityThread = constructor.newInstance();
-        Field current = activityThreadClass.getDeclaredField("sCurrentActivityThread");
-        current.setAccessible(true);
-        current.set(null, activityThread);
-        Method getSystemContext = activityThreadClass.getDeclaredMethod("getSystemContext");
-        return (Context) getSystemContext.invoke(activityThread);
     }
 }

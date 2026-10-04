@@ -33,13 +33,19 @@ val deviceHelperResources = layout.buildDirectory.dir("generated/deviceHelper/re
 val dexDeviceHelper = tasks.register<JavaExec>("dexDeviceHelper") {
     description = "Dexes the on-device app-info helper into a resource jar."
     val classes = deviceHelper.output.classesDirs
+    val stubClasses = deviceHelperStubs.output.classesDirs
     val output = deviceHelperResources.map { it.file("dev/acme/adbtoolbox/adapters/adb/apps/app-info-helper.jar") }
     inputs.files(classes)
+    inputs.files(stubClasses)
     outputs.file(output)
     classpath = d8
     mainClass.set("com.android.tools.r8.D8")
     argumentProviders += CommandLineArgumentProvider {
         listOf("--release", "--min-api", "21", "--output", output.get().asFile.absolutePath) +
+            // Desugaring needs the supertypes of what the helper subclasses and implements: the
+            // JDK for java.*, the stubs for android.*.
+            listOf("--lib", javaLauncher.get().metadata.installationPath.asFile.absolutePath) +
+            stubClasses.files.filter { it.exists() }.flatMap { listOf("--classpath", it.absolutePath) } +
             classes.asFileTree.matching { include("**/*.class") }.files.map { it.absolutePath }.sorted()
     }
     doFirst { output.get().asFile.parentFile.mkdirs() }

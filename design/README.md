@@ -141,8 +141,11 @@ Three sections, each `padding: 10px 0 12px` with a 1px bottom border; section he
      pulsing 7px teal dot + "Mirroring · 1080×2400 @ 60 fps" (11.5px/600 teal) + outlined red
      **"Stop"** (24px). Help text: "Window is open on your desktop. Closing it also stops this session."
 2. **Capture** — meta "~/Desktop".
-   - idle: two secondary buttons **"Screenshot"** (tooltip "Save a PNG to ~/Desktop") and
-     **"Record"** (tooltip "Record the screen — max 3 minutes per adb").
+   - idle: three secondary buttons **"Screenshot"** (tooltip "Save a PNG to ~/Desktop"),
+     **"Full page"** (the foreground app's whole scrolling content, ADR 0013; tooltip "Save the
+     app's whole scrolling content as a PNG to ~/Desktop. The app is briefly moved to a tall virtual
+     screen, so its current screen is recreated.") and **"Record"** (tooltip "Record the screen —
+     max 3 minutes per adb").
    - recording: red banner row (`redBg`, 1px `redBorder`) with pulsing red dot +
      mono "Recording · 00:42" (11px/700 red) + outlined red **"Stop & save"**.
      On stop: toast "Saved screen-2026-09-01.mp4" with a **Reveal** action.

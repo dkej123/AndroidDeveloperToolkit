@@ -11,6 +11,8 @@ import dev.acme.adbtoolbox.domain.adb.FakeAdbTransport
 import dev.acme.adbtoolbox.domain.capture.CaptureLocation
 import dev.acme.adbtoolbox.domain.capture.FakeCaptureDestination
 import dev.acme.adbtoolbox.domain.capture.FileNamePolicy
+import dev.acme.adbtoolbox.domain.capture.FullShotRender
+import dev.acme.adbtoolbox.domain.capture.FullShotRenderer
 import dev.acme.adbtoolbox.domain.capture.RevealInFileManager
 import dev.acme.adbtoolbox.domain.device.Device
 import dev.acme.adbtoolbox.domain.device.DeviceConnectionState
@@ -52,6 +54,7 @@ class CaptureViewModelTest {
         binaryScript: (dev.acme.adbtoolbox.domain.adb.AdbRequest) -> AdbBinaryScript = {
             AdbBinaryScript(listOf(PNG_BYTES), AdbOutcome.Completed(0))
         },
+        fullShot: FullShotRender = FullShotRender.Rendered("/data/local/tmp/adbtoolbox-fullshot.png", 1080, 5000, truncated = false),
     ) {
         val scope = TestScope()
         val dispatcher = StandardTestDispatcher(scope.testScheduler)
@@ -59,7 +62,13 @@ class CaptureViewModelTest {
         val selectedDeviceState = MutableStateFlow<SelectedDeviceState>(SelectedDeviceState.None)
         val transport = FakeAdbTransport(binaryScript = binaryScript)
         val destination = FakeCaptureDestination()
-        val useCase = CaptureScreenshotUseCase(transport, destination, FIXED_FILE_NAME, FIXED_CLOCK)
+        val useCase = CaptureScreenshotUseCase(
+            transport,
+            destination,
+            FIXED_FILE_NAME,
+            FIXED_CLOCK,
+            fullShotRenderer = FullShotRenderer { fullShot },
+        )
         val revealed = mutableListOf<CaptureLocation>()
         val revealInFileManager = RevealInFileManager { location -> revealed += location }
         val feedback = FeedbackViewModel(scope = scope, dispatchers = dispatchers)
@@ -149,5 +158,34 @@ class CaptureViewModelTest {
 
         val request = h.transport.binaryRequests.single() as AdbDeviceRequest
         request.serial shouldBe DeviceSerial.of("emulator-5554")
+    }
+
+    @Test
+    fun `a full screenshot saves the app's full content and says so`() = runTest {
+        val h = Harness()
+        h.selectedDeviceState.value = SelectedDeviceState.Online(onlineDevice("emulator-5554"))
+
+        h.viewModel.handle(CaptureIntent.CaptureFullScreenshot)
+        h.scope.runCurrent()
+
+        h.destination.targets.single().baseFileName shouldBe "screen-20260902-101530-full.png"
+        h.viewModel.state.value.isCapturing shouldBe false
+        h.viewModel.state.value.lastCapture.shouldBeInstanceOf<CaptureLocation>()
+        val toast = h.feedback.state.value.toasts.single()
+        toast.severity shouldBe FeedbackSeverity.Success
+        toast.text shouldBe "Saved ${h.viewModel.state.value.lastCapture?.displayPath}"
+    }
+
+    @Test
+    fun `a full screenshot whose content continues below the capture warns that it was cut`() = runTest {
+        val h = Harness(fullShot = FullShotRender.Rendered("/data/local/tmp/adbtoolbox-fullshot.png", 1080, 7272, truncated = true))
+        h.selectedDeviceState.value = SelectedDeviceState.Online(onlineDevice("emulator-5554"))
+
+        h.viewModel.handle(CaptureIntent.CaptureFullScreenshot)
+        h.scope.runCurrent()
+
+        val toast = h.feedback.state.value.toasts.single()
+        toast.severity shouldBe FeedbackSeverity.Warning
+        toast.text shouldBe "Saved ${h.viewModel.state.value.lastCapture?.displayPath} — the content is longer and was cut off"
     }
 }

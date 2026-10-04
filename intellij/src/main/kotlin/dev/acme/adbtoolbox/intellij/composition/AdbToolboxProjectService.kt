@@ -31,6 +31,7 @@ import dev.acme.adbtoolbox.adapters.adb.packages.AppInfoHelper
 import dev.acme.adbtoolbox.adapters.adb.packages.DevOptionsHelper
 import dev.acme.adbtoolbox.application.adb.ConcurrencyLimitedAdbTransport
 import dev.acme.adbtoolbox.adapters.adb.packages.DeviceHelperDeployment
+import dev.acme.adbtoolbox.adapters.adb.packages.FullShotHelper
 import dev.acme.adbtoolbox.adapters.jvm.capture.DesktopRevealInFileManager
 import dev.acme.adbtoolbox.adapters.jvm.capture.SettingsBackedCaptureDestination
 import dev.acme.adbtoolbox.adapters.jvm.discovery.DefaultSdkLocationPlatformToolsSource
@@ -421,10 +422,14 @@ class AdbToolboxProjectService(private val project: Project) : Disposable {
     val revealInFileManager: RevealInFileManager = DesktopRevealInFileManager()
     private val fileNamePolicy: FileNamePolicy = TimestampFileNamePolicy()
 
+    /** Pushes the on-device helper jar once per device, shared by every helper entry point (ADR 0010/0012/0013). */
+    private val deviceHelperDeployment = DeviceHelperDeployment(adbTransport)
+
     private val captureScreenshotUseCase = CaptureScreenshotUseCase(
         adbTransport = adbTransport,
         captureDestination = captureDestination,
         fileNamePolicy = fileNamePolicy,
+        fullShotRenderer = FullShotHelper(adbTransport, deviceHelperDeployment),
     )
 
     /** Task 019's minimal Device-view screenshot binding, driven by [selectedDeviceViewModel]. */
@@ -556,9 +561,6 @@ class AdbToolboxProjectService(private val project: Project) : Disposable {
         dispatchers = dispatcherProvider,
         persistence = selectedPackagePersistence,
     )
-
-    /** Pushes the on-device helper jar once per device, shared by every helper entry point (ADR 0010/0012). */
-    private val deviceHelperDeployment = DeviceHelperDeployment(adbTransport)
 
     /** Task 021's serial-scoped package repository, shared by Apps and post-action refreshes. */
     val packageRepository: PackageRepository = AdbPackageRepository(
