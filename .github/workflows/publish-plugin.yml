@@ -43,6 +43,11 @@ jobs:
         with:
           cache-disabled: true
 
+      # buildSearchableOptions and the platform/visual tests start the IDE on its JBR, which needs
+      # the host's freetype/fontconfig/X11 client libraries (missing on a slim self-hosted image).
+      - name: Ensure IDE runtime libraries
+        run: .github/scripts/ensure-ide-runtime-libs.sh
+
       - name: Resolve Marketplace channel
         shell: bash
         run: |
