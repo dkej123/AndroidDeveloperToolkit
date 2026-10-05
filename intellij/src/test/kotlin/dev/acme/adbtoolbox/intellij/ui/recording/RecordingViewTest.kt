@@ -22,6 +22,8 @@ import dev.acme.adbtoolbox.domain.device.DeviceConnectionState
 import dev.acme.adbtoolbox.domain.device.SelectedDeviceState
 import dev.acme.adbtoolbox.domain.devicecontext.ControlPolicy
 import dev.acme.adbtoolbox.domain.dispatch.DispatcherProvider
+import dev.acme.adbtoolbox.intellij.ui.common.HeldDispatcher
+import dev.acme.adbtoolbox.intellij.ui.common.HeldDispatchers
 import dev.acme.adbtoolbox.domain.process.ByteSink
 import dev.acme.adbtoolbox.domain.time.FakeMonotonicClock
 import kotlinx.coroutines.CoroutineScope
@@ -182,9 +184,10 @@ class RecordingViewTest : BasePlatformTestCase() {
 
     fun `test clicking the toggle button forwards a Toggle intent through the real view model`() {
         val dispatchers = TestDispatchers()
-        val vmScope = CoroutineScope(SupervisorJob() + dispatchers.default)
+        // The view model's own coroutines are held, so only the click's synchronous effect is observed.
+        val vmScope = CoroutineScope(SupervisorJob() + HeldDispatcher)
         val selectedDeviceState = MutableStateFlow<SelectedDeviceState>(SelectedDeviceState.Online(onlineDevice("emulator-5554")))
-        val vm = viewModel(vmScope, dispatchers, selectedDeviceState)
+        val vm = viewModel(vmScope, HeldDispatchers, selectedDeviceState)
         val viewScope = CoroutineScope(SupervisorJob() + dispatchers.default)
         val view = RecordingView(vm, viewScope, dispatchers)
         viewScope.cancel()

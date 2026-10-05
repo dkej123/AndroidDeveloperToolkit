@@ -21,17 +21,16 @@ import dev.acme.adbtoolbox.domain.discovery.DiscoveryOutcome
 import dev.acme.adbtoolbox.domain.discovery.FakeToolLocator
 import dev.acme.adbtoolbox.domain.discovery.ToolId
 import dev.acme.adbtoolbox.domain.dispatch.DispatcherProvider
+import dev.acme.adbtoolbox.intellij.ui.common.HeldDispatcher
+import dev.acme.adbtoolbox.intellij.ui.common.HeldDispatchers
 import dev.acme.adbtoolbox.domain.nav.FakeNavigationPersistence
 import dev.acme.adbtoolbox.domain.nav.ViewId
 import dev.acme.adbtoolbox.domain.process.FakeProcessExecutor
-import kotlin.coroutines.CoroutineContext
-import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.Runnable
 import kotlinx.coroutines.isActive
 
 /**
@@ -48,17 +47,6 @@ class MirroringViewTest : BasePlatformTestCase() {
         // Like production: renders are queued on the EDT behind the test body, so a direct
         // render() in a test is never overwritten by a background initial-state render.
         override val main = Dispatchers.EDT
-    }
-
-    /** Accepts coroutines but never runs them, so nothing launched on it can race the test body. */
-    private object HeldDispatcher : CoroutineDispatcher() {
-        override fun dispatch(context: CoroutineContext, block: Runnable) = Unit
-    }
-
-    private object HeldDispatchers : DispatcherProvider {
-        override val default: CoroutineDispatcher = HeldDispatcher
-        override val io: CoroutineDispatcher = HeldDispatcher
-        override val main: CoroutineContext = HeldDispatcher
     }
 
     private fun onlineDevice(serial: String) = Device(serial = DeviceSerial.of(serial), state = DeviceConnectionState.Online)
@@ -131,9 +119,7 @@ class MirroringViewTest : BasePlatformTestCase() {
 
     fun `test clicking the toggle button forwards a Toggle intent through the real view model`() {
         val dispatchers = TestDispatchers()
-        // start() runs the session on dispatchers.default; with the fake locator failing at once, a
-        // fast runner turned Starting into Error -> Idle before the assertion (CI 2026-10-05).
-        // Holding the view model's coroutines keeps the synchronous Starting state observable.
+        // The view model's own coroutines are held, so only the click's synchronous effect is observed.
         val vmScope = CoroutineScope(SupervisorJob() + HeldDispatcher)
         val selectedDeviceState = MutableStateFlow<SelectedDeviceState>(SelectedDeviceState.Online(onlineDevice("emulator-5554")))
         val vm = viewModel(vmScope, HeldDispatchers, selectedDeviceState)

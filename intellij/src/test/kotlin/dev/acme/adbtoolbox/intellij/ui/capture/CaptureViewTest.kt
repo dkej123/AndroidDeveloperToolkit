@@ -18,6 +18,8 @@ import dev.acme.adbtoolbox.domain.device.DeviceConnectionState
 import dev.acme.adbtoolbox.domain.device.SelectedDeviceState
 import dev.acme.adbtoolbox.domain.devicecontext.ControlPolicy
 import dev.acme.adbtoolbox.domain.dispatch.DispatcherProvider
+import dev.acme.adbtoolbox.intellij.ui.common.HeldDispatcher
+import dev.acme.adbtoolbox.intellij.ui.common.HeldDispatchers
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -112,9 +114,10 @@ class CaptureViewTest : BasePlatformTestCase() {
         // `:intellij:test` sandbox does not reliably support (see CaptureView's own render loop, which
         // this test never exercises for the same reason — its scope is cancelled immediately).
         val dispatchers = TestDispatchers()
-        val vmScope = CoroutineScope(SupervisorJob() + dispatchers.default)
+        // The view model's own coroutines are held, so only the click's synchronous effect is observed.
+        val vmScope = CoroutineScope(SupervisorJob() + HeldDispatcher)
         val selectedDeviceState = MutableStateFlow<SelectedDeviceState>(SelectedDeviceState.Online(onlineDevice("emulator-5554")))
-        val vm = viewModel(vmScope, dispatchers, selectedDeviceState)
+        val vm = viewModel(vmScope, HeldDispatchers, selectedDeviceState)
         val viewScope = CoroutineScope(SupervisorJob() + dispatchers.default)
         val view = CaptureView(vm, viewScope, dispatchers)
         viewScope.cancel()
@@ -128,9 +131,10 @@ class CaptureViewTest : BasePlatformTestCase() {
 
     fun `test clicking Full page forwards a CaptureFullScreenshot request through the real view model`() {
         val dispatchers = TestDispatchers()
-        val vmScope = CoroutineScope(SupervisorJob() + dispatchers.default)
+        // The view model's own coroutines are held, so only the click's synchronous effect is observed.
+        val vmScope = CoroutineScope(SupervisorJob() + HeldDispatcher)
         val selectedDeviceState = MutableStateFlow<SelectedDeviceState>(SelectedDeviceState.Online(onlineDevice("emulator-5554")))
-        val vm = viewModel(vmScope, dispatchers, selectedDeviceState)
+        val vm = viewModel(vmScope, HeldDispatchers, selectedDeviceState)
         val viewScope = CoroutineScope(SupervisorJob() + dispatchers.default)
         val view = CaptureView(vm, viewScope, dispatchers)
         viewScope.cancel()
