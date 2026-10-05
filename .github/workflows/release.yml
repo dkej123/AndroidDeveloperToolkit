@@ -24,8 +24,12 @@ jobs:
           distribution: temurin
           java-version: "21"
 
+      # The self-hosted runner keeps ~/.gradle in a Docker volume between jobs; the GitHub cache
+      # only re-uploaded the Gradle cache over the runner's home uplink after every job.
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-disabled: true
 
       - name: Build plugin
         run: ./gradlew :intellij:buildPlugin --stacktrace
