@@ -153,6 +153,11 @@ tasks.named<Zip>("buildPlugin") {
     archiveBaseName.set("adb-toolbox")
 }
 
+// The license and the notices of ported third-party code (docs/adr/0014) travel inside the plugin jar.
+tasks.named<ProcessResources>("processResources") {
+    from(rootProject.files("LICENSE", "THIRD_PARTY_NOTICES.md")) { into("META-INF") }
+}
+
 /**
  * The `## [version]` section of [changelog] as Marketplace change-notes HTML: `### Heading` lines
  * become `<h3>`, `- item` lines `<li>`. Fails the build when the version has no entry, so a release

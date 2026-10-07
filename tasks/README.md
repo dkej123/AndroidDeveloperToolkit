@@ -163,6 +163,15 @@ concurrent edits to `plugin.xml`.
 | 051 | [Responsive/scaling verification](051-responsive-scaling-verification.md) | Apply and verify only supplied breakpoints and scaling rules |
 | 052 | [Cross-feature integration](052-cross-feature-integration.md) | Regression-tested shared state/lifecycle behavior |
 | 053 | [Release verification](053-release-verification.md) | Compatibility, verifier, package inspection, evidence-only release commit |
+| 057 | [UI hierarchy model and uiautomator capture](057-ui-hierarchy-model.md) | Oh My Android port (ADR 0014/0015) |
+| 058 | [Accessibility audit (TalkBack order)](058-accessibility-audit.md) | Oh My Android port (ADR 0014/0015) |
+| 059 | [More quick toggles: rendering, accessibility, connectivity](059-more-quick-toggles.md) | Oh My Android port (ADR 0014/0015) |
+| 060 | [Device language and emulator GPS location](060-locale-and-gps.md) | Oh My Android port (ADR 0014/0015) |
+| 061 | [Screenshots on the clipboard](061-screenshot-clipboard.md) | Oh My Android port (ADR 0014/0015) |
+| 062 | [Foreground app detection](062-foreground-app.md) | Oh My Android port (ADR 0014/0015) |
+| 063 | [MCP server core](063-mcp-server-core.md) | Oh My Android port (ADR 0014/0015) |
+| 064 | [Layout Inspector, audit, toggles, locale/GPS, MCP settings — UI](064-inspector-and-new-features-ui.md) | Oh My Android port (ADR 0014/0015) |
+| 065 | [MCP tools](065-mcp-tools.md) | Oh My Android port (ADR 0014/0015) |
 
 ## Product coverage map
 
