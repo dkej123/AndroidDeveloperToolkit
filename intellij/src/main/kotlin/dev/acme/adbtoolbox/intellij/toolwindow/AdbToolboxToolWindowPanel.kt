@@ -144,6 +144,8 @@ class AdbToolboxToolWindowPanel(
     densityViewModel: DensityViewModel,
     quickTogglesViewModel: QuickTogglesViewModel,
     developerOptionsViewModel: dev.acme.adbtoolbox.application.display.developer.DeveloperOptionsViewModel? = null,
+    deviceSettingTogglesViewModel: dev.acme.adbtoolbox.application.display.toggles.DeviceSettingTogglesViewModel? = null,
+    selectedDeviceState: StateFlow<dev.acme.adbtoolbox.domain.device.SelectedDeviceState>? = null,
     densityOverrideTracker: OverrideSummaryContributor,
     deviceContextAggregator: DeviceContextAggregator,
     private val displayScope: CoroutineScope,
@@ -272,6 +274,8 @@ class AdbToolboxToolWindowPanel(
         scope = displayScope,
         dispatchers = dispatchers,
         developerOptionsViewModel = developerOptionsViewModel,
+        deviceSettingTogglesViewModel = deviceSettingTogglesViewModel,
+        selectedDevice = selectedDeviceState,
     )
 
     private val navigationCoordinator = NavigationRoutingCoordinator(

@@ -148,10 +148,11 @@ class VisualRegressionTest : BasePlatformTestCase() {
                     ),
                 )
                 update(developerOptionsFixture())
+                update(settingTogglesFixture())
             }
         }, overrideCount = 2),
-        // Taller, so the Developer-options rows and the process-limit chips are in the golden too.
-        Scenario("display-toggles-light-tall", 380, 1040, dark = false, selected = ViewId.Device, view = {
+        // Taller, so every toggle group, rotation and the process-limit chips are in the golden too.
+        Scenario("display-toggles-light-tall", 380, 1000, dark = false, selected = ViewId.Device, view = {
             DisplayPanel({}, {}, {}, {}, {}, {}, {}, {}).apply {
                 update(FontScaleState.Idle(1.0))
                 update(DensityViewState.Idle(DensityReading(428, null)))
@@ -165,6 +166,7 @@ class VisualRegressionTest : BasePlatformTestCase() {
                     ),
                 )
                 update(developerOptionsFixture())
+                update(settingTogglesFixture())
             }
         }),
         Scenario("network-dark-dock", 380, 620, dark = true, selected = ViewId.Network, view = {
@@ -457,6 +459,20 @@ private object GoldenImages {
         }
     }
 }
+
+private fun settingTogglesFixture() = dev.acme.adbtoolbox.application.display.toggles.DeviceSettingTogglesViewState(
+    toggles = dev.acme.adbtoolbox.application.display.toggles.DeviceSettingToggle.entries.associateWith { toggle ->
+        when (toggle) {
+            dev.acme.adbtoolbox.application.display.toggles.DeviceSettingToggle.MobileData ->
+                QuickToggleFieldState.Error("Not supported on this device", null)
+            dev.acme.adbtoolbox.application.display.toggles.DeviceSettingToggle.ShowLayoutBounds,
+            dev.acme.adbtoolbox.application.display.toggles.DeviceSettingToggle.Wifi,
+            -> QuickToggleFieldState.Idle(true)
+            else -> QuickToggleFieldState.Idle(false)
+        }
+    },
+    rotation = QuickToggleFieldState.Idle(dev.acme.adbtoolbox.domain.display.toggles.ScreenRotation.Landscape),
+)
 
 private fun developerOptionsFixture() = DeveloperOptionsViewState(
     toggles = mapOf(

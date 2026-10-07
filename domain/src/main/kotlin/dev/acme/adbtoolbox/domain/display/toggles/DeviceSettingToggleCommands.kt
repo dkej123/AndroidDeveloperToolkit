@@ -141,7 +141,19 @@ open class SvcRadioCommand(private val service: String, private val setting: Str
 
 object WifiCommand : SvcRadioCommand("wifi", "wifi_on")
 
-object MobileDataCommand : SvcRadioCommand("data", "mobile_data")
+/** Mobile data; a device without a cellular radio reads [DisplaySettingRead.NotSet] ("n/a"). */
+object MobileDataCommand : SvcRadioCommand("data", "mobile_data") {
+    override fun readRequest(serial: DeviceSerial) = shell(
+        serial, "cmd", "package", "has-feature", "android.hardware.telephony", ";", "settings", "get", "global", "mobile_data",
+    )
+
+    override fun parseRead(result: AdbTextResult): DisplaySettingRead<Boolean> {
+        val lines = result.stdout.lines().map(String::trim).filter(String::isNotEmpty)
+        if (result.outcome is AdbOutcome.Completed && lines.firstOrNull() == "false") return DisplaySettingRead.NotSet
+        val setting = if (lines.firstOrNull() == "true") lines.drop(1) else lines
+        return super.parseRead(result.copy(stdout = setting.joinToString("\n")))
+    }
+}
 
 /** How the screen rotates: following the sensor, or locked. */
 enum class ScreenRotation { Auto, Portrait, Landscape }

@@ -66,6 +66,7 @@ private class FakeTransport(private val devices: Map<DeviceSerial, FakeDevice>) 
         argv.take(2) == listOf("settings", "get") -> device.settings["${argv[2]}/${argv[3]}"] ?: "null"
         argv.take(2) == listOf("settings", "put") -> { device.settings["${argv[2]}/${argv[3]}"] = argv[4]; "" }
         argv.take(2) == listOf("svc", "wifi") -> { device.settings["global/wifi_on"] = if (argv[2] == "enable") "1" else "0"; "" }
+        argv.take(3) == listOf("cmd", "package", "has-feature") -> "true"
         argv.take(2) == listOf("svc", "data") -> { device.settings["global/mobile_data"] = if (argv[2] == "enable") "1" else "0"; "" }
         argv == listOf("cmd", "connectivity", "airplane-mode") -> if (device.airplane) "enabled" else "disabled"
         argv.take(3) == listOf("cmd", "connectivity", "airplane-mode") -> { device.airplane = argv[3] == "enable"; "" }

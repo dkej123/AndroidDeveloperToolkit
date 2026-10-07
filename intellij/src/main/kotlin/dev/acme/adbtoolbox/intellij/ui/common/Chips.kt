@@ -28,6 +28,10 @@ data class PresetChipChoice<T : Any>(
     val label: String,
     val isDefault: Boolean = false,
     val kind: PresetChipKind = PresetChipKind.PRESET,
+    /** Segmented style only: the share of the track (the process limit's "Standard" takes 2). */
+    val segmentWeight: Int = if (isDefault) 2 else 1,
+    /** Segmented style only: mono for values (process-limit numbers), UI font for words (rotation). */
+    val monospaced: Boolean = !isDefault,
 )
 
 enum class PresetChipKind { PRESET, CUSTOM }
@@ -165,7 +169,7 @@ private class SegmentedLayout : java.awt.LayoutManager {
     private val gap get() = JBUI.scale(2)
     private val chipHeight get() = JBUI.scale(22)
 
-    private fun weight(component: Component) = if ((component as? PresetChip<*>)?.isDefaultChoice == true) 2 else 1
+    private fun weight(component: Component) = (component as? PresetChip<*>)?.segmentWeight ?: 1
 
     override fun preferredLayoutSize(parent: Container): Dimension {
         val insets = parent.insets
@@ -239,6 +243,7 @@ class PresetChip<T : Any> internal constructor(
     val value: T get() = choice.value
     val kind: PresetChipKind get() = choice.kind
     internal val isDefaultChoice: Boolean get() = choice.isDefault
+    internal val segmentWeight: Int get() = choice.segmentWeight
 
     /**
      * Chips paint their own surface and border, so they keep the plain Basic UI. A theme's button UI
@@ -268,7 +273,7 @@ class PresetChip<T : Any> internal constructor(
     /** Segmented numbers are mono 11 and the default ("Standard") is UI 11, per the prototype. */
     private fun baseFont(): java.awt.Font = when {
         !segmented -> AdbToolboxTheme.Typography.body
-        choice.isDefault -> AdbToolboxTheme.Typography.body.deriveFont(JBUI.scale(11f))
+        !choice.monospaced -> AdbToolboxTheme.Typography.body.deriveFont(JBUI.scale(11f))
         else -> AdbToolboxTheme.Typography.mono.deriveFont(JBUI.scale(11f))
     }
 

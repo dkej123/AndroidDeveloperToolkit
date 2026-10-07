@@ -680,6 +680,15 @@ class AdbToolboxProjectService(private val project: Project) : Disposable {
         selectedDeviceState = selectedDeviceViewModel.state,
     )
 
+    /** Rendering, accessibility and connectivity switches plus rotation of the Quick toggles section (task 059). */
+    val deviceSettingTogglesViewModel: dev.acme.adbtoolbox.application.display.toggles.DeviceSettingTogglesViewModel =
+        dev.acme.adbtoolbox.application.display.toggles.DeviceSettingTogglesViewModel(
+            scope = childScope(),
+            dispatchers = dispatcherProvider,
+            transport = adbTransport,
+            selectedDeviceState = selectedDeviceViewModel.state,
+        )
+
     /** Task 032's host-LAN-IPv4 discovery port ("Use my computer IP") and persisted MRU recents adapter. */
     val hostNetworkInfo: HostNetworkInfo = JvmHostNetworkInfo()
     val networkRecentsPersistence: NetworkRecentsPersistence =
@@ -758,6 +767,7 @@ class AdbToolboxProjectService(private val project: Project) : Disposable {
                 deviceFactsViewModel.handle(DeviceFactsIntent.Refresh)
                 quickTogglesViewModel.handle(QuickTogglesIntent.Refresh)
                 developerOptionsViewModel.handle(DeveloperOptionsIntent.Refresh)
+                deviceSettingTogglesViewModel.handle(dev.acme.adbtoolbox.application.display.toggles.DeviceSettingTogglesIntent.Refresh)
                 fontScaleViewModel.handle(FontScaleIntent.Retry)
                 densityViewModel.handle(DensityIntent.Retry)
             },

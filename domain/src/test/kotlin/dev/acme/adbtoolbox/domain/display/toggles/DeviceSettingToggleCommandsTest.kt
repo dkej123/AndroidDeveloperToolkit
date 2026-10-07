@@ -86,9 +86,12 @@ class ConnectivityTogglesTest {
         WifiCommand.writes(false) shouldBe listOf("svc wifi disable")
         WifiCommand.parseRead(ok("2\n")) shouldBe DisplaySettingRead.Value(true)
         WifiCommand.parseRead(ok("0\n")) shouldBe DisplaySettingRead.Value(false)
-        MobileDataCommand.readRequest(serial).rendered() shouldBe "settings get global mobile_data"
+        MobileDataCommand.readRequest(serial).rendered() shouldBe
+            "cmd package has-feature android.hardware.telephony ; settings get global mobile_data"
         MobileDataCommand.writes(true) shouldBe listOf("svc data enable")
-        MobileDataCommand.parseRead(ok("null\n")) shouldBe DisplaySettingRead.Value(false)
+        MobileDataCommand.parseRead(ok("true\nnull\n")) shouldBe DisplaySettingRead.Value(false)
+        MobileDataCommand.parseRead(ok("true\n1\n")) shouldBe DisplaySettingRead.Value(true)
+        MobileDataCommand.parseRead(ok("false\n1\n")) shouldBe DisplaySettingRead.NotSet // no cellular radio
     }
 }
 

@@ -8,6 +8,9 @@ import dev.acme.adbtoolbox.application.display.QuickTogglesViewState
 import dev.acme.adbtoolbox.application.display.density.DensityViewState
 import dev.acme.adbtoolbox.application.display.developer.DeveloperOptionsViewState
 import dev.acme.adbtoolbox.application.display.developer.DeveloperToggle
+import dev.acme.adbtoolbox.application.display.toggles.DeviceSettingToggle
+import dev.acme.adbtoolbox.application.display.toggles.DeviceSettingTogglesViewState
+import dev.acme.adbtoolbox.domain.display.toggles.ScreenRotation
 import dev.acme.adbtoolbox.domain.display.AnimationsSummary
 import dev.acme.adbtoolbox.domain.display.density.DensityReading
 import dev.acme.adbtoolbox.domain.display.fontscale.FontScaleState
@@ -36,11 +39,15 @@ class DisplayPanelTest : BasePlatformTestCase() {
         onSetTalkBack: (Boolean) -> Unit = {},
         onSetDeveloperToggle: (DeveloperToggle, Boolean) -> Unit = { _, _ -> },
         onSetProcessLimit: (Int) -> Unit = {},
+        onSetDeviceSettingToggle: (DeviceSettingToggle, Boolean) -> Unit = { _, _ -> },
+        onSetRotation: (ScreenRotation) -> Unit = {},
     ) = DisplayPanel(
         onApplyFontScale, onResetFontScale, onApplyDensityPreset, onApplyCustomDensity, onResetDensity,
         onSetDarkTheme, onSetShowTouches, onSetAnimationsOff, onSetTalkBack,
         onSetDeveloperToggle = onSetDeveloperToggle,
         onSetProcessLimit = onSetProcessLimit,
+        onSetDeviceSettingToggle = onSetDeviceSettingToggle,
+        onSetRotation = onSetRotation,
     )
 
     // ---- Font scale ----
@@ -357,33 +364,101 @@ class DisplayPanelTest : BasePlatformTestCase() {
                 talkBack = QuickToggleFieldState.Idle(false),
             ),
         )
-        assertEquals("2 of 8 on", p.togglesMetaLabelForTest.text)
+        assertEquals("2 of 17 on", p.togglesMetaLabelForTest.text)
 
         p.update(
             DeveloperOptionsViewState(
                 toggles = DeveloperToggle.entries.associateWith { QuickToggleFieldState.Idle(it == DeveloperToggle.StayAwake) },
             ),
         )
-        assertEquals("3 of 8 on", p.togglesMetaLabelForTest.text)
+        assertEquals("3 of 17 on", p.togglesMetaLabelForTest.text)
+    }
+
+    // ---- Task 059/064 setting toggles ----
+
+    fun `test setting toggles render their readback and report clicks`() {
+        val set = mutableListOf<Pair<DeviceSettingToggle, Boolean>>()
+        val p = panel(onSetDeviceSettingToggle = { toggle, on -> set += toggle to on })
+        p.update(
+            DeviceSettingTogglesViewState(
+                toggles = DeviceSettingToggle.entries.associateWith { QuickToggleFieldState.Idle(it == DeviceSettingToggle.BoldText) },
+                rotation = QuickToggleFieldState.Idle(ScreenRotation.Auto),
+            ),
+        )
+
+        assertEquals("weight +300", p.settingValueLabelForTest(DeviceSettingToggle.BoldText).text)
+        assertEquals("off", p.settingValueLabelForTest(DeviceSettingToggle.GpuOverdraw).text)
+        p.settingToggleForTest(DeviceSettingToggle.GpuOverdraw).doClick()
+        assertEquals(listOf(DeviceSettingToggle.GpuOverdraw to true), set)
+    }
+
+    fun `test an unsupported toggle reads n-a with its reason and leaves the count`() {
+        val p = panel()
+        p.update(
+            DeviceSettingTogglesViewState(
+                toggles = DeviceSettingToggle.entries.associateWith {
+                    if (it == DeviceSettingToggle.MobileData) QuickToggleFieldState.Error("Not supported on this device", null) else QuickToggleFieldState.Idle(false)
+                },
+            ),
+        )
+
+        assertEquals("n/a", p.settingValueLabelForTest(DeviceSettingToggle.MobileData).text)
+        assertEquals("No cellular radio on this device", p.settingToggleForTest(DeviceSettingToggle.MobileData).toolTipText)
+        assertFalse(p.settingToggleForTest(DeviceSettingToggle.MobileData).isEnabled)
+        assertEquals("0 of 16 on", p.togglesMetaLabelForTest.text)
+    }
+
+    fun `test airplane and wi-fi block themselves while adb runs over wi-fi`() {
+        val p = panel()
+        p.update(DeviceSettingTogglesViewState(toggles = DeviceSettingToggle.entries.associateWith { QuickToggleFieldState.Idle(true) }))
+
+        p.setConnectedOverWifi(true)
+
+        assertEquals("adb over Wi-Fi", p.settingValueLabelForTest(DeviceSettingToggle.Wifi).text)
+        assertFalse(p.settingToggleForTest(DeviceSettingToggle.AirplaneMode).isEnabled)
+        assertTrue(p.settingToggleForTest(DeviceSettingToggle.Wifi).toolTipText.startsWith("Connected over Wi-Fi"))
+        assertTrue(p.settingToggleForTest(DeviceSettingToggle.MobileData).isEnabled)
+
+        p.setConnectedOverWifi(false)
+        assertEquals("on", p.settingValueLabelForTest(DeviceSettingToggle.Wifi).text)
+        assertTrue(p.settingToggleForTest(DeviceSettingToggle.Wifi).isEnabled)
+    }
+
+    fun `test rotation is a segmented control with an amber locked value`() {
+        val chosen = mutableListOf<ScreenRotation>()
+        val p = panel(onSetRotation = { chosen += it })
+        assertFalse(p.rotationChipRowForTest.chips.first().isEnabled)
+
+        p.update(DeviceSettingTogglesViewState(rotation = QuickToggleFieldState.Idle(ScreenRotation.Landscape)))
+
+        assertEquals("landscape · locked", p.rotationValueLabelForTest.text)
+        assertEquals(dev.acme.adbtoolbox.intellij.ui.common.AdbToolboxTheme.Colors.amber, p.rotationValueLabelForTest.foreground)
+        p.rotationChipRowForTest.chips.first { it.value == ScreenRotation.Auto }.doClick()
+        assertEquals(listOf(ScreenRotation.Auto), chosen)
     }
 
     fun `test tiles are grouped under appearance and developer captions`() {
         val p = panel()
         val texts = mutableListOf<String>()
         fun collect(component: java.awt.Component) {
-            if (component is javax.swing.JLabel) texts += component.text
+            if (component is javax.swing.JLabel) texts += (component.accessibleContext.accessibleName ?: component.text)
             if (component is java.awt.Container) component.components.forEach(::collect)
         }
         collect(p)
 
-        val appearance = texts.indexOf("APPEARANCE & ACCESSIBILITY")
-        val developer = texts.indexOf("DEVELOPER")
-        assertTrue(appearance >= 0 && developer > appearance)
-        assertEquals(
-            listOf("Dark theme", "Animations off", "Show touches", "TalkBack"),
-            texts.subList(appearance + 1, developer).filter { it in listOf("Dark theme", "Animations off", "Show touches", "TalkBack") },
-        )
+        val appearance = texts.indexOf("Appearance & accessibility")
+        val developer = texts.indexOf("Developer")
+        val connectivity = texts.indexOf("Connectivity")
+        assertTrue(appearance >= 0 && developer > appearance && connectivity > developer)
+        val appearanceTiles = listOf("Dark theme", "Animations off", "Show touches", "TalkBack", "Bold text", "Invert colors")
+        assertEquals(appearanceTiles, texts.subList(appearance + 1, developer).filter { it in appearanceTiles })
         assertTrue(texts.indexOf("Stay awake") > developer)
+        assertTrue(texts.indexOf("Show layout bounds") in developer..connectivity)
+        assertEquals(
+            listOf("Airplane mode", "Wi-Fi", "Mobile data"),
+            texts.drop(connectivity + 1).filter { it in listOf("Airplane mode", "Wi-Fi", "Mobile data") },
+        )
+        assertTrue(texts.indexOf("Rotation") > connectivity)
     }
 
     // ---- Developer-options toggles ----

@@ -39,7 +39,7 @@ class QuickToggleGridTest : BasePlatformTestCase() {
         val tile = QuickToggleTile("Stay awake", ToggleSwitch(compact = true), value)
 
         val labels = tile.components.filterIsInstance<JBLabel>()
-        assertEquals("Stay awake", labels[0].text)
+        assertEquals("Stay awake", labels[0].accessibleContext.accessibleName)
         assertSame(value, tile.components[1])
     }
 }

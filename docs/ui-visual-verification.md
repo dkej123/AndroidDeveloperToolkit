@@ -15,7 +15,7 @@ the journey tests exercise controls independently of pixel output.
 | `device-scrcpy-missing-light-dock.png` | Device | Light | 380px dock | scrcpy missing: greyed Start, fix hint and links (user decision 2026-09-29) |
 | `apps-dark-dock.png` | Apps | Dark | 380px dock | filtered list, selected app, lifecycle actions |
 | `display-light-dock.png` | Display | Light | 380px dock | active font/density overrides and toggles |
-| `display-toggles-light-tall.png` | Display | Light | 380px, 1040px tall | every quick toggle incl. Developer options, a refused toggle (n/a) and the process-limit chips |
+| `display-toggles-light-tall.png` | Display | Light | 380px, 1000px tall | every quick toggle group (Appearance & accessibility, Developer, Connectivity), refused toggles (n/a, 45%), rotation and the process-limit chips |
 | `network-dark-dock.png` | Network | Dark | 380px dock | active proxy, warning and recents |
 | `logcat-dark-wide.png` | Logcat | Dark | 560px wide | query, severity rows, paused stream and footer |
 

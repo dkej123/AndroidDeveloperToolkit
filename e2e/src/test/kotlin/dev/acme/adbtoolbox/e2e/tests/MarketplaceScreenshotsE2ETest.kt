@@ -83,7 +83,7 @@ class MarketplaceScreenshotsE2ETest : E2eTest() {
             studio.navigate(View.Device)
             // Every quick toggle and the process limit read back (they show "—" while reading).
             awaitUntil(E2eConfig.deviceTimeout(60), Duration.ofMillis(500), "the quick toggles") {
-                studio.visibleTexts().let { texts -> texts.any { Regex("""\d of 8 on""").matches(it) } && "standard" in texts }
+                studio.visibleTexts().let { texts -> texts.any { Regex("""\d+ of \d+ on""").matches(it) } && "standard" in texts }
             }
         }
         scene(2, "apps", DARK) { selectSampleApp() }

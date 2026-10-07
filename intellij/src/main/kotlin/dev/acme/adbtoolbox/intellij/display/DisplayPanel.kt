@@ -10,6 +10,9 @@ import dev.acme.adbtoolbox.application.display.QuickToggleFieldState
 import dev.acme.adbtoolbox.application.display.QuickTogglesViewState
 import dev.acme.adbtoolbox.application.display.developer.DeveloperOptionsViewState
 import dev.acme.adbtoolbox.application.display.developer.DeveloperToggle
+import dev.acme.adbtoolbox.application.display.toggles.DeviceSettingToggle
+import dev.acme.adbtoolbox.application.display.toggles.DeviceSettingTogglesViewState
+import dev.acme.adbtoolbox.domain.display.toggles.ScreenRotation
 import dev.acme.adbtoolbox.application.display.valueOrNull
 import dev.acme.adbtoolbox.domain.display.developer.BackgroundProcessLimit
 import dev.acme.adbtoolbox.application.display.density.DensityViewState
@@ -66,6 +69,8 @@ class DisplayPanel(
     onSetTalkBack: (Boolean) -> Unit = {},
     private val onSetDeveloperToggle: (DeveloperToggle, Boolean) -> Unit = { _, _ -> },
     private val onSetProcessLimit: (Int) -> Unit = {},
+    private val onSetDeviceSettingToggle: (DeviceSettingToggle, Boolean) -> Unit = { _, _ -> },
+    private val onSetRotation: (ScreenRotation) -> Unit = {},
     /** Mounted inside another scrolling view (the Device view) rather than scrolling on its own. */
     embedded: Boolean = false,
 ) : JBPanel<DisplayPanel>(BorderLayout()) {
@@ -230,8 +235,54 @@ class DisplayPanel(
         QuickToggleTile(developerLabel(toggle), developerToggles.getValue(toggle), developerValueLabels.getValue(toggle))
     }
 
+    // Task 059/064 switches (design §5.3 extended grid), rendered from DeviceSettingTogglesViewState.
+    private val settingToggles: Map<DeviceSettingToggle, ToggleSwitch> = DeviceSettingToggle.entries.associateWith { toggle ->
+        ToggleSwitch(compact = true).apply {
+            toolTipText = settingTooltip(toggle)
+            addActionListener { onSetDeviceSettingToggle(toggle, isSelected) }
+        }
+    }
+    private val settingValueLabels: Map<DeviceSettingToggle, JBLabel> = DeviceSettingToggle.entries.associateWith { toggleValueLabel() }
+    private val settingTiles: Map<DeviceSettingToggle, QuickToggleTile> = DeviceSettingToggle.entries.associateWith { toggle ->
+        QuickToggleTile(settingLabel(toggle), settingToggles.getValue(toggle), settingValueLabels.getValue(toggle))
+    }
+
+    /** Toggles that are n/a on this device: they stay visible (45%) but do not count in "N of M on". */
+    private val unavailableToggles = mutableSetOf<ToggleSwitch>()
+
+    /** Airplane / Wi-Fi are blocked while adb itself runs over Wi-Fi (design §5.3). */
+    private var connectedOverWifi = false
+    private var lastSettingState = DeviceSettingTogglesViewState()
+
     private val allToggles: List<ToggleSwitch> =
-        listOf(darkThemeToggle, animationsOffToggle, showTouchesToggle, talkBackToggle) + developerToggles.values
+        listOf(darkThemeToggle, animationsOffToggle, showTouchesToggle, talkBackToggle) + developerToggles.values + settingToggles.values
+
+    private val rotationValueLabel = toggleValueLabel()
+    private val rotationRow = labeledValueRow(groupLabel("Rotation"), rotationValueLabel)
+    private val rotationChipRow: PresetChipRow<ScreenRotation> = PresetChipRow(
+        choices = ScreenRotation.entries.map { rotation ->
+            PresetChipChoice(
+                value = rotation,
+                label = rotation.name,
+                isDefault = rotation == ScreenRotation.Auto,
+                segmentWeight = 1,
+                monospaced = false,
+            )
+        },
+        selected = ScreenRotation.Auto,
+        style = PresetChipRowStyle.SEGMENTED,
+    ).apply {
+        border = JBUI.Borders.empty(0, AdbToolboxTheme.Spacing.sectionInset)
+        chips.forEach { chip ->
+            chip.toolTipText = if (chip.value == ScreenRotation.Auto) {
+                "settings put system accelerometer_rotation 1"
+            } else {
+                "Turns auto-rotate off and sets user_rotation ${if (chip.value == ScreenRotation.Portrait) 0 else 1}"
+            }
+            chip.isEnabled = false
+        }
+        onSelectionChanged = { rotation -> onSetRotation(rotation) }
+    }
 
     private val togglesMetaLabel = sectionMetaLabel()
 
@@ -255,8 +306,26 @@ class DisplayPanel(
 
     private val togglesSection = section(
         sectionHeader(sectionTitleLabel("Quick toggles"), togglesMetaLabel),
-        toggleGroup("Appearance & accessibility", listOf(darkThemeTile, animationsTile, showTouchesTile, talkBackTile)),
-        toggleGroup("Developer", developerTiles),
+        toggleGroup(
+            "Appearance & accessibility",
+            listOf(darkThemeTile, animationsTile, showTouchesTile, talkBackTile) +
+                listOf(DeviceSettingToggle.BoldText, DeviceSettingToggle.InvertColors).map(settingTiles::getValue),
+        ),
+        toggleGroup(
+            "Developer",
+            developerTiles + listOf(
+                DeviceSettingToggle.ShowLayoutBounds,
+                DeviceSettingToggle.GpuOverdraw,
+                DeviceSettingToggle.GpuProfileBars,
+                DeviceSettingToggle.PointerLocation,
+            ).map(settingTiles::getValue),
+        ),
+        toggleGroup(
+            "Connectivity",
+            listOf(DeviceSettingToggle.AirplaneMode, DeviceSettingToggle.Wifi, DeviceSettingToggle.MobileData).map(settingTiles::getValue),
+        ),
+        rotationRow,
+        rotationChipRow,
         processLimitRow,
         processLimitChipRow,
     )
@@ -316,6 +385,10 @@ class DisplayPanel(
     internal val processLimitValueLabelForTest: JBLabel get() = processLimitValueLabel
     internal val togglesMetaLabelForTest: JBLabel get() = togglesMetaLabel
     internal val darkThemeTileForTest: QuickToggleTile get() = darkThemeTile
+    internal fun settingToggleForTest(toggle: DeviceSettingToggle): JToggleButton = settingToggles.getValue(toggle)
+    internal fun settingValueLabelForTest(toggle: DeviceSettingToggle): JBLabel = settingValueLabels.getValue(toggle)
+    internal val rotationChipRowForTest: PresetChipRow<ScreenRotation> get() = rotationChipRow
+    internal val rotationValueLabelForTest: JBLabel get() = rotationValueLabel
 
     fun update(state: FontScaleState) {
         val current = when (state) {
@@ -427,12 +500,14 @@ class DisplayPanel(
             val field = state.toggles[toggle] ?: QuickToggleFieldState.Loading
             val valueLabel = developerValueLabels.getValue(toggle)
             applyToggleState(developerToggles.getValue(toggle), valueLabel, field, toText = { if (it) "on" else "off" })
+            val switch = developerToggles.getValue(toggle)
             if (field is QuickToggleFieldState.Error) {
                 if (field.lastKnown == null) valueLabel.text = "n/a"
                 valueLabel.toolTipText = field.message
             } else {
                 valueLabel.toolTipText = null
             }
+            if (field is QuickToggleFieldState.Error && field.lastKnown == null) unavailableToggles += switch else unavailableToggles -= switch
         }
 
         val limitField = state.processLimit
@@ -451,12 +526,69 @@ class DisplayPanel(
         refreshTogglesMeta()
     }
 
-    /** Header meta "N of 8 on", counted from device readbacks only; "—" until any toggle has loaded. */
+    /** The label of [toggle], as shown to the user. */
+    fun settingLabelFor(toggle: DeviceSettingToggle): String = settingLabel(toggle)
+
+    fun setConnectedOverWifi(overWifi: Boolean) {
+        if (overWifi == connectedOverWifi) return
+        connectedOverWifi = overWifi
+        update(lastSettingState)
+    }
+
+    fun update(state: DeviceSettingTogglesViewState) {
+        lastSettingState = state
+        DeviceSettingToggle.entries.forEach { toggle ->
+            val field = state.toggles[toggle] ?: QuickToggleFieldState.Loading
+            val switch = settingToggles.getValue(toggle)
+            val valueLabel = settingValueLabels.getValue(toggle)
+            applyToggleState(switch, valueLabel, field, toText = { on -> settingValue(toggle, on) })
+            val unavailable = field is QuickToggleFieldState.Error && field.lastKnown == null
+            val blocked = connectedOverWifi && (toggle == DeviceSettingToggle.AirplaneMode || toggle == DeviceSettingToggle.Wifi)
+            when {
+                unavailable -> {
+                    valueLabel.text = "n/a"
+                    switch.isEnabled = false
+                    switch.toolTipText = unavailableReason(toggle, (field as QuickToggleFieldState.Error).message)
+                    unavailableToggles += switch
+                }
+                blocked -> {
+                    valueLabel.text = "adb over Wi-Fi"
+                    switch.isEnabled = false
+                    switch.toolTipText = "Connected over Wi-Fi — ${if (toggle == DeviceSettingToggle.Wifi) "turning Wi-Fi off" else "airplane mode"} " +
+                        "would drop this adb session. Connect over USB to use it."
+                    unavailableToggles -= switch
+                }
+                else -> {
+                    switch.toolTipText = settingTooltip(toggle)
+                    unavailableToggles -= switch
+                }
+            }
+            valueLabel.toolTipText = switch.toolTipText.takeIf { unavailable || blocked }
+            settingTiles.getValue(toggle).isEnabled = !unavailable && !blocked
+        }
+        val rotationField = state.rotation
+        val rotation = rotationField.valueOrNull()
+        rotationValueLabel.text = when (rotation) {
+            null -> if (rotationField is QuickToggleFieldState.Error) "n/a" else "—"
+            ScreenRotation.Auto -> "auto-rotate"
+            else -> "${rotation.name.lowercase()} · locked"
+        }
+        rotationValueLabel.foreground =
+            if (rotation != null && rotation != ScreenRotation.Auto) AdbToolboxTheme.Colors.amber else AdbToolboxTheme.Colors.textFaint
+        rotationValueLabel.toolTipText = (rotationField as? QuickToggleFieldState.Error)?.message
+        if (rotation != null) rotationChipRow.setSelectedValue(rotation)
+        rotationChipRow.applyPending = rotationField is QuickToggleFieldState.Applying
+        rotationChipRow.chips.forEach { it.isEnabled = rotationField !is QuickToggleFieldState.Loading }
+        refreshTogglesMeta()
+    }
+
+    /** Header meta "N of M on", from device readbacks only; M leaves out n/a toggles; "—" until any toggle has loaded. */
     private fun refreshTogglesMeta() {
+        val counted = allToggles - unavailableToggles
         togglesMetaLabel.text = if (allToggles.none { it.isEnabled }) {
             "—"
         } else {
-            "${allToggles.count { it.isSelected }} of ${allToggles.size} on"
+            "${counted.count { it.isSelected }} of ${counted.size} on"
         }
     }
 
@@ -614,6 +746,44 @@ class DisplayPanel(
             DeveloperToggle.DontKeepActivities -> "Destroy every activity as soon as the user leaves it"
             DeveloperToggle.ShowViewUpdates -> "Flash views inside windows when they redraw"
             DeveloperToggle.ShowSurfaceUpdates -> "Flash entire window surfaces when they update — needs adb root on most devices"
+        }
+
+        fun settingLabel(toggle: DeviceSettingToggle): String = when (toggle) {
+            DeviceSettingToggle.ShowLayoutBounds -> "Show layout bounds"
+            DeviceSettingToggle.GpuOverdraw -> "GPU overdraw"
+            DeviceSettingToggle.GpuProfileBars -> "GPU profile bars"
+            DeviceSettingToggle.PointerLocation -> "Pointer location"
+            DeviceSettingToggle.BoldText -> "Bold text"
+            DeviceSettingToggle.InvertColors -> "Invert colors"
+            DeviceSettingToggle.AirplaneMode -> "Airplane mode"
+            DeviceSettingToggle.Wifi -> "Wi-Fi"
+            DeviceSettingToggle.MobileData -> "Mobile data"
+        }
+
+        fun settingTooltip(toggle: DeviceSettingToggle): String = when (toggle) {
+            DeviceSettingToggle.ShowLayoutBounds -> "setprop debug.layout true|false — open apps redraw with clip bounds and margins"
+            DeviceSettingToggle.GpuOverdraw -> "setprop debug.hwui.overdraw show|false — tints pixels drawn more than once"
+            DeviceSettingToggle.GpuProfileBars -> "setprop debug.hwui.profile visual_bars|false — frame-time bars at the bottom of the screen"
+            DeviceSettingToggle.PointerLocation -> "settings put system pointer_location 1|0 — draws touch coordinates on top"
+            DeviceSettingToggle.BoldText -> "settings put secure font_weight_adjustment 300|0"
+            DeviceSettingToggle.InvertColors -> "settings put secure accessibility_display_inversion_enabled 1|0"
+            DeviceSettingToggle.AirplaneMode -> "cmd connectivity airplane-mode enable|disable"
+            DeviceSettingToggle.Wifi -> "svc wifi enable|disable — turning off Wi-Fi can drop a wireless adb connection"
+            DeviceSettingToggle.MobileData -> "svc data enable|disable"
+        }
+
+        fun settingValue(toggle: DeviceSettingToggle, on: Boolean): String = when {
+            !on -> "off"
+            toggle == DeviceSettingToggle.BoldText -> "weight +300"
+            toggle == DeviceSettingToggle.GpuOverdraw -> "show"
+            toggle == DeviceSettingToggle.GpuProfileBars -> "bars"
+            else -> "on"
+        }
+
+        fun unavailableReason(toggle: DeviceSettingToggle, message: String): String = when (toggle) {
+            DeviceSettingToggle.MobileData -> "No cellular radio on this device"
+            DeviceSettingToggle.BoldText -> "Needs Android 12 (API 31)"
+            else -> message
         }
 
         fun fontChipLabel(value: Double): String {

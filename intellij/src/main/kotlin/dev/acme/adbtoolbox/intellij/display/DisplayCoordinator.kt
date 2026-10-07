@@ -1,5 +1,11 @@
 package dev.acme.adbtoolbox.intellij.display
 
+import dev.acme.adbtoolbox.application.display.toggles.DeviceSettingToggle
+import dev.acme.adbtoolbox.application.display.toggles.DeviceSettingTogglesIntent
+import dev.acme.adbtoolbox.application.display.toggles.DeviceSettingTogglesViewModel
+import dev.acme.adbtoolbox.application.display.toggles.DeviceSettingTogglesViewState
+import dev.acme.adbtoolbox.domain.display.toggles.ScreenRotation
+
 import com.intellij.openapi.Disposable
 import dev.acme.adbtoolbox.application.devicecontext.DeviceContextAggregator
 import dev.acme.adbtoolbox.application.display.DisplayBadgeContributor
@@ -53,6 +59,9 @@ class DisplayCoordinator(
     private val scope: CoroutineScope,
     private val dispatchers: DispatcherProvider,
     developerOptionsViewModel: DeveloperOptionsViewModel? = null,
+    deviceSettingTogglesViewModel: DeviceSettingTogglesViewModel? = null,
+    /** Airplane / Wi-Fi block themselves while adb runs over Wi-Fi (design §5.3). */
+    selectedDevice: kotlinx.coroutines.flow.StateFlow<dev.acme.adbtoolbox.domain.device.SelectedDeviceState>? = null,
 ) : Disposable {
 
     val panel: DisplayPanel = DisplayPanel(
@@ -69,6 +78,10 @@ class DisplayCoordinator(
             developerOptionsViewModel?.handle(DeveloperOptionsIntent.SetToggle(toggle, enabled))
         },
         onSetProcessLimit = { limit -> developerOptionsViewModel?.handle(DeveloperOptionsIntent.SetProcessLimit(limit)) },
+        onSetDeviceSettingToggle = { toggle, enabled ->
+            deviceSettingTogglesViewModel?.handle(DeviceSettingTogglesIntent.SetToggle(toggle, enabled))
+        },
+        onSetRotation = { rotation -> deviceSettingTogglesViewModel?.handle(DeviceSettingTogglesIntent.SetRotation(rotation)) },
         embedded = true,
     ).also { slot.add(it, java.awt.BorderLayout.CENTER) }
 
@@ -92,7 +105,47 @@ class DisplayCoordinator(
         developerOptionsViewModel?.state
             ?.onEach { state -> withContext(dispatchers.main) { renderDeveloperOptions(state) } }
             ?.launchIn(scope)
+        deviceSettingTogglesViewModel?.state
+            ?.onEach { state -> withContext(dispatchers.main) { renderDeviceSettingToggles(state) } }
+            ?.launchIn(scope)
+        selectedDevice
+            ?.onEach { selected ->
+                val overWifi = (selected as? dev.acme.adbtoolbox.domain.device.SelectedDeviceState.Online)
+                    ?.device?.connectionKind == dev.acme.adbtoolbox.domain.device.DeviceConnectionKind.Wifi
+                withContext(dispatchers.main) { panel.setConnectedOverWifi(overWifi) }
+            }
+            ?.launchIn(scope)
     }
+
+    /**
+     * Production code always reaches this already marshaled onto [dispatchers]' `main` context. Like
+     * [renderDeveloperOptions], a failure is announced only when it ends the user's own change; a
+     * rotation change is confirmed with a toast (design §5.3).
+     */
+    internal fun renderDeviceSettingToggles(state: DeviceSettingTogglesViewState) {
+        panel.update(state)
+        state.toggles.forEach { (toggle, field) ->
+            if (field is QuickToggleFieldState.Error && lastSettingFields[toggle] is QuickToggleFieldState.Applying) {
+                postError("${panel.settingLabelFor(toggle)}: ${field.message}")
+            }
+        }
+        val rotation = state.rotation
+        if (lastRotation is QuickToggleFieldState.Applying) {
+            when (rotation) {
+                is QuickToggleFieldState.Error -> postError("Rotation: ${rotation.message}")
+                is QuickToggleFieldState.Idle -> post(
+                    if (rotation.value == ScreenRotation.Auto) "Auto-rotate on" else "Rotation locked to ${rotation.value.name.lowercase()}",
+                    FeedbackSeverity.Success,
+                )
+                else -> Unit
+            }
+        }
+        lastSettingFields = state.toggles
+        lastRotation = rotation
+    }
+
+    private var lastSettingFields: Map<DeviceSettingToggle, QuickToggleFieldState<Boolean>> = emptyMap()
+    private var lastRotation: QuickToggleFieldState<ScreenRotation> = QuickToggleFieldState.Loading
 
     /**
      * Production code always reaches this already marshaled onto [dispatchers]' `main` context.
@@ -149,10 +202,12 @@ class DisplayCoordinator(
 
     private var lastTalkBackError: QuickToggleFieldState.Error<Boolean>? = null
 
-    private fun postError(message: String) {
+    private fun postError(message: String) = post(message, FeedbackSeverity.Error)
+
+    private fun post(message: String, severity: FeedbackSeverity) {
         feedback.handle(
             FeedbackIntent.Post(
-                FeedbackMessage(id = "display-error-${System.nanoTime()}", text = message, severity = FeedbackSeverity.Error),
+                FeedbackMessage(id = "display-${severity.name.lowercase()}-${System.nanoTime()}", text = message, severity = severity),
             ),
         )
     }

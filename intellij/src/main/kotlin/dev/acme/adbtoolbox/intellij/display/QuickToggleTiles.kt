@@ -29,9 +29,28 @@ internal class QuickToggleTile(
     val toggle: ToggleSwitch,
     val valueLabel: JBLabel,
 ) : JPanel(null) {
-    private val labelComponent = JBLabel(label).apply {
+    // Labels are never truncated (design §5.3 extended grid): an HTML label wraps at its width; its
+    // accessible name stays the plain label for assistive tech and the E2E caption lookup.
+    private val labelComponent = JBLabel("<html>${com.intellij.openapi.util.text.StringUtil.escapeXmlEntities(label)}</html>").apply {
         font = AdbToolboxTheme.Typography.body.deriveFont(JBUI.scale(11.5f))
         foreground = AdbToolboxTheme.Colors.text
+        getAccessibleContext().accessibleName = label
+        verticalAlignment = javax.swing.SwingConstants.TOP
+    }
+
+    /** The label's height when wrapped into [width]. */
+    private fun labelHeight(width: Int): Int {
+        val view = labelComponent.getClientProperty(javax.swing.plaf.basic.BasicHTML.propertyKey) as? javax.swing.text.View
+            ?: return labelComponent.preferredSize.height
+        view.setSize(maxOf(1, width).toFloat(), 0f)
+        return kotlin.math.ceil(view.getPreferredSpan(javax.swing.text.View.Y_AXIS).toDouble()).toInt()
+    }
+
+    /** The tile's height at [width], with the label wrapped (rows of the grid use the tallest). */
+    fun heightFor(width: Int): Int {
+        val labelWidth = width - JBUI.scale(9) - JBUI.scale(8) - JBUI.scale(6) - toggle.preferredSize.width
+        val top = maxOf(labelHeight(labelWidth), toggle.preferredSize.height + JBUI.scale(2))
+        return JBUI.scale(7) + top + JBUI.scale(3) + valueLabel.preferredSize.height + JBUI.scale(7)
     }
     private var hovered = false
 
@@ -79,6 +98,24 @@ internal class QuickToggleTile(
         repaint()
     }
 
+    /** n/a and blocked tiles stay visible at the design system's 45% (design §5.3). */
+    override fun paint(graphics: Graphics) {
+        if (isEnabled) return super.paint(graphics)
+        val g2 = graphics.create() as Graphics2D
+        try {
+            g2.composite = java.awt.AlphaComposite.getInstance(java.awt.AlphaComposite.SRC_OVER, AdbToolboxTheme.States.disabledOpacity)
+            super.paint(g2)
+        } finally {
+            g2.dispose()
+        }
+    }
+
+    override fun setEnabled(enabled: Boolean) {
+        if (enabled == isEnabled) return
+        super.setEnabled(enabled)
+        repaint()
+    }
+
     override fun paintComponent(graphics: Graphics) {
         val g2 = graphics.create() as Graphics2D
         try {
@@ -109,23 +146,29 @@ internal class QuickToggleTile(
         private val rowGap get() = JBUI.scale(6)
         private val lineGap get() = JBUI.scale(3)
 
-        private fun topRowHeight() = maxOf(labelComponent.preferredSize.height, toggle.preferredSize.height)
+        private fun labelWidth(width: Int) = maxOf(0, width - left - rowGap - toggle.preferredSize.width - right)
 
-        override fun preferredLayoutSize(parent: Container): Dimension = Dimension(
-            left + labelComponent.preferredSize.width + rowGap + toggle.preferredSize.width + right,
-            top + topRowHeight() + lineGap + valueLabel.preferredSize.height + top,
-        )
+        private fun topRowHeight(width: Int) = maxOf(labelHeight(labelWidth(width)), toggle.preferredSize.height + JBUI.scale(2))
+
+        override fun preferredLayoutSize(parent: Container): Dimension {
+            val width = if (parent.width > 0) parent.width else JBUI.scale(150)
+            return Dimension(
+                left + rowGap + toggle.preferredSize.width + right + JBUI.scale(60),
+                top + topRowHeight(width) + lineGap + valueLabel.preferredSize.height + top,
+            )
+        }
 
         override fun minimumLayoutSize(parent: Container): Dimension =
             Dimension(left + rowGap + toggle.preferredSize.width + right, preferredLayoutSize(parent).height)
 
         override fun layoutContainer(parent: Container) {
-            val rowHeight = topRowHeight()
+            val rowHeight = topRowHeight(parent.width)
             val switchSize = toggle.preferredSize
             val switchX = parent.width - right - switchSize.width
-            toggle.setBounds(switchX, top + (rowHeight - switchSize.height) / 2, switchSize.width, switchSize.height)
-            val labelHeight = labelComponent.preferredSize.height
-            labelComponent.setBounds(left, top + (rowHeight - labelHeight) / 2, maxOf(0, switchX - rowGap - left), labelHeight)
+            // The track stays top-aligned with the first label line (margin-top 2px).
+            toggle.setBounds(switchX, top + JBUI.scale(2), switchSize.width, switchSize.height)
+            val labelWidth = labelWidth(parent.width)
+            labelComponent.setBounds(left, top, labelWidth, labelHeight(labelWidth))
             valueLabel.setBounds(
                 left,
                 top + rowHeight + lineGap,
@@ -147,6 +190,7 @@ internal class QuickToggleTile(
  */
 internal class QuickToggleGrid(tiles: List<QuickToggleTile>) : JPanel(null) {
     private var publishedColumns = -1
+    private var publishedWidth = -1
 
     init {
         isOpaque = false
@@ -167,8 +211,10 @@ internal class QuickToggleGrid(tiles: List<QuickToggleTile>) : JPanel(null) {
         super.setBounds(x, y, width, height)
         if (width <= 0) return
         val columns = columnsFor(width)
-        if (columns != publishedColumns) {
+        // Wrapped labels make the row height depend on the width, not only on the column count.
+        if (columns != publishedColumns || width != publishedWidth) {
             publishedColumns = columns
+            publishedWidth = width
             // Not now: this runs inside the parent's layout pass, and invalidating a BoxLayout
             // parent mid-pass nulls its child cache (NPE "this.xChildren is null", E2E 2026-10-01).
             javax.swing.SwingUtilities.invokeLater {
@@ -188,7 +234,16 @@ internal class QuickToggleGrid(tiles: List<QuickToggleTile>) : JPanel(null) {
         private fun widthOf(parent: Container) =
             if (parent.width > 0) parent.width else parent.parent?.width ?: 0
 
-        private fun rowHeight(parent: Container) = parent.components.maxOfOrNull { it.preferredSize.height } ?: 0
+        private fun cellWidth(parent: Container, width: Int): Int {
+            val insets = parent.insets
+            val columns = columnsFor(width)
+            return (width - insets.left - insets.right - (columns - 1) * gap) / columns
+        }
+
+        private fun rowHeight(parent: Container, width: Int): Int {
+            val cell = cellWidth(parent, width)
+            return parent.components.maxOfOrNull { (it as? QuickToggleTile)?.heightFor(cell) ?: it.preferredSize.height } ?: 0
+        }
 
         override fun preferredLayoutSize(parent: Container): Dimension {
             val insets = parent.insets
@@ -196,9 +251,10 @@ internal class QuickToggleGrid(tiles: List<QuickToggleTile>) : JPanel(null) {
             if (count == 0) return Dimension(insets.left + insets.right, insets.top + insets.bottom)
             val columns = columnsFor(widthOf(parent))
             val rows = (count + columns - 1) / columns
+            val width = widthOf(parent).takeIf { it > 0 } ?: (insets.left + insets.right + JBUI.scale(150))
             return Dimension(
                 insets.left + insets.right + JBUI.scale(150),
-                insets.top + insets.bottom + rows * rowHeight(parent) + (rows - 1) * gap,
+                insets.top + insets.bottom + rows * rowHeight(parent, width) + (rows - 1) * gap,
             )
         }
 
@@ -209,7 +265,7 @@ internal class QuickToggleGrid(tiles: List<QuickToggleTile>) : JPanel(null) {
             val columns = columnsFor(parent.width)
             val available = parent.width - insets.left - insets.right
             val cellWidth = (available - (columns - 1) * gap) / columns
-            val cellHeight = rowHeight(parent)
+            val cellHeight = rowHeight(parent, parent.width)
             parent.components.forEachIndexed { index, component ->
                 val column = index % columns
                 val row = index / columns
