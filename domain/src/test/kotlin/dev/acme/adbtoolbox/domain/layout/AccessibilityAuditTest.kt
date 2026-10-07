@@ -148,6 +148,30 @@ class AccessibilityAuditTest {
     }
 
     @Test
+    fun `a focusable scrolling container is not a stop, its rows are`() {
+        val items = audit(
+            n(1, PixelRect(0, 0, 1080, 2000), "android.widget.ScrollView", flags = UiNodeFlags(focusable = true, scrollable = true), children = arrayOf(
+                n(2, big(0), "android.widget.LinearLayout", flags = CLICKABLE, children = arrayOf(n(3, big(0), "android.widget.TextView", text = "Network"))),
+                n(4, big(dp(100)), "android.widget.LinearLayout", flags = CLICKABLE, children = arrayOf(n(5, big(dp(100)), "android.widget.TextView", text = "Display"))),
+            )),
+        )
+
+        items.map { it.spoken } shouldContainExactly listOf("Network, Button, double-tap to activate", "Display, Button, double-tap to activate")
+    }
+
+    @Test
+    fun `the Settings screen lists each row of its focusable ScrollView`() {
+        val root = UiAutomatorXmlParser.parse(javaClass.getResource("/layout/api30-settings.xml")!!.readText())
+            .shouldBeInstanceOf<UiTreeParse.Parsed>().root
+
+        val items = AccessibilityAudit.items(UiHierarchy(root, 440))
+
+        val rows = listOf("Network & internet", "Connected devices", "Apps & notifications", "Battery", "Display", "Sound", "Storage")
+        rows.forEach { row -> items.count { it.spoken.startsWith(row) } shouldBe 1 }
+        items.none { "ScrollView" in it.node.className || "RecyclerView" in it.node.className } shouldBe true
+    }
+
+    @Test
     fun `the report lists every stop with its problems`() {
         val report = AccessibilityAudit.audit(UiHierarchy(n(0, PixelRect(0, 0, 1080, 2340), children = arrayOf(
             n(1, big(0), "android.widget.ImageButton", flags = CLICKABLE),

@@ -10,6 +10,7 @@ import dev.acme.adbtoolbox.application.logcat.LogcatPackagePidTracker
 import dev.acme.adbtoolbox.application.logcat.LogcatPidResolver
 import dev.acme.adbtoolbox.application.logcat.LogcatSessionManager
 import dev.acme.adbtoolbox.domain.adb.AdbOutcome
+import dev.acme.adbtoolbox.domain.adb.AdbStreamEvent
 import dev.acme.adbtoolbox.domain.adb.AdbTextResult
 import dev.acme.adbtoolbox.domain.adb.DeviceSerial
 import dev.acme.adbtoolbox.domain.adb.FakeAdbTransport
@@ -72,12 +73,16 @@ class LogcatCoordinatorTest : BasePlatformTestCase() {
 
     private fun fixture(
         initialState: SelectedDeviceState = SelectedDeviceState.None,
+        streamOutcome: AdbOutcome = AdbOutcome.Completed(0),
     ): Fixture {
         val dispatchers: DispatcherProvider = TestDispatchers()
         val scope = CoroutineScope(SupervisorJob() + dispatchers.default)
         val selectedDeviceState = MutableStateFlow(initialState)
         val selectedPackageState = MutableStateFlow<SelectedPackageState>(SelectedPackageState.None)
-        val transport = FakeAdbTransport(textScript = { AdbTextResult(AdbOutcome.Completed(0), "", "") })
+        val transport = FakeAdbTransport(
+            textScript = { AdbTextResult(AdbOutcome.Completed(0), "", "") },
+            streamScript = { listOf(AdbStreamEvent.Completed(streamOutcome)) },
+        )
         val sessionManager = LogcatSessionManager(scope, dispatchers, selectedDeviceState, transport)
         val pidTracker = LogcatPackagePidTracker(scope, dispatchers, selectedPackageState, LogcatPidResolver(transport))
         val controller = LogcatControlsController(
@@ -236,14 +241,15 @@ class LogcatCoordinatorTest : BasePlatformTestCase() {
     }
 
     fun `test the badge contributor reflects an error session on the selected serial`() {
-        // The fixture's fake logcat stream ends immediately, so the session for the selected
-        // serial settles in Error; the contributor must then report Attention for that serial only.
-        val f = fixture(initialState = SelectedDeviceState.Online(Device(SERIAL, DeviceConnectionState.Online)))
+        // An unsupported stream is never retried (LogcatSessionManager), so the session settles in
+        // Error for good; a retriable end would flip back to Starting and make this a race.
+        val f = fixture(
+            initialState = SelectedDeviceState.Online(Device(SERIAL, DeviceConnectionState.Online)),
+            streamOutcome = AdbOutcome.Unsupported("logcat unavailable"),
+        )
         val coordinator = coordinator(f)
         val contributor = LogcatBadgeContributor(f.controller)
 
-        // The session reconnects after a short delay (LogcatSessionManager), so it does not stay in
-        // Error: wait for the badge itself rather than reading it after the state was seen.
         val deadline = System.currentTimeMillis() + 5_000
         while (contributor.badgeFor(SERIAL) != dev.acme.adbtoolbox.domain.nav.NavigationBadge.Attention &&
             System.currentTimeMillis() < deadline

@@ -50,7 +50,7 @@ data class AccessibilityReport(val stops: List<AccessibilityStop>, val unannounc
 
 /**
  * Approximates TalkBack's traversal: depth-first; an actionable node (clickable, focusable,
- * checkable, long-clickable) is one stop and swallows its children, whose text is merged into the
+ * checkable, long-clickable — but not a merely focusable container of actionable nodes) is one stop and swallows its children, whose text is merged into the
  * announcement; a non-actionable node with text is a stop of its own; pure containers are skipped.
  * Siblings are read in rows top to bottom (centres within 16 dp share a row), then left to right.
  *
@@ -79,7 +79,7 @@ object AccessibilityAudit {
         images: MutableList<UiNode>,
     ) {
         if (node.bounds.isEmpty) return
-        if (node.flags.actionable) {
+        if (isStop(node)) {
             stops += stop(node, mergedText(node), hierarchy, viewport, stops.size + 1)
             return
         }
@@ -91,6 +91,20 @@ object AccessibilityAudit {
         val inner = if (node.flags.scrollable) node.bounds else viewport
         spatiallyOrdered(node.children, hierarchy).forEach { visit(it, hierarchy, inner, stops, images) }
     }
+
+    /**
+     * A node that is only focusable (Settings' `ScrollView`, a `RecyclerView`, the layout around
+     * them) is not a stop when it holds actionable nodes: TalkBack moves straight to those.
+     */
+    private fun isStop(node: UiNode): Boolean {
+        val f = node.flags
+        if (!f.actionable) return false
+        if (f.clickable || f.checkable || f.longClickable) return true
+        return node.children.none(::hasActionable)
+    }
+
+    private fun hasActionable(node: UiNode): Boolean =
+        !node.bounds.isEmpty && (node.flags.actionable || node.children.any(::hasActionable))
 
     private fun spatiallyOrdered(nodes: List<UiNode>, hierarchy: UiHierarchy): List<UiNode> {
         val tolerance = hierarchy.px(ROW_TOLERANCE_DP)
