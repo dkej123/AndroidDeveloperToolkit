@@ -51,9 +51,11 @@ Islands Dark (Studio’s default theme). Every view and every App details tab:
 The capture refuses scenes that still show "Loading…" or a timeout, so a slow device fails the
 run instead of producing a broken picture.
 
-Marketplace has no API for screenshots: upload them on the plugin page (Edit → Media) whenever the
-UI changed visibly. Check every image first — a leftover dialog, toast or error state means
-re-running the script.
+Check every image first — a leftover dialog, toast or error state means re-running the script.
+Then put them on the page with `release/listing.sh` (needs `$JETBRAINS_MARKETPLACE_TOKEN`) or the
+**Marketplace Listing** workflow (`gh workflow run marketplace-listing.yml`, uses the repository
+secret). It replaces the page's screenshots and also sets the links and syncs the description from
+`plugin.xml`. These are the undocumented endpoints the Marketplace edit page itself calls.
 
 ## First upload (once)
 

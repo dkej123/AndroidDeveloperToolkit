@@ -9,6 +9,9 @@ mkdir -p "$RELEASE_LOGS"
 rlog() { printf '\033[1;34m[release]\033[0m %s\n' "$*" >&2; }
 rdie() { printf '\033[1;31m[release] error:\033[0m %s\n' "$*" >&2; exit 1; }
 
+# Numeric ID of the plugin page (https://plugins.jetbrains.com/plugin/34857-adb-toolbox), for the page API.
+MARKETPLACE_PLUGIN_ID=34857
+
 plugin_version() { awk -F '=' '/^pluginVersion/ { gsub(/[[:space:]]/, "", $2); print $2 }' "$RELEASE_ROOT/gradle.properties"; }
 plugin_zip() { echo "$RELEASE_ROOT/intellij/build/distributions/adb-toolbox-$(plugin_version).zip"; }
 

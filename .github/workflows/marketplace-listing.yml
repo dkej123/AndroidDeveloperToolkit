@@ -1,0 +1,48 @@
+name: Marketplace Listing
+
+# Updates the JetBrains Marketplace page (links, description, screenshots) with release/listing.sh
+# and the JETBRAINS_MARKETPLACE_TOKEN secret. Manual only; it does not upload a plugin version.
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Screenshot set (marketplace/screenshots/<version>); empty = pluginVersion
+        required: false
+        type: string
+      screenshots:
+        description: Replace the screenshots
+        type: boolean
+        default: true
+      description:
+        description: Sync the description from plugin.xml
+        type: boolean
+        default: true
+      urls:
+        description: Set the links (homepage, source, issues, docs, license)
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+jobs:
+  listing:
+    name: Update the Marketplace page
+    # curl + python3 only; no Gradle or IDE, so no need for the self-hosted runner.
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Update listing
+        env:
+          JETBRAINS_MARKETPLACE_TOKEN: ${{ secrets.JETBRAINS_MARKETPLACE_TOKEN }}
+        shell: bash
+        run: |
+          ARGS=()
+          [[ -n "${{ inputs.version }}" ]] && ARGS+=(--version "${{ inputs.version }}")
+          [[ "${{ inputs.screenshots }}" == "true" ]] || ARGS+=(--no-screenshots)
+          [[ "${{ inputs.description }}" == "true" ]] || ARGS+=(--no-description)
+          [[ "${{ inputs.urls }}" == "true" ]] || ARGS+=(--no-urls)
+          release/listing.sh "${ARGS[@]}"

@@ -9,7 +9,8 @@
 <p>Control your Android device from Android Studio or IntelliJ IDEA without opening a terminal.
 ADB Toolbox puts the adb commands you run every day into one tool window.</p>
 <ul>
-  <li><b>Device</b> &ndash; device facts, screenshots and screen recording, scrcpy mirroring,
+  <li><b>Device</b> &ndash; device facts, screenshots (also full-page, of scrolling screens) and
+      screen recording, scrcpy mirroring,
       font scale and display density presets, quick toggles for dark theme, animations, show
       touches, TalkBack and common developer options.</li>
   <li><b>Apps</b> &ndash; searchable package list with launcher icons and pins; restart,
@@ -18,7 +19,8 @@ ADB Toolbox puts the adb commands you run every day into one tool window.</p>
   <li><b>Network</b> &ndash; device-wide HTTP proxy and emulator network throttling.</li>
   <li><b>Logcat</b> &ndash; a fast, filterable stream with levels, search, package filter,
       pause and wrap.</li>
-  <li>Wi-Fi pairing, multiple devices, light and dark themes.</li>
+  <li>Wi-Fi pairing, multiple devices, light and dark themes, a one-click diagnostics bundle for
+      bug reports.</li>
 </ul>
 <p>Requires adb (Android SDK platform-tools); mirroring requires scrcpy.</p>
     ]]></description>
