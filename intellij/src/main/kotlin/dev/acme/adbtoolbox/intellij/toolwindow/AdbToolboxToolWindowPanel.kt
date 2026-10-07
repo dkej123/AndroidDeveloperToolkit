@@ -147,6 +147,9 @@ class AdbToolboxToolWindowPanel(
     deviceSettingTogglesViewModel: dev.acme.adbtoolbox.application.display.toggles.DeviceSettingTogglesViewModel? = null,
     selectedDeviceState: StateFlow<dev.acme.adbtoolbox.domain.device.SelectedDeviceState>? = null,
     localeViewModel: dev.acme.adbtoolbox.application.locale.LocaleViewModel? = null,
+    currentAppViewModel: dev.acme.adbtoolbox.application.currentapp.CurrentAppViewModel? = null,
+    confirmCurrentApp: (dev.acme.adbtoolbox.application.currentapp.CurrentAppAction, String) -> Boolean = { _, _ -> false },
+    registerCurrentAppDetailsOpener: ((String) -> Unit) -> Unit = {},
     locationViewModel: dev.acme.adbtoolbox.application.locale.LocationViewModel? = null,
     densityOverrideTracker: OverrideSummaryContributor,
     deviceContextAggregator: DeviceContextAggregator,
@@ -239,6 +242,34 @@ class AdbToolboxToolWindowPanel(
         host.activeViewHost.registerFeatureView(ViewId.Apps.routeKey) { appsCoordinator.panel }
     }
 
+    /** Details from Current app: App details for the package, the Apps rail item, back link "← Device" (design §3a). */
+    private val openDetailsFromCurrentApp: (String) -> Unit = { pkg ->
+        val row = appsViewModel.state.value.rows.firstOrNull { it.packageName == pkg }
+        appsViewModel.handle(dev.acme.adbtoolbox.application.apps.AppsIntent.SelectPackage(pkg))
+        appDetailsViewModel?.handle(dev.acme.adbtoolbox.application.appdetails.AppDetailsIntent.Open(pkg, row?.label ?: pkg, row?.icon))
+        appsCoordinator.detailsPanel.showOpenedFromDevice {
+            navigationViewModel.handle(dev.acme.adbtoolbox.application.nav.NavigationIntent.Select(ViewId.Device))
+        }
+        navigationViewModel.handle(dev.acme.adbtoolbox.application.nav.NavigationIntent.Select(ViewId.Apps))
+    }
+
+    private val currentAppCoordinator = currentAppViewModel?.let { vm ->
+        registerCurrentAppDetailsOpener(openDetailsFromCurrentApp)
+        dev.acme.adbtoolbox.intellij.currentapp.CurrentAppCoordinator(
+            slot = deviceFactsCoordinator.panel.currentAppSlot,
+            viewModel = vm,
+            identity = { pkg ->
+                appsViewModel.state.value.rows.firstOrNull { it.packageName == pkg }
+                    ?.let { dev.acme.adbtoolbox.intellij.currentapp.AppIdentity(it.label, it.icon) }
+            },
+            confirm = confirmCurrentApp,
+            onDetails = openDetailsFromCurrentApp,
+            onWake = { deviceActionsViewModel.handle(dev.acme.adbtoolbox.application.deviceactions.DeviceActionsIntent.Wake) },
+            scope = kotlinx.coroutines.CoroutineScope(deviceFactsScope.coroutineContext + kotlinx.coroutines.SupervisorJob(deviceFactsScope.coroutineContext[kotlinx.coroutines.Job])),
+            dispatchers = dispatchers,
+        )
+    }
+
     private val networkCoordinator = NetworkCoordinator(
         controller = proxyController,
         aggregator = deviceContextAggregator,
@@ -326,6 +357,7 @@ class AdbToolboxToolWindowPanel(
         navigationCoordinator.dispose()
         feedbackCoordinator.dispose()
         localeCoordinator?.dispose()
+        currentAppCoordinator?.dispose()
         displayCoordinator.dispose()
         logcatCoordinator.dispose()
         networkCoordinator.dispose()

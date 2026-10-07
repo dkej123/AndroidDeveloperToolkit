@@ -410,7 +410,7 @@ class AppsPanel(
 }
 
 /** The destructive group's dashed top divider (`design/README.md` §4: "a 1px dashed top border"). */
-private class DashedTopBorder(private val color: Color) : AbstractBorder() {
+internal class DashedTopBorder(private val color: Color) : AbstractBorder() {
     override fun getBorderInsets(c: Component) = java.awt.Insets(JBUI.scale(1), 0, 0, 0)
 
     override fun paintBorder(c: Component, g: Graphics, x: Int, y: Int, width: Int, height: Int) {

@@ -58,9 +58,33 @@ class AppDetailsPanel(
 
     // ---- header ----
 
+    /** Where "←" returns: the Apps list, or the Device view when opened from Current app (design §3a). */
+    private var backToDevice: (() -> Unit)? = null
+
     private val backLink = DesignButton("← Apps", DesignButtonStyle.LINK).apply {
-        addActionListener { onIntent(AppDetailsIntent.Close) }
+        addActionListener {
+            onIntent(AppDetailsIntent.Close)
+            backToDevice?.let { back ->
+                showOpenedFromApps()
+                back()
+            }
+        }
     }
+
+    /** Opened from Current app: the back link reads "← Device" and returns there. */
+    fun showOpenedFromDevice(back: () -> Unit) {
+        backToDevice = back
+        backLink.text = "← Device"
+        backLink.toolTipText = "Back to the Device view — scroll position is kept"
+    }
+
+    fun showOpenedFromApps() {
+        backToDevice = null
+        backLink.text = "← Apps"
+        backLink.toolTipText = null
+    }
+
+    internal val backLinkForTest: javax.swing.JButton get() = backLink
     private val iconLabel = JBLabel()
     private val titleLabel = JBLabel().apply {
         font = AdbToolboxTheme.Typography.sectionTitle

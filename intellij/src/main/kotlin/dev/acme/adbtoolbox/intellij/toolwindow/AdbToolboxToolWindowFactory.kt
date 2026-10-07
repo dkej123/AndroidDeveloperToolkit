@@ -67,6 +67,12 @@ class AdbToolboxToolWindowFactory : ToolWindowFactory, DumbAware {
             developerOptionsViewModel = composition.developerOptionsViewModel,
             deviceSettingTogglesViewModel = composition.deviceSettingTogglesViewModel,
             localeViewModel = composition.localeViewModel,
+            currentAppViewModel = composition.currentAppViewModel,
+            confirmCurrentApp = dev.acme.adbtoolbox.intellij.currentapp.CurrentAppCoordinator.confirmWithAppsDialogs(project) {
+                (composition.selectedDeviceViewModel.state.value as? dev.acme.adbtoolbox.domain.device.SelectedDeviceState.Online)
+                    ?.device?.displayName ?: "the device"
+            },
+            registerCurrentAppDetailsOpener = { opener -> composition.openCurrentAppDetails = opener },
             locationViewModel = composition.locationViewModel,
             selectedDeviceState = composition.selectedDeviceViewModel.state,
             densityOverrideTracker = composition.densityOverrideTracker,

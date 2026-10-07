@@ -169,6 +169,31 @@ class VisualRegressionTest : BasePlatformTestCase() {
                 update(settingTogglesFixture())
             }
         }),
+        // Current app with a debuggable app in front (design §3a).
+        Scenario("device-current-app-dark-dock", 380, 360, dark = true, selected = ViewId.Device, view = {
+            dev.acme.adbtoolbox.intellij.currentapp.CurrentAppSection(
+                identity = { dev.acme.adbtoolbox.intellij.currentapp.AppIdentity("Acme Shop", null) },
+                onAction = { _, _ -> }, onDetails = {}, onRefresh = {}, onApplyPending = {}, onWake = {}, onLaunchLast = {},
+                now = { 2_000L },
+            ).apply {
+                val app = dev.acme.adbtoolbox.domain.foreground.ForegroundState.App("com.acme.shop", ".checkout.CheckoutActivity")
+                update(
+                    dev.acme.adbtoolbox.application.currentapp.CurrentAppViewState(
+                        display = dev.acme.adbtoolbox.application.currentapp.CurrentAppDisplay.App(
+                            snapshot = dev.acme.adbtoolbox.application.currentapp.CurrentAppSnapshot(
+                                foreground = app,
+                                details = dev.acme.adbtoolbox.domain.foreground.PackageDetails("4.12.0-dev", 41200, 26, 36, debuggable = true, system = false, runtimePermissions = emptyList()),
+                                process = dev.acme.adbtoolbox.domain.foreground.ProcessInfo(8155, kotlin.time.Duration.parse("3m 12s")),
+                            ),
+                            app = app,
+                            killed = false,
+                        ),
+                        updatedAtMillis = 0L,
+                        deviceOnline = true,
+                    ),
+                )
+            }
+        }),
         // Language & region with an override and Location on an emulator (design §3b, §3c).
         Scenario("device-locale-location-dark-dock", 380, 620, dark = true, selected = ViewId.Device, view = {
             javax.swing.JPanel().apply {

@@ -86,6 +86,17 @@ ADB Toolbox puts the adb commands you run every day into one tool window.</p>
             <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="shift meta R"/>
         </action>
 
+        <!-- Design §3a: restart (or launch, when shown as killed) the app in front — one modifier apart
+             from the Apps view's shift+cmd+R so the two targets are never ambiguous. -->
+        <action id="AdbToolbox.RestartForegroundApp"
+                class="dev.acme.adbtoolbox.intellij.currentapp.RestartForegroundAppAction"
+                text="Restart Foreground App"
+                description="Force-stop, then launch the app on the device screen (launches it when it was killed)">
+            <keyboard-shortcut keymap="$default" first-keystroke="shift control alt R"/>
+            <keyboard-shortcut keymap="Mac OS X" first-keystroke="shift meta alt R"/>
+            <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="shift meta alt R"/>
+        </action>
+
         <!-- Task 037's global focus-Logcat shortcut — forwards to the same NavigationViewModel.handle
              entry point the rail uses; design/README.md's Interactions section names shift+cmd+L. -->
         <action id="AdbToolbox.FocusLogcat"

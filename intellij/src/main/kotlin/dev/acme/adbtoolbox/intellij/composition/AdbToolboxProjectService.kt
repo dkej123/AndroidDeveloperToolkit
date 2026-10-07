@@ -717,6 +717,36 @@ class AdbToolboxProjectService(private val project: Project) : Disposable {
         }
     }
 
+    /** Set by the tool window: opens App details from Current app with the "← Device" back link. */
+    var openCurrentAppDetails: (String) -> Unit = {}
+
+    /** Current app (design §3a): the foreground app, its facts and actions. */
+    val currentAppViewModel: dev.acme.adbtoolbox.application.currentapp.CurrentAppViewModel =
+        dev.acme.adbtoolbox.application.currentapp.CurrentAppViewModel(
+            scope = childScope(),
+            dispatchers = dispatcherProvider,
+            currentApp = dev.acme.adbtoolbox.application.currentapp.CurrentAppUseCase(adbTransport),
+            lifecycle = appLifecycleUseCase,
+            clearData = clearDataUseCase,
+            uninstall = uninstallUseCase,
+            selectedDeviceState = selectedDeviceViewModel.state,
+        ) { event ->
+            when (event) {
+                is dev.acme.adbtoolbox.application.currentapp.CurrentAppEvent.Done ->
+                    toast(event.message, dev.acme.adbtoolbox.domain.feedback.FeedbackSeverity.Success)
+                is dev.acme.adbtoolbox.application.currentapp.CurrentAppEvent.Failed -> feedbackViewModel.handle(
+                    dev.acme.adbtoolbox.application.feedback.FeedbackIntent.Post(
+                        dev.acme.adbtoolbox.domain.feedback.FeedbackMessage(
+                            id = "current-app-${System.nanoTime()}",
+                            text = event.message,
+                            severity = dev.acme.adbtoolbox.domain.feedback.FeedbackSeverity.Error,
+                            action = dev.acme.adbtoolbox.domain.feedback.FeedbackAction("Details") { openCurrentAppDetails(event.packageName) },
+                        ),
+                    ),
+                )
+            }
+        }
+
     /** Emulator GPS location (design §3c). */
     val locationViewModel: dev.acme.adbtoolbox.application.locale.LocationViewModel = dev.acme.adbtoolbox.application.locale.LocationViewModel(
         scope = childScope(),

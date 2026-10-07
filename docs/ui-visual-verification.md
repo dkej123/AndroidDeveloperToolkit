@@ -17,6 +17,7 @@ the journey tests exercise controls independently of pixel output.
 | `display-light-dock.png` | Display | Light | 380px dock | active font/density overrides and toggles |
 | `display-toggles-light-tall.png` | Display | Light | 380px, 1000px tall | every quick toggle group (Appearance & accessibility, Developer, Connectivity), refused toggles (n/a, 45%), rotation and the process-limit chips |
 | `device-locale-location-dark-dock.png` | Device | Dark | 380px dock | Language & region with an applied override (amber meta, active row, Reset to original) and Location on an emulator |
+| `device-current-app-dark-dock.png` | Device | Dark | 380px dock | Current app with a debuggable app in front: identity, facts, actions and the destructive group |
 | `network-dark-dock.png` | Network | Dark | 380px dock | active proxy, warning and recents |
 | `logcat-dark-wide.png` | Logcat | Dark | 560px wide | query, severity rows, paused stream and footer |
 

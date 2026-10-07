@@ -74,6 +74,13 @@ class DeviceFactsPanel(
 
     // Slot rows carry the sections' 10px inset. Mirroring fills the row (its help text wraps to
     // the section width); capture and device actions are `actionRowStyle` rows with a 6px gap.
+    /** Current app (design §3a) is the first section, above Mirroring. */
+    val currentAppSlot: JPanel = object : JPanel(BorderLayout()) {
+        override fun getMaximumSize(): java.awt.Dimension = java.awt.Dimension(Int.MAX_VALUE, preferredSize.height)
+    }.apply {
+        isOpaque = false
+        alignmentX = Component.LEFT_ALIGNMENT
+    }
     val mirroringSlot: JBPanel<Nothing> = slot(BorderLayout())
     val captureSlot: JBPanel<Nothing> = slot(FlexRowLayout(AdbToolboxTheme.Spacing.s3))
     val deviceActionsSlot: JBPanel<Nothing> = slot(FlexRowLayout(AdbToolboxTheme.Spacing.s3))
@@ -112,6 +119,7 @@ class DeviceFactsPanel(
         add(JBPanel<Nothing>().apply {
             layout = BoxLayout(this, BoxLayout.Y_AXIS)
             isOpaque = false
+            add(currentAppSlot)
             add(section("Mirroring", mirroringMetaLabel, mirroringSlot))
             add(section("Capture", captureMetaLabel, captureSlot))
             add(deviceSection())
