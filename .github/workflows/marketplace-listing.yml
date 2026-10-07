@@ -18,7 +18,7 @@ on:
         type: boolean
         default: true
       urls:
-        description: Set the links (homepage, source, issues, docs, license)
+        description: Set the links (source, issues, docs, license)
         type: boolean
         default: true
 

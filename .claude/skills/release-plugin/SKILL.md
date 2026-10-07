@@ -42,8 +42,8 @@ Plugin ID `com.github.dkwasniak.adbtoolbox`, vendor `dkwasniak`. Scripts live in
    - `release/publish.sh [--channel beta] [--local]` — preflight (clean, pushed, on `main` for stable,
      CHANGELOG, tag free, version not yet on Marketplace), then tag push → CI, and follows the
      `Publish Plugin` run with `gh run watch`.
-4. **Screenshots on the listing**: Marketplace has no upload API for them. Tell the user which
-   files to upload (plugin page → Edit → Media) when they changed.
+4. **Screenshots on the listing**: when they changed, push them and run the Marketplace Listing
+   workflow — see the `marketplace-listing` skill.
 5. **After publish**: confirm `Publish Plugin` and `Release` workflows succeeded
    (`gh run list --limit 5`); JetBrains moderates each version before it is visible.
 

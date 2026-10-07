@@ -9,7 +9,7 @@
 #
 # Marketplace documents no API for the page itself; these are the endpoints its own edit page
 # calls (POST /edit for links, PUT /description, POST+PUT /screenshots).
-#   - links: docs/marketplace.md values (homepage, source, issues, docs, license);
+#   - links: source, issues, docs, license (the homepage field is ignored by the API);
 #   - description: the <description> of intellij/src/main/resources/META-INF/plugin.xml;
 #   - screenshots: marketplace/screenshots/<version>/*.png in file-name order; they replace the
 #     page's current screenshots.
@@ -49,7 +49,6 @@ if (( do_urls )); then
     rlog "links"
     call -X POST "$api/edit" -H 'Content-Type: application/json' --data @- >/dev/null <<JSON
 {"urls": {
-  "url": "$repo",
   "sourceCodeUrl": "$repo",
   "bugtrackerUrl": "$repo/issues",
   "docUrl": "$repo#readme",
