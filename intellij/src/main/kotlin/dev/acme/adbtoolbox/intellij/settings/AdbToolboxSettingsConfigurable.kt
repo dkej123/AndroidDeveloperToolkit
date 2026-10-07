@@ -30,6 +30,36 @@ internal interface DiagnosticsPreferences {
     var verbose: Boolean
 }
 
+/** Application-wide preferences edited on this page (design §11): clipboard and MCP access. */
+internal interface AppPreferences {
+    var copyScreenshotsToClipboard: Boolean
+    var mcpAccess: dev.acme.adbtoolbox.application.mcp.McpAccess
+
+    /** Starts/stops the MCP server for [mcpAccess], registering [project]'s tools first. */
+    fun applyMcp(project: Project?)
+}
+
+private object ServiceAppPreferences : AppPreferences {
+    private val settings get() = dev.acme.adbtoolbox.intellij.mcp.AdbToolboxAppSettings.getInstance()
+    override var copyScreenshotsToClipboard: Boolean
+        get() = settings.copyScreenshotsToClipboard
+        set(value) {
+            settings.copyScreenshotsToClipboard = value
+        }
+    override var mcpAccess: dev.acme.adbtoolbox.application.mcp.McpAccess
+        get() = settings.mcpAccess
+        set(value) {
+            settings.mcpAccess = value
+        }
+
+    override fun applyMcp(project: Project?) {
+        if (project != null && mcpAccess != dev.acme.adbtoolbox.application.mcp.McpAccess.Off) {
+            project.service<AdbToolboxProjectService>().registerMcpTools()
+        }
+        dev.acme.adbtoolbox.intellij.mcp.McpServerService.getInstance().applyAccess()
+    }
+}
+
 private object ServiceDiagnosticsPreferences : DiagnosticsPreferences {
     override var verbose: Boolean
         get() = DiagnosticsService.getInstance().verbose
@@ -43,6 +73,7 @@ class AdbToolboxSettingsConfigurable internal constructor(
     private val backend: SettingsEditorBackend,
     private val project: Project? = null,
     private val diagnosticsPreferences: DiagnosticsPreferences = ServiceDiagnosticsPreferences,
+    private val appPreferences: AppPreferences = ServiceAppPreferences,
 ) : Configurable {
 
     constructor(project: Project) : this(ProjectSettingsEditorBackend(project), project)
@@ -66,7 +97,9 @@ class AdbToolboxSettingsConfigurable internal constructor(
             currentForm.logcatBufferSizeKb.text != baseline.logcatBufferSizeKb.toString() ||
             currentForm.talkBackOn.text != baseline.talkBackOnCommand.orEmpty() ||
             currentForm.talkBackOff.text != baseline.talkBackOffCommand.orEmpty() ||
-            currentForm.verboseDiagnostics.isSelected != diagnosticsPreferences.verbose
+            currentForm.verboseDiagnostics.isSelected != diagnosticsPreferences.verbose ||
+            currentForm.copyToClipboard.isSelected != appPreferences.copyScreenshotsToClipboard ||
+            currentForm.mcp.access != appPreferences.mcpAccess
     }
 
     @Throws(ConfigurationException::class)
@@ -84,6 +117,11 @@ class AdbToolboxSettingsConfigurable internal constructor(
         )
 
         diagnosticsPreferences.verbose = currentForm.verboseDiagnostics.isSelected
+        appPreferences.copyScreenshotsToClipboard = currentForm.copyToClipboard.isSelected
+        if (currentForm.mcp.access != appPreferences.mcpAccess) {
+            appPreferences.mcpAccess = currentForm.mcp.access
+            appPreferences.applyMcp(project)
+        }
         when (val result = backend.apply(candidate)) {
             is SettingsApplyResult.Applied -> {
                 persisted = result.state
@@ -116,9 +154,18 @@ class AdbToolboxSettingsConfigurable internal constructor(
         target.talkBackOn.text = state.talkBackOnCommand.orEmpty()
         target.talkBackOff.text = state.talkBackOffCommand.orEmpty()
         target.verboseDiagnostics.isSelected = diagnosticsPreferences.verbose
+        target.copyToClipboard.isSelected = appPreferences.copyScreenshotsToClipboard
+        target.mcp.access = appPreferences.mcpAccess
     }
 
     private class SettingsForm(project: Project?) {
+        val copyToClipboard = JBCheckBox("Also copy screenshots to the clipboard").apply { name = "copyScreenshotsCheckBox" }
+        val mcp = dev.acme.adbtoolbox.intellij.mcp.McpSettingsPanel(
+            status = { dev.acme.adbtoolbox.intellij.mcp.McpServerService.getInstance().status.value },
+            token = { dev.acme.adbtoolbox.intellij.mcp.AdbToolboxAppSettings.getInstance().mcpToken() },
+            regenerate = { dev.acme.adbtoolbox.intellij.mcp.McpServerService.getInstance().regenerateToken() },
+            tools = dev.acme.adbtoolbox.application.mcp.tools.mcpCatalog(),
+        )
         val verboseDiagnostics = JBCheckBox("Verbose diagnostics (debug level)").apply {
             name = "verboseDiagnosticsCheckBox"
         }
@@ -140,12 +187,17 @@ class AdbToolboxSettingsConfigurable internal constructor(
         }
 
         val panel: JPanel = FormBuilder.createFormBuilder()
+            .addComponent(com.intellij.ui.TitledSeparator("Paths"))
             .addLabeledComponent("ADB executable:", adbPath, 1, false)
             .addTooltip("Leave blank to use automatic tool discovery.")
             .addLabeledComponent("scrcpy executable:", scrcpyPath, 1, false)
             .addTooltip("Leave blank to use automatic tool discovery.")
-            .addLabeledComponent("Capture directory:", captureDirectory, 1, false)
+            .addComponent(com.intellij.ui.TitledSeparator("Capture"))
+            .addLabeledComponent("Save to:", captureDirectory, 1, false)
             .addTooltip("Leave blank to use the default capture location.")
+            .addComponent(copyToClipboard)
+            .addTooltip("Applies to every screenshot, including full-page captures. The toast says “copied to clipboard” when it happened.")
+            .addComponent(com.intellij.ui.TitledSeparator("Logcat"))
             .addLabeledComponent("Logcat buffer size (KB):", logcatBufferSizeKb, 1, false)
             .addTooltip(
                 "Allowed range: ${SettingsState.MIN_LOGCAT_BUFFER_SIZE_KB}–" +
@@ -157,7 +209,9 @@ class AdbToolboxSettingsConfigurable internal constructor(
                 "Run on the device shell by the Display view's TalkBack toggle; \"adb shell\" prefixes are dropped. " +
                     "Leave blank to use the built-in Samsung or Google command for the connected device.",
             )
-            .addSeparator()
+            .addComponent(com.intellij.ui.TitledSeparator("AI agents (MCP)"))
+            .addComponent(mcp)
+            .addComponent(com.intellij.ui.TitledSeparator("Diagnostics"))
             .addComponent(verboseDiagnostics)
             .addTooltip("Also records every successful command, stream chunk and Logcat batch. Leave off unless asked.")
             .addComponent(diagnosticsButtons)

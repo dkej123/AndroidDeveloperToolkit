@@ -31,6 +31,36 @@ class AdbToolboxSettingsConfigurableTest : BasePlatformTestCase() {
         configurable.disposeUIResources()
     }
 
+    private class FakeAppPreferences(
+        override var copyScreenshotsToClipboard: Boolean = true,
+        override var mcpAccess: dev.acme.adbtoolbox.application.mcp.McpAccess = dev.acme.adbtoolbox.application.mcp.McpAccess.Off,
+    ) : AppPreferences {
+        var applied = 0
+        override fun applyMcp(project: com.intellij.openapi.project.Project?) {
+            applied++
+        }
+    }
+
+    fun `test the clipboard checkbox and the MCP access level are applied application-wide`() {
+        val preferences = FakeAppPreferences()
+        val configurable = AdbToolboxSettingsConfigurable(FakeSettingsEditorBackend(), appPreferences = preferences)
+        val component = configurable.createComponent()
+        val checkbox = descendants(component).filterIsInstance<javax.swing.JCheckBox>().single { it.name == "copyScreenshotsCheckBox" }
+        val fullControl = descendants(component).filterIsInstance<javax.swing.JRadioButton>().single { it.text == "Full control" }
+
+        assertTrue(checkbox.isSelected)
+        checkbox.isSelected = false
+        fullControl.isSelected = true
+        assertTrue(configurable.isModified)
+        configurable.apply()
+
+        assertFalse(preferences.copyScreenshotsToClipboard)
+        assertEquals(dev.acme.adbtoolbox.application.mcp.McpAccess.FullControl, preferences.mcpAccess)
+        assertEquals(1, preferences.applied)
+        assertFalse(configurable.isModified)
+        configurable.disposeUIResources()
+    }
+
     private fun descendants(component: Component): List<Component> =
         listOf(component) + ((component as? Container)?.components?.flatMap(::descendants) ?: emptyList())
 

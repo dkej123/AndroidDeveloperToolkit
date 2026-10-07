@@ -30,6 +30,8 @@ internal class AppsConfirmationDialog(
     dialogTitle: String,
     private val bodyText: String,
     destructiveLabel: String,
+    /** "Requested by Claude Code over MCP…" when an agent asked for it (design §11), teal under the body. */
+    private val agentNote: String? = null,
 ) : DialogWrapper(project, false) {
 
     init {
@@ -60,6 +62,13 @@ internal class AppsConfirmationDialog(
             preferredSize = Dimension(JBUI.scale(300), preferredSize.height)
             add(titleLabel, BorderLayout.NORTH)
             add(bodyLabel, BorderLayout.CENTER)
+            agentNote?.let { note ->
+                add(JBLabel("<html><body style='width:${bodyWidth}px'>$note</body></html>").apply {
+                    font = AdbToolboxTheme.Typography.caption.deriveFont(JBUI.scale(10.5f))
+                    foreground = AdbToolboxTheme.Colors.brand
+                    border = EmptyBorder(JBUI.scale(6), 0, 0, 0)
+                }, BorderLayout.SOUTH)
+            }
         }
     }
 

@@ -29,6 +29,7 @@ import dev.acme.adbtoolbox.intellij.ui.mirroring.MirroringOptionsDialog
 class AdbToolboxToolWindowFactory : ToolWindowFactory, DumbAware {
     override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
         val composition = project.service<AdbToolboxProjectService>()
+        composition.registerMcpTools()
         val panel = AdbToolboxToolWindowPanel(
             viewModel = composition.shellViewModel,
             dispatchers = composition.dispatcherProvider,

@@ -38,9 +38,10 @@ class FeedbackOverlayCoordinator(
     private val dispatchers: DispatcherProvider,
     onResetOverrides: () -> Unit = {},
     deviceContext: Flow<DeviceContextSnapshot>? = null,
+    onOpenMcpSettings: () -> Unit = {},
 ) : Disposable {
 
-    val statusPanel = FeedbackStatusPanel(onResetOverrides = onResetOverrides)
+    val statusPanel = FeedbackStatusPanel(onResetOverrides = onResetOverrides, onOpenMcpSettings = onOpenMcpSettings)
     private val toastStackPanel = ToastStackPanel(
         onAction = { id -> viewModel.handle(FeedbackIntent.InvokeAction(id)) },
         onDismiss = { id -> viewModel.handle(FeedbackIntent.Dismiss(id)) },

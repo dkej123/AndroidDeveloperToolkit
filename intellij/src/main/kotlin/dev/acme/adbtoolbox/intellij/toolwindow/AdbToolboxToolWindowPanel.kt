@@ -342,7 +342,25 @@ class AdbToolboxToolWindowPanel(
         dispatchers = dispatchers,
         onResetOverrides = onResetOverrides,
         deviceContext = deviceContextAggregator.state,
+        onOpenMcpSettings = openSettings,
     )
+
+    init {
+        // The MCP chip (design §8) follows the IDE-wide server status.
+        runCatching { dev.acme.adbtoolbox.intellij.mcp.McpServerService.getInstance().status }.getOrNull()
+            ?.onEach { status ->
+                val session = status.sessions.firstOrNull()
+                withContext(dispatchers.main) {
+                    feedbackCoordinator.statusPanel.updateMcp(
+                        agent = session?.clientName?.takeIf { status.running },
+                        access = if (status.access == dev.acme.adbtoolbox.application.mcp.McpAccess.FullControl) "Full control" else "Read only",
+                        inFlight = status.callInFlight,
+                        lastCall = session?.lastCall,
+                    )
+                }
+            }
+            ?.launchIn(feedbackScope)
+    }
 
     init {
         host.navigationSlot.add(navigationRail, BorderLayout.CENTER)

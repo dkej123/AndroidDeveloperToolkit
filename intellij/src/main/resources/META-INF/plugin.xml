@@ -32,6 +32,8 @@ ADB Toolbox puts the adb commands you run every day into one tool window.</p>
     <!-- Project services are registered as light @Service classes (AdbToolboxProjectService),
          which need no XML entry here. -->
     <extensions defaultExtensionNs="com.intellij">
+        <!-- ADR 0015: the project's MCP tools are registered at startup when access is not Off. -->
+        <postStartupActivity implementation="dev.acme.adbtoolbox.intellij.mcp.McpStartupActivity"/>
         <toolWindow id="ADB Toolbox" anchor="right" secondary="false"
                     icon="/icons/expui/toolwindow/adbToolbox.svg"
                     factoryClass="dev.acme.adbtoolbox.intellij.toolwindow.AdbToolboxToolWindowFactory"/>

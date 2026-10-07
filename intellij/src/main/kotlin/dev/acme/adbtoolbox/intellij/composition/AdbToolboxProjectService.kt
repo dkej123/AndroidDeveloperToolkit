@@ -430,6 +430,8 @@ class AdbToolboxProjectService(private val project: Project) : Disposable {
         captureDestination = captureDestination,
         fileNamePolicy = fileNamePolicy,
         fullShotRenderer = FullShotHelper(adbTransport, deviceHelperDeployment),
+        clipboard = dev.acme.adbtoolbox.intellij.mcp.IdeImageClipboard(),
+        copyToClipboard = { dev.acme.adbtoolbox.intellij.mcp.AdbToolboxAppSettings.getInstance().copyScreenshotsToClipboard },
     )
 
     /** Task 019's minimal Device-view screenshot binding, driven by [selectedDeviceViewModel]. */
@@ -958,7 +960,39 @@ class AdbToolboxProjectService(private val project: Project) : Disposable {
         append(runCatching { settingsRepository.readSettings() }.getOrElse { "unreadable: $it" }).append('\n')
     }
 
+    /** The MCP tools of this project (ADR 0015), bound to its device selection and use cases. */
+    private val mcpTools: List<dev.acme.adbtoolbox.application.mcp.McpTool> by lazy {
+        dev.acme.adbtoolbox.application.mcp.tools.mcpTools(
+            dev.acme.adbtoolbox.application.mcp.tools.McpToolEnvironment(
+                transport = adbTransport,
+                devices = deviceRepository,
+                selected = selectedDeviceViewModel.state,
+                layout = dev.acme.adbtoolbox.application.layout.CaptureLayoutUseCase(adbTransport),
+                imageScaler = dev.acme.adbtoolbox.adapters.jvm.mcp.AwtImageScaler(),
+                lifecycle = appLifecycleUseCase,
+                clearData = clearDataUseCase,
+                uninstall = uninstallUseCase,
+                currentApp = dev.acme.adbtoolbox.application.currentapp.CurrentAppUseCase(adbTransport),
+                locale = dev.acme.adbtoolbox.application.locale.DeviceLocaleUseCase(
+                    dev.acme.adbtoolbox.adapters.adb.packages.LocaleHelper(adbTransport, deviceHelperDeployment),
+                    dev.acme.adbtoolbox.intellij.persistence.PropertiesOriginalLocaleStore(),
+                ),
+                location = dev.acme.adbtoolbox.application.locale.EmulatorLocationUseCase(adbTransport),
+                appData = dev.acme.adbtoolbox.application.appdetails.AppDataReader(adbTransport, AdbAppDatabaseTransfer(adbTransport), JdbcSqliteEngine()),
+                confirmation = dev.acme.adbtoolbox.intellij.mcp.IdeMcpConfirmation(project) { serial ->
+                    deviceRepository.devices.value.firstOrNull { it.serial == serial }?.displayName ?: serial.toString()
+                },
+            ),
+        )
+    }
+
+    /** Makes this project's tools reachable over MCP; the server itself follows the access level. */
+    fun registerMcpTools() {
+        dev.acme.adbtoolbox.intellij.mcp.McpServerService.getInstance().register(project, mcpTools)
+    }
+
     override fun dispose() {
+        runCatching { dev.acme.adbtoolbox.intellij.mcp.McpServerService.getInstance().unregister(project) }
         diagnosticsLog.log(DiagLevel.INFO, DiagCategory.LIFECYCLE, "project closed", mapOf("project" to project.name))
         // feedbackViewModel.dispose() is distinct from cancelling projectScope (ADR 0004's scope
         // ownership alone does not reject an in-flight handle() call — see FeedbackViewModel's

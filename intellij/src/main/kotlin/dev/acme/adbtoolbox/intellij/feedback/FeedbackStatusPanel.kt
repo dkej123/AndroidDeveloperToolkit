@@ -33,7 +33,43 @@ import javax.swing.JButton
  */
 class FeedbackStatusPanel(
     private val onResetOverrides: () -> Unit = {},
+    private val onOpenMcpSettings: () -> Unit = {},
 ) : JBPanel<FeedbackStatusPanel>(BorderLayout()) {
+
+    // MCP chip (design §8): teal, only while an agent is connected; the dot fills while a call runs.
+    private val mcpChip = JButton("").apply {
+        font = AdbToolboxTheme.Typography.mono.deriveFont(Font.BOLD, JBUI.scale(9f))
+        foreground = AdbToolboxTheme.Colors.brand
+        isContentAreaFilled = false
+        isFocusPainted = false
+        isBorderPainted = false
+        iconTextGap = JBUI.scale(5)
+        border = JBUI.Borders.empty(1, 6)
+        isVisible = false
+        addActionListener { onOpenMcpSettings() }
+    }
+    private val mcpChipSurface = RoundedSurface(AdbToolboxTheme.Colors.brandBg, AdbToolboxTheme.Colors.brandBorder, radius = { JBUI.scale(4) }).apply {
+        layout = BorderLayout()
+        isVisible = false
+        add(mcpChip, BorderLayout.CENTER)
+    }
+    private var lastMcpCall: String? = null
+
+    /** [agent] null hides the chip; [lastCall] newer than the last one shown becomes the status message. */
+    fun updateMcp(agent: String?, access: String, inFlight: Boolean, lastCall: String?) {
+        mcpChipSurface.isVisible = agent != null
+        mcpChip.isVisible = agent != null
+        if (agent == null) return
+        mcpChip.text = if (width in 1..339) "MCP" else "MCP · $agent"
+        mcpChip.icon = StatusDotIcon(AdbToolboxTheme.Colors.brand, filled = inFlight, diameter = 5)
+        mcpChip.toolTipText = "$agent connected over MCP · $access — click for AI agent settings"
+        if (lastCall != null && lastCall != lastMcpCall) {
+            lastMcpCall = lastCall
+            messageLabel.text = "$agent · $lastCall"
+        }
+    }
+
+    internal val mcpChipForTest: JButton get() = mcpChip
 
     private val processLabel = JBLabel("").apply {
         font = AdbToolboxTheme.Typography.mono.deriveFont(Font.BOLD, JBUI.scale(9f))
@@ -88,7 +124,7 @@ class FeedbackStatusPanel(
         // `statusBarStyle`: one vertically centered flex row with an 8px gap. The message is the
         // only flexible child, so a long last-command message ellipsises instead of pushing the
         // required "reset all" action out of the bar at narrow widths.
-        val row = flexRow(AdbToolboxTheme.Spacing.s4, processChip, messageLabel, overrideChipLabel, fill = messageLabel)
+        val row = flexRow(AdbToolboxTheme.Spacing.s4, processChip, mcpChipSurface, messageLabel, overrideChipLabel, fill = messageLabel)
         add(row, BorderLayout.CENTER)
     }
 
