@@ -38,7 +38,8 @@ Also: several devices at once, pairing over Wi-Fi, and light and dark themes tha
 ## Installation
 
 In Android Studio or IntelliJ IDEA open **Settings → Plugins → Marketplace**, search for
-**ADB Toolbox** and click **Install**.
+**ADB Toolbox** and click **Install** — or install it from the
+[JetBrains Marketplace page](https://plugins.jetbrains.com/plugin/34857-adb-toolbox).
 
 Or download the ZIP from [Releases](https://github.com/dkej123/AndroidDeveloperToolkit/releases)
 and use **Settings → Plugins → ⚙ → Install Plugin from Disk…**.

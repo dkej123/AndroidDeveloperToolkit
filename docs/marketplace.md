@@ -4,7 +4,10 @@
 - **Name:** ADB Toolbox · **Vendor:** dkwasniak (`damian.kwasniak@gmail.com`)
 - **Compatibility:** IntelliJ Platform 2024.2+ (build 242+, no upper bound) — Android Studio and
   IntelliJ IDEA; the Android plugin and Terminal are optional dependencies.
-- **Status:** not published yet. The first version (1.0.0) must be uploaded manually.
+- **Page:** https://plugins.jetbrains.com/plugin/34857-adb-toolbox (numeric ID 34857, vendor
+  `damian-kwasniak`).
+- **Status:** 1.0.0 uploaded manually on 2026-10-07, waiting for JetBrains moderation. Later
+  versions go through `release/release.sh` / the tag-driven workflow.
 
 Release mechanics (scripts, CI, token): `release/README.md`. Agent runbook:
 `.claude/skills/release-plugin/SKILL.md`.
