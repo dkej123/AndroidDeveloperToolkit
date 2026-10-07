@@ -45,6 +45,26 @@
       <div style="{{ pillRecord }}" onClick="{{ toggleRecording }}">{{ recordPillLabel }}</div>
       <div style="{{ pillSkeleton }}" onClick="{{ toggleSkeleton }}">{{ skeletonPillLabel }}</div>
     </div>
+    <div style="{{ switcherGroupStyle }}">
+      <div style="{{ switcherLabelStyle }}">Current app</div>
+      <sc-for list="{{ caPills }}" as="p" hint-placeholder-count="10">
+        <div style="{{ p.style }}" onClick="{{ p.onClick }}">{{ p.label }}</div>
+      </sc-for>
+    </div>
+    <div style="{{ switcherGroupStyle }}">
+      <div style="{{ switcherLabelStyle }}">Target</div>
+      <sc-for list="{{ devicePills }}" as="p" hint-placeholder-count="3">
+        <div style="{{ p.style }}" onClick="{{ p.onClick }}">{{ p.label }}</div>
+      </sc-for>
+      <div style="{{ pillClip }}" onClick="{{ toggleClip }}">{{ clipPillLabel }}</div>
+      <div style="{{ pillInspector }}" onClick="{{ toggleInspector }}">{{ inspectorPillLabel }}</div>
+    </div>
+    <div style="{{ switcherGroupStyle }}">
+      <div style="{{ switcherLabelStyle }}">MCP</div>
+      <sc-for list="{{ mcpPills }}" as="p" hint-placeholder-count="4">
+        <div style="{{ p.style }}" onClick="{{ p.onClick }}">{{ p.label }}</div>
+      </sc-for>
+    </div>
   </div>
 
   <div style="{{ frameStyle }}" ref="{{ frameRef }}">
@@ -81,7 +101,7 @@
       </sc-if>
       <sc-if value="{{ isDeviceUnauthorized }}" hint-placeholder-val="{{ false }}">
         <div style="{{ warnDotStyle }}"></div>
-        <div style="{{ unauthorizedTextStyle }}">Pixel 8 Pro — unauthorized</div>
+        <div style="{{ unauthorizedTextStyle }}">Pixel 9 — unauthorized</div>
         <div style="{{ spacerStyle }}"></div>
         <div style="{{ linkStyle }}" onClick="{{ onRefresh }}">Retry</div>
       </sc-if>
@@ -131,7 +151,7 @@
           </div>
         </sc-for>
         <div style="{{ spacerStyle }}"></div>
-        <div style="{{ railSettingsStyle }}" style-hover="{{ hoverStyle }}" title="Settings — adb &amp; scrcpy paths"><div style="{{ gearIconStyle }}"></div></div>
+        <a href="ADB Toolbox Settings.dc.html" style="{{ railSettingsStyle }}" title="Settings — adb &amp; scrcpy paths, capture, AI agents"><div style="{{ gearIconStyle }}"></div></a>
       </div>
 
       <!-- view column -->
@@ -162,10 +182,109 @@
             </sc-if>
 
             <sc-if value="{{ showDeviceContent }}" hint-placeholder-val="{{ true }}">
+              <div style="{{ sectionStyle }}" onMouseLeave="{{ caLeave }}">
+                <div style="{{ sectionHeaderStyle }}">
+                  <div style="{{ sectionTitleStyle }}">Current app</div>
+                  <sc-if value="{{ caPending }}" hint-placeholder-val="{{ false }}">
+                    <div style="{{ caPendingStyle }}" onClick="{{ caApplyPending }}" title="{{ caPendingTip }}">{{ caPendingLabel }}</div>
+                  </sc-if>
+                  <sc-if value="{{ caShowMeta }}" hint-placeholder-val="{{ true }}">
+                    <div style="{{ caMetaStyle }}" onClick="{{ caRefresh }}" title="Refresh now — also checks every 3 s while this view is visible">{{ caMeta }}</div>
+                  </sc-if>
+                </div>
+
+                <sc-if value="{{ caIsLoading }}" hint-placeholder-val="{{ false }}">
+                  <div style="{{ caIdRowStyle }}">
+                    <div style="{{ caSkelTileStyle }}"></div>
+                    <div style="{{ caSkelColStyle }}">
+                      <div style="{{ caSkelBarA }}"></div>
+                      <div style="{{ caSkelBarB }}"></div>
+                    </div>
+                  </div>
+                  <div style="{{ caSkelRowsStyle }}">
+                    <div style="{{ caSkelBarC }}"></div>
+                    <div style="{{ caSkelBarD }}"></div>
+                  </div>
+                </sc-if>
+
+                <sc-if value="{{ caIsError }}" hint-placeholder-val="{{ false }}">
+                  <div style="{{ caMsgWrapStyle }}">
+                    <div style="{{ caMsgTitleStyle }}">Couldn’t read the foreground app</div>
+                    <div style="{{ caMsgMonoStyle }}">dumpsys activity activities — timed out after 5 s</div>
+                  </div>
+                  <div style="{{ resetRowStyle }}">
+                    <div style="{{ overrideNoteStyle }}">The rest of this view still works.</div>
+                    <div style="{{ linkStyle }}" onClick="{{ caRetry }}">Retry</div>
+                  </div>
+                </sc-if>
+
+                <sc-if value="{{ caIsIdle }}" hint-placeholder-val="{{ false }}">
+                  <div style="{{ caIdRowStyle }}">
+                    <div style="{{ caIdleTileStyle }}"></div>
+                    <div style="{{ caTextColStyle }}">
+                      <div style="{{ caLabelStyle }}">{{ caIdleTitle }}</div>
+                      <div style="{{ caPkgStyle }}">{{ caIdlePkg }}</div>
+                    </div>
+                  </div>
+                  <div style="{{ resetRowStyle }}">
+                    <div style="{{ overrideNoteStyle }}">{{ caIdleNote }}</div>
+                    <sc-if value="{{ caIdleHasAction }}" hint-placeholder-val="{{ false }}">
+                      <div style="{{ linkStyle }}" onClick="{{ caIdleAction }}" title="{{ caIdleActionTip }}">{{ caIdleActionLabel }}</div>
+                    </sc-if>
+                  </div>
+                </sc-if>
+
+                <sc-if value="{{ caIsApp }}" hint-placeholder-val="{{ true }}">
+                  <div style="{{ caIdRowStyle }}">
+                    <div style="{{ caTileStyle }}"></div>
+                    <div style="{{ caTextColStyle }}">
+                      <div style="{{ caLabelRowStyle }}">
+                        <div style="{{ caLabelStyle }}">{{ caLabel }}</div>
+                        <sc-if value="{{ caDebuggable }}" hint-placeholder-val="{{ true }}">
+                          <div style="{{ caDebugTagStyle }}" title="android:debuggable=true — debugger, run-as and Shared prefs work">debug</div>
+                        </sc-if>
+                        <sc-if value="{{ caSystem }}" hint-placeholder-val="{{ false }}">
+                          <div style="{{ caSystemTagStyle }}" title="Preinstalled on the system image">system</div>
+                        </sc-if>
+                      </div>
+                      <div style="{{ caPkgStyle }}" title="{{ caPkg }}">{{ caPkg }}</div>
+                    </div>
+                  </div>
+                  <div style="{{ factsGridStyle }}">
+                    <sc-for list="{{ caFacts }}" as="f" hint-placeholder-count="4">
+                      <div style="{{ f.wrapStyle }}" title="{{ f.tip }}">
+                        <div style="{{ f.keyStyle }}">{{ f.key }}</div>
+                        <div style="{{ f.valStyle }}">{{ f.value }}</div>
+                      </div>
+                    </sc-for>
+                  </div>
+                  <sc-if value="{{ caHasHelp }}" hint-placeholder-val="{{ false }}">
+                    <div style="{{ helpTextStyle }}">{{ caHelp }}</div>
+                  </sc-if>
+                  <div style="{{ actionRowStyle }}">
+                    <div style="{{ caPrimaryStyle }}" style-hover="{{ caPrimaryHover }}" onClick="{{ caPrimary }}" title="{{ caPrimaryTip }}">
+                      <sc-if value="{{ caPrimaryBusy }}" hint-placeholder-val="{{ false }}">
+                        <div style="{{ caBtnSpinnerStyle }}"></div>
+                      </sc-if>
+                      <div>{{ caPrimaryLabel }}</div>
+                    </div>
+                    <div style="{{ caKillStyle }}" style-hover="{{ caKillHover }}" onClick="{{ caKill }}" title="{{ caKillTip }}">{{ caKillLabel }}</div>
+                    <div style="{{ caPermsStyle }}" style-hover="{{ caPermsHover }}" onClick="{{ caPerms }}" title="{{ caPermsTip }}">{{ caPermsLabel }}</div>
+                    <div style="{{ spacerStyle }}"></div>
+                    <div style="{{ linkStyle }}" onClick="{{ caDetails }}" title="{{ caDetailsTip }}">Details</div>
+                  </div>
+                  <div style="{{ dangerZoneStyle }}">
+                    <div style="{{ dangerLabelStyle }}">Destructive</div>
+                    <div style="{{ caClearStyle }}" style-hover="{{ caClearHover }}" onClick="{{ caClear }}" title="{{ caClearTip }}">Clear data</div>
+                    <div style="{{ caUninstallStyle }}" style-hover="{{ caUninstallHover }}" onClick="{{ caUninstall }}" title="{{ caUninstallTip }}">Uninstall</div>
+                  </div>
+                </sc-if>
+              </div>
+
               <div style="{{ sectionStyle }}">
                 <div style="{{ sectionHeaderStyle }}">
                   <div style="{{ sectionTitleStyle }}">Mirroring</div>
-                  <div style="{{ sectionMetaStyle }}">scrcpy 2.7</div>
+                  <div style="{{ sectionMetaStyle }}">scrcpy 4.1</div>
                 </div>
                 <sc-if value="{{ isMirroring }}" hint-placeholder-val="{{ false }}">
                   <div style="{{ runningRowStyle }}">
@@ -200,8 +319,16 @@
                 </sc-if>
                 <sc-if value="{{ isNotRecording }}" hint-placeholder-val="{{ true }}">
                   <div style="{{ actionRowStyle }}">
-                    <div style="{{ secondaryBtnStyle }}" style-hover="{{ hoverStyle }}" onClick="{{ onScreenshot }}" title="Save a PNG to ~/Desktop">Screenshot</div>
+                    <div style="{{ secondaryBtnStyle }}" style-hover="{{ hoverStyle }}" onClick="{{ onScreenshot }}" title="{{ screenshotTip }}">Screenshot</div>
                     <div style="{{ secondaryBtnStyle }}" style-hover="{{ hoverStyle }}" onClick="{{ toggleRecording }}" title="Record the screen — max 3 minutes per adb">Record</div>
+                    <div style="{{ secondaryBtnStyle }}" style-hover="{{ hoverStyle }}" onClick="{{ onInspect }}" title="Capture the screen and its view hierarchy into an editor tab  ⌥⇧⌘I">Inspect layout</div>
+                  </div>
+                </sc-if>
+                <sc-if value="{{ inspectorOpen }}" hint-placeholder-val="{{ false }}">
+                  <div style="{{ resetRowStyle }}">
+                    <div style="{{ overrideNoteStyle }}">Inspector open · captured 12:04:31</div>
+                    <a href="ADB Toolbox Layout Inspector.dc.html" style="{{ linkStyle }}" title="Show the Layout Inspector editor tab">Show</a>
+                    <div style="{{ linkStyle }}" onClick="{{ onInspect }}" title="Re-capture screen and hierarchy  ⌥⇧⌘I">Re-capture</div>
                   </div>
                 </sc-if>
               </div>
@@ -225,8 +352,7 @@
                   <div style="{{ secondaryBtnStyle }}" style-hover="{{ hoverStyle }}">Wake</div>
                 </div>
               </div>
-              <!-- Display controls (font scale, display scale, quick toggles) live in the Device view;
-                   there is no Display view (user decision, 2026-09-25). -->
+
             <div style="{{ sectionStyle }}">
               <div style="{{ sectionHeaderStyle }}">
                 <div style="{{ sectionTitleStyle }}">Font scale</div>
@@ -272,10 +398,10 @@
                   <div style="{{ secondaryBtnStyle }}" style-hover="{{ hoverStyle }}" onClick="{{ applyDensityCustom }}">Apply</div>
                 </div>
               </sc-if>
-              <div style="{{ helpTextStyle }}">Percentages are relative to the physical density (428 dpi). Values outside 60–200% can make the UI unusable.</div>
+              <div style="{{ helpTextStyle }}">Percentages are relative to the physical density (420 dpi). Values outside 60–200% can make the UI unusable.</div>
               <sc-if value="{{ densityOverridden }}" hint-placeholder-val="{{ false }}">
                 <div style="{{ resetRowStyle }}">
-                  <div style="{{ overrideNoteStyle }}">Physical density is 428 dpi</div>
+                  <div style="{{ overrideNoteStyle }}">Physical density is 420 dpi</div>
                   <div style="{{ linkStyle }}" onClick="{{ resetDensity }}">Reset to physical</div>
                 </div>
               </sc-if>
@@ -283,16 +409,111 @@
 
             <div style="{{ sectionStyle }}">
               <div style="{{ sectionHeaderStyle }}">
-                <div style="{{ sectionTitleStyle }}">Quick toggles</div>
+                <div style="{{ sectionTitleStyle }}">Language &amp; region</div>
+                <div style="{{ localeStateStyle }}">{{ localeStateLabel }}</div>
               </div>
-              <sc-for list="{{ displayToggles }}" as="t" hint-placeholder-count="3">
-                <div style="{{ t.rowStyle }}" style-hover="{{ hoverStyle }}" onClick="{{ t.onClick }}" title="{{ t.tooltip }}">
-                  <div style="{{ t.trackStyle }}"><div style="{{ t.knobStyle }}"></div></div>
-                  <div style="{{ t.labelStyle }}">{{ t.label }}</div>
-                  <div style="{{ spacerStyle }}"></div>
-                  <div style="{{ t.valueStyle }}">{{ t.value }}</div>
+              <div style="{{ padRowStyle }}">
+                <div style="{{ searchWrapStyle }}">
+                  <div style="{{ searchIconStyle }}"></div>
+                  <input style="{{ searchInputStyle }}" placeholder="Search languages and regions…" value="{{ localeQuery }}" onInput="{{ onLocaleQuery }}" />
+                  <sc-if value="{{ hasLocaleQuery }}" hint-placeholder-val="{{ false }}">
+                    <div style="{{ clearBtnStyle }}" onClick="{{ clearLocaleQuery }}">×</div>
+                  </sc-if>
+                </div>
+              </div>
+              <div style="{{ padGroupLabelStyle }}">{{ localeListLabel }}</div>
+              <div style="{{ localeListStyle }}">
+                <sc-for list="{{ localeRows }}" as="r" hint-placeholder-count="4">
+                  <div style="{{ r.rowStyle }}" style-hover="{{ r.hoverStyle }}" onClick="{{ r.onClick }}" title="{{ r.tooltip }}">
+                    <div style="{{ r.codeStyle }}">{{ r.code }}</div>
+                    <div style="{{ r.nameStyle }}">{{ r.name }}</div>
+                    <sc-if value="{{ r.isActive }}" hint-placeholder-val="{{ false }}">
+                      <div style="{{ r.activeStyle }}">applied</div>
+                    </sc-if>
+                  </div>
+                </sc-for>
+              </div>
+              <sc-if value="{{ isLocaleEmpty }}" hint-placeholder-val="{{ false }}">
+                <div style="{{ helpTextStyle }}">No language matches “{{ localeQuery }}”. Search by name or code, e.g. pt-BR.</div>
+              </sc-if>
+              <div style="{{ helpTextStyle }}">Changes the system language; the foreground activity restarts. Pseudo-locales only change strings in builds with pseudoLocalesEnabled.</div>
+              <sc-if value="{{ localeOverridden }}" hint-placeholder-val="{{ false }}">
+                <div style="{{ resetRowStyle }}">
+                  <div style="{{ overrideNoteStyle }}">Original is en-US</div>
+                  <div style="{{ linkStyle }}" onClick="{{ resetLocale }}">Reset to original</div>
+                </div>
+              </sc-if>
+            </div>
+
+            <div style="{{ sectionStyle }}">
+              <div style="{{ sectionHeaderStyle }}">
+                <div style="{{ sectionTitleStyle }}">Location</div>
+                <div style="{{ locMetaStyle }}">{{ locMeta }}</div>
+              </div>
+              <div style="{{ chipRowStyle }}">
+                <sc-for list="{{ locChips }}" as="c" hint-placeholder-count="8">
+                  <div style="{{ c.style }}" style-hover="{{ c.hoverStyle }}" onClick="{{ c.onClick }}" title="{{ c.tooltip }}">{{ c.label }}</div>
+                </sc-for>
+              </div>
+              <sc-if value="{{ locCustomOpen }}" hint-placeholder-val="{{ false }}">
+                <div style="{{ customRowStyle }}">
+                  <input style="{{ latFieldStyle }}" placeholder="latitude" value="{{ locLatIn }}" onInput="{{ onLatInput }}" />
+                  <div style="{{ customUnitStyle }}">,</div>
+                  <input style="{{ lonFieldStyle }}" placeholder="longitude" value="{{ locLonIn }}" onInput="{{ onLonInput }}" />
+                  <div style="{{ secondaryBtnStyle }}" style-hover="{{ hoverStyle }}" onClick="{{ applyLoc }}">Apply</div>
+                </div>
+                <sc-if value="{{ hasLocErr }}" hint-placeholder-val="{{ false }}">
+                  <div style="{{ fieldErrorStyle }}">{{ locErr }}</div>
+                </sc-if>
+              </sc-if>
+              <div style="{{ helpTextStyle }}">{{ locHelp }}</div>
+            </div>
+
+            <div style="{{ sectionStyle }}">
+              <div style="{{ sectionHeaderStyle }}">
+                <div style="{{ sectionTitleStyle }}">Quick toggles</div>
+                <div style="{{ togglesMetaStyle }}">{{ togglesMeta }}</div>
+              </div>
+              <sc-for list="{{ toggleGroups }}" as="g" hint-placeholder-count="2">
+                <div style="{{ g.wrapStyle }}">
+                  <div style="{{ g.labelStyle }}">{{ g.label }}</div>
+                  <div style="{{ g.gridStyle }}">
+                    <sc-for list="{{ g.items }}" as="t" hint-placeholder-count="4">
+                      <div style="{{ t.tileStyle }}" style-hover="{{ t.hoverStyle }}" onClick="{{ t.onClick }}" title="{{ t.tooltip }}">
+                        <div style="{{ t.topStyle }}">
+                          <div style="{{ t.labelStyle }}">{{ t.label }}</div>
+                          <div style="{{ t.trackStyle }}"><div style="{{ t.knobStyle }}"></div></div>
+                        </div>
+                        <div style="{{ t.valueStyle }}">{{ t.value }}</div>
+                      </div>
+                    </sc-for>
+                  </div>
                 </div>
               </sc-for>
+              <div style="{{ bgLimitWrapStyle }}">
+                <div style="{{ bgLimitHeaderStyle }}">
+                  <div style="{{ bgLimitLabelStyle }}">Rotation</div>
+                  <div style="{{ spacerStyle }}"></div>
+                  <div style="{{ rotValueStyle }}">{{ rotValue }}</div>
+                </div>
+                <div style="{{ segmentedStyle }}">
+                  <sc-for list="{{ rotChips }}" as="c" hint-placeholder-count="3">
+                    <div style="{{ c.style }}" style-hover="{{ c.hoverStyle }}" onClick="{{ c.onClick }}" title="{{ c.tooltip }}">{{ c.label }}</div>
+                  </sc-for>
+                </div>
+              </div>
+              <div style="{{ bgLimitWrapStyle }}">
+                <div style="{{ bgLimitHeaderStyle }}">
+                  <div style="{{ bgLimitLabelStyle }}">Background process limit</div>
+                  <div style="{{ spacerStyle }}"></div>
+                  <div style="{{ bgLimitValueStyle }}">{{ bgLimitValue }}</div>
+                </div>
+                <div style="{{ segmentedStyle }}">
+                  <sc-for list="{{ bgLimitChips }}" as="c" hint-placeholder-count="6">
+                    <div style="{{ c.style }}" style-hover="{{ c.hoverStyle }}" onClick="{{ c.onClick }}" title="{{ c.tooltip }}">{{ c.label }}</div>
+                  </sc-for>
+                </div>
+              </div>
             </div>
             </sc-if>
           </div>
@@ -349,6 +570,35 @@
           </div>
         </sc-if>
 
+        <!-- ============ APP DETAILS (stand-in) ============ -->
+        <sc-if value="{{ isAppDetail }}" hint-placeholder-val="{{ false }}">
+          <div style="{{ appsToolbarStyle }}">
+            <div style="{{ linkStyle }}" onClick="{{ detailBack }}" title="{{ detailBackTip }}">{{ detailBackLabel }}</div>
+            <div style="{{ detailTitleStyle }}">{{ detailLabel }}</div>
+          </div>
+          <div style="{{ detailTabsStyle }}">
+            <sc-for list="{{ detailTabs }}" as="t" hint-placeholder-count="3">
+              <div style="{{ t.style }}" onClick="{{ t.onClick }}">{{ t.label }}</div>
+            </sc-for>
+          </div>
+          <div style="{{ viewScrollStyle }}">
+            <div style="{{ sectionStyle }}">
+              <div style="{{ selectedAppRowStyle }}">
+                <div style="{{ selectedAppLabelStyle }}">{{ detailLabel }}</div>
+                <div style="{{ selectedAppPkgStyle }}">{{ detailPkg }}</div>
+              </div>
+              <div style="{{ factsGridStyle }}">
+                <sc-for list="{{ detailFacts }}" as="f" hint-placeholder-count="4">
+                  <div style="{{ f.wrapStyle }}">
+                    <div style="{{ f.keyStyle }}">{{ f.key }}</div>
+                    <div style="{{ f.valStyle }}">{{ f.value }}</div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+            <div style="{{ detailNoteStyle }}">Prototype stand-in for the existing App details page. Only the entry from Current app and the “← Device” back link are new.</div>
+          </div>
+        </sc-if>
 
         <!-- ============ NETWORK ============ -->
         <sc-if value="{{ isNetworkView }}" hint-placeholder-val="{{ false }}">
@@ -473,10 +723,16 @@
           <div style="{{ runningChipLabelStyle }}">{{ runningChipLabel }}</div>
         </div>
       </sc-if>
+      <sc-if value="{{ hasMcpChip }}" hint-placeholder-val="{{ false }}">
+        <a href="ADB Toolbox Settings.dc.html#mcp" style="{{ mcpChipStyle }}" title="{{ mcpChipTip }}">
+          <div style="{{ mcpDotStyle }}"></div>
+          <div style="{{ mcpChipLabelStyle }}">{{ mcpChipLabel }}</div>
+        </a>
+      </sc-if>
       <div style="{{ statusMsgStyle }}">{{ statusMessage }}</div>
       <div style="{{ spacerStyle }}"></div>
       <sc-if value="{{ hasOverrides }}" hint-placeholder-val="{{ false }}">
-        <div style="{{ overrideChipStyle }}" style-hover="{{ hoverStyle }}" onClick="{{ resetAllOverrides }}" title="Revert font scale, density and proxy on this device">{{ overrideChipLabel }}</div>
+        <div style="{{ overrideChipStyle }}" style-hover="{{ hoverStyle }}" onClick="{{ resetAllOverrides }}" title="Revert font scale, density, language and proxy on this device">{{ overrideChipLabel }}</div>
       </sc-if>
       <div style="{{ statusVersionStyle }}">adb 35.0.2</div>
     </div>
@@ -500,6 +756,9 @@
         <div style="{{ confirmStyle }}" onClick="{{ stopProp }}">
           <div style="{{ confirmTitleStyle }}">{{ confirmTitle }}</div>
           <div style="{{ confirmBodyStyle }}">{{ confirmBody }}</div>
+          <sc-if value="{{ hasConfirmAgentNote }}" hint-placeholder-val="{{ false }}">
+            <div style="{{ confirmAgentStyle }}">{{ confirmAgentNote }}</div>
+          </sc-if>
           <div style="{{ confirmActionsStyle }}">
             <div style="{{ confirmCancelStyle }}" style-hover="{{ hoverStyle }}" onClick="{{ cancelConfirm }}">Cancel</div>
             <div style="{{ confirmOkStyle }}" onClick="{{ acceptConfirm }}">{{ confirmOkLabel }}</div>
@@ -556,9 +815,10 @@ function theme(mode) {
 }
 
 const DEVICES = [
-  { id: 'd1', name: 'Pixel 8 Pro', serial: '1A2B3C4D', conn: 'USB', state: 'online' },
-  { id: 'd2', name: 'Pixel Tablet', serial: '10.0.4.91:5555', conn: 'Wi-Fi', state: 'online' },
+  { id: 'd1', name: 'Pixel 9', serial: '49060DLAQ002W7', conn: 'USB', state: 'online' },
+  { id: 'd2', name: 'Pixel Tablet', serial: '10.0.4.91:5555', conn: 'Wi-Fi', state: 'online', cellular: false },
   { id: 'd3', name: 'Galaxy S23', serial: 'R5CT90XKPQZ', conn: 'USB', state: 'unauthorized' },
+  { id: 'd4', name: 'Pixel 9 API 37', serial: 'emulator-5554', conn: 'Emulator', state: 'online', emulator: true },
 ];
 
 const APPS = [
@@ -587,6 +847,29 @@ const LOG = [
   { level: 'D', time: '12:04:24', tag: 'CartRepo', pkg: 'com.acme.shop', msg: 'cold start, coupon cleared' },
 ];
 
+const FG = {
+  debug: { label: 'Acme Shop', pkg: 'com.acme.shop', ver: '4.12.0-dev', code: '41200', debuggable: true, activity: '.checkout.CheckoutActivity', pid: '8155', up: '3m 12s', target: '36', min: '26', installer: 'adb (Android Studio)' },
+  release: { label: 'Maps', pkg: 'com.google.android.apps.maps', ver: '26.39.03', code: '1063720459', debuggable: false, activity: 'com.google.android.maps.MapsActivity', pid: '6021', up: '1h 04m', target: '36', min: '29', installer: 'Google Play' },
+  system: { label: 'Settings', pkg: 'com.android.settings', ver: '17', code: '37', system: true, activity: '.SubSettings', pid: '3310', up: '12m 40s', target: '37', min: '37', installer: 'system image' },
+  systemui: { label: 'System UI', pkg: 'com.android.systemui', ver: '17', code: '37', system: true, systemui: true, activity: 'NotificationShade (window)', pid: '1874', up: '82h 30m', target: '37', min: '37', installer: 'system image' },
+};
+const CA_APP_KEYS = ['debug', 'release', 'system', 'systemui'];
+const QUICK_LOCALES = [
+  ['en-XA', 'Pseudo accented — longer, accented text in [brackets] shows truncation'],
+  ['ar-XB', 'Pseudo RTL — mirrored layout with reversed English text'],
+  ['ar-EG', 'Arabic — real RTL strings and Arabic-Indic digits'],
+  ['he-IL', 'Hebrew — real RTL strings, Latin digits'],
+];
+const LOCALES = [
+  ['en-US', 'English (United States)'], ['en-GB', 'English (United Kingdom)'], ['pl-PL', 'Polski (Polska)'], ['de-DE', 'Deutsch (Deutschland)'],
+  ['de-CH', 'Deutsch (Schweiz)'], ['fr-FR', 'Français (France)'], ['es-ES', 'Español (España)'], ['pt-BR', 'Português (Brasil)'],
+  ['it-IT', 'Italiano (Italia)'], ['nl-NL', 'Nederlands (Nederland)'], ['sv-SE', 'Svenska (Sverige)'], ['tr-TR', 'Türkçe (Türkiye)'],
+  ['uk-UA', 'Українська (Україна)'], ['ja-JP', '日本語 (日本)'], ['ko-KR', '한국어 (대한민국)'], ['zh-CN', '中文 (中国)'],
+  ['hi-IN', 'हिन्दी (भारत)'], ['fa-IR', 'فارسی (ایران)'],
+];
+const CITIES = [['Warsaw', 52.2297, 21.0122], ['London', 51.5072, -0.1276], ['New York', 40.7128, -74.006], ['San Francisco', 37.7749, -122.4194], ['Tokyo', 35.6762, 139.6503], ['Sydney', -33.8688, 151.2093], ['Stockholm', 59.3293, 18.0686]];
+const ROT = ['Auto', 'Portrait', 'Landscape'];
+
 const FONT_PRESETS = [0.85, 1, 1.15, 1.3, 1.5, 2];
 const DENSITY_PRESETS = [80, 90, 100, 110, 125, 150];
 const LEVELS = ['V', 'D', 'I', 'W', 'E'];
@@ -602,10 +885,36 @@ class Component extends DCLogic {
     fontScale: 1, fontCustomOpen: false, fontCustomValue: '1.75', fontCustomInvalid: false,
     density: 100, densityCustomOpen: false, densityCustomValue: '380',
     darkMode: true, animations: true, showTouches: false,
+    talkback: false, stayAwake: true, dontKeep: false, viewUpdates: false, surfaceUpdates: false, bgLimit: 'Standard',
     proxyHost: '10.0.4.117', proxyPort: '8888', proxyEnabled: false,
     logQuery: '', minLevel: 'V', pkgFilterOn: true, paused: false, autoscroll: true, wrap: false, logCleared: false,
-    toast: null, confirm: null, statusMessage: 'Ready',
+    toast: null, confirm: null, confirmPkg: null, confirmFrom: null, statusMessage: 'Ready',
+    fg: 'debug', lastApp: 'debug', busy: null, pending: false, restarted: false, fresh: false, refreshing: false, appGone: false,
+    detailPkg: null, detailFrom: null, detailTab: 'info',
+    clipCopy: true, inspectorOpen: false, localeQuery: '', locale: 'en-US',
+    locName: null, locLat: 37.422, locLon: -122.0841, locCustomOpen: false, locLatIn: '52.2297', locLonIn: '21.0122', locErr: '',
+    boldText: false, invert: false, layoutBounds: false, overdraw: false, profileBars: false, pointerLoc: false,
+    airplane: false, wifi: true, mobileData: true, rotation: 'Auto', mcp: 'off',
   };
+
+  setFg(id) {
+    clearTimeout(this._ca);
+    const patch = { fg: id, busy: null, pending: false, restarted: false, fresh: false, appGone: false };
+    if (CA_APP_KEYS.includes(id)) patch.lastApp = id;
+    if (id === 'killed' && !['debug', 'release'].includes(this.state.lastApp)) patch.lastApp = 'debug';
+    this.setState(patch);
+  }
+  caRun(kind) {
+    const app = FG[this.state.lastApp];
+    this.setState({ busy: kind });
+    clearTimeout(this._ca);
+    this._ca = setTimeout(() => {
+      if (kind === 'kill') { this.setState({ busy: null, fg: 'killed', restarted: false, fresh: true }); this.flash('Force-stopped ' + app.pkg); }
+      else if (kind === 'perms') { this.setState({ busy: null, fg: 'killed', restarted: false, fresh: true }); this.flash('Permissions reset for ' + app.pkg + ' — 4 revoked'); }
+      else { this.setState({ busy: null, fg: this.state.lastApp, restarted: true, fresh: true }); this.flash((kind === 'launch' ? 'Launched ' : 'Restarted ') + app.pkg); }
+    }, 1200);
+  }
+  caApplyPending() { clearTimeout(this._cp); this.setState({ fg: 'release', lastApp: 'release', pending: false, restarted: false, fresh: true }); }
 
   componentDidMount() {
     if (!this.frameRef.current || typeof ResizeObserver === 'undefined') return;
@@ -625,13 +934,15 @@ class Component extends DCLogic {
   dismissToast() { clearTimeout(this._t); this.setState({ toast: null }); }
 
   setSize(w, h) { this.setState({ width: w, height: h, pickerOpen: false }); }
-  askConfirm(kind) { this.setState({ confirm: kind }); }
-  cancelConfirm() { this.setState({ confirm: null }); }
+  askConfirm(kind, pkg, from) { this.setState({ confirm: kind, confirmPkg: pkg || null, confirmFrom: from || null }); }
+  cancelConfirm() { if (this.state.confirmFrom === 'agent') this.flash('Declined Claude Code’s request to uninstall ' + this.state.confirmPkg); this.setState({ confirm: null, confirmPkg: null, confirmFrom: null }); }
   acceptConfirm() {
-    const kind = this.state.confirm;
-    this.setState({ confirm: null });
-    if (kind === 'uninstall') this.flash('Uninstalled ' + this.state.selectedPkg, 'ok');
-    if (kind === 'clear') this.flash('Data cleared for ' + this.state.selectedPkg, 'ok');
+    const { confirm: kind, confirmFrom } = this.state;
+    const pkg = this.state.confirmPkg || this.state.selectedPkg;
+    this.setState({ confirm: null, confirmPkg: null, confirmFrom: null });
+    const by = confirmFrom === 'agent' ? ' · requested by Claude Code' : '';
+    if (kind === 'uninstall') { this.flash('Uninstalled ' + pkg + by, 'ok'); if (confirmFrom === 'current') this.setState({ fg: 'home', appGone: true }); }
+    if (kind === 'clear') { this.flash('Data cleared for ' + pkg, 'ok'); if (confirmFrom === 'current') this.setState({ fg: 'killed', restarted: false }); }
   }
 
   renderVals() {
@@ -643,7 +954,8 @@ class Component extends DCLogic {
     const dev = DEVICES.find(d => d.id === s.selectedDeviceId) || DEVICES[0];
     const fontOverridden = s.fontScale !== 1;
     const densityOverridden = s.density !== 100;
-    const overrideCount = (fontOverridden ? 1 : 0) + (densityOverridden ? 1 : 0) + (s.proxyEnabled ? 1 : 0);
+    const localeOverridden = s.locale !== 'en-US';
+    const overrideCount = (fontOverridden ? 1 : 0) + (densityOverridden ? 1 : 0) + (localeOverridden ? 1 : 0) + (s.proxyEnabled ? 1 : 0);
     const portInvalid = s.proxyPort !== '' && !(Number(s.proxyPort) >= 1 && Number(s.proxyPort) <= 65535);
 
     const pill = (active) => ({ padding: '5px 10px', borderRadius: 999, fontSize: 11, fontWeight: 600, cursor: 'pointer', fontFamily: UI, whiteSpace: 'nowrap', color: active ? '#0b0c0e' : '#c7cad0', background: active ? '#e7e9ee' : 'rgba(255,255,255,0.08)' });
@@ -656,24 +968,24 @@ class Component extends DCLogic {
     const iconBtnActive = { ...iconBtn, background: th.accentBg, border: `1px solid ${th.accentBorder}`, color: th.accent };
     const field = { height: 24, borderRadius: 4, border: `1px solid ${th.borderStrong}`, background: th.field, color: th.text, fontFamily: MONO, fontSize: 11, padding: '0 7px', outline: 'none', minWidth: 0 };
     const sectionTitle = { fontSize: 12.5, fontWeight: 700, color: th.text };
-    const link = { fontSize: 11, fontWeight: 600, color: th.accent, cursor: 'pointer', flexShrink: 0 };
+    const link = { fontSize: 11, fontWeight: 600, color: th.accent, cursor: 'pointer', flexShrink: 0, textDecoration: 'none' };
     const helpText = { fontSize: 10.5, lineHeight: 1.45, color: th.textFaint, padding: '0 10px 2px' };
 
     // ---- rail ----
     const icon = (paths, color) => React.createElement('svg', { width: 16, height: 16, viewBox: '0 0 16 16', fill: 'none' },
       paths.map((p, i) => React.createElement('path', { key: i, d: p, stroke: color, strokeWidth: 1.35, strokeLinecap: 'round', strokeLinejoin: 'round' })));
     const RAIL = [
-      { id: 'device', label: 'Device', tip: 'Device — mirroring, capture, facts, display, quick toggles', d: ['M5.2 2.4h5.6a1.4 1.4 0 0 1 1.4 1.4v8.4a1.4 1.4 0 0 1-1.4 1.4H5.2a1.4 1.4 0 0 1-1.4-1.4V3.8a1.4 1.4 0 0 1 1.4-1.4Z', 'M6.9 11.9h2.2'] },
+      { id: 'device', label: 'Device', tip: 'Device — current app, mirroring, capture, display, language, location, toggles', d: ['M5.2 2.4h5.6a1.4 1.4 0 0 1 1.4 1.4v8.4a1.4 1.4 0 0 1-1.4 1.4H5.2a1.4 1.4 0 0 1-1.4-1.4V3.8a1.4 1.4 0 0 1 1.4-1.4Z', 'M6.9 11.9h2.2'] },
       { id: 'apps', label: 'Apps', tip: 'Apps — restart, clear data, uninstall', d: ['M2.7 2.7h4v4h-4z', 'M9.3 2.7h4v4h-4z', 'M2.7 9.3h4v4h-4z', 'M9.3 9.3h4v4h-4z'] },
       { id: 'network', label: 'Network', tip: 'Network — global proxy', d: ['M8 2.6a5.4 5.4 0 1 0 0 10.8A5.4 5.4 0 0 0 8 2.6Z', 'M2.7 8h10.6', 'M8 2.6c1.6 1.7 1.6 9.1 0 10.8', 'M8 2.6C6.4 4.3 6.4 11.7 8 13.4'] },
       { id: 'logcat', label: 'Logcat', tip: 'Logcat — severity, filters, search', d: ['M2.7 4.2h10.6', 'M2.7 8h7.2', 'M2.7 11.8h9'] },
     ];
     const railItems = RAIL.map(r => {
       const active = s.view === r.id;
-      const badgeAmber = (r.id === 'device' && (fontOverridden || densityOverridden)) || (r.id === 'network' && s.proxyEnabled);
+      const badgeAmber = (r.id === 'device' && (fontOverridden || densityOverridden || localeOverridden)) || (r.id === 'network' && s.proxyEnabled);
       const badgeRed = r.id === 'logcat' && connected && !s.logCleared;
       return {
-        tooltip: r.tip, onClick: () => this.setState({ view: r.id, pickerOpen: false }),
+        tooltip: r.tip, onClick: () => this.setState({ view: r.id, pickerOpen: false, detailPkg: null }),
         btnStyle: { position: 'relative', width: 26, height: 26, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0, background: active ? th.accentBg : 'transparent', border: `1px solid ${active ? th.accentBorder : 'transparent'}` },
         hoverStyle: active ? {} : th.hover,
         iconWrapStyle: { display: 'flex', width: 16, height: 16 },
@@ -684,7 +996,7 @@ class Component extends DCLogic {
     });
 
     // ---- device facts ----
-    const facts = [['Android', '15 · API 35'], ['Resolution', '1080×2400'], ['Density', densityOverridden ? Math.round(428 * s.density / 100) + ' dpi' : '428 dpi'], ['Battery', '72% · charging'], ['ABI', 'arm64-v8a'], ['Uptime', '4h 12m']];
+    const facts = [['Android', '17 · API 37'], ['Resolution', '1080×2424'], ['Density', densityOverridden ? Math.round(420 * s.density / 100) + ' dpi' : '420 dpi'], ['Battery', '56% · charging'], ['ABI', 'arm64-v8a'], ['Uptime', '82h 32m']];
     const deviceFacts = facts.map(([k, v]) => ({
       key: k, value: v,
       wrapStyle: { display: 'flex', flexDirection: 'column', gap: 1, minWidth: 0 },
@@ -731,10 +1043,10 @@ class Component extends DCLogic {
       onClick: dis ? () => {} : () => this.setState({ fontCustomOpen: !s.fontCustomOpen }),
     }]);
     const densityChips = DENSITY_PRESETS.map(v => ({
-      label: v + '%', tooltip: v === 100 ? 'Physical density — 428 dpi' : Math.round(428 * v / 100) + ' dpi',
+      label: v + '%', tooltip: v === 100 ? 'Physical density — 420 dpi' : Math.round(420 * v / 100) + ' dpi',
       style: gate(chipStyle(!s.densityCustomOpen && s.density === v, v !== 100), dis),
       hoverStyle: dis ? {} : th.hover,
-      onClick: dis ? () => {} : () => { this.setState({ density: v, densityCustomOpen: false }); this.flash(v === 100 ? 'Density reset to physical (428 dpi)' : 'Density set to ' + Math.round(428 * v / 100) + ' dpi'); },
+      onClick: dis ? () => {} : () => { this.setState({ density: v, densityCustomOpen: false }); this.flash(v === 100 ? 'Density reset to physical (420 dpi)' : 'Density set to ' + Math.round(420 * v / 100) + ' dpi'); },
     })).concat([{
       label: 'Custom…', tooltip: 'Enter an absolute dpi value',
       style: gate({ ...chipStyle(s.densityCustomOpen, false), borderStyle: 'dashed' }, dis),
@@ -742,19 +1054,79 @@ class Component extends DCLogic {
       onClick: dis ? () => {} : () => this.setState({ densityCustomOpen: !s.densityCustomOpen }),
     }]);
 
-    const toggleRow = (on, label, value, tooltip, onClick) => ({
-      label, value, tooltip, onClick: dis ? () => {} : onClick,
-      rowStyle: gate({ display: 'flex', alignItems: 'center', gap: 8, height: 28, padding: '0 10px', borderRadius: 5, cursor: 'pointer' }, dis),
-      trackStyle: { width: 24, height: 13, borderRadius: 999, background: on ? th.accent : th.borderStrong, position: 'relative', flexShrink: 0 },
-      knobStyle: { position: 'absolute', top: 1.5, left: on ? 12 : 1.5, width: 10, height: 10, borderRadius: '50%', background: '#fff', transition: 'left 0.15s' },
-      labelStyle: { fontSize: 11.5, color: th.text },
-      valueStyle: { fontFamily: MONO, fontSize: 10, color: th.textFaint },
-    });
-    const displayToggles = [
-      toggleRow(s.darkMode, 'Dark theme', s.darkMode ? 'yes' : 'no', 'cmd uimode night yes|no', () => { this.setState({ darkMode: !s.darkMode }); this.flash('Dark theme ' + (!s.darkMode ? 'on' : 'off')); }),
-      toggleRow(!s.animations, 'Animations off', s.animations ? '1×' : '0×', 'Sets window, transition and animator scales to 0', () => { this.setState({ animations: !s.animations }); this.flash('Animations ' + (s.animations ? 'disabled' : 'restored')); }),
+    const overWifi = dev.conn === 'Wi-Fi';
+    const toggleRow = (on, label, value, tooltip, onClick, o) => {
+      o = o || {};
+      return {
+        on: !o.na && on, label, na: !!o.na, blocked: !!o.blocked,
+        value: o.na ? 'n/a' : o.blocked ? o.blockedValue : value,
+        tooltip: o.na || o.blocked ? o.reason : tooltip,
+        onClick: dis || o.na || o.blocked ? () => {} : onClick,
+      };
+    };
+    const tg = (key, label, onV, offV, tip, name, o) => toggleRow(s[key], label, s[key] ? onV : offV, tip, () => { const v = !s[key]; this.setState({ [key]: v }); this.flash(name + ' ' + (v ? 'on' : 'off')); }, o);
+    const wifiBlock = (what) => overWifi ? { blocked: true, blockedValue: 'adb over Wi-Fi', reason: 'Connected over Wi-Fi — ' + what + ' would drop this adb session. Connect over USB to use it.' } : null;
+    const appearanceToggles = [
+      toggleRow(s.darkMode, 'Dark theme', s.darkMode ? 'night yes' : 'night no', 'cmd uimode night yes|no', () => { this.setState({ darkMode: !s.darkMode }); this.flash('Dark theme ' + (!s.darkMode ? 'on' : 'off')); }),
+      toggleRow(!s.animations, 'Animations off', s.animations ? 'scale 1×' : 'scale 0×', 'Sets window, transition and animator scales to 0', () => { this.setState({ animations: !s.animations }); this.flash('Animations ' + (s.animations ? 'disabled' : 'restored')); }),
       toggleRow(s.showTouches, 'Show touches', s.showTouches ? 'on' : 'off', 'Useful while recording', () => this.setState({ showTouches: !s.showTouches })),
+      toggleRow(s.talkback, 'TalkBack', (s.talkback ? 'on' : 'off') + ' · Google', 'Toggles the Google TalkBack accessibility service', () => { this.setState({ talkback: !s.talkback }); this.flash('TalkBack ' + (!s.talkback ? 'on' : 'off')); }),
+      tg('boldText', 'Bold text', 'weight +300', 'off', 'settings put secure font_weight_adjustment 300|0', 'Bold text'),
+      tg('invert', 'Invert colors', 'on', 'off', 'settings put secure accessibility_display_inversion_enabled 1|0', 'Invert colors'),
     ];
+    const developerToggles = [
+      toggleRow(s.stayAwake, 'Stay awake', s.stayAwake ? 'on' : 'off', 'svc power stayon usb — screen stays on while charging', () => this.setState({ stayAwake: !s.stayAwake })),
+      toggleRow(s.dontKeep, "Don't keep activities", s.dontKeep ? 'on' : 'off', 'Destroys every activity as soon as the user leaves it', () => { this.setState({ dontKeep: !s.dontKeep }); this.flash("Don't keep activities " + (!s.dontKeep ? 'on' : 'off')); }),
+      toggleRow(s.viewUpdates, 'Show view updates', s.viewUpdates ? 'on' : 'off', 'Flashes views inside windows when drawn', () => this.setState({ viewUpdates: !s.viewUpdates })),
+      toggleRow(s.surfaceUpdates, 'Show surface updates', s.surfaceUpdates ? 'on' : 'off', 'Flashes entire window surfaces when they update', () => this.setState({ surfaceUpdates: !s.surfaceUpdates })),
+      tg('layoutBounds', 'Show layout bounds', 'on', 'off', 'setprop debug.layout true|false — open apps redraw with clip bounds and margins', 'Layout bounds'),
+      tg('overdraw', 'GPU overdraw', 'show', 'off', 'setprop debug.hwui.overdraw show|false — tints pixels drawn more than once', 'GPU overdraw'),
+      tg('profileBars', 'GPU profile bars', 'bars', 'off', 'setprop debug.hwui.profile visual_bars|false — frame-time bars at the bottom of the screen', 'GPU profile bars'),
+      tg('pointerLoc', 'Pointer location', 'on', 'off', 'settings put system pointer_location 1|0 — draws touch coordinates on top', 'Pointer location'),
+    ];
+    const connectivityToggles = [
+      tg('airplane', 'Airplane mode', 'on', 'off', 'cmd connectivity airplane-mode enable|disable', 'Airplane mode', wifiBlock('airplane mode')),
+      tg('wifi', 'Wi-Fi', 'on', 'off', 'svc wifi enable|disable — turning off Wi-Fi can drop a wireless adb connection', 'Wi-Fi', wifiBlock('turning Wi-Fi off')),
+      tg('mobileData', 'Mobile data', 'on', 'off', 'svc data enable|disable', 'Mobile data', dev.cellular === false ? { na: true, reason: 'No cellular radio on this device' } : null),
+    ];
+    const displayToggles = appearanceToggles.concat(developerToggles, connectivityToggles);
+    const BG = ['Standard', '0', '1', '2', '3', '4'];
+
+    const bgLimitChips = BG.map(v => ({
+      label: v, tooltip: v === 'Standard' ? 'Standard limit' : (v === '0' ? 'No background processes' : 'At most ' + v + ' background process' + (v === '1' ? '' : 'es')),
+      style: gate({ flex: v === 'Standard' ? 2 : 1, height: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 4, fontSize: 11, cursor: 'pointer', fontFamily: v === 'Standard' ? UI : MONO, fontWeight: s.bgLimit === v ? 700 : 400, color: s.bgLimit === v ? (v === 'Standard' ? th.text : th.amber) : th.textDim, background: s.bgLimit === v ? (v === 'Standard' ? th.header : th.amberBg) : 'transparent', boxShadow: s.bgLimit === v ? ('inset 0 0 0 1px ' + (v === 'Standard' ? th.borderStrong : th.amber)) : 'none' }, dis),
+      hoverStyle: dis ? {} : th.hover,
+      onClick: dis ? () => {} : () => { this.setState({ bgLimit: v }); this.flash('Background process limit: ' + (v === 'Standard' ? 'standard' : v)); },
+    }));
+    const tile = (t) => {
+      const blocked = dis || t.na || t.blocked;
+      return {
+        ...t,
+        tileStyle: gate({ display: 'flex', flexDirection: 'column', gap: 3, padding: '7px 8px 7px 9px', borderRadius: 6, cursor: 'pointer', minWidth: 0, background: t.on ? th.accentBg : 'transparent', border: '1px solid ' + (t.on ? th.accentBorder : th.border) }, blocked),
+        hoverStyle: blocked || t.on ? {} : th.hover,
+        topStyle: { display: 'flex', alignItems: 'flex-start', gap: 6 },
+        labelStyle: { fontSize: 11.5, lineHeight: 1.3, fontWeight: t.on ? 600 : 400, color: th.text, flex: 1, minWidth: 0, overflowWrap: 'anywhere', textWrap: 'pretty' },
+        trackStyle: { width: 22, height: 12, borderRadius: 999, background: t.on ? th.accent : th.borderStrong, position: 'relative', flexShrink: 0, marginTop: 2 },
+        knobStyle: { position: 'absolute', top: 1.5, left: t.on ? 11.5 : 1.5, width: 9, height: 9, borderRadius: '50%', background: '#fff', transition: 'left 0.15s' },
+        valueStyle: { fontFamily: MONO, fontSize: 9.5, color: t.on ? th.accent : th.textFaint, overflowWrap: 'anywhere' },
+      };
+    };
+    const groupWrap = { display: 'flex', flexDirection: 'column', gap: 5, padding: '2px 10px 0' };
+    const groupLabel = { fontSize: 9.5, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase', color: th.textFaint };
+    const groupGrid = { display: 'grid', gridTemplateColumns: compact ? '1fr' : 'repeat(auto-fill, minmax(150px, 1fr))', gap: 5 };
+    const toggleGroups = [
+      { label: 'Appearance & accessibility', items: appearanceToggles.map(tile) },
+      { label: 'Developer', items: developerToggles.map(tile) },
+      { label: 'Connectivity', items: connectivityToggles.map(tile) },
+    ].map(g => ({ ...g, wrapStyle: groupWrap, labelStyle: groupLabel, gridStyle: groupGrid }));
+    const togglesOn = displayToggles.filter(t => t.on).length;
+    const togglesAvail = displayToggles.filter(t => !t.na).length;
+    const rotChips = ROT.map(v => ({
+      label: v, tooltip: v === 'Auto' ? 'settings put system accelerometer_rotation 1' : 'Turns auto-rotate off and sets user_rotation ' + (v === 'Portrait' ? '0' : '1'),
+      style: gate({ flex: 1, height: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 4, fontSize: 11, cursor: 'pointer', fontFamily: UI, fontWeight: s.rotation === v ? 700 : 400, color: s.rotation === v ? (v === 'Auto' ? th.text : th.amber) : th.textDim, background: s.rotation === v ? (v === 'Auto' ? th.header : th.amberBg) : 'transparent', boxShadow: s.rotation === v ? ('inset 0 0 0 1px ' + (v === 'Auto' ? th.borderStrong : th.amber)) : 'none' }, dis),
+      hoverStyle: dis ? {} : th.hover,
+      onClick: dis ? () => {} : () => { this.setState({ rotation: v }); this.flash(v === 'Auto' ? 'Auto-rotate on' : 'Rotation locked to ' + v.toLowerCase()); },
+    }));
 
     // ---- logcat ----
     const lq = s.logQuery.trim().toLowerCase();
@@ -790,16 +1162,48 @@ class Component extends DCLogic {
     const logEmptyByFilter = !s.logCleared && connected;
     const toast = s.toast;
 
+    // ---- current app ----
+    const fgKey = s.fg, caKilled = fgKey === 'killed';
+    const caApp = caKilled ? FG[s.lastApp] : FG[fgKey];
+    const caIsApp = !!caApp && (CA_APP_KEYS.includes(fgKey) || caKilled);
+    const caSys = caIsApp && !!caApp.system, caSysUI = caIsApp && !!caApp.systemui;
+    const busy = s.busy;
+    const off = (st, o) => o ? { ...st, opacity: 0.45, cursor: 'default' } : st;
+    const factKey = { fontSize: 9.5, fontWeight: 700, letterSpacing: 0.4, textTransform: 'uppercase', color: th.textFaint };
+    const factVal = { fontFamily: MONO, fontSize: 11, color: th.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' };
+    const caFacts = !caIsApp ? [] : [
+      ['Activity', caKilled ? '—' : caApp.activity, true, caKilled ? 'No activity — process is not running' : (caApp.activity.startsWith('.') ? caApp.pkg + '/' + caApp.activity : caApp.activity)],
+      ['Version', caApp.ver + ' (' + caApp.code + ')', false, 'versionName ' + caApp.ver + ' · versionCode ' + caApp.code],
+      ['Process', caKilled ? 'not running' : (s.restarted ? '8201 · 4s' : caApp.pid + ' · ' + caApp.up), false, caKilled ? 'Force-stopped' : 'PID · running for'],
+      ['Target SDK', caApp.target, false, 'targetSdkVersion ' + caApp.target + ' · minSdk ' + caApp.min],
+    ].map(([k, v, span, tip]) => ({
+      key: k, value: v, tip,
+      wrapStyle: { display: 'flex', flexDirection: 'column', gap: 1, minWidth: 0, gridColumn: span ? '1 / -1' : 'auto' },
+      keyStyle: factKey, valStyle: { ...factVal, color: k === 'Process' && caKilled ? th.textFaint : th.text },
+    }));
+    const pBusy = busy === 'restart' || busy === 'launch';
+    const pOff = caSysUI || (!!busy && !pBusy);
+    const kOff = caKilled || caSysUI || (!!busy && busy !== 'kill');
+    const rOff = caSysUI || (!!busy && busy !== 'perms');
+    const cOff = caSysUI || !!busy, uOff = caSys || !!busy;
+    const sysUiTip = 'Disabled for System UI — it draws the status bar, shade and lock screen';
+    const hasLast = !s.appGone && ['debug', 'release', 'system'].includes(s.lastApp);
+    const isHome = fgKey === 'home', isLock = fgKey === 'lock';
+    const skel = (w, h) => ({ height: h || 10, width: w, borderRadius: 3, background: th.mode === 'dark' ? 'rgba(255,255,255,0.055)' : 'rgba(0,0,0,0.05)', animation: 'adb-pulse 1.4s ease-in-out infinite', flexShrink: 0 });
+    const caMeta = s.refreshing || fgKey === 'loading' ? 'reading…' : fgKey === 'error' ? 'adb error' : caKilled ? 'not running' : (s.fresh ? 'updated just now' : 'updated 2 s ago');
+    const cpkg = s.confirmPkg || selApp.pkg;
+    const dApp = Object.values(FG).find(a => a.pkg === s.detailPkg) || FG.debug;
+
     return {
       hoverStyle: th.hover, spacerStyle: { flex: 1 },
-      pageStyle: { minHeight: '100vh', background: th.backdrop, display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '200px 24px 60px', fontFamily: UI },
+      pageStyle: { minHeight: '100vh', background: th.backdrop, display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '300px 24px 60px', fontFamily: UI },
       switcherStyle: { position: 'fixed', top: 12, left: '50%', transform: 'translateX(-50%)', zIndex: 60, display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center', maxWidth: 940 },
       switcherGroupStyle: { display: 'flex', gap: 4, padding: 5, borderRadius: 999, background: 'rgba(20,21,24,0.9)', backdropFilter: 'blur(12px)' },
       pillDark: pill(s.theme === 'dark'), pillLight: pill(s.theme === 'light'),
       setDark: () => this.setState({ theme: 'dark' }), setLight: () => this.setState({ theme: 'light' }),
       pillWide: pill(W >= 470), pillDock: pill(W >= 340 && W < 470), pillNarrow: pill(W < 340),
       setWide: () => this.setSize(560, 700), setDock: () => this.setSize(380, 720), setNarrow: () => this.setSize(300, 720),
-      viewPills: RAIL.map(r => ({ label: r.label, style: pill(s.view === r.id), onClick: () => this.setState({ view: r.id }) })),
+      viewPills: RAIL.map(r => ({ label: r.label, style: pill(s.view === r.id), onClick: () => this.setState({ view: r.id, detailPkg: null }) })),
       statePills: [
         { id: 'connected', label: 'Connected' }, { id: 'none', label: 'No device' },
         { id: 'loading', label: 'Loading' }, { id: 'unauthorized', label: 'Unauthorized' },
@@ -868,11 +1272,177 @@ class Component extends DCLogic {
       bodyRowStyle: { flex: 1, display: 'flex', overflow: 'hidden', minHeight: 0 },
       railStyle: { width: 34, flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, padding: '4px 0 6px', background: th.panel, borderRight: `1px solid ${th.border}` },
       railItems,
-      railSettingsStyle: { width: 26, height: 26, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 },
+      railSettingsStyle: { textDecoration: 'none', width: 26, height: 26, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 },
       viewColStyle: { flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0, position: 'relative' },
       viewScrollStyle: { flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column' },
 
-      isDeviceView: s.view === 'device', isAppsView: s.view === 'apps',
+      switcherLabelStyle: { padding: '5px 4px 5px 8px', fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.45)', fontFamily: UI, whiteSpace: 'nowrap' },
+      caPills: [
+        ['debug', 'Debug app'], ['release', 'Release app'], ['home', 'Home'], ['lock', 'Lock screen'], ['system', 'System app'], ['systemui', 'System UI'],
+        ['killed', 'Killed'], ['loading', 'Reading'], ['error', 'adb error'],
+      ].map(([id, label]) => ({ label, style: pill(s.fg === id), onClick: () => this.setState({ view: 'device', detailPkg: null, deviceState: 'connected', skeleton: false }, () => this.setFg(id)) }))
+        .concat([{ label: 'Change pending', style: pill(s.pending), onClick: () => this.setState({ view: 'device', detailPkg: null, pending: !s.pending }) }]),
+
+      caLeave: () => { if (!s.pending) return; clearTimeout(this._cp); this._cp = setTimeout(() => this.caApplyPending(), 600); },
+      caPending: s.pending && caIsApp, caShowMeta: !(s.pending && caIsApp),
+      caPendingLabel: (compact ? 'Maps in front' : 'Maps came to the front') + ' · Update',
+      caPendingTip: 'Held while the pointer is over this section. Applies when you move away, or click to update now.',
+      caPendingStyle: { ...link, marginLeft: 'auto', fontSize: 10.5 },
+      caMeta, caMetaStyle: { fontFamily: MONO, fontSize: 9.5, color: fgKey === 'error' ? th.red : th.textFaint, marginLeft: 'auto', cursor: 'pointer' },
+      caRefresh: () => { if (s.refreshing) return; this.setState({ refreshing: true }); setTimeout(() => this.setState({ refreshing: false, fresh: true }), 500); },
+
+      caIsLoading: fgKey === 'loading', caIsError: fgKey === 'error', caIsIdle: isHome || isLock, caIsApp,
+      caIdRowStyle: { display: 'flex', alignItems: 'center', gap: 8, padding: '0 10px', minWidth: 0 },
+      caSkelTileStyle: { ...skel(28, 28), borderRadius: 6 },
+      caSkelColStyle: { display: 'flex', flexDirection: 'column', gap: 6, flex: 1, minWidth: 0 },
+      caSkelBarA: skel('46%'), caSkelBarB: skel('70%'),
+      caSkelRowsStyle: { display: 'flex', flexDirection: 'column', gap: 8, padding: '6px 10px 2px' },
+      caSkelBarC: skel('88%'), caSkelBarD: skel('54%'),
+      caRetry: () => { this.setFg('loading'); setTimeout(() => this.setFg('debug'), 700); },
+      caMsgWrapStyle: { display: 'flex', flexDirection: 'column', gap: 2, padding: '0 10px' },
+      caMsgTitleStyle: { fontSize: 11.5, fontWeight: 600, color: th.text },
+      caMsgMonoStyle: { fontFamily: MONO, fontSize: 9.5, color: th.textFaint, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
+
+      caIdleTileStyle: { width: 28, height: 28, borderRadius: 6, flexShrink: 0, border: `1.5px dashed ${th.borderStrong}` },
+      caIdleTitle: isLock ? 'Lock screen' : 'Home screen',
+      caIdlePkg: isLock ? 'com.android.systemui' : 'com.google.android.apps.nexuslauncher',
+      caIdleNote: isLock ? 'Unlock the device to act on the foreground app.' : (hasLast ? 'Last app: ' + FG[s.lastApp].label : 'No app in the foreground.'),
+      caIdleHasAction: isLock || hasLast,
+      caIdleActionLabel: isLock ? 'Wake' : (busy === 'launch' ? 'Launching…' : 'Launch'),
+      caIdleActionTip: isLock ? 'input keyevent KEYCODE_WAKEUP' : (hasLast ? 'Launch ' + FG[s.lastApp].pkg + '  ⌥⇧⌘R' : ''),
+      caIdleAction: () => { if (isLock) { this.flash('Sent wake to ' + dev.name); return; } if (!busy) this.caRun('launch'); },
+
+      caTileStyle: { width: 28, height: 28, borderRadius: 6, flexShrink: 0, background: caApp && caApp.debuggable ? th.brandBg : th.header, border: `1px solid ${caApp && caApp.debuggable ? th.brandBorder : th.border}`, opacity: caKilled ? 0.55 : 1 },
+      caTextColStyle: { display: 'flex', flexDirection: 'column', gap: 1, minWidth: 0, flex: 1 },
+      caLabelRowStyle: { display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 },
+      caLabelStyle: { fontSize: 12, fontWeight: 700, color: th.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 },
+      caPkgStyle: { fontFamily: MONO, fontSize: 9.5, color: th.textFaint, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
+      caLabel: caApp ? caApp.label : '', caPkg: caApp ? caApp.pkg : '',
+      caDebuggable: caIsApp && !!caApp.debuggable, caSystem: caSys,
+      caDebugTagStyle: { fontSize: 9, fontWeight: 700, color: th.brand, background: th.brandBg, border: `1px solid ${th.brandBorder}`, borderRadius: 3, padding: '1px 4px', flexShrink: 0 },
+      caSystemTagStyle: { fontSize: 9, fontWeight: 700, color: th.textDim, border: `1px solid ${th.border}`, borderRadius: 3, padding: '1px 4px', flexShrink: 0 },
+      caFacts,
+      caHasHelp: caKilled || caSysUI,
+      caHelp: caKilled ? 'Force-stopped. Stays here until another app comes to the front.' : 'System UI draws the status bar, shade and lock screen. Actions are off so the device stays usable.',
+
+      caPrimaryStyle: off({ ...primaryBtn, gap: 6, cursor: pBusy ? 'progress' : 'pointer', opacity: pBusy ? 0.85 : 1 }, pOff),
+      caPrimaryHover: pOff || pBusy ? {} : { filter: 'brightness(1.08)' },
+      caPrimaryBusy: pBusy,
+      caBtnSpinnerStyle: { width: 9, height: 9, borderRadius: '50%', border: '1.5px solid #fff', borderTopColor: 'transparent', animation: 'adb-spin 0.7s linear infinite', flexShrink: 0 },
+      caPrimaryLabel: busy === 'restart' ? 'Restarting…' : busy === 'launch' ? 'Launching…' : caKilled ? 'Launch' : 'Restart',
+      caPrimaryTip: caSysUI ? sysUiTip : caKilled ? 'Launch the main activity  ⌥⇧⌘R' : 'Force-stop, then launch the main activity  ⌥⇧⌘R',
+      caPrimary: () => { if (pOff || busy) return; this.caRun(caKilled ? 'launch' : 'restart'); },
+      caKillStyle: off({ ...secondaryBtn, cursor: busy === 'kill' ? 'progress' : 'pointer' }, kOff),
+      caKillHover: kOff || busy ? {} : th.hover,
+      caKillLabel: busy === 'kill' ? 'Killing…' : 'Kill',
+      caKillTip: caSysUI ? sysUiTip : caKilled ? 'Not running' : 'am force-stop — leaves data intact',
+      caKill: () => { if (kOff || busy) return; this.caRun('kill'); },
+      caPermsStyle: off({ ...secondaryBtn, cursor: busy === 'perms' ? 'progress' : 'pointer' }, rOff),
+      caPermsHover: rOff || busy ? {} : th.hover,
+      caPermsLabel: busy === 'perms' ? 'Resetting…' : 'Reset permissions',
+      caPermsTip: caSysUI ? sysUiTip : 'Revokes runtime permissions and clears “Don’t ask again” — the app is stopped, data stays',
+      caPerms: () => { if (rOff || busy) return; this.caRun('perms'); },
+      caDetailsTip: caApp ? 'Open App details for ' + caApp.pkg + ' — Info, Shared prefs, Databases' : '',
+      caDetails: () => { if (!caApp) return; this.setState({ view: 'apps', detailPkg: caApp.pkg, detailFrom: 'device', detailTab: 'info', selectedPkg: caApp.pkg }); },
+      caClearStyle: off(dangerBtn, cOff), caClearHover: cOff ? {} : { background: th.redBg },
+      caClearTip: caSysUI ? sysUiTip : 'Deletes databases, prefs and caches. Cannot be undone.',
+      caClear: () => { if (cOff) return; this.askConfirm('clear', caApp.pkg, 'current'); },
+      caUninstallStyle: off(dangerBtn, uOff), caUninstallHover: uOff ? {} : { background: th.redBg },
+      caUninstallTip: caSysUI ? sysUiTip : caSys ? 'Preinstalled system app — adb can’t uninstall it' : 'Removes the app and all its data. Cannot be undone.',
+      caUninstall: () => { if (uOff) return; this.askConfirm('uninstall', caApp.pkg, 'current'); },
+
+      padRowStyle: { display: 'flex', padding: '0 10px', opacity: dis ? 0.45 : 1 },
+      padGroupLabelStyle: { ...groupLabel, padding: '2px 10px 0' },
+      localeStateStyle: { fontFamily: MONO, fontSize: 10, color: localeOverridden ? th.amber : th.textFaint, marginLeft: 'auto' },
+      localeStateLabel: dis ? '—' : (localeOverridden ? s.locale + ' applied' : s.locale),
+      localeQuery: s.localeQuery, hasLocaleQuery: !!s.localeQuery,
+      onLocaleQuery: (e) => this.setState({ localeQuery: e.target.value }),
+      clearLocaleQuery: () => this.setState({ localeQuery: '' }),
+      localeListLabel: s.localeQuery.trim() ? 'Results' : 'Test locales',
+      localeListStyle: { display: 'flex', flexDirection: 'column', gap: 1 },
+      localeRows: (() => {
+        const lq2 = s.localeQuery.trim().toLowerCase();
+        const list = lq2 ? QUICK_LOCALES.concat(LOCALES).filter(([c, n]) => c.toLowerCase().includes(lq2) || n.toLowerCase().includes(lq2)).slice(0, 6) : QUICK_LOCALES;
+        return list.map(([code, name]) => {
+          const active = s.locale === code && code !== 'en-US';
+          return {
+            code, name, isActive: active, tooltip: dis ? 'Connect a device to use this' : code + ' — ' + name,
+            onClick: dis ? () => {} : () => { this.setState({ locale: code, localeQuery: '' }); this.flash(code === 'en-US' ? 'Language reset to en-US' : 'Language set to ' + code + ' · activity restarted'); },
+            rowStyle: gate({ display: 'flex', alignItems: 'center', gap: 8, height: 26, padding: '0 10px', margin: '0 0', cursor: 'pointer', minWidth: 0, background: active ? th.amberBg : 'transparent' }, dis),
+            hoverStyle: dis || active ? {} : th.hover,
+            codeStyle: { fontFamily: MONO, fontSize: 11, width: 44, flexShrink: 0, color: active ? th.amber : th.text, fontWeight: active ? 700 : 400 },
+            nameStyle: { fontSize: 10.5, color: th.textFaint, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
+            activeStyle: { fontSize: 9, fontWeight: 700, color: th.amber, flexShrink: 0 },
+          };
+        });
+      })(),
+      isLocaleEmpty: !!s.localeQuery.trim() && ![...QUICK_LOCALES, ...LOCALES].some(([c, n]) => c.toLowerCase().includes(s.localeQuery.trim().toLowerCase()) || n.toLowerCase().includes(s.localeQuery.trim().toLowerCase())),
+      localeOverridden: connected && localeOverridden,
+      resetLocale: () => { this.setState({ locale: 'en-US' }); this.flash('Language reset to en-US'); },
+
+      locMetaStyle: { fontFamily: MONO, fontSize: 9.5, color: th.textFaint, marginLeft: 'auto' },
+      locMeta: dis ? '—' : !dev.emulator ? 'emulator only' : (s.locName ? s.locName + ' · ' : '') + s.locLat.toFixed(4) + ', ' + s.locLon.toFixed(4),
+      locChips: (() => {
+        const ld = dis || !dev.emulator;
+        const why = dis ? 'Connect a device to use this' : 'Emulator only — a physical device reports its real GPS';
+        return CITIES.map(([n, lat, lon]) => ({
+          label: n, tooltip: ld ? why : lat.toFixed(4) + ', ' + lon.toFixed(4) + ' — adb emu geo fix ' + lon + ' ' + lat,
+          style: gate(chipStyle(!s.locCustomOpen && s.locName === n, false), ld), hoverStyle: ld ? {} : th.hover,
+          onClick: ld ? () => {} : () => { this.setState({ locName: n, locLat: lat, locLon: lon, locCustomOpen: false, locErr: '' }); this.flash('Location set to ' + n + ' (' + lat.toFixed(4) + ', ' + lon.toFixed(4) + ')'); },
+        })).concat([{ label: 'Custom…', tooltip: ld ? why : 'Enter latitude and longitude in decimal degrees', style: gate({ ...chipStyle(s.locCustomOpen, false), borderStyle: 'dashed' }, ld), hoverStyle: ld ? {} : th.hover, onClick: ld ? () => {} : () => this.setState({ locCustomOpen: !s.locCustomOpen, locErr: '' }) }]);
+      })(),
+      locCustomOpen: s.locCustomOpen && !!dev.emulator && connected,
+      locLatIn: s.locLatIn, locLonIn: s.locLonIn,
+      onLatInput: (e) => this.setState({ locLatIn: e.target.value, locErr: '' }),
+      onLonInput: (e) => this.setState({ locLonIn: e.target.value, locErr: '' }),
+      latFieldStyle: { ...field, width: 84, borderColor: s.locErr.startsWith('Latitude') ? th.red : th.borderStrong },
+      lonFieldStyle: { ...field, width: 92, borderColor: s.locErr.startsWith('Longitude') ? th.red : th.borderStrong },
+      hasLocErr: !!s.locErr, locErr: s.locErr,
+      applyLoc: () => {
+        const la = Number(s.locLatIn), lo = Number(s.locLonIn);
+        if (s.locLatIn.trim() === '' || !(la >= -90 && la <= 90)) { this.setState({ locErr: 'Latitude must be −90 to 90' }); return; }
+        if (s.locLonIn.trim() === '' || !(lo >= -180 && lo <= 180)) { this.setState({ locErr: 'Longitude must be −180 to 180' }); return; }
+        this.setState({ locName: null, locLat: la, locLon: lo, locCustomOpen: false, locErr: '' });
+        this.flash('Location set to ' + la.toFixed(4) + ', ' + lo.toFixed(4));
+      },
+      locHelp: !dev.emulator ? 'Emulator only — a physical device reports its real GPS. Pick an emulator in the device bar.' : 'Sends a GPS fix with adb emu geo fix. It stays until you set another or cold-boot the emulator.',
+
+      hasMcpChip: s.mcp !== 'off',
+      mcpChipStyle: { display: 'flex', alignItems: 'center', gap: 5, padding: '1px 6px', borderRadius: 4, background: th.brandBg, border: '1px solid ' + th.brandBorder, flexShrink: 0, textDecoration: 'none', cursor: 'pointer' },
+      mcpDotStyle: { width: 5, height: 5, borderRadius: '50%', background: th.brand, animation: s.mcp === 'calling' ? 'adb-pulse 0.9s ease-in-out infinite' : 'none' },
+      mcpChipLabelStyle: { fontFamily: MONO, fontSize: 9, fontWeight: 700, color: th.brand, whiteSpace: 'nowrap' },
+      mcpChipLabel: compact ? 'MCP' : 'MCP · Claude Code',
+      mcpChipTip: 'Claude Code connected over MCP · Full control — click for AI agent settings',
+      mcpPills: [['off', 'Off'], ['idle', 'Agent connected'], ['calling', 'Agent calling'], ['ask', 'Agent asks: uninstall']].map(([id, label]) => ({
+        label, style: pill(id === 'ask' ? s.confirmFrom === 'agent' : s.mcp === id),
+        onClick: () => {
+          if (id === 'ask') { this.setState({ mcp: 'idle', confirm: 'uninstall', confirmPkg: 'com.acme.shop', confirmFrom: 'agent' }); return; }
+          this.setState({ mcp: id, statusMessage: id === 'calling' ? 'Claude Code · tap(540, 1210) on ' + dev.name : id === 'idle' ? 'Claude Code · get_ui_tree' : 'Ready' });
+        },
+      })),
+      hasConfirmAgentNote: s.confirmFrom === 'agent',
+      confirmAgentNote: 'Requested by Claude Code over MCP. Cancel tells the agent you declined.',
+      confirmAgentStyle: { fontSize: 10.5, lineHeight: 1.45, color: th.brand, marginTop: 8 },
+
+      devicePills: [['d1', 'Phone · USB'], ['d2', 'Tablet · Wi-Fi'], ['d4', 'Emulator']].map(([id, label]) => ({ label, style: pill(s.selectedDeviceId === id && connected), onClick: () => this.setState({ selectedDeviceId: id, deviceState: 'connected', view: 'device', detailPkg: null }) })),
+      pillClip: pill(s.clipCopy), clipPillLabel: 'Clipboard copy: ' + (s.clipCopy ? 'on' : 'off'), toggleClip: () => this.setState({ clipCopy: !s.clipCopy }),
+      pillInspector: pill(s.inspectorOpen), inspectorPillLabel: 'Inspector: ' + (s.inspectorOpen ? 'open' : 'closed'), toggleInspector: () => this.setState({ inspectorOpen: !s.inspectorOpen }),
+
+      isAppDetail: s.view === 'apps' && !!s.detailPkg,
+      detailBackLabel: s.detailFrom === 'device' ? '← Device' : '← Apps',
+      detailBackTip: s.detailFrom === 'device' ? 'Back to the Device view — scroll position is kept' : 'Back to the app list',
+      detailBack: () => this.setState({ view: s.detailFrom || 'apps', detailPkg: null, detailFrom: null }),
+      detailLabel: dApp.label, detailPkg: dApp.pkg,
+      detailTitleStyle: { fontSize: 11.5, fontWeight: 600, color: th.textDim, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
+      detailTabsStyle: { display: 'flex', gap: 2, padding: '0 8px', flexShrink: 0, borderBottom: `1px solid ${th.border}` },
+      detailTabs: [['info', 'Info'], ['prefs', 'Shared prefs'], ['db', 'Databases']].map(([id, label]) => ({
+        label, onClick: () => this.setState({ detailTab: id }),
+        style: { height: 28, display: 'flex', alignItems: 'center', padding: '0 8px', fontSize: 11.5, cursor: 'pointer', whiteSpace: 'nowrap', color: s.detailTab === id ? th.text : th.textDim, fontWeight: s.detailTab === id ? 600 : 400, boxShadow: s.detailTab === id ? `inset 0 -2px 0 ${th.accent}` : 'none' },
+      })),
+      detailFacts: s.detailTab !== 'info' ? [] : [['Version', dApp.ver + ' (' + dApp.code + ')'], ['Target SDK', dApp.target], ['Min SDK', dApp.min], ['Debuggable', dApp.debuggable ? 'yes' : 'no'], ['Installer', dApp.installer]].map(([k, v]) => ({ key: k, value: v, wrapStyle: { display: 'flex', flexDirection: 'column', gap: 1, minWidth: 0 }, keyStyle: factKey, valStyle: factVal })),
+      detailNoteStyle: { ...helpText, padding: '10px 10px 2px' },
+
+      isDeviceView: s.view === 'device', isAppsView: s.view === 'apps' && !s.detailPkg, isDisplayView: s.view === 'display',
       isNetworkView: s.view === 'network', isLogcatView: s.view === 'logcat',
 
       showNoDeviceEmpty: !connected && s.deviceState !== 'loading' && !s.skeleton,
@@ -908,7 +1478,10 @@ class Component extends DCLogic {
 
       isRecording: connected && s.recording, isNotRecording: !(connected && s.recording),
       toggleRecording: () => { const on = !s.recording; this.setState({ recording: on }); this.flash(on ? 'Recording started' : 'Saved screen-2026-09-01.mp4', 'ok', on ? null : 'Reveal'); },
-      onScreenshot: () => { if (dis) return; this.flash('Saved screen-2026-09-01.png', 'ok', 'Reveal'); },
+      onScreenshot: () => { if (dis) return; this.flash('Saved screen-2026-09-01.png' + (s.clipCopy ? ' · copied to clipboard' : ''), 'ok', 'Reveal'); },
+      screenshotTip: s.clipCopy ? 'Save a PNG to ~/Desktop and copy it to the clipboard' : 'Save a PNG to ~/Desktop',
+      onInspect: () => { if (dis) return; this.setState({ inspectorOpen: true }); this.flash('Captured layout of ' + dev.name + ' · opened in editor'); },
+      inspectorOpen: connected && s.inspectorOpen,
       recordingRowStyle: { display: 'flex', alignItems: 'center', gap: 7, margin: '0 10px', padding: '6px 8px', borderRadius: 5, background: th.redBg, border: `1px solid ${th.redBorder}` },
       recDotStyle: { width: 7, height: 7, borderRadius: '50%', background: th.red, animation: 'adb-pulse 1.2s ease-in-out infinite', flexShrink: 0 },
       recLabelStyle: { fontFamily: MONO, fontSize: 11, fontWeight: 700, color: th.red },
@@ -939,15 +1512,15 @@ class Component extends DCLogic {
       dangerZoneStyle: { display: 'flex', alignItems: 'center', gap: 6, padding: '8px 10px 0', margin: '0 10px', borderTop: `1px dashed ${th.border}`, flexWrap: 'wrap' },
       dangerLabelStyle: { fontSize: 9.5, fontWeight: 700, letterSpacing: 0.4, textTransform: 'uppercase', color: th.textFaint, marginRight: 'auto' },
       dangerBtnStyle: gate(dangerBtn, dis), dangerHoverStyle: dis ? {} : { background: th.redBg },
-      onClearData: () => { if (dis) return; this.askConfirm('clear'); },
-      onUninstall: () => { if (dis) return; this.askConfirm('uninstall'); },
+      onClearData: () => { if (dis) return; this.askConfirm('clear', selApp.pkg, 'apps'); },
+      onUninstall: () => { if (dis) return; this.askConfirm('uninstall', selApp.pkg, 'apps'); },
 
       fontChips, densityChips,
       chipRowStyle: { display: 'flex', gap: 4, flexWrap: 'wrap', padding: '0 10px' },
       fontStateStyle: { fontFamily: MONO, fontSize: 10, color: fontOverridden ? th.amber : th.textFaint, marginLeft: 'auto' },
       fontStateLabel: dis ? '—' : (fontOverridden ? s.fontScale + '× applied' : 'default'),
       densityStateStyle: { fontFamily: MONO, fontSize: 10, color: densityOverridden ? th.amber : th.textFaint, marginLeft: 'auto' },
-      densityStateLabel: dis ? '—' : (densityOverridden ? Math.round(428 * s.density / 100) + ' dpi' : '428 dpi'),
+      densityStateLabel: dis ? '—' : (densityOverridden ? Math.round(420 * s.density / 100) + ' dpi' : '420 dpi'),
       fontCustomOpen: s.fontCustomOpen, densityCustomOpen: s.densityCustomOpen,
       customRowStyle: { display: 'flex', alignItems: 'center', gap: 6, padding: '2px 10px 0' },
       customFieldStyle: { ...field, width: 64 },
@@ -968,8 +1541,18 @@ class Component extends DCLogic {
       resetRowStyle: { display: 'flex', alignItems: 'center', gap: 8, padding: '2px 10px 0' },
       overrideNoteStyle: { fontSize: 10.5, color: th.textFaint, marginRight: 'auto' },
       resetFont: () => { this.setState({ fontScale: 1, fontCustomOpen: false }); this.flash('Font scale reset to 1×'); },
-      resetDensity: () => { this.setState({ density: 100, densityCustomOpen: false }); this.flash('Density reset to physical (428 dpi)'); },
-      displayToggles,
+      resetDensity: () => { this.setState({ density: 100, densityCustomOpen: false }); this.flash('Density reset to physical (420 dpi)'); },
+      displayToggles, bgLimitChips, toggleGroups,
+      togglesMeta: dis ? '—' : togglesOn + ' of ' + togglesAvail + ' on',
+      rotChips, rotValue: s.rotation === 'Auto' ? 'auto-rotate' : s.rotation.toLowerCase() + ' · locked',
+      rotValueStyle: { fontFamily: MONO, fontSize: 10, color: s.rotation === 'Auto' ? th.textFaint : th.amber },
+      togglesMetaStyle: { fontFamily: MONO, fontSize: 10, color: th.textFaint, marginLeft: 'auto' },
+      bgLimitWrapStyle: { display: 'flex', flexDirection: 'column', gap: 5, padding: '4px 10px 0' },
+      segmentedStyle: { display: 'flex', gap: 2, padding: 2, borderRadius: 6, background: th.field, border: '1px solid ' + th.borderStrong },
+      bgLimitValue: s.bgLimit === 'Standard' ? 'standard' : s.bgLimit + ' max',
+      bgLimitHeaderStyle: { display: 'flex', alignItems: 'center', gap: 8 },
+      bgLimitLabelStyle: { fontSize: 9.5, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase', color: th.textFaint },
+      bgLimitValueStyle: { fontFamily: MONO, fontSize: 10, color: s.bgLimit === 'Standard' ? th.textFaint : th.amber },
 
       proxyHost: s.proxyHost, proxyPort: s.proxyPort,
       onHostInput: (e) => this.setState({ proxyHost: e.target.value }),
@@ -1057,7 +1640,7 @@ class Component extends DCLogic {
       hasOverrides: connected && overrideCount > 0,
       overrideChipStyle: { fontSize: 9, fontWeight: 700, color: th.amber, border: `1px solid ${th.amber}`, borderRadius: 3, padding: '1px 5px', cursor: 'pointer', flexShrink: 0 },
       overrideChipLabel: overrideCount + ' override' + (overrideCount === 1 ? '' : 's') + ' · reset all',
-      resetAllOverrides: () => { this.setState({ fontScale: 1, density: 100, proxyEnabled: false }); this.flash('All overrides reverted on ' + dev.name); },
+      resetAllOverrides: () => { this.setState({ fontScale: 1, density: 100, proxyEnabled: false, locale: 'en-US' }); this.flash('All overrides reverted on ' + dev.name); },
       statusVersionStyle: { fontFamily: MONO, fontSize: 9, color: th.textFaint, flexShrink: 0 },
 
       toastVisible: !!toast,
@@ -1076,7 +1659,7 @@ class Component extends DCLogic {
       confirmStyle: { width: '100%', maxWidth: 300, borderRadius: 8, background: th.panel, border: `1px solid ${th.borderStrong}`, boxShadow: th.shadow, padding: 14 },
       confirmTitleStyle: { fontSize: 12.5, fontWeight: 700, marginBottom: 5 },
       confirmBodyStyle: { fontSize: 11, lineHeight: 1.45, color: th.textDim },
-      confirmTitle: s.confirm === 'uninstall' ? 'Uninstall ' + selApp.pkg + '?' : 'Clear data for ' + selApp.pkg + '?',
+      confirmTitle: s.confirm === 'uninstall' ? 'Uninstall ' + cpkg + '?' : 'Clear data for ' + cpkg + '?',
       confirmBody: s.confirm === 'uninstall'
         ? 'Removes the app and all of its data from ' + dev.name + '. This cannot be undone.'
         : 'Deletes databases, preferences and caches on ' + dev.name + ', and signs the user out. This cannot be undone.',

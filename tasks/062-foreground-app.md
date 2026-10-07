@@ -1,4 +1,4 @@
-# 062 — Foreground app detection
+# 062 — Foreground app and Current app actions (domain/application)
 
 Date: 2026-10-07. Source of logic: Oh My Android (MIT), docs/adr/0014.
 
@@ -12,12 +12,21 @@ Read the package/activity in the foreground on demand, for Current app, the MCP 
 
 ## Scope
 
-- `ForegroundAppCommand`: `dumpsys activity activities`, first `Resumed:`/`ResumedActivity:` line →
-  package + activity component; launcher/System UI detection; nothing resumed → typed "none".
+- `ForegroundAppCommand`: `dumpsys activity activities` (`topResumedActivity`, `ResumedActivity`,
+  `mResumedActivity`), fallback `dumpsys window` (`mCurrentFocus` / `mFocusedApp`) → package, activity, user;
+  home screen (the resolved HOME activity), lock screen (`isKeyguardShowing`), System UI shade; nothing → typed none.
+- Current app facts (design §3a): label/icon via the existing app-info helper, version name/code, debuggable,
+  system, target/min SDK (`dumpsys package`), PID (`pidof`) and running-for (`ps -o etime=`), cheap path
+  comparing package + PID only.
+- **Reset permissions**: for each granted runtime permission of `dumpsys package <pkg>` run `pm revoke` and
+  `pm clear-permission-flags <pkg> <perm> user-set user-fixed`, skipping system-fixed/policy-fixed; result counts.
+  Never `pm reset-permissions`.
+- Freshness policy as a pure, testable state machine (query triggers, 3 s poll while visible and focused,
+  held change while pointer/focus/action/confirm, apply rules).
 
 ## Out of scope
 
-- Polling policy and UI (Current app design pending).
+- Swing UI (task 064).
 
 ## TDD plan
 

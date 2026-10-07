@@ -4,7 +4,11 @@ Date: 2026-10-07. Source of logic: Oh My Android (MIT), docs/adr/0014.
 
 ## Goal
 
-Apply the supplied design for everything above once it is in `design/` (prompt: the inspector/a11y/location/toggles/MCP brief).
+Apply the supplied design (merged 2026-10-07): `design/README.md` §3a Current app, §3b Language & region,
+§3c Location, §5.3 extended tiles + rotation, §8 MCP chip, §9 Layout Inspector (editor tab), §10 audit mode,
+§11 Settings (clipboard, AI agents); prototypes `ADB Toolbox Plugin`, `Layout Inspector`, `Settings`.
+Pending designer corrections are listed in the design follow-up (Display sections stay in the Device view, tiles,
+Full page, 28px status bar win over the prototype).
 
 ## Dependencies
 

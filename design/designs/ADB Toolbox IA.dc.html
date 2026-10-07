@@ -57,7 +57,7 @@
           <div style="flex: 1; display: grid; gap: 6px;">
             <div style="display: flex; align-items: center; gap: 10px; padding: 8px 11px; background: rgba(84,138,247,0.16); border: 1px solid rgba(84,138,247,0.5); border-radius: 6px;">
               <span style="font-size: 11.5px; font-weight: 700; width: 66px; flex: none;">Device</span>
-              <span style="font-size: 11px; color: #b6c3d1;">mirroring, capture, device facts, reboot, font scale, density, quick toggles — the landing view</span>
+              <span style="font-size: 11px; color: #b6c3d1;">current app, mirroring, capture (+ inspect), facts, display, language, location, toggles — the landing view</span>
             </div>
             <div style="display: flex; align-items: center; gap: 10px; padding: 8px 11px; background: #2b2d30; border: 1px solid rgba(255,255,255,0.08); border-radius: 6px;">
               <span style="font-size: 11.5px; font-weight: 700; width: 66px; flex: none;">Apps</span>
@@ -83,6 +83,16 @@
           <span style="font-family: ui-monospace, monospace; font-size: 9.5px; color: #16a79b; width: 74px; flex: none;">GLOBAL</span>
           <span style="font-size: 12px; font-weight: 600; flex: none;">Status bar</span>
           <span style="font-size: 11px; color: #8a8d93;">last command, running-process chip (mirroring / recording), adb version — pinned</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px; padding: 9px 12px; background: #2b2d30; border: 1px dashed rgba(84,138,247,0.5); border-radius: 6px;">
+          <span style="font-family: ui-monospace, monospace; font-size: 9.5px; color: #548af7; width: 74px; flex: none;">EDITOR TAB</span>
+          <span style="font-size: 12px; font-weight: 600; flex: none;">Layout Inspector</span>
+          <span style="font-size: 11px; color: #8a8d93;">frozen capture · tree · canvas with redlines, grid, color, overlay · attributes / accessibility audit — opened from Capture or ⌥⇧⌘I</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px; padding: 9px 12px; background: #2b2d30; border: 1px dashed rgba(255,255,255,0.12); border-radius: 6px;">
+          <span style="font-family: ui-monospace, monospace; font-size: 9.5px; color: #8a8d93; width: 74px; flex: none;">SETTINGS</span>
+          <span style="font-size: 12px; font-weight: 600; flex: none;">AI agents (MCP)</span>
+          <span style="font-size: 11px; color: #8a8d93;">Off / Read only / Full control, token, setup snippets, tool list — status-bar chip links here</span>
         </div>
       </div>
     </div>
@@ -141,10 +151,58 @@
         <div style="text-align: right; font-family: ui-monospace, monospace; font-size: 10px; color: #8a8d93;">⇧⌘R</div>
       </div>
       <div style="display: grid; grid-template-columns: 1.5fr 2.4fr 52px 92px; align-items: center; padding: 9px 12px; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 11.5px;">
+        <div style="font-weight: 600;">Restart the app that is on screen</div>
+        <div style="color: #8a8d93;">Device · Current app · Restart (no search)</div>
+        <div style="text-align: center; font-family: ui-monospace, monospace; color: #66b578;">1</div>
+        <div style="text-align: right; font-family: ui-monospace, monospace; font-size: 10px; color: #8a8d93;">⌥⇧⌘R</div>
+      </div>
+      <div style="display: grid; grid-template-columns: 1.5fr 2.4fr 52px 92px; align-items: center; padding: 9px 12px; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 11.5px;">
+        <div style="font-weight: 600;">Kill, then cold-start it</div>
+        <div style="color: #8a8d93;">Device · Current app · Kill · Launch (app stays in the section)</div>
+        <div style="text-align: center; font-family: ui-monospace, monospace; color: #66b578;">2</div>
+        <div style="text-align: right; font-family: ui-monospace, monospace; font-size: 10px; color: #8a8d93;">—</div>
+      </div>
+      <div style="display: grid; grid-template-columns: 1.5fr 2.4fr 52px 92px; align-items: center; padding: 9px 12px; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 11.5px;">
+        <div style="font-weight: 600;">Inspect prefs of the app on screen</div>
+        <div style="color: #8a8d93;">Device · Current app · Details · Shared prefs · ← Device</div>
+        <div style="text-align: center; font-family: ui-monospace, monospace; color: #66b578;">2</div>
+        <div style="text-align: right; font-family: ui-monospace, monospace; font-size: 10px; color: #8a8d93;">—</div>
+      </div>
+      <div style="display: grid; grid-template-columns: 1.5fr 2.4fr 52px 92px; align-items: center; padding: 9px 12px; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 11.5px;">
         <div style="font-weight: 600;">Mirror the device</div>
         <div style="color: #8a8d93;">Device · Start mirroring (scrcpy)</div>
         <div style="text-align: center; font-family: ui-monospace, monospace; color: #66b578;">1</div>
         <div style="text-align: right; font-family: ui-monospace, monospace; font-size: 10px; color: #8a8d93;">⇧⌘M</div>
+      </div>
+      <div style="display: grid; grid-template-columns: 1.5fr 2.4fr 52px 92px; align-items: center; padding: 9px 12px; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 11.5px;">
+        <div style="font-weight: 600;">Measure a gap against the design</div>
+        <div style="color: #8a8d93;">Capture · Inspect layout · click A · hover B (redline)</div>
+        <div style="text-align: center; font-family: ui-monospace, monospace; color: #66b578;">3</div>
+        <div style="text-align: right; font-family: ui-monospace, monospace; font-size: 10px; color: #8a8d93;">⌥⇧⌘I</div>
+      </div>
+      <div style="display: grid; grid-template-columns: 1.5fr 2.4fr 52px 92px; align-items: center; padding: 9px 12px; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 11.5px;">
+        <div style="font-weight: 600;">Check a screen with TalkBack in mind</div>
+        <div style="color: #8a8d93;">Inspect layout · A (audit) · Copy report</div>
+        <div style="text-align: center; font-family: ui-monospace, monospace; color: #66b578;">2</div>
+        <div style="text-align: right; font-family: ui-monospace, monospace; font-size: 10px; color: #8a8d93;">⌥⇧⌘I, A</div>
+      </div>
+      <div style="display: grid; grid-template-columns: 1.5fr 2.4fr 52px 92px; align-items: center; padding: 9px 12px; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 11.5px;">
+        <div style="font-weight: 600;">Test RTL / long strings</div>
+        <div style="color: #8a8d93;">Device · Language · ar-XB or en-XA · Reset to original</div>
+        <div style="text-align: center; font-family: ui-monospace, monospace; color: #66b578;">1</div>
+        <div style="text-align: right; font-family: ui-monospace, monospace; font-size: 10px; color: #8a8d93;">—</div>
+      </div>
+      <div style="display: grid; grid-template-columns: 1.5fr 2.4fr 52px 92px; align-items: center; padding: 9px 12px; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 11.5px;">
+        <div style="font-weight: 600;">Fake a GPS position</div>
+        <div style="color: #8a8d93;">Device · Location · Warsaw (emulator)</div>
+        <div style="text-align: center; font-family: ui-monospace, monospace; color: #66b578;">1</div>
+        <div style="text-align: right; font-family: ui-monospace, monospace; font-size: 10px; color: #8a8d93;">—</div>
+      </div>
+      <div style="display: grid; grid-template-columns: 1.5fr 2.4fr 52px 92px; align-items: center; padding: 9px 12px; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 11.5px;">
+        <div style="font-weight: 600;">Let an agent drive the device</div>
+        <div style="color: #8a8d93;">Settings · AI agents · Full control · Copy snippet</div>
+        <div style="text-align: center; font-family: ui-monospace, monospace; color: #d9a441;">3</div>
+        <div style="text-align: right; font-family: ui-monospace, monospace; font-size: 10px; color: #8a8d93;">—</div>
       </div>
       <div style="display: grid; grid-template-columns: 1.5fr 2.4fr 52px 92px; align-items: center; padding: 9px 12px; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 11.5px;">
         <div style="font-weight: 600;">Point the device at my mitmproxy</div>
@@ -171,7 +229,7 @@
         <div style="text-align: right; font-family: ui-monospace, monospace; font-size: 10px; color: #8a8d93;">⇧⌘L</div>
       </div>
     </div>
-    <p style="margin: 9px 0 0; font-size: 11.5px; line-height: 1.5; color: #8a8d93; max-width: 800px;">The device chosen in the bar scopes every view and survives IDE restarts per project. Logcat has its own package picker (pinned apps first); the Apps selection does not filter it.</p>
+    <p style="margin: 9px 0 0; font-size: 11.5px; line-height: 1.5; color: #8a8d93; max-width: 800px;">Selection is shared: the package chosen in Apps is the default filter in Logcat, and the device chosen in the bar scopes all views. Current app acts on the foreground package without changing that selection; only “Details” moves the Apps selection to it, and its “← Device” returns to the Device view. Both survive IDE restarts per project.</p>
   </div>
 
   <!-- KEYBOARD + DEGRADE -->
@@ -189,6 +247,8 @@
           <div style="display: flex; gap: 8px;"><span style="font-family: ui-monospace, monospace; font-size: 10px; color: #dfe1e5; width: 92px; flex: none;">↑ ↓ ← →</span><span>Moves within a region — rail views, preset chips, app list rows, log lines.</span></div>
           <div style="display: flex; gap: 8px;"><span style="font-family: ui-monospace, monospace; font-size: 10px; color: #dfe1e5; width: 92px; flex: none;">⌘F / Esc</span><span>Focus the Logcat search field; Esc clears the query, then blurs.</span></div>
           <div style="display: flex; gap: 8px;"><span style="font-family: ui-monospace, monospace; font-size: 10px; color: #dfe1e5; width: 92px; flex: none;">Space</span><span>Toggles pause in Logcat, wherever focus is inside that view.</span></div>
+          <div style="display: flex; gap: 8px;"><span style="font-family: ui-monospace, monospace; font-size: 10px; color: #dfe1e5; width: 92px; flex: none;">⇧⌘R / ⌥⇧⌘R</span><span>⇧⌘R restarts the app selected in Apps; ⌥⇧⌘R restarts (or launches, if killed) the app in the foreground. Both work from any view.</span></div>
+          <div style="display: flex; gap: 8px;"><span style="font-family: ui-monospace, monospace; font-size: 10px; color: #dfe1e5; width: 92px; flex: none;">⌥⇧⌘I · G I A F</span><span>Capture into the Layout Inspector; inside its canvas: grid, color picker, audit, fit. Single keys only while the canvas has focus.</span></div>
           <div style="display: flex; gap: 8px;"><span style="font-family: ui-monospace, monospace; font-size: 10px; color: #dfe1e5; width: 92px; flex: none;">End</span><span>Resumes autoscroll and jumps to the newest line.</span></div>
           <div style="display: flex; gap: 8px;"><span style="font-family: ui-monospace, monospace; font-size: 10px; color: #dfe1e5; width: 92px; flex: none;">Enter</span><span>Applies a custom value; a destructive confirm still needs a second Enter on a focused Cancel-default dialog.</span></div>
         </div>

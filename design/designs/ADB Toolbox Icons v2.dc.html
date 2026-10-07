@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+<meta name="ext-resource-dependency" content="design_handoff_adb_toolbox/icons/expui/views/device.svg" data-resource-id="ic_device">
+<meta name="ext-resource-dependency" content="design_handoff_adb_toolbox/icons/expui/views/device_dark.svg" data-resource-id="ic_device_dark">
+<meta name="ext-resource-dependency" content="design_handoff_adb_toolbox/icons/expui/views/apps.svg" data-resource-id="ic_apps">
+<meta name="ext-resource-dependency" content="design_handoff_adb_toolbox/icons/expui/views/apps_dark.svg" data-resource-id="ic_apps_dark">
+<meta name="ext-resource-dependency" content="design_handoff_adb_toolbox/icons/expui/views/network.svg" data-resource-id="ic_network">
+<meta name="ext-resource-dependency" content="design_handoff_adb_toolbox/icons/expui/views/network_dark.svg" data-resource-id="ic_network_dark">
+<meta name="ext-resource-dependency" content="design_handoff_adb_toolbox/icons/expui/views/logcat.svg" data-resource-id="ic_logcat">
+<meta name="ext-resource-dependency" content="design_handoff_adb_toolbox/icons/expui/views/logcat_dark.svg" data-resource-id="ic_logcat_dark">
+<meta name="ext-resource-dependency" content="design_handoff_adb_toolbox/icons/expui/actions/mirror.svg" data-resource-id="ic_mirror">
+<meta name="ext-resource-dependency" content="design_handoff_adb_toolbox/icons/expui/actions/mirror_dark.svg" data-resource-id="ic_mirror_dark">
+<meta name="ext-resource-dependency" content="design_handoff_adb_toolbox/icons/expui/actions/screenshot.svg" data-resource-id="ic_screenshot">
+<meta name="ext-resource-dependency" content="design_handoff_adb_toolbox/icons/expui/actions/screenshot_dark.svg" data-resource-id="ic_screenshot_dark">
+<meta name="ext-resource-dependency" content="design_handoff_adb_toolbox/icons/expui/actions/record.svg" data-resource-id="ic_record">
+<meta name="ext-resource-dependency" content="design_handoff_adb_toolbox/icons/expui/actions/record_dark.svg" data-resource-id="ic_record_dark">
+<meta name="ext-resource-dependency" content="design_handoff_adb_toolbox/icons/expui/actions/stopRecording.svg" data-resource-id="ic_stopRecording">
+<meta name="ext-resource-dependency" content="design_handoff_adb_toolbox/icons/expui/actions/stopRecording_dark.svg" data-resource-id="ic_stopRecording_dark">
+<meta name="ext-resource-dependency" content="design_handoff_adb_toolbox/icons/expui/actions/restartApp.svg" data-resource-id="ic_restartApp">
+<meta name="ext-resource-dependency" content="design_handoff_adb_toolbox/icons/expui/actions/restartApp_dark.svg" data-resource-id="ic_restartApp_dark">
+<meta name="ext-resource-dependency" content="design_handoff_adb_toolbox/icons/expui/actions/forceStop.svg" data-resource-id="ic_forceStop">
+<meta name="ext-resource-dependency" content="design_handoff_adb_toolbox/icons/expui/actions/forceStop_dark.svg" data-resource-id="ic_forceStop_dark">
+<meta name="ext-resource-dependency" content="design_handoff_adb_toolbox/icons/expui/actions/clearData.svg" data-resource-id="ic_clearData">
+<meta name="ext-resource-dependency" content="design_handoff_adb_toolbox/icons/expui/actions/clearData_dark.svg" data-resource-id="ic_clearData_dark">
+<meta name="ext-resource-dependency" content="design_handoff_adb_toolbox/icons/expui/actions/uninstall.svg" data-resource-id="ic_uninstall">
+<meta name="ext-resource-dependency" content="design_handoff_adb_toolbox/icons/expui/actions/uninstall_dark.svg" data-resource-id="ic_uninstall_dark">
+<meta name="ext-resource-dependency" content="design_handoff_adb_toolbox/icons/expui/actions/fontScale.svg" data-resource-id="ic_fontScale">
+<meta name="ext-resource-dependency" content="design_handoff_adb_toolbox/icons/expui/actions/fontScale_dark.svg" data-resource-id="ic_fontScale_dark">
+<meta name="ext-resource-dependency" content="design_handoff_adb_toolbox/icons/expui/actions/density.svg" data-resource-id="ic_density">
+<meta name="ext-resource-dependency" content="design_handoff_adb_toolbox/icons/expui/actions/density_dark.svg" data-resource-id="ic_density_dark">
+<meta name="ext-resource-dependency" content="design_handoff_adb_toolbox/icons/expui/actions/resetOverrides.svg" data-resource-id="ic_resetOverrides">
+<meta name="ext-resource-dependency" content="design_handoff_adb_toolbox/icons/expui/actions/resetOverrides_dark.svg" data-resource-id="ic_resetOverrides_dark">
+<meta name="ext-resource-dependency" content="design_handoff_adb_toolbox/icons/expui/actions/proxy.svg" data-resource-id="ic_proxy">
+<meta name="ext-resource-dependency" content="design_handoff_adb_toolbox/icons/expui/actions/proxy_dark.svg" data-resource-id="ic_proxy_dark">
+<meta name="ext-resource-dependency" content="design_handoff_adb_toolbox/icons/expui/actions/authorize.svg" data-resource-id="ic_authorize">
+<meta name="ext-resource-dependency" content="design_handoff_adb_toolbox/icons/expui/actions/authorize_dark.svg" data-resource-id="ic_authorize_dark">
+<meta name="ext-resource-dependency" content="design_handoff_adb_toolbox/icons/expui/actions/wifi.svg" data-resource-id="ic_wifi">
+<meta name="ext-resource-dependency" content="design_handoff_adb_toolbox/icons/expui/actions/wifi_dark.svg" data-resource-id="ic_wifi_dark">
+<meta name="ext-resource-dependency" content="design_handoff_adb_toolbox/icons/expui/actions/usb.svg" data-resource-id="ic_usb">
+<meta name="ext-resource-dependency" content="design_handoff_adb_toolbox/icons/expui/actions/usb_dark.svg" data-resource-id="ic_usb_dark">
+<template id="__bundler_thumbnail"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" data-bg-color="#1e1f22"><rect width="100" height="100" fill="#1e1f22"/><rect x="36" y="25" width="28" height="50" rx="7" fill="#16A79B"/><rect x="41" y="32" width="8" height="8" rx="2" fill="#F2765A"/><rect x="51" y="32" width="8" height="8" rx="2" fill="#1E1F22" fill-opacity=".4"/><rect x="41" y="42" width="8" height="8" rx="2" fill="#1E1F22" fill-opacity=".4"/><rect x="51" y="42" width="8" height="8" rx="2" fill="#1E1F22"/><rect x="41" y="58" width="18" height="3" rx="1.5" fill="#1E1F22"/></svg></template>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #1e1f22; }
+  a { color: #548af7; text-decoration: none; }
+  a:hover { color: #3574f0; text-decoration: underline; }
+  img { display: block; }
+</style>
+</helmet>
+<div style="min-height: 100vh; background: #1e1f22; color: #dfe1e5; font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif; padding: 40px 28px 80px;">
+<div style="max-width: 1060px; margin: 0 auto; display: grid; gap: 36px;">
+
+  <div style="display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 18px;">
+    <div>
+      <div style="font-family: ui-monospace, monospace; font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: #8a8d93;">Icons v2 · IntelliJ New UI spec</div>
+      <h1 style="margin: 10px 0 6px; font-size: 30px; font-weight: 600; letter-spacing: -0.02em;">ADB Toolbox icon set</h1>
+      <p style="margin: 0; font-size: 13px; line-height: 1.5; color: #8a8d93; max-width: 640px; text-wrap: pretty;">Every glyph below is a real file from <span style="font-family: ui-monospace, monospace; font-size: 12px; color: #c3c6cb;">design_handoff_adb_toolbox/icons/</span>, rendered as shipped. 1px strokes on the half-pixel grid, exact New UI palette so the IDE can recolor them on hover and selection.</p>
+    </div>
+    <div style="display: grid; gap: 3px; font-family: ui-monospace, monospace; font-size: 10px; color: #6f737a; text-align: right;">
+      <div>pluginIcon 40×40</div>
+      <div>tool window 20×20 + 16×16</div>
+      <div>views, actions 16×16</div>
+      <div>light #6C707E · dark #CED0D6</div>
+    </div>
+  </div>
+
+  <div style="display: grid; gap: 14px;">
+    <div style="display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;">
+      <span style="font-family: ui-monospace, monospace; font-size: 10px; color: #16a79b;">01</span>
+      <h2 style="margin: 0; font-size: 17px; font-weight: 600;">Plugin logo</h2>
+      <span style="font-size: 12px; color: #8a8d93;">META-INF/pluginIcon.svg + pluginIcon_dark.svg. Marketplace and the Plugins dialog show it at 40 and 80.</span>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px;">
+      <div style="background: #ffffff; border-radius: 8px; padding: 20px; display: flex; align-items: flex-end; gap: 20px;">
+        <img src="design_handoff_adb_toolbox/icons/META-INF/pluginIcon.svg" width="80" height="80" alt="Plugin logo, light">
+        <img src="design_handoff_adb_toolbox/icons/META-INF/pluginIcon.svg" width="40" height="40" alt="Plugin logo, light, 40">
+        <div style="font-family: ui-monospace, monospace; font-size: 10px; color: #6c707e; margin-left: auto;">light</div>
+      </div>
+      <div style="background: #2b2d30; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 20px; display: flex; align-items: flex-end; gap: 20px;">
+        <img src="design_handoff_adb_toolbox/icons/META-INF/pluginIcon_dark.svg" width="80" height="80" alt="Plugin logo, dark">
+        <img src="design_handoff_adb_toolbox/icons/META-INF/pluginIcon_dark.svg" width="40" height="40" alt="Plugin logo, dark, 40">
+        <div style="font-family: ui-monospace, monospace; font-size: 10px; color: #8a8d93; margin-left: auto;">dark</div>
+      </div>
+      <div style="background: #2b2d30; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; display: flex; align-items: center; gap: 12px;">
+        <img src="design_handoff_adb_toolbox/icons/META-INF/pluginIcon_dark.svg" width="40" height="40" alt="">
+        <div style="display: grid; gap: 3px;">
+          <div style="font-size: 13px; font-weight: 600;">ADB Toolbox</div>
+          <div style="font-size: 11.5px; color: #8a8d93;">Control your Android device from the IDE</div>
+          <div style="font-size: 11px; color: #6f737a;">Acme · 1.0.0</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display: grid; gap: 14px;">
+    <div style="display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;">
+      <span style="font-family: ui-monospace, monospace; font-size: 10px; color: #16a79b;">02</span>
+      <h2 style="margin: 0; font-size: 17px; font-weight: 600;">Tool window icon</h2>
+      <span style="font-size: 12px; color: #8a8d93;">adbToolbox@20x20.svg for the stripe, adbToolbox.svg (16) for compact mode. The logo silhouette in one color: tiles and slider are cut out, the two "off" tiles at 45%.</span>
+    </div>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px;">
+      <div style="background: #2b2d30; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 18px; display: flex; flex-wrap: wrap; align-items: flex-end; gap: 22px;">
+        <div style="display: grid; justify-items: center; gap: 8px;">
+          <div style="width: 84px; height: 84px; border-radius: 6px; background-color: #1e1f22; background-image: linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px); background-size: 4px 4px; display: flex; align-items: center; justify-content: center;">
+            <img src="design_handoff_adb_toolbox/icons/expui/toolwindow/adbToolbox-20x20_dark.svg" width="80" height="80" alt="">
+          </div>
+          <span style="font-family: ui-monospace, monospace; font-size: 9.5px; color: #6f737a;">20 · 4×</span>
+        </div>
+        <div style="display: grid; justify-items: center; gap: 8px;">
+          <div style="width: 68px; height: 68px; border-radius: 6px; background-color: #1e1f22; background-image: linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px); background-size: 4px 4px; display: flex; align-items: center; justify-content: center;">
+            <img src="design_handoff_adb_toolbox/icons/expui/toolwindow/adbToolbox_dark.svg" width="64" height="64" alt="">
+          </div>
+          <span style="font-family: ui-monospace, monospace; font-size: 9.5px; color: #6f737a;">16 · 4×</span>
+        </div>
+        <div style="display: flex; gap: 10px; align-items: center;">
+          <img src="design_handoff_adb_toolbox/icons/expui/toolwindow/adbToolbox-20x20_dark.svg" width="20" height="20" alt="">
+          <img src="design_handoff_adb_toolbox/icons/expui/toolwindow/adbToolbox_dark.svg" width="16" height="16" alt="">
+          <div style="width: 1px; height: 20px; background: rgba(255,255,255,0.1);"></div>
+          <div style="background: #ffffff; border-radius: 4px; padding: 4px; display: flex; gap: 8px; align-items: center;">
+            <img src="design_handoff_adb_toolbox/icons/expui/toolwindow/adbToolbox-20x20.svg" width="20" height="20" alt="">
+            <img src="design_handoff_adb_toolbox/icons/expui/toolwindow/adbToolbox.svg" width="16" height="16" alt="">
+          </div>
+        </div>
+      </div>
+      <div style="background: #2b2d30; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 18px; display: flex; gap: 16px; align-items: flex-start;">
+        <div style="width: 40px; background: #2b2d30; border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; padding: 6px 0; display: grid; justify-items: center; gap: 6px; flex: none;">
+          <div style="width: 30px; height: 30px; border-radius: 6px; display: flex; align-items: center; justify-content: center;"><img src="design_handoff_adb_toolbox/icons/expui/views/logcat_dark.svg" width="20" height="20" alt="" style="opacity: 0.9;"></div>
+          <div style="width: 30px; height: 30px; border-radius: 6px; background: #3574f0; display: flex; align-items: center; justify-content: center;"><img src="design_handoff_adb_toolbox/icons/expui/toolwindow/adbToolbox-20x20_dark.svg" width="20" height="20" alt="" style="filter: brightness(1.6);"></div>
+          <div style="width: 30px; height: 30px; border-radius: 6px; display: flex; align-items: center; justify-content: center;"><img src="design_handoff_adb_toolbox/icons/expui/views/apps_dark.svg" width="20" height="20" alt=""></div>
+        </div>
+        <div style="font-size: 12px; line-height: 1.55; color: #8a8d93; text-wrap: pretty;">In the right stripe beside Gradle and Logcat. Selected = platform blue square with the icon recolored white; this only works because the stroke is exactly <span style="font-family: ui-monospace, monospace; color: #c3c6cb;">#CED0D6</span> / <span style="font-family: ui-monospace, monospace; color: #c3c6cb;">#6C707E</span>. Register with <span style="font-family: ui-monospace, monospace; color: #c3c6cb;">icon="/icons/expui/toolwindow/adbToolbox.svg"</span>; the @20x20 sibling is found automatically.</div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display: grid; gap: 14px;">
+    <div style="display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;">
+      <span style="font-family: ui-monospace, monospace; font-size: 10px; color: #16a79b;">03</span>
+      <h2 style="margin: 0; font-size: 17px; font-weight: 600;">Views and actions</h2>
+      <span style="font-size: 12px; color: #8a8d93;">16×16. Each tile: 1× dark, 1× light, 3× dark on the pixel grid.</span>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px;">
+      <sc-for list="{{ icons }}" as="i" hint-placeholder-count="19">
+        <div style="background: #2b2d30; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 12px; display: grid; gap: 10px;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="width: 52px; height: 52px; border-radius: 5px; background-color: #1e1f22; background-image: linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px); background-size: 3px 3px; display: flex; align-items: center; justify-content: center; flex: none;">
+              {{ i.dark48 }}
+            </div>
+            <div style="display: grid; gap: 6px;">
+              <div style="width: 26px; height: 26px; border-radius: 5px; background: #1e1f22; display: flex; align-items: center; justify-content: center;">{{ i.dark16 }}</div>
+              <div style="width: 26px; height: 26px; border-radius: 5px; background: #ffffff; display: flex; align-items: center; justify-content: center;">{{ i.light16 }}</div>
+            </div>
+          </div>
+          <div style="display: grid; gap: 2px;">
+            <div style="font-size: 12px; font-weight: 600;">{{ i.label }}</div>
+            <div style="font-family: ui-monospace, monospace; font-size: 9.5px; color: #6f737a;">{{ i.file }}</div>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+
+  <div style="display: grid; gap: 14px;">
+    <div style="display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;">
+      <span style="font-family: ui-monospace, monospace; font-size: 10px; color: #16a79b;">04</span>
+      <h2 style="margin: 0; font-size: 17px; font-weight: 600;">Use platform icons</h2>
+      <span style="font-size: 12px; color: #8a8d93;">Not bundled. AllIcons already has them and they follow theme changes for free.</span>
+    </div>
+    <div style="background: #2b2d30; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 6px 14px; display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); column-gap: 28px;">
+      <sc-for list="{{ platform }}" as="p" hint-placeholder-count="12">
+        <div style="display: flex; justify-content: space-between; gap: 12px; padding: 7px 0; border-bottom: 1px solid rgba(255,255,255,0.06); font-size: 12px;">
+          <span style="color: #c3c6cb;">{{ p.use }}</span>
+          <span style="font-family: ui-monospace, monospace; font-size: 11px; color: #8a8d93;">{{ p.icon }}</span>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+
+  <div style="display: grid; gap: 14px;">
+    <div style="display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;">
+      <span style="font-family: ui-monospace, monospace; font-size: 10px; color: #16a79b;">05</span>
+      <h2 style="margin: 0; font-size: 17px; font-weight: 600;">IntelliJ requirements checklist</h2>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 10px;">
+      <sc-for list="{{ rules }}" as="r" hint-placeholder-count="8">
+        <div style="display: flex; gap: 10px; background: #2b2d30; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 12px 14px; font-size: 12px; line-height: 1.5; color: #c3c6cb;">
+          <span style="color: #57965c; font-weight: 700; flex: none;">✓</span>
+          <span style="text-wrap: pretty;">{{ r }}</span>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    const base = 'design_handoff_adb_toolbox/icons/expui/';
+    const list = [
+      ['views/device', 'Device view'], ['views/apps', 'Apps view'], ['views/network', 'Network view'], ['views/logcat', 'Logcat view'],
+      ['actions/mirror', 'Start mirroring'], ['actions/screenshot', 'Screenshot'], ['actions/record', 'Record screen'], ['actions/stopRecording', 'Stop recording'],
+      ['actions/restartApp', 'Restart app'], ['actions/forceStop', 'Force-stop'], ['actions/clearData', 'Clear data'], ['actions/uninstall', 'Uninstall'],
+      ['actions/fontScale', 'Font scale'], ['actions/density', 'Display density'], ['actions/resetOverrides', 'Reset overrides'], ['actions/proxy', 'Global proxy'],
+      ['actions/authorize', 'Authorize device'], ['actions/wifi', 'Connect over Wi-Fi'], ['actions/usb', 'USB connection'],
+      ['actions/layoutInspector', 'Layout Inspector'], ['actions/a11yAudit', 'Accessibility audit'], ['actions/location', 'Emulator location'], ['actions/language', 'Language & region'],
+      ['actions/overlay', 'Design overlay'], ['actions/mcpAgent', 'AI agents (MCP)'], ['actions/rotate', 'Rotation'],
+    ];
+    const R = window.__resources || {};
+    const icons = list.map(([p, label]) => { const n = p.split('/')[1]; const light = R['ic_' + n] || base + p + '.svg', dark = R['ic_' + n + '_dark'] || base + p + '_dark.svg'; const img = (s, z) => React.createElement('img', { src: s, width: z, height: z, alt: '', style: { display: 'block' } }); return { label, file: n + '.svg', dark48: img(dark, 48), dark16: img(dark, 16), light16: img(light, 16) }; });
+    const platform = [
+      ['Refresh device list', 'Actions.Refresh'], ['Launch app', 'Actions.Execute'], ['Pause stream', 'Actions.Pause'], ['Resume stream', 'Actions.Resume'],
+      ['Autoscroll', 'RunConfigurations.Scroll_down'], ['Wrap lines', 'Actions.ToggleSoftWrap'], ['Filter', 'General.Filter'], ['Search', 'Actions.Search'],
+      ['Clear log buffer', 'Actions.GC'], ['Settings', 'General.Settings'], ['Show system packages', 'Actions.Show'], ['More actions', 'Actions.More'],
+      ['Inspector: color picker', 'Ide.Pipette'], ['Inspector: 8 dp grid', 'Graph.Grid'], ['Inspector: zoom in / out', 'General.ZoomIn / ZoomOut'], ['Inspector: fit / 100%', 'General.FitContent / ActualZoom'],
+      ['Copy value / snippet', 'Actions.Copy'], ['App details back', 'Actions.Back'],
+    ].map(([use, icon]) => ({ use, icon: 'AllIcons.' + icon }));
+    const rules = [
+      'Plugin logo at META-INF/pluginIcon.svg, 40×40, with pluginIcon_dark.svg next to it. No text, shapes kept clear of the edges.',
+      'Tool window: 16×16 file plus a 20×20 sibling named adbToolbox@20x20.svg. The stripe picks the 20px one in the New UI.',
+      'Actions and views: 16×16 viewBox, at least 1px padding inside the box.',
+      '1px stroke on half-pixel coordinates (x.5), so lines land on whole pixels at 100%.',
+      'Exact New UI palette: #6C707E light, #CED0D6 dark; red #DB3B4B / #DB5C5C. The IDE recolors these hex values for selection, so no separate selected files.',
+      'Dark variants use the _dark.svg suffix and load automatically. No @2x files for SVG.',
+      'Color only for meaning: red for live recording and irreversible actions, amber for device overrides.',
+      'Rail badges come from BadgeIconSupplier at runtime, not baked into the SVG.',
+    ];
+    return { icons, platform, rules };
+  }
+}
+</script>
+</body>
+</html>

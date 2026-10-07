@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #101114; }
+  a { color: #548af7; text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-thumb { background: rgba(128,128,128,0.35); border-radius: 4px; }
+  @keyframes adb-pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
+</style>
+</helmet>
+
+<div style="{{ pageStyle }}">
+  <div style="{{ switcherStyle }}">
+    <div style="{{ switcherGroupStyle }}">
+      <sc-for list="{{ themePills }}" as="p" hint-placeholder-count="2"><div style="{{ p.style }}" onClick="{{ p.onClick }}">{{ p.label }}</div></sc-for>
+    </div>
+    <div style="{{ switcherGroupStyle }}">
+      <sc-for list="{{ accessPills }}" as="p" hint-placeholder-count="3"><div style="{{ p.style }}" onClick="{{ p.onClick }}">{{ p.label }}</div></sc-for>
+    </div>
+    <div style="{{ switcherGroupStyle }}">
+      <div style="{{ pillAgent }}" onClick="{{ toggleAgent }}">{{ agentPillLabel }}</div>
+      <a href="ADB Toolbox Plugin.dc.html" style="{{ backPillStyle }}">← Tool window</a>
+    </div>
+  </div>
+
+  <div style="{{ dialogStyle }}">
+    <div style="{{ titleBarStyle }}">Settings</div>
+    <div style="{{ dialogBodyStyle }}">
+      <div style="{{ navStyle }}">
+        <div style="{{ navSearchStyle }}">
+          <div style="{{ searchIconStyle }}"></div>
+          <div style="{{ navSearchTextStyle }}">Search settings</div>
+        </div>
+        <sc-for list="{{ navItems }}" as="n" hint-placeholder-count="10">
+          <div style="{{ n.style }}">{{ n.label }}</div>
+        </sc-for>
+      </div>
+
+      <div style="{{ contentColStyle }}">
+        <div style="{{ crumbStyle }}">
+          <div style="{{ crumbDimStyle }}">Tools</div>
+          <div style="{{ crumbDimStyle }}">›</div>
+          <div>ADB Toolbox</div>
+        </div>
+        <div style="{{ contentStyle }}" ref="{{ contentRef }}">
+
+          <div style="{{ groupStyle }}">
+            <div style="{{ groupHeadStyle }}"><div style="{{ groupTitleStyle }}">Paths</div><div style="{{ groupLineStyle }}"></div></div>
+            <div style="{{ rowStyle }}">
+              <div style="{{ labelStyle }}">adb:</div>
+              <div style="{{ fieldWrapStyle }}"><div style="{{ fieldStyle }}">/opt/homebrew/bin/adb</div><div style="{{ browseStyle }}">…</div></div>
+              <div style="{{ okNoteStyle }}">35.0.2</div>
+            </div>
+            <div style="{{ rowStyle }}">
+              <div style="{{ labelStyle }}">scrcpy:</div>
+              <div style="{{ fieldWrapStyle }}"><div style="{{ fieldStyle }}">/opt/homebrew/bin/scrcpy</div><div style="{{ browseStyle }}">…</div></div>
+              <div style="{{ okNoteStyle }}">4.1</div>
+            </div>
+          </div>
+
+          <div style="{{ groupStyle }}">
+            <div style="{{ groupHeadStyle }}"><div style="{{ groupTitleStyle }}">Capture</div><div style="{{ groupLineStyle }}"></div></div>
+            <div style="{{ rowStyle }}">
+              <div style="{{ labelStyle }}">Save to:</div>
+              <div style="{{ fieldWrapStyle }}"><div style="{{ fieldStyle }}">~/Desktop</div><div style="{{ browseStyle }}">…</div></div>
+            </div>
+            <div style="{{ checkRowStyle }}" onClick="{{ toggleClip }}">
+              <div style="{{ clipBoxStyle }}">{{ clipGlyph }}</div>
+              <div style="{{ checkLabelStyle }}">Also copy screenshots to the clipboard</div>
+            </div>
+            <div style="{{ commentStyle }}">Applies to every screenshot, including full-page captures. The toast says “copied to clipboard” when it happened.</div>
+          </div>
+
+          <div style="{{ groupStyle }}">
+            <div style="{{ groupHeadStyle }}"><div style="{{ groupTitleStyle }}">Logcat</div><div style="{{ groupLineStyle }}"></div></div>
+            <div style="{{ rowStyle }}">
+              <div style="{{ labelStyle }}">Buffer size:</div>
+              <div style="{{ smallFieldStyle }}">16</div>
+              <div style="{{ unitStyle }}">MB</div>
+            </div>
+          </div>
+
+          <div style="{{ groupStyle }}" id="mcp">
+            <div style="{{ groupHeadStyle }}"><div style="{{ groupTitleStyle }}">AI agents (MCP)</div><div style="{{ groupLineStyle }}"></div></div>
+            <div style="{{ commentStyleTop }}">A local MCP server lets coding agents drive the device selected in the tool window. It only listens on 127.0.0.1 and needs the token below.</div>
+
+            <div style="{{ radioGroupStyle }}">
+              <div style="{{ labelStyle }}">Access:</div>
+              <div style="{{ radioColStyle }}">
+                <sc-for list="{{ accessRadios }}" as="r" hint-placeholder-count="3">
+                  <div style="{{ radioItemStyle }}" onClick="{{ r.onClick }}">
+                    <div style="{{ radioRowStyle }}">
+                      <div style="{{ r.dotStyle }}"><div style="{{ r.innerStyle }}"></div></div>
+                      <div style="{{ r.labelStyle }}">{{ r.label }}</div>
+                    </div>
+                    <div style="{{ radioCommentStyle }}">{{ r.comment }}</div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+
+            <div style="{{ statusBoxStyle }}">
+              <div style="{{ statusDotStyle }}"></div>
+              <div style="{{ statusColStyle }}">
+                <div style="{{ statusTitleStyle }}">{{ statusTitle }}</div>
+                <div style="{{ statusSubStyle }}">{{ statusSub }}</div>
+              </div>
+              <sc-if value="{{ isOn }}" hint-placeholder-val="{{ false }}">
+                <div style="{{ linkStyle }}" onClick="{{ copyEndpoint }}">Copy URL</div>
+              </sc-if>
+            </div>
+
+            <div style="{{ onlyOnStyle }}">
+              <div style="{{ rowStyle }}">
+                <div style="{{ labelStyle }}">Port:</div>
+                <div style="{{ smallFieldStyle }}">47123</div>
+                <div style="{{ unitCommentStyle }}">Picked on first start, then kept. 127.0.0.1 only.</div>
+              </div>
+              <div style="{{ rowStyle }}">
+                <div style="{{ labelStyle }}">Token:</div>
+                <div style="{{ tokenFieldStyle }}">{{ tokenMasked }}</div>
+                <div style="{{ linkStyle }}" onClick="{{ copyToken }}">Copy</div>
+                <div style="{{ linkStyle }}" onClick="{{ regenToken }}" title="Disconnects every agent; they need the new token">Regenerate</div>
+              </div>
+
+              <div style="{{ subHeadStyle }}">Set up an agent</div>
+              <div style="{{ tabsStyle }}">
+                <sc-for list="{{ agentTabs }}" as="t" hint-placeholder-count="5"><div style="{{ t.style }}" onClick="{{ t.onClick }}">{{ t.label }}</div></sc-for>
+              </div>
+              <div style="{{ snippetWrapStyle }}">
+                <div style="{{ snippetHeadStyle }}">
+                  <div style="{{ snippetWhereStyle }}">{{ snippetWhere }}</div>
+                  <div style="{{ spacerStyle }}"></div>
+                  <div style="{{ copyBtnStyle }}" style-hover="{{ hoverStyle }}" onClick="{{ copySnippet }}">Copy</div>
+                </div>
+                <pre style="{{ snippetStyle }}">{{ snippet }}</pre>
+              </div>
+              <div style="{{ commentStyle }}">Copy inserts the real token. Check the agent’s docs if its config format has changed.</div>
+
+              <div style="{{ subHeadStyle }}">Exposed tools</div>
+              <div style="{{ toolsTableStyle }}">
+                <sc-for list="{{ toolGroups }}" as="g" hint-placeholder-count="5">
+                  <div style="{{ g.headStyle }}">
+                    <div>{{ g.label }}</div>
+                    <div style="{{ g.metaStyle }}">{{ g.meta }}</div>
+                  </div>
+                  <sc-for list="{{ g.tools }}" as="t" hint-placeholder-count="4">
+                    <div style="{{ t.rowStyle }}" title="{{ t.tooltip }}">
+                      <div style="{{ t.nameStyle }}">{{ t.name }}</div>
+                      <div style="{{ t.descStyle }}">{{ t.desc }}</div>
+                      <sc-if value="{{ t.destructive }}" hint-placeholder-val="{{ false }}"><div style="{{ t.destStyle }}">asks first</div></sc-if>
+                      <div style="{{ t.levelStyle }}">{{ t.level }}</div>
+                    </div>
+                  </sc-for>
+                </sc-for>
+              </div>
+              <div style="{{ commentStyle }}">Uninstall and Clear data always open the same confirmation as in the tool window, naming the agent — also in Full control. Cancel, or no answer in 60 s, returns “declined by user”. Shared prefs and databases are readable only for debuggable apps (run-as).</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+    <div style="{{ footerStyle }}">
+      <div style="{{ spacerStyle }}"></div>
+      <div style="{{ footBtnStyle }}">Cancel</div>
+      <div style="{{ footBtnStyle }}">Apply</div>
+      <div style="{{ okBtnStyle }}">OK</div>
+    </div>
+    <sc-if value="{{ toastVisible }}" hint-placeholder-val="{{ false }}">
+      <div style="{{ toastStyle }}"><div style="{{ toastGlyphStyle }}">✓</div><div>{{ toastText }}</div></div>
+    </sc-if>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const UI = '"Segoe UI", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif';
+const MONO = 'ui-monospace, "JetBrains Mono", Consolas, Menlo, monospace';
+function theme(mode) {
+  if (mode === 'light') return { mode, backdrop: '#dde1e6', bg: '#f7f8fa', panel: '#ffffff', header: '#f2f3f5', field: '#ffffff', border: '#e1e3e8', borderStrong: '#cfd2d8', text: '#1e1f22', textDim: '#63666b', textFaint: '#93969b', accent: '#3574f0', accentBg: 'rgba(53,116,240,0.10)', brand: '#0e8a80', brandBg: 'rgba(14,138,128,0.10)', brandBorder: 'rgba(14,138,128,0.45)', green: '#2f8f52', red: '#c9424a', redBg: 'rgba(201,66,74,0.09)', redBorder: 'rgba(201,66,74,0.5)', hover: { background: 'rgba(0,0,0,0.045)' }, shadow: '0 18px 44px rgba(20,20,30,0.18), 0 0 0 1px rgba(0,0,0,0.06)' };
+  return { mode, backdrop: '#101114', bg: '#1e1f22', panel: '#242629', header: '#2b2d30', field: '#1e1f22', border: 'rgba(255,255,255,0.08)', borderStrong: 'rgba(255,255,255,0.15)', text: '#dfe1e5', textDim: '#8a8d93', textFaint: '#6b6e74', accent: '#548af7', accentBg: 'rgba(84,138,247,0.16)', brand: '#16a79b', brandBg: 'rgba(22,167,155,0.16)', brandBorder: 'rgba(22,167,155,0.5)', green: '#66b578', red: '#e0656b', redBg: 'rgba(224,101,107,0.14)', redBorder: 'rgba(224,101,107,0.5)', hover: { background: 'rgba(255,255,255,0.055)' }, shadow: '0 20px 50px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.06)' };
+}
+const URL_ = 'http://127.0.0.1:47123/mcp';
+const TOOLS = [
+  ['See', [['screenshot', 'PNG of the current screen', 'read'], ['get_ui_tree', 'Accessibility hierarchy with bounds in dp', 'read'], ['get_current_app', 'Foreground package, activity, PID', 'read'], ['list_devices', 'Online devices and the selected one', 'read']]],
+  ['Act', [['tap', 'Tap at x, y (dp) or on a node id', 'full'], ['type_text', 'Type into the focused field', 'full'], ['swipe', 'Swipe or scroll between two points', 'full'], ['press_key', 'Back, Home, Enter, Recents, volume', 'full']]],
+  ['Device', [['get_device_info', 'Android version, resolution, density, battery', 'read'], ['set_toggle', 'Any Quick toggle, rotation, font scale, density', 'full'], ['set_locale', 'Language & region, incl. pseudo-locales', 'full'], ['set_location', 'GPS fix — emulator only', 'full'], ['reboot', 'Reboot the device', 'full']]],
+  ['Apps', [['list_apps', 'Installed packages, debuggable flag', 'read'], ['launch_app', 'Launch the main activity', 'full'], ['restart_app', 'Force-stop, then launch', 'full'], ['force_stop', 'am force-stop', 'full'], ['reset_permissions', 'Revoke runtime permissions', 'full'], ['clear_app_data', 'pm clear — deletes all app data', 'full', true], ['uninstall_app', 'Removes the app and its data', 'full', true]]],
+  ['Data', [['logcat', 'Recent lines, filtered by package and level', 'read'], ['read_shared_prefs', 'Shared prefs XML — debuggable apps', 'read'], ['query_database', 'SELECT on an app database — debuggable apps', 'read']]],
+];
+const SNIPPETS = {
+  claude: ['Terminal', 'claude mcp add --transport http adb-toolbox ' + URL_ + ' \\\n  --header "Authorization: Bearer atk_••••••••3f9a"'],
+  codex: ['~/.codex/config.toml', '[mcp_servers.adb-toolbox]\nurl = "' + URL_ + '"\nbearer_token_env_var = "ADB_TOOLBOX_TOKEN"\n\n# then: export ADB_TOOLBOX_TOKEN=atk_••••••••3f9a'],
+  cursor: ['.cursor/mcp.json', '{\n  "mcpServers": {\n    "adb-toolbox": {\n      "url": "' + URL_ + '",\n      "headers": { "Authorization": "Bearer atk_••••••••3f9a" }\n    }\n  }\n}'],
+  gemini: ['~/.gemini/settings.json', '{\n  "mcpServers": {\n    "adb-toolbox": {\n      "httpUrl": "' + URL_ + '",\n      "headers": { "Authorization": "Bearer atk_••••••••3f9a" }\n    }\n  }\n}'],
+  other: ['Any MCP client (streamable HTTP)', 'URL     ' + URL_ + '\nHeader  Authorization: Bearer atk_••••••••3f9a'],
+};
+class Component extends DCLogic {
+  contentRef = React.createRef();
+  state = { theme: 'dark', access: 'full', agent: true, clip: true, tab: 'claude', toast: null, tokenTail: '3f9a' };
+  componentDidMount() {
+    if (location.hash === '#mcp') setTimeout(() => { const el = this.contentRef.current && this.contentRef.current.querySelector('#mcp'); if (el) this.contentRef.current.scrollTop = el.offsetTop - 12; }, 50);
+  }
+  flash(t) { this.setState({ toast: t }); clearTimeout(this._t); this._t = setTimeout(() => this.setState({ toast: null }), 2600); }
+  renderVals() {
+    const s = this.state, th = theme(s.theme);
+    const pill = (a) => ({ padding: '5px 10px', borderRadius: 999, fontSize: 11, fontWeight: 600, cursor: 'pointer', fontFamily: UI, whiteSpace: 'nowrap', textDecoration: 'none', color: a ? '#0b0c0e' : '#c7cad0', background: a ? '#e7e9ee' : 'rgba(255,255,255,0.08)' });
+    const on = s.access !== 'off';
+    const link = { fontSize: 11, fontWeight: 600, color: th.accent, cursor: 'pointer', flexShrink: 0 };
+    const field = { height: 24, display: 'flex', alignItems: 'center', padding: '0 7px', borderRadius: 4, border: `1px solid ${th.borderStrong}`, background: th.field, fontFamily: MONO, fontSize: 11, color: th.text, minWidth: 0 };
+    const comment = { fontSize: 10.5, lineHeight: 1.45, color: th.textFaint, paddingLeft: 108, maxWidth: 640 };
+    const sn = SNIPPETS[s.tab].map(v => v.replace(/atk_••••••••3f9a/g, 'atk_••••••••' + s.tokenTail));
+    const NAV = ['Appearance & Behavior', 'Keymap', 'Editor', 'Plugins', 'Version Control', 'Build, Execution, Deployment', 'Languages & Frameworks', 'Tools', '  ADB Toolbox', '  Terminal', '  Tasks', 'Advanced Settings'];
+    const statusTitle = !on ? 'Server stopped' : (s.agent ? 'Listening on ' + URL_ + ' · 1 agent connected' : 'Listening on ' + URL_);
+    const statusSub = !on ? 'Choose Read only or Full control to start it. Nothing listens while it is off.' : (s.agent ? 'Claude Code · last call get_ui_tree 4 s ago · Pixel 9' : 'No agent connected yet. Add one with a snippet below.');
+    return {
+      spacerStyle: { flex: 1 }, hoverStyle: th.hover, linkStyle: link,
+      pageStyle: { minHeight: '100vh', background: th.backdrop, display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '70px 24px 60px', fontFamily: UI },
+      switcherStyle: { position: 'fixed', top: 12, left: '50%', transform: 'translateX(-50%)', zIndex: 60, display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' },
+      switcherGroupStyle: { display: 'flex', gap: 4, padding: 5, borderRadius: 999, background: 'rgba(20,21,24,0.9)' },
+      backPillStyle: pill(false),
+      themePills: [['dark', 'Dark'], ['light', 'Light']].map(([id, l]) => ({ label: l, style: pill(s.theme === id), onClick: () => this.setState({ theme: id }) })),
+      accessPills: [['off', 'Off'], ['read', 'Read only'], ['full', 'Full control']].map(([id, l]) => ({ label: l, style: pill(s.access === id), onClick: () => this.setState({ access: id }) })),
+      pillAgent: pill(s.agent && on), agentPillLabel: 'Agent connected: ' + (s.agent && on ? 'yes' : 'no'), toggleAgent: () => this.setState({ agent: !s.agent }),
+
+      dialogStyle: { width: 'min(1040px, 100%)', height: 760, display: 'flex', flexDirection: 'column', background: th.bg, color: th.text, borderRadius: 8, boxShadow: th.shadow, border: `1px solid ${th.border}`, overflow: 'hidden', position: 'relative' },
+      titleBarStyle: { height: 30, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 600, background: th.header, borderBottom: `1px solid ${th.border}` },
+      dialogBodyStyle: { flex: 1, display: 'flex', minHeight: 0 },
+      navStyle: { width: 230, flexShrink: 0, background: th.panel, borderRight: `1px solid ${th.border}`, padding: '8px 0', display: 'flex', flexDirection: 'column', gap: 1 },
+      navSearchStyle: { margin: '0 8px 8px', height: 24, display: 'flex', alignItems: 'center', gap: 6, padding: '0 7px', borderRadius: 4, border: `1px solid ${th.borderStrong}`, background: th.field },
+      searchIconStyle: { width: 9, height: 9, borderRadius: '50%', border: `1.4px solid ${th.textFaint}` },
+      navSearchTextStyle: { fontSize: 11, color: th.textFaint },
+      navItems: NAV.map(l => { const sel = l.trim() === 'ADB Toolbox'; return { label: l.trim(), style: { height: 24, display: 'flex', alignItems: 'center', padding: '0 12px 0 ' + (l.startsWith('  ') ? 28 : 12) + 'px', fontSize: 11.5, color: th.text, background: sel ? th.accentBg : 'transparent', fontWeight: sel ? 600 : 400 } }; }),
+      contentColStyle: { flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 },
+      crumbStyle: { height: 36, flexShrink: 0, display: 'flex', alignItems: 'center', gap: 6, padding: '0 20px', fontSize: 12.5, fontWeight: 600, borderBottom: `1px solid ${th.border}` },
+      crumbDimStyle: { color: th.textDim, fontWeight: 400 },
+      contentRef: this.contentRef,
+      contentStyle: { flex: 1, overflowY: 'auto', padding: '14px 20px 24px', display: 'flex', flexDirection: 'column', gap: 18, minHeight: 0 },
+      groupStyle: { display: 'flex', flexDirection: 'column', gap: 8 },
+      groupHeadStyle: { display: 'flex', alignItems: 'center', gap: 8 },
+      groupTitleStyle: { fontSize: 12.5, fontWeight: 700, whiteSpace: 'nowrap' },
+      groupLineStyle: { flex: 1, height: 1, background: th.border },
+      rowStyle: { display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 },
+      labelStyle: { width: 100, flexShrink: 0, fontSize: 11.5, color: th.text },
+      fieldWrapStyle: { display: 'flex', alignItems: 'center', gap: 4, flex: 1, maxWidth: 420, minWidth: 0 },
+      fieldStyle: { ...field, flex: 1 },
+      browseStyle: { width: 24, height: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 4, border: `1px solid ${th.borderStrong}`, fontSize: 11, color: th.textDim, cursor: 'pointer' },
+      okNoteStyle: { fontFamily: MONO, fontSize: 10, color: th.green },
+      smallFieldStyle: { ...field, width: 70 },
+      unitStyle: { fontSize: 11.5, color: th.textDim },
+      unitCommentStyle: { fontSize: 10.5, color: th.textFaint },
+      checkRowStyle: { display: 'flex', alignItems: 'center', gap: 7, paddingLeft: 108, cursor: 'pointer' },
+      clipBoxStyle: { width: 14, height: 14, borderRadius: 3, border: `1px solid ${s.clip ? th.accent : th.borderStrong}`, background: s.clip ? th.accent : 'transparent', color: '#fff', fontSize: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' },
+      clipGlyph: s.clip ? '✓' : '', toggleClip: () => this.setState({ clip: !s.clip }),
+      checkLabelStyle: { fontSize: 11.5 },
+      commentStyle: comment, commentStyleTop: { ...comment, paddingLeft: 0 },
+
+      radioGroupStyle: { display: 'flex', alignItems: 'flex-start', gap: 8 },
+      radioColStyle: { display: 'flex', flexDirection: 'column', gap: 8 },
+      radioItemStyle: { display: 'flex', flexDirection: 'column', gap: 2, cursor: 'pointer' },
+      radioRowStyle: { display: 'flex', alignItems: 'center', gap: 7 },
+      radioCommentStyle: { fontSize: 10.5, lineHeight: 1.45, color: th.textFaint, paddingLeft: 21, maxWidth: 520 },
+      accessRadios: [
+        ['off', 'Off', 'No server runs. Default.'],
+        ['read', 'Read only', 'Agents can see the screen, UI tree, logcat, app list, prefs and databases. They can’t change anything on the device.'],
+        ['full', 'Full control', 'Agents can also tap, type, change device settings and manage apps. Uninstall and Clear data still ask here first.'],
+      ].map(([id, l, c]) => ({
+        label: l, comment: c, onClick: () => this.setState({ access: id }),
+        dotStyle: { width: 14, height: 14, borderRadius: '50%', border: `1px solid ${s.access === id ? th.accent : th.borderStrong}`, background: s.access === id ? th.accent : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
+        innerStyle: { width: 6, height: 6, borderRadius: '50%', background: s.access === id ? '#fff' : 'transparent' },
+        labelStyle: { fontSize: 11.5, fontWeight: s.access === id ? 600 : 400 },
+      })),
+      statusBoxStyle: { display: 'flex', alignItems: 'center', gap: 9, marginLeft: 108, maxWidth: 640, padding: '8px 10px', borderRadius: 5, background: on ? th.brandBg : th.panel, border: `1px solid ${on ? th.brandBorder : th.border}` },
+      statusDotStyle: { width: 7, height: 7, borderRadius: '50%', flexShrink: 0, background: on ? th.brand : 'transparent', border: on ? 'none' : `1.5px solid ${th.textFaint}`, animation: on && s.agent ? 'adb-pulse 1.6s ease-in-out infinite' : 'none' },
+      statusColStyle: { display: 'flex', flexDirection: 'column', gap: 1, flex: 1, minWidth: 0 },
+      statusTitleStyle: { fontSize: 11.5, fontWeight: 600, color: on ? th.brand : th.textDim, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
+      statusSubStyle: { fontSize: 10.5, color: th.textDim },
+      statusTitle, statusSub, isOn: on,
+      copyEndpoint: () => this.flash('Copied ' + URL_),
+      onlyOnStyle: { display: 'flex', flexDirection: 'column', gap: 8, opacity: on ? 1 : 0.45, pointerEvents: on ? 'auto' : 'none' },
+      tokenFieldStyle: { ...field, width: 220, letterSpacing: 0.5 },
+      tokenMasked: 'atk_••••••••••••••••' + s.tokenTail,
+      copyToken: () => this.flash('Copied token'),
+      regenToken: () => { const t = Math.random().toString(16).slice(2, 6); this.setState({ tokenTail: t }); this.flash('New token · connected agents were disconnected'); },
+      subHeadStyle: { fontSize: 11.5, fontWeight: 700, marginTop: 6, paddingLeft: 108 },
+      tabsStyle: { display: 'flex', gap: 2, marginLeft: 108, borderBottom: `1px solid ${th.border}`, maxWidth: 640 },
+      agentTabs: [['claude', 'Claude Code'], ['codex', 'Codex CLI'], ['cursor', 'Cursor'], ['gemini', 'Gemini CLI'], ['other', 'Other']].map(([id, l]) => ({ label: l, onClick: () => this.setState({ tab: id }), style: { height: 26, display: 'flex', alignItems: 'center', padding: '0 9px', fontSize: 11.5, cursor: 'pointer', color: s.tab === id ? th.text : th.textDim, fontWeight: s.tab === id ? 600 : 400, boxShadow: s.tab === id ? `inset 0 -2px 0 ${th.accent}` : 'none', whiteSpace: 'nowrap' } })),
+      snippetWrapStyle: { marginLeft: 108, maxWidth: 640, borderRadius: 5, border: `1px solid ${th.borderStrong}`, background: th.field, overflow: 'hidden' },
+      snippetHeadStyle: { display: 'flex', alignItems: 'center', gap: 8, height: 26, padding: '0 4px 0 9px', background: th.header, borderBottom: `1px solid ${th.border}` },
+      snippetWhereStyle: { fontFamily: MONO, fontSize: 10, color: th.textFaint },
+      copyBtnStyle: { height: 20, padding: '0 8px', display: 'flex', alignItems: 'center', borderRadius: 4, fontSize: 10.5, fontWeight: 600, color: th.accent, cursor: 'pointer' },
+      copySnippet: () => this.flash('Copied ' + (s.tab === 'other' ? 'endpoint' : sn[0]) + ' snippet with token'),
+      snippetWhere: sn[0], snippet: sn[1],
+      snippetStyle: { margin: 0, padding: '9px 10px', fontFamily: MONO, fontSize: 11, lineHeight: 1.55, color: th.text, whiteSpace: 'pre-wrap', wordBreak: 'break-all' },
+      toolsTableStyle: { marginLeft: 108, maxWidth: 640, border: `1px solid ${th.border}`, borderRadius: 5, overflow: 'hidden' },
+      toolGroups: TOOLS.map(([g, list]) => {
+        const reads = list.filter(t => t[2] === 'read').length;
+        return {
+          label: g, meta: reads === list.length ? 'read' : reads === 0 ? 'full control' : 'read + full control',
+          headStyle: { display: 'flex', alignItems: 'center', gap: 8, height: 24, padding: '0 10px', background: th.header, fontSize: 9.5, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase', color: th.textFaint, borderBottom: `1px solid ${th.border}` },
+          metaStyle: { marginLeft: 'auto', fontFamily: MONO, fontSize: 9, letterSpacing: 0, textTransform: 'none', fontWeight: 400 },
+          tools: list.map(([name, desc, lvl, destructive]) => {
+            const available = s.access === 'full' || (s.access === 'read' && lvl === 'read');
+            return {
+              name, desc, destructive: !!destructive, level: lvl === 'read' ? 'Read' : 'Full',
+              tooltip: available ? '' : (s.access === 'off' ? 'Server is off' : 'Needs Full control — not exposed to agents in Read only'),
+              rowStyle: { display: 'flex', alignItems: 'center', gap: 8, height: 26, padding: '0 10px', borderBottom: `1px solid ${th.border}`, opacity: available ? 1 : 0.45 },
+              nameStyle: { fontFamily: MONO, fontSize: 11, width: 130, flexShrink: 0, color: th.text },
+              descStyle: { fontSize: 10.5, color: th.textDim, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
+              destStyle: { fontSize: 9, fontWeight: 700, color: th.red, background: th.redBg, border: `1px solid ${th.redBorder}`, borderRadius: 3, padding: '1px 4px', flexShrink: 0 },
+              levelStyle: { fontFamily: MONO, fontSize: 9.5, width: 28, textAlign: 'right', color: lvl === 'read' ? th.textFaint : th.textDim, flexShrink: 0 },
+            };
+          }),
+        };
+      }),
+      footerStyle: { height: 46, flexShrink: 0, display: 'flex', alignItems: 'center', gap: 8, padding: '0 14px', borderTop: `1px solid ${th.border}`, background: th.bg },
+      footBtnStyle: { height: 26, padding: '0 14px', display: 'flex', alignItems: 'center', borderRadius: 5, fontSize: 11.5, border: `1px solid ${th.borderStrong}`, cursor: 'pointer' },
+      okBtnStyle: { height: 26, padding: '0 18px', display: 'flex', alignItems: 'center', borderRadius: 5, fontSize: 11.5, fontWeight: 600, background: th.accent, color: '#fff', cursor: 'pointer' },
+      toastVisible: !!s.toast, toastText: s.toast || '',
+      toastStyle: { position: 'absolute', left: 244, bottom: 56, display: 'flex', alignItems: 'center', gap: 7, padding: '6px 9px', borderRadius: 5, background: th.panel, border: `1px solid ${th.border}`, borderLeft: `3px solid ${th.green}`, boxShadow: th.shadow, fontSize: 11 },
+      toastGlyphStyle: { fontSize: 11, fontWeight: 700, color: th.green },
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted (2026-10-07). Builds on ADR 0004 (presentation/lifecycle), 0005 (transport) and 0014.
+Accepted (2026-10-07; token, port and confirmation policy aligned with the design handoff the same day). Builds on ADR 0004 (presentation/lifecycle), 0005 (transport) and 0014.
 
 ## Context
 
@@ -23,15 +23,19 @@ is supported by all target agents (`claude mcp add --transport http …`).
   Implemented with the JDK's `com.sun.net.httpserver` (in JBR, no new dependency) in
   `:adapters-jvm`; JSON-RPC handling, tool catalog and access policy are plain Kotlin in
   `:application` on `kotlinx.serialization` (already a dependency).
-- **Security:** bound to the loopback address only; requests whose `Origin` header is present and
-  not `http://localhost`/`http://127.0.0.1` are refused (DNS rebinding); the server runs only while
-  the access level is not Off.
+- **Security:** bound to the loopback address only; every request needs
+  `Authorization: Bearer <token>` (a random per-installation token, shown masked in Settings, with
+  Copy and Regenerate — regenerating disconnects every agent); requests whose `Origin` header is
+  present and not `http://localhost`/`http://127.0.0.1` are refused (DNS rebinding); the server
+  runs only while the access level is not Off.
 - **Access level** (per application, persisted): **Off** (default; server stopped), **Read only**
-  (tools annotated read-only), **Full control**. Checked on every call, so a change applies at
-  once. Tools carry MCP annotations (`readOnlyHint`, `destructiveHint`) so agents ask before
-  destructive calls.
-- **Port:** a fixed default (`47821`) so setup snippets are stable, configurable in Settings; if it is
-  busy the server reports it instead of picking a random port.
+  (only read tools are listed to agents at all), **Full control**. Checked on every call, so a
+  change applies at once. Tools carry MCP annotations (`readOnlyHint`, `destructiveHint`).
+  **Uninstall and Clear data always ask in the IDE**, also in Full control: the tool window's own
+  confirmation, naming the agent; Cancel or no answer within 60 s returns "declined by user".
+- **Port:** picked from the free ephemeral range on the first start, then persisted and reused so
+  setup snippets stay valid; if it is later busy, the server reports it (Settings shows it) rather
+  than silently moving.
 - **Device scope:** tools act on the device selected in the tool window unless the call passes a
   `serial`; with none selected/online they return a tool error, not a protocol error.
 - **Tools reuse the use cases** the UI uses (capture, apps, display toggles, logcat, app data) —
@@ -40,7 +44,6 @@ is supported by all target agents (`claude mcp add --transport http …`).
 
 ## Consequences
 
-- Any local process can reach the port while the level is not Off — the same trust boundary as the
-  adb server itself (port 5037), hence Off by default and the explicit level.
+- The token keeps other local processes and web pages out; it is stored in the IDE's password safe.
 - One IDE instance owns the port; a second instance reports it busy.
-- The UI for the level, setup snippets and the live indicator follows the design (pending).
+- UI: design/README.md §8 (status-bar MCP chip) and §11 (Settings › AI agents).

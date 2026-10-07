@@ -16,8 +16,12 @@ A local MCP server per ADR 0015: JSON-RPC handling, Streamable HTTP endpoint, ac
   version negotiation, tool registry with JSON schemas and annotations, access policy (Off / Read only /
   Full control, checked per call), tool errors vs protocol errors.
 - `:adapters-jvm`: `com.sun.net.httpserver` endpoint on 127.0.0.1:<port>/mcp, POST only (GET → 405), Origin check,
-  size limits, start/stop with the access level, busy-port error.
-- Persisted settings: access level (default Off), port (default 47821).
+  `Authorization: Bearer` token check, size limits, start/stop with the access level, busy-port error.
+- Persisted per application: access level (default Off), port (picked on first start, then kept), token
+  (password safe; regenerate disconnects sessions). Session tracking (agent name from `clientInfo`, last call)
+  for the status-bar chip and Settings status box.
+- Confirmation port: Uninstall / Clear data requested by an agent go through the IDE confirmation, 60 s timeout →
+  "declined by user" (design §11).
 
 ## Out of scope
 
@@ -30,7 +34,7 @@ A local MCP server per ADR 0015: JSON-RPC handling, Streamable HTTP endpoint, ac
 
 ## Acceptance criteria
 
-- `claude mcp add --transport http adb-toolbox http://127.0.0.1:47821/mcp` lists the tools against a running IDE.
+- `claude mcp add --transport http adb-toolbox http://127.0.0.1:<port>/mcp --header "Authorization: Bearer <token>"` lists the tools against a running IDE.
 
 ## Validation
 
