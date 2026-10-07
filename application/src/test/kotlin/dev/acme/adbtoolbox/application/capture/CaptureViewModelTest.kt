@@ -55,6 +55,7 @@ class CaptureViewModelTest {
             AdbBinaryScript(listOf(PNG_BYTES), AdbOutcome.Completed(0))
         },
         fullShot: FullShotRender = FullShotRender.Rendered("/data/local/tmp/adbtoolbox-fullshot.png", 1080, 5000, truncated = false),
+        clipboard: dev.acme.adbtoolbox.domain.capture.ImageClipboard? = null,
     ) {
         val scope = TestScope()
         val dispatcher = StandardTestDispatcher(scope.testScheduler)
@@ -68,6 +69,7 @@ class CaptureViewModelTest {
             FIXED_FILE_NAME,
             FIXED_CLOCK,
             fullShotRenderer = FullShotRenderer { fullShot },
+            clipboard = clipboard,
         )
         val revealed = mutableListOf<CaptureLocation>()
         val revealInFileManager = RevealInFileManager { location -> revealed += location }
@@ -187,5 +189,16 @@ class CaptureViewModelTest {
         val toast = h.feedback.state.value.toasts.single()
         toast.severity shouldBe FeedbackSeverity.Warning
         toast.text shouldBe "Saved ${h.viewModel.state.value.lastCapture?.displayPath} — the content is longer and was cut off"
+    }
+
+    @Test
+    fun `the toast says when the screenshot is also on the clipboard`() = runTest {
+        val h = Harness(clipboard = { true })
+        h.selectedDeviceState.value = SelectedDeviceState.Online(onlineDevice("emulator-5554"))
+
+        h.viewModel.handle(CaptureIntent.CaptureFullScreenshot)
+        h.scope.runCurrent()
+
+        h.feedback.state.value.toasts.single().text shouldBe "Saved ${h.viewModel.state.value.lastCapture?.displayPath} · copied to clipboard"
     }
 }

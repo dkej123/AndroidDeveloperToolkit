@@ -87,10 +87,10 @@ class CaptureViewModel(
                         FeedbackIntent.Post(
                             FeedbackMessage(
                                 id = "capture-success-${result.location.displayPath}",
-                                text = if (result.truncated) {
-                                    "Saved ${result.location.displayPath} — the content is longer and was cut off"
-                                } else {
-                                    "Saved ${result.location.displayPath}"
+                                text = buildString {
+                                    append("Saved ${result.location.displayPath}")
+                                    if (result.copiedToClipboard) append(" · copied to clipboard")
+                                    if (result.truncated) append(" — the content is longer and was cut off")
                                 },
                                 severity = if (result.truncated) FeedbackSeverity.Warning else FeedbackSeverity.Success,
                                 action = FeedbackAction("Reveal") { revealInFileManager.reveal(result.location) },

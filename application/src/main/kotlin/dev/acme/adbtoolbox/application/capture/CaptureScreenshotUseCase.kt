@@ -11,6 +11,7 @@ import dev.acme.adbtoolbox.domain.capture.FileNamePolicy
 import dev.acme.adbtoolbox.domain.capture.FullShotHelperCommand
 import dev.acme.adbtoolbox.domain.capture.FullShotRender
 import dev.acme.adbtoolbox.domain.capture.FullShotRenderer
+import dev.acme.adbtoolbox.domain.capture.ImageClipboard
 import dev.acme.adbtoolbox.domain.process.ByteSink
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
@@ -29,8 +30,11 @@ enum class ScreenshotMode { Visible, FullContent }
 
 /** What [CaptureScreenshotUseCase.capture] produced. */
 sealed interface CaptureScreenshotResult {
-    /** [truncated]: a full-content capture whose content may continue below what was captured. */
-    data class Success(val location: CaptureLocation, val truncated: Boolean = false) : CaptureScreenshotResult
+    /**
+     * [truncated]: a full-content capture whose content may continue below what was captured.
+     * [copiedToClipboard]: the image is also on the clipboard (task 061).
+     */
+    data class Success(val location: CaptureLocation, val truncated: Boolean = false, val copiedToClipboard: Boolean = false) : CaptureScreenshotResult
     data class Failure(val reason: String) : CaptureScreenshotResult
 }
 
@@ -64,6 +68,9 @@ class CaptureScreenshotUseCase(
     private val clock: Clock = Clock.System,
     private val timeout: Duration = DEFAULT_SCREENSHOT_TIMEOUT,
     private val fullShotRenderer: FullShotRenderer? = null,
+    private val clipboard: ImageClipboard? = null,
+    /** Settings › Capture › "Also copy screenshots to the clipboard" (default on, design §11). */
+    private val copyToClipboard: () -> Boolean = { true },
 ) {
     suspend fun capture(serial: DeviceSerial, mode: ScreenshotMode = ScreenshotMode.Visible): CaptureScreenshotResult {
         val baseFileName = fileNamePolicy.baseFileName(clock.now())
@@ -95,9 +102,12 @@ class CaptureScreenshotUseCase(
     private suspend fun save(baseFileName: String, operation: AdbOperation, serial: DeviceSerial): CaptureScreenshotResult {
         val target = captureDestination.beginCapture(baseFileName)
         var bytesWritten = 0L
+        // Kept only when it goes to the clipboard; a copy failure never fails the save.
+        val forClipboard = if (clipboard != null && copyToClipboard()) mutableListOf<ByteArray>() else null
         val countingSink = ByteSink { chunk ->
             bytesWritten += chunk.size
             target.sink.write(chunk)
+            forClipboard?.add(chunk.copyOf())
         }
         var committed = false
         try {
@@ -108,7 +118,8 @@ class CaptureScreenshotUseCase(
             if (outcome is AdbOutcome.Completed && outcome.exitCode.let { it == null || it == 0 } && bytesWritten > 0L) {
                 val location = target.commit()
                 committed = true
-                return CaptureScreenshotResult.Success(location)
+                val copied = forClipboard != null && runCatching { clipboard!!.copyPng(forClipboard.fold(ByteArray(0)) { all, part -> all + part }) }.getOrDefault(false)
+                return CaptureScreenshotResult.Success(location, copiedToClipboard = copied)
             }
             return CaptureScreenshotResult.Failure(describe(outcome, bytesWritten))
         } finally {
