@@ -13,6 +13,8 @@ dependencies {
     implementation(project(":domain"))
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.kotlinx.datetime)
+    // MCP JSON-RPC (ADR 0015); JsonElement API only, no compiler plugin. Already shipped via :domain.
+    implementation(libs.kotlinx.serialization.json)
 
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.kotest.assertions.core)
