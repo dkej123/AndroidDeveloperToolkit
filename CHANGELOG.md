@@ -4,6 +4,24 @@ All notable changes to ADB Toolbox. Each release needs a `## [<version>] - <YYYY
 the Marketplace change notes and the GitHub release notes are generated from it
 (`release/README.md`).
 
+## [1.1.0] - 2026-10-07
+
+### Added
+- **Layout Inspector** (Capture → Inspect layout, ⌥⇧⌘I): the screen and its UI hierarchy in an
+  editor tab — sizes and distances in dp, redlines between elements, 8 dp grid, color picker,
+  design overlay from a Figma PNG (scale, opacity, Difference, nudge), searchable hierarchy tree
+  and attributes with Copy.
+- **Accessibility audit** in the inspector: estimated TalkBack order, unlabeled controls, images
+  without a description, touch targets under 48 dp, Markdown report.
+- **Current app** section: the app in front with its facts, refresh, Kill, Reset permissions and
+  Details.
+- **Language & region** (per-device locale override with reset) and **Location** (emulator GPS).
+- **Quick toggles**: nine new toggles and screen rotation; toggles a device refuses show as n/a.
+- **AI agents (MCP)**: an optional local MCP server (127.0.0.1, token) so coding agents such as
+  Claude Code, Codex CLI, Cursor or Gemini CLI can use the selected device — read only or full
+  control, Uninstall and Clear data always ask first; setup snippets in Settings.
+- Screenshots are also copied to the clipboard (Settings › Capture, on by default).
+
 ## [1.0.0] - 2026-10-01
 
 First public release.
