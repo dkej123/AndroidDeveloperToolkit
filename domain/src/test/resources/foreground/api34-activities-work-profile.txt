@@ -1,0 +1,2 @@
+  topResumedActivity=ActivityRecord{a1b2c3d u10 com.acme.shop/.checkout.CheckoutActivity t42}
+    mResumedActivity: ActivityRecord{a1b2c3d u10 com.acme.shop/.checkout.CheckoutActivity t42}

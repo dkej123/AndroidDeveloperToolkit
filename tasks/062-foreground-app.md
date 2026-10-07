@@ -21,8 +21,7 @@ Read the package/activity in the foreground on demand, for Current app, the MCP 
 - **Reset permissions**: for each granted runtime permission of `dumpsys package <pkg>` run `pm revoke` and
   `pm clear-permission-flags <pkg> <perm> user-set user-fixed`, skipping system-fixed/policy-fixed; result counts.
   Never `pm reset-permissions`.
-- Freshness policy as a pure, testable state machine (query triggers, 3 s poll while visible and focused,
-  held change while pointer/focus/action/confirm, apply rules).
+- (The freshness policy — triggers, 3 s poll, held changes — depends on UI events and lives in task 064.)
 
 ## Out of scope
 

@@ -1,0 +1,565 @@
+Packages:
+  Package [com.android.settings] (a48209e):
+    userId=1000
+    sharedUser=SharedUserSetting{c916c2f android.uid.system/1000}
+    pkg=Package{43b923c com.android.settings}
+    codePath=/system_ext/priv-app/Settings
+    resourcePath=/system_ext/priv-app/Settings
+    legacyNativeLibraryDir=/system_ext/priv-app/Settings/lib
+    primaryCpuAbi=x86_64
+    secondaryCpuAbi=null
+    versionCode=30 minSdk=30 targetSdk=30
+    versionName=11
+    splits=[base]
+    apkSigningVersion=3
+    applicationInfo=ApplicationInfo{43b923c com.android.settings}
+    flags=[ SYSTEM HAS_CODE ALLOW_CLEAR_USER_DATA ALLOW_BACKUP KILL_AFTER_RESTORE ]
+    privateFlags=[ PRIVATE_FLAG_ACTIVITIES_RESIZE_MODE_RESIZEABLE_VIA_SDK_VERSION ALLOW_AUDIO_PLAYBACK_CAPTURE DEFAULT_TO_DEVICE_PROTECTED_STORAGE DIRECT_BOOT_AWARE PRIVILEGED SYSTEM_EXT PRIVATE_FLAG_ALLOW_NATIVE_HEAP_POINTER_TAGGING ]
+    forceQueryable=false
+    queriesPackages=[]
+    dataDir=/data/user_de/0/com.android.settings
+    supportsScreens=[small, medium, large, xlarge, resizeable, anyDensity]
+    usesLibraries:
+      org.apache.http.legacy
+    usesLibraryFiles:
+      /system/framework/org.apache.http.legacy.jar
+    timeStamp=2024-07-24 22:02:11
+    firstInstallTime=2024-07-24 22:02:11
+    lastUpdateTime=2024-07-24 22:02:11
+    signatures=PackageSignatures{a53bbc5 version:3, signatures:[b2d95fc0], past signatures:[]}
+    installPermissionsFixed=true
+    pkgFlags=[ SYSTEM HAS_CODE ALLOW_CLEAR_USER_DATA ALLOW_BACKUP KILL_AFTER_RESTORE ]
+    requested permissions:
+      android.permission.REQUEST_NETWORK_SCORES
+      android.permission.WRITE_MEDIA_STORAGE
+      android.permission.MANAGE_EXTERNAL_STORAGE
+      android.permission.WRITE_EXTERNAL_STORAGE: restricted=true
+      android.permission.READ_EXTERNAL_STORAGE: restricted=true
+      android.permission.WRITE_SETTINGS
+      android.permission.WRITE_SECURE_SETTINGS
+      android.permission.DEVICE_POWER
+      android.permission.CHANGE_CONFIGURATION
+      android.permission.MOUNT_UNMOUNT_FILESYSTEMS
+      android.permission.VIBRATE
+      android.permission.BLUETOOTH
+      android.permission.BLUETOOTH_ADMIN
+      android.permission.BLUETOOTH_PRIVILEGED
+      android.permission.NFC
+      android.permission.HARDWARE_TEST
+      android.permission.CALL_PHONE
+      android.permission.MODIFY_AUDIO_SETTINGS
+      android.permission.MASTER_CLEAR
+      com.google.android.googleapps.permission.GOOGLE_AUTH
+      android.permission.ACCESS_DOWNLOAD_MANAGER
+      android.permission.READ_CONTACTS
+      android.permission.WRITE_CONTACTS
+      android.permission.ACCESS_NETWORK_STATE
+      android.permission.LOCAL_MAC_ADDRESS
+      android.permission.ACCESS_WIFI_STATE
+      com.android.certinstaller.INSTALL_AS_USER
+      android.permission.CHANGE_WIFI_STATE
+      android.permission.TETHER_PRIVILEGED
+      android.permission.FOREGROUND_SERVICE
+      android.permission.INTERNET
+      android.permission.CLEAR_APP_USER_DATA
+      android.permission.READ_PRIVILEGED_PHONE_STATE
+      android.permission.READ_PHONE_STATE
+      android.permission.MODIFY_PHONE_STATE
+      android.permission.ACCESS_FINE_LOCATION
+      android.permission.WRITE_APN_SETTINGS
+      android.permission.ACCESS_CHECKIN_PROPERTIES
+      android.permission.READ_USER_DICTIONARY
+      android.permission.WRITE_USER_DICTIONARY
+      android.permission.FORCE_STOP_PACKAGES
+      android.permission.PACKAGE_USAGE_STATS
+      android.permission.BATTERY_STATS
+      com.android.launcher.permission.READ_SETTINGS
+      com.android.launcher.permission.WRITE_SETTINGS
+      android.permission.MOVE_PACKAGE
+      android.permission.USE_CREDENTIALS
+      android.permission.BACKUP
+      android.permission.READ_SYNC_STATS
+      android.permission.READ_SYNC_SETTINGS
+      android.permission.WRITE_SYNC_SETTINGS
+      android.permission.READ_DEVICE_CONFIG
+      android.permission.STATUS_BAR
+      android.permission.MANAGE_USB
+      android.permission.MANAGE_DEBUGGING
+      android.permission.SET_POINTER_SPEED
+      android.permission.SET_KEYBOARD_LAYOUT
+      android.permission.INTERACT_ACROSS_USERS_FULL
+      android.permission.COPY_PROTECTED_DATA
+      android.permission.MANAGE_USERS
+      android.permission.MANAGE_PROFILE_AND_DEVICE_OWNERS
+      android.permission.READ_PROFILE
+      android.permission.CONFIGURE_WIFI_DISPLAY
+      android.permission.CONFIGURE_DISPLAY_COLOR_MODE
+      android.permission.CONTROL_DISPLAY_COLOR_TRANSFORMS
+      android.permission.SUGGEST_MANUAL_TIME_AND_ZONE
+      android.permission.ACCESS_NOTIFICATIONS
+      android.permission.REBOOT
+      android.permission.RECEIVE_BOOT_COMPLETED
+      android.permission.MANAGE_DEVICE_ADMINS
+      android.permission.READ_SEARCH_INDEXABLES
+      android.permission.BIND_SETTINGS_SUGGESTIONS_SERVICE
+      android.permission.OEM_UNLOCK_STATE
+      android.permission.MANAGE_USER_OEM_UNLOCK_STATE
+      android.permission.OVERRIDE_WIFI_CONFIG
+      android.permission.MANAGE_FINGERPRINT
+      android.permission.USE_BIOMETRIC
+      android.permission.USE_BIOMETRIC_INTERNAL
+      android.permission.USER_ACTIVITY
+      android.permission.CHANGE_APP_IDLE_STATE
+      android.permission.PEERS_MAC_ADDRESS
+      android.permission.MANAGE_NOTIFICATIONS
+      android.permission.DELETE_PACKAGES
+      android.permission.REQUEST_DELETE_PACKAGES
+      android.permission.MANAGE_APP_OPS_RESTRICTIONS
+      android.permission.MANAGE_APP_OPS_MODES
+      android.permission.HIDE_NON_SYSTEM_OVERLAY_WINDOWS
+      android.permission.READ_PRINT_SERVICES
+      android.permission.NETWORK_SETTINGS
+      android.permission.TEST_BLACKLISTED_PASSWORD
+      android.permission.USE_RESERVED_DISK
+      android.permission.MANAGE_SCOPED_ACCESS_DIRECTORY_PERMISSIONS
+      android.permission.CAMERA
+      android.permission.MEDIA_CONTENT_CONTROL
+      android.permission.INSTALL_DYNAMIC_SYSTEM
+      android.permission.BIND_CELL_BROADCAST_SERVICE
+      android.permission.SYSTEM_ALERT_WINDOW
+      android.permission.READ_CALL_LOG: restricted=true
+      android.permission.WRITE_CALL_LOG: restricted=true
+      android.permission.ACCESS_COARSE_LOCATION
+    install permissions:
+      android.permission.BIND_INCALL_SERVICE: granted=true
+      android.permission.WRITE_SETTINGS: granted=true
+      android.permission.CONFIGURE_WIFI_DISPLAY: granted=true
+      android.permission.CONFIGURE_DISPLAY_COLOR_MODE: granted=true
+      android.permission.CONTROL_DISPLAY_COLOR_TRANSFORMS: granted=true
+      android.permission.BIND_ATTENTION_SERVICE: granted=true
+      android.permission.USE_CREDENTIALS: granted=true
+      android.permission.MODIFY_AUDIO_SETTINGS: granted=true
+      android.permission.MANAGE_EXTERNAL_STORAGE: granted=true
+      android.permission.ACCESS_CHECKIN_PROPERTIES: granted=true
+      android.permission.MODIFY_AUDIO_ROUTING: granted=true
+      android.permission.INSTALL_LOCATION_PROVIDER: granted=true
+      android.permission.USE_RESERVED_DISK: granted=true
+      android.permission.SYSTEM_ALERT_WINDOW: granted=true
+      android.permission.BROADCAST_PHONE_ACCOUNT_REGISTRATION: granted=true
+      android.permission.CLEAR_APP_USER_DATA: granted=true
+      android.permission.BROADCAST_CALLLOG_INFO: granted=true
+      android.permission.NFC: granted=true
+      android.permission.NETWORK_SETTINGS: granted=true
+      android.permission.CALL_PRIVILEGED: granted=true
+      android.permission.MASTER_CLEAR: granted=true
+      android.permission.FOREGROUND_SERVICE: granted=true
+      android.permission.WRITE_SYNC_SETTINGS: granted=true
+      android.permission.MANAGE_DYNAMIC_SYSTEM: granted=true
+      android.permission.RECEIVE_BOOT_COMPLETED: granted=true
+      com.google.android.googleapps.permission.GOOGLE_AUTH: granted=true
+      android.permission.MANAGE_ROLE_HOLDERS: granted=true
+      android.permission.PEERS_MAC_ADDRESS: granted=true
+      android.permission.DEVICE_POWER: granted=true
+      android.permission.READ_PRINT_SERVICES: granted=true
+      android.permission.MANAGE_PROFILE_AND_DEVICE_OWNERS: granted=true
+      android.permission.READ_PROFILE: granted=true
+      android.permission.BLUETOOTH: granted=true
+      android.permission.WRITE_MEDIA_STORAGE: granted=true
+      android.permission.WRITE_BLOCKED_NUMBERS: granted=true
+      android.permission.INTERNET: granted=true
+      android.permission.BLUETOOTH_ADMIN: granted=true
+      android.permission.CONTROL_VPN: granted=true
+      android.permission.UPDATE_DEVICE_STATS: granted=true
+      android.permission.MANAGE_FINGERPRINT: granted=true
+      android.permission.BIND_CONNECTION_SERVICE: granted=true
+      android.permission.ACCESS_INSTANT_APPS: granted=true
+      android.permission.ACCESS_CONTEXT_HUB: granted=true
+      android.permission.MANAGE_USB: granted=true
+      android.permission.INTERACT_ACROSS_USERS_FULL: granted=true
+      android.permission.STOP_APP_SWITCHES: granted=true
+      android.permission.BATTERY_STATS: granted=true
+      android.permission.PACKAGE_USAGE_STATS: granted=true
+      android.permission.MOUNT_UNMOUNT_FILESYSTEMS: granted=true
+      android.permission.TETHER_PRIVILEGED: granted=true
+      android.permission.WRITE_SECURE_SETTINGS: granted=true
+      android.permission.MANAGE_DEBUGGING: granted=true
+      android.permission.MOVE_PACKAGE: granted=true
+      android.permission.READ_BLOCKED_NUMBERS: granted=true
+      android.permission.READ_SEARCH_INDEXABLES: granted=true
+      android.permission.READ_PRIVILEGED_PHONE_STATE: granted=true
+      android.permission.TRIGGER_TIME_ZONE_RULES_CHECK: granted=true
+      android.permission.ACCESS_DOWNLOAD_MANAGER: granted=true
+      android.permission.BLUETOOTH_PRIVILEGED: granted=true
+      android.permission.HARDWARE_TEST: granted=true
+      android.permission.USE_BIOMETRIC_INTERNAL: granted=true
+      android.permission.INSTALL_DYNAMIC_SYSTEM: granted=true
+      android.permission.SUBSTITUTE_NOTIFICATION_APP_NAME: granted=true
+      android.intent.category.MASTER_CLEAR.permission.C2D_MESSAGE: granted=true
+      android.permission.BIND_JOB_SERVICE: granted=true
+      android.permission.CONFIRM_FULL_BACKUP: granted=true
+      android.permission.WRITE_APN_SETTINGS: granted=true
+      android.permission.CHANGE_WIFI_STATE: granted=true
+      android.permission.MANAGE_USERS: granted=true
+      android.permission.ACCESS_NETWORK_STATE: granted=true
+      android.permission.BACKUP: granted=true
+      android.permission.CHANGE_CONFIGURATION: granted=true
+      android.permission.USER_ACTIVITY: granted=true
+      android.permission.LOCAL_MAC_ADDRESS: granted=true
+      android.permission.READ_LOGS: granted=true
+      android.permission.COPY_PROTECTED_DATA: granted=true
+      android.permission.INTERACT_ACROSS_USERS: granted=true
+      android.permission.SET_KEYBOARD_LAYOUT: granted=true
+      android.permission.MANAGE_APP_OPS_RESTRICTIONS: granted=true
+      android.permission.MANAGE_USER_OEM_UNLOCK_STATE: granted=true
+      android.permission.REQUEST_NETWORK_SCORES: granted=true
+      android.permission.CONNECTIVITY_USE_RESTRICTED_NETWORKS: granted=true
+      android.permission.WRITE_USER_DICTIONARY: granted=true
+      android.permission.READ_SYNC_STATS: granted=true
+      android.permission.REBOOT: granted=true
+      android.permission.REQUEST_DELETE_PACKAGES: granted=true
+      android.permission.OEM_UNLOCK_STATE: granted=true
+      android.permission.MANAGE_DEVICE_ADMINS: granted=true
+      android.permission.CHANGE_APP_IDLE_STATE: granted=true
+      android.permission.BIND_SETTINGS_SUGGESTIONS_SERVICE: granted=true
+      android.permission.TEST_BLACKLISTED_PASSWORD: granted=true
+      android.permission.SET_POINTER_SPEED: granted=true
+      android.permission.MANAGE_NOTIFICATIONS: granted=true
+      android.permission.SEND_SHOW_SUSPENDED_APP_DETAILS: granted=true
+      android.permission.READ_SYNC_SETTINGS: granted=true
+      android.permission.BIND_CELL_BROADCAST_SERVICE: granted=true
+      android.permission.LOADER_USAGE_STATS: granted=true
+      android.permission.OVERRIDE_WIFI_CONFIG: granted=true
+      android.permission.FORCE_STOP_PACKAGES: granted=true
+      android.permission.SUGGEST_MANUAL_TIME_AND_ZONE: granted=true
+      android.permission.HIDE_NON_SYSTEM_OVERLAY_WINDOWS: granted=true
+      android.permission.ACCESS_NOTIFICATIONS: granted=true
+      android.permission.HANDLE_CALL_INTENT: granted=true
+      android.permission.MEDIA_RESOURCE_OVERRIDE_PID: granted=true
+      android.permission.VIBRATE: granted=true
+      com.android.certinstaller.INSTALL_AS_USER: granted=true
+      android.permission.HANDLE_CAR_MODE_CHANGES: granted=true
+      android.permission.READ_USER_DICTIONARY: granted=true
+      android.permission.MANAGE_SCOPED_ACCESS_DIRECTORY_PERMISSIONS: granted=true
+      android.permission.ACCESS_WIFI_STATE: granted=true
+      android.permission.USE_BIOMETRIC: granted=true
+      android.permission.MANAGE_APP_OPS_MODES: granted=true
+      android.permission.MODIFY_PHONE_STATE: granted=true
+      android.permission.STATUS_BAR: granted=true
+      android.permission.QUERY_ALL_PACKAGES: granted=true
+      android.permission.READ_DEVICE_CONFIG: granted=true
+      android.permission.LOCATION_HARDWARE: granted=true
+      android.permission.WAKE_LOCK: granted=true
+      android.permission.BIND_NETWORK_RECOMMENDATION_SERVICE: granted=true
+      android.permission.READ_OEM_UNLOCK_STATE: granted=true
+      android.permission.MEDIA_CONTENT_CONTROL: granted=true
+      android.permission.DELETE_PACKAGES: granted=true
+    User 0: ceDataInode=123376 installed=true hidden=false suspended=false distractionFlags=0 stopped=false notLaunched=false enabled=0 instant=false virtual=false
+    overlay paths:
+      /product/overlay/EmulationPixel5/EmulationPixel5Overlay.apk
+      /product/overlay/Settings__auto_generated_rro_product.apk
+      disabledComponents:
+        com.android.settings.CryptKeeper
+        com.android.settings.Settings$DevelopmentSettingsDashboardActivity
+      enabledComponents:
+        com.android.settings.Settings$ConnectedDeviceDashboardActivity
+        com.android.settings.Settings$PowerUsageSummaryActivity
+        com.android.settings.Settings$WifiDisplaySettingsActivity
+        com.android.settings.Settings$BluetoothSettingsActivity
+        com.android.settings.Settings$WifiSettingsActivity
+        com.android.settings.WebViewImplementation
+        com.android.settings.Settings$UserSettingsActivity
+        com.android.settings.Settings$DataUsageSummaryActivity
+
+Queries:
+  system apps queryable: false
+  forceQueryable:
+    [com.android.inputdevices,com.android.keychain,com.android.server.telecom,com.android.wallpaperbackup,com.android.localtransport,com.android.providers.settings,android,com.android.dynsystem,com.android.settings,com.android.emulator.multidisplay,com.android.location.fused]
+  queries via package name:
+  queries via intent:
+  queryable via interaction:
+    User 0:
+      [com.android.inputdevices,com.android.keychain,com.android.server.telecom,com.android.wallpaperbackup,com.android.localtransport,com.android.providers.settings,android,com.android.dynsystem,com.android.settings,com.android.emulator.multidisplay,com.android.location.fused]:
+        [com.android.service.ims,com.android.mms.service,com.android.service.ims.presence,com.android.providers.telephony,com.android.stk,com.android.ons,com.android.phone]
+        com.android.bluetooth
+        [com.google.android.networkstack.tethering,com.google.android.networkstack,com.google.android.cellbroadcastservice,com.google.android.networkstack.permissionconfig]
+        [com.android.calllogbackup,com.android.providers.userdictionary,com.android.providers.blockednumber,com.android.providers.contacts]
+        [com.android.mtp,com.android.providers.downloads,com.android.providers.downloads.ui,com.android.providers.media,com.android.soundpicker]
+        com.android.providers.calendar
+        com.android.externalstorage
+        com.android.carrierdefaultapp
+        com.android.traceur
+        com.android.settings.intelligence
+        com.google.android.apps.pixelmigrate
+        com.google.android.apps.wellbeing
+        com.google.android.ims
+        com.google.android.projection.gearhead
+        com.google.android.partnersetup
+        com.google.android.configupdater
+        com.android.dialer
+        com.google.android.apps.restore
+        [com.google.android.gms,com.google.android.gsf]
+        com.google.android.googlequicksearchbox
+        com.google.android.deskclock
+        com.android.chrome
+        com.google.android.inputmethod.latin
+        com.google.android.gm
+        com.google.android.apps.maps
+        com.google.android.apps.photos
+        com.google.android.apps.docs
+        com.google.android.apps.youtube.music
+        com.google.android.videos
+        com.google.android.calendar
+        com.google.android.apps.messaging
+        com.google.android.youtube
+        com.google.android.apps.nexuslauncher
+        com.android.systemui
+        com.google.android.providers.media.module
+        com.google.android.cellbroadcastreceiver
+        com.google.android.ext.services
+        com.google.android.permissioncontroller
+      com.android.bluetooth:
+        [com.android.inputdevices,com.android.keychain,com.android.server.telecom,com.android.wallpaperbackup,com.android.localtransport,com.android.providers.settings,android,com.android.dynsystem,com.android.settings,com.android.emulator.multidisplay,com.android.location.fused]
+      [com.google.android.networkstack.tethering,com.google.android.networkstack,com.google.android.cellbroadcastservice,com.google.android.networkstack.permissionconfig]:
+        [com.android.inputdevices,com.android.keychain,com.android.server.telecom,com.android.wallpaperbackup,com.android.localtransport,com.android.providers.settings,android,com.android.dynsystem,com.android.settings,com.android.emulator.multidisplay,com.android.location.fused]
+      [com.android.calllogbackup,com.android.providers.userdictionary,com.android.providers.blockednumber,com.android.providers.contacts]:
+        [com.android.inputdevices,com.android.keychain,com.android.server.telecom,com.android.wallpaperbackup,com.android.localtransport,com.android.providers.settings,android,com.android.dynsystem,com.android.settings,com.android.emulator.multidisplay,com.android.location.fused]
+      [com.android.mtp,com.android.providers.downloads,com.android.providers.downloads.ui,com.android.providers.media,com.android.soundpicker]:
+        [com.android.inputdevices,com.android.keychain,com.android.server.telecom,com.android.wallpaperbackup,com.android.localtransport,com.android.providers.settings,android,com.android.dynsystem,com.android.settings,com.android.emulator.multidisplay,com.android.location.fused]
+      com.android.providers.calendar:
+        [com.android.inputdevices,com.android.keychain,com.android.server.telecom,com.android.wallpaperbackup,com.android.localtransport,com.android.providers.settings,android,com.android.dynsystem,com.android.settings,com.android.emulator.multidisplay,com.android.location.fused]
+      com.android.printspooler:
+        [com.android.inputdevices,com.android.keychain,com.android.server.telecom,com.android.wallpaperbackup,com.android.localtransport,com.android.providers.settings,android,com.android.dynsystem,com.android.settings,com.android.emulator.multidisplay,com.android.location.fused]
+      com.android.settings.intelligence:
+        [com.android.inputdevices,com.android.keychain,com.android.server.telecom,com.android.wallpaperbackup,com.android.localtransport,com.android.providers.settings,android,com.android.dynsystem,com.android.settings,com.android.emulator.multidisplay,com.android.location.fused]
+      com.google.android.apps.wellbeing:
+        [com.android.inputdevices,com.android.keychain,com.android.server.telecom,com.android.wallpaperbackup,com.android.localtransport,com.android.providers.settings,android,com.android.dynsystem,com.android.settings,com.android.emulator.multidisplay,com.android.location.fused]
+      com.google.android.ims:
+        [com.android.inputdevices,com.android.keychain,com.android.server.telecom,com.android.wallpaperbackup,com.android.localtransport,com.android.providers.settings,android,com.android.dynsystem,com.android.settings,com.android.emulator.multidisplay,com.android.location.fused]
+      com.google.android.projection.gearhead:
+        [com.android.inputdevices,com.android.keychain,com.android.server.telecom,com.android.wallpaperbackup,com.android.localtransport,com.android.providers.settings,android,com.android.dynsystem,com.android.settings,com.android.emulator.multidisplay,com.android.location.fused]
+      com.google.android.partnersetup:
+        [com.android.inputdevices,com.android.keychain,com.android.server.telecom,com.android.wallpaperbackup,com.android.localtransport,com.android.providers.settings,android,com.android.dynsystem,com.android.settings,com.android.emulator.multidisplay,com.android.location.fused]
+      com.google.android.configupdater:
+        [com.android.inputdevices,com.android.keychain,com.android.server.telecom,com.android.wallpaperbackup,com.android.localtransport,com.android.providers.settings,android,com.android.dynsystem,com.android.settings,com.android.emulator.multidisplay,com.android.location.fused]
+      com.android.dialer:
+        [com.android.inputdevices,com.android.keychain,com.android.server.telecom,com.android.wallpaperbackup,com.android.localtransport,com.android.providers.settings,android,com.android.dynsystem,com.android.settings,com.android.emulator.multidisplay,com.android.location.fused]
+      [com.google.android.gms,com.google.android.gsf]:
+        [com.android.inputdevices,com.android.keychain,com.android.server.telecom,com.android.wallpaperbackup,com.android.localtransport,com.android.providers.settings,android,com.android.dynsystem,com.android.settings,com.android.emulator.multidisplay,com.android.location.fused]
+      com.google.android.googlequicksearchbox:
+        [com.android.inputdevices,com.android.keychain,com.android.server.telecom,com.android.wallpaperbackup,com.android.localtransport,com.android.providers.settings,android,com.android.dynsystem,com.android.settings,com.android.emulator.multidisplay,com.android.location.fused]
+      com.google.android.inputmethod.latin:
+        [com.android.inputdevices,com.android.keychain,com.android.server.telecom,com.android.wallpaperbackup,com.android.localtransport,com.android.providers.settings,android,com.android.dynsystem,com.android.settings,com.android.emulator.multidisplay,com.android.location.fused]
+      com.google.android.gm:
+        [com.android.inputdevices,com.android.keychain,com.android.server.telecom,com.android.wallpaperbackup,com.android.localtransport,com.android.providers.settings,android,com.android.dynsystem,com.android.settings,com.android.emulator.multidisplay,com.android.location.fused]
+      com.google.android.apps.photos:
+        [com.android.inputdevices,com.android.keychain,com.android.server.telecom,com.android.wallpaperbackup,com.android.localtransport,com.android.providers.settings,android,com.android.dynsystem,com.android.settings,com.android.emulator.multidisplay,com.android.location.fused]
+      com.google.android.apps.docs:
+        [com.android.inputdevices,com.android.keychain,com.android.server.telecom,com.android.wallpaperbackup,com.android.localtransport,com.android.providers.settings,android,com.android.dynsystem,com.android.settings,com.android.emulator.multidisplay,com.android.location.fused]
+      com.google.android.apps.youtube.music:
+        [com.android.inputdevices,com.android.keychain,com.android.server.telecom,com.android.wallpaperbackup,com.android.localtransport,com.android.providers.settings,android,com.android.dynsystem,com.android.settings,com.android.emulator.multidisplay,com.android.location.fused]
+      com.google.android.syncadapters.contacts:
+        [com.android.inputdevices,com.android.keychain,com.android.server.telecom,com.android.wallpaperbackup,com.android.localtransport,com.android.providers.settings,android,com.android.dynsystem,com.android.settings,com.android.emulator.multidisplay,com.android.location.fused]
+      com.google.android.videos:
+        [com.android.inputdevices,com.android.keychain,com.android.server.telecom,com.android.wallpaperbackup,com.android.localtransport,com.android.providers.settings,android,com.android.dynsystem,com.android.settings,com.android.emulator.multidisplay,com.android.location.fused]
+      com.google.android.apps.messaging:
+        [com.android.inputdevices,com.android.keychain,com.android.server.telecom,com.android.wallpaperbackup,com.android.localtransport,com.android.providers.settings,android,com.android.dynsystem,com.android.settings,com.android.emulator.multidisplay,com.android.location.fused]
+      com.google.android.youtube:
+        [com.android.inputdevices,com.android.keychain,com.android.server.telecom,com.android.wallpaperbackup,com.android.localtransport,com.android.providers.settings,android,com.android.dynsystem,com.android.settings,com.android.emulator.multidisplay,com.android.location.fused]
+      com.google.android.apps.nexuslauncher:
+        [com.android.inputdevices,com.android.keychain,com.android.server.telecom,com.android.wallpaperbackup,com.android.localtransport,com.android.providers.settings,android,com.android.dynsystem,com.android.settings,com.android.emulator.multidisplay,com.android.location.fused]
+      com.android.systemui:
+        [com.android.inputdevices,com.android.keychain,com.android.server.telecom,com.android.wallpaperbackup,com.android.localtransport,com.android.providers.settings,android,com.android.dynsystem,com.android.settings,com.android.emulator.multidisplay,com.android.location.fused]
+      com.google.android.providers.media.module:
+        [com.android.inputdevices,com.android.keychain,com.android.server.telecom,com.android.wallpaperbackup,com.android.localtransport,com.android.providers.settings,android,com.android.dynsystem,com.android.settings,com.android.emulator.multidisplay,com.android.location.fused]
+      com.google.android.ext.services:
+        [com.android.inputdevices,com.android.keychain,com.android.server.telecom,com.android.wallpaperbackup,com.android.localtransport,com.android.providers.settings,android,com.android.dynsystem,com.android.settings,com.android.emulator.multidisplay,com.android.location.fused]
+      com.google.android.permissioncontroller:
+        [com.android.inputdevices,com.android.keychain,com.android.server.telecom,com.android.wallpaperbackup,com.android.localtransport,com.android.providers.settings,android,com.android.dynsystem,com.android.settings,com.android.emulator.multidisplay,com.android.location.fused]
+
+Shared users:
+  SharedUser [android.uid.system] (c916c2f):
+    userId=1000
+    Packages
+      PackageSetting{1d70c8f com.android.inputdevices/1000}
+      PackageSetting{241e2ab com.android.keychain/1000}
+      PackageSetting{31c0cfa com.android.server.telecom/1000}
+      PackageSetting{511a8aa com.android.wallpaperbackup/1000}
+      PackageSetting{5a8b1b4 com.android.localtransport/1000}
+      PackageSetting{61e7969 com.android.providers.settings/1000}
+      PackageSetting{92c5f84 android/1000}
+      PackageSetting{a1442b5 com.android.dynsystem/1000}
+      PackageSetting{a48209e com.android.settings/1000}
+      PackageSetting{eadfc23 com.android.emulator.multidisplay/1000}
+      PackageSetting{f39a576 com.android.location.fused/1000}
+    install permissions:
+      android.permission.BIND_INCALL_SERVICE: granted=true
+      android.permission.WRITE_SETTINGS: granted=true
+      android.permission.CONFIGURE_WIFI_DISPLAY: granted=true
+      android.permission.CONFIGURE_DISPLAY_COLOR_MODE: granted=true
+      android.permission.CONTROL_DISPLAY_COLOR_TRANSFORMS: granted=true
+      android.permission.BIND_ATTENTION_SERVICE: granted=true
+      android.permission.USE_CREDENTIALS: granted=true
+      android.permission.MODIFY_AUDIO_SETTINGS: granted=true
+      android.permission.MANAGE_EXTERNAL_STORAGE: granted=true
+      android.permission.ACCESS_CHECKIN_PROPERTIES: granted=true
+      android.permission.MODIFY_AUDIO_ROUTING: granted=true
+      android.permission.INSTALL_LOCATION_PROVIDER: granted=true
+      android.permission.USE_RESERVED_DISK: granted=true
+      android.permission.SYSTEM_ALERT_WINDOW: granted=true
+      android.permission.BROADCAST_PHONE_ACCOUNT_REGISTRATION: granted=true
+      android.permission.CLEAR_APP_USER_DATA: granted=true
+      android.permission.BROADCAST_CALLLOG_INFO: granted=true
+      android.permission.NFC: granted=true
+      android.permission.NETWORK_SETTINGS: granted=true
+      android.permission.CALL_PRIVILEGED: granted=true
+      android.permission.MASTER_CLEAR: granted=true
+      android.permission.FOREGROUND_SERVICE: granted=true
+      android.permission.WRITE_SYNC_SETTINGS: granted=true
+      android.permission.MANAGE_DYNAMIC_SYSTEM: granted=true
+      android.permission.RECEIVE_BOOT_COMPLETED: granted=true
+      com.google.android.googleapps.permission.GOOGLE_AUTH: granted=true
+      android.permission.MANAGE_ROLE_HOLDERS: granted=true
+      android.permission.PEERS_MAC_ADDRESS: granted=true
+      android.permission.DEVICE_POWER: granted=true
+      android.permission.READ_PRINT_SERVICES: granted=true
+      android.permission.MANAGE_PROFILE_AND_DEVICE_OWNERS: granted=true
+      android.permission.READ_PROFILE: granted=true
+      android.permission.BLUETOOTH: granted=true
+      android.permission.WRITE_MEDIA_STORAGE: granted=true
+      android.permission.WRITE_BLOCKED_NUMBERS: granted=true
+      android.permission.INTERNET: granted=true
+      android.permission.BLUETOOTH_ADMIN: granted=true
+      android.permission.CONTROL_VPN: granted=true
+      android.permission.UPDATE_DEVICE_STATS: granted=true
+      android.permission.MANAGE_FINGERPRINT: granted=true
+      android.permission.BIND_CONNECTION_SERVICE: granted=true
+      android.permission.ACCESS_INSTANT_APPS: granted=true
+      android.permission.ACCESS_CONTEXT_HUB: granted=true
+      android.permission.MANAGE_USB: granted=true
+      android.permission.INTERACT_ACROSS_USERS_FULL: granted=true
+      android.permission.STOP_APP_SWITCHES: granted=true
+      android.permission.BATTERY_STATS: granted=true
+      android.permission.PACKAGE_USAGE_STATS: granted=true
+      android.permission.MOUNT_UNMOUNT_FILESYSTEMS: granted=true
+      android.permission.TETHER_PRIVILEGED: granted=true
+      android.permission.WRITE_SECURE_SETTINGS: granted=true
+      android.permission.MANAGE_DEBUGGING: granted=true
+      android.permission.MOVE_PACKAGE: granted=true
+      android.permission.READ_BLOCKED_NUMBERS: granted=true
+      android.permission.READ_SEARCH_INDEXABLES: granted=true
+      android.permission.READ_PRIVILEGED_PHONE_STATE: granted=true
+      android.permission.TRIGGER_TIME_ZONE_RULES_CHECK: granted=true
+      android.permission.ACCESS_DOWNLOAD_MANAGER: granted=true
+      android.permission.BLUETOOTH_PRIVILEGED: granted=true
+      android.permission.HARDWARE_TEST: granted=true
+      android.permission.USE_BIOMETRIC_INTERNAL: granted=true
+      android.permission.INSTALL_DYNAMIC_SYSTEM: granted=true
+      android.permission.SUBSTITUTE_NOTIFICATION_APP_NAME: granted=true
+      android.intent.category.MASTER_CLEAR.permission.C2D_MESSAGE: granted=true
+      android.permission.BIND_JOB_SERVICE: granted=true
+      android.permission.CONFIRM_FULL_BACKUP: granted=true
+      android.permission.WRITE_APN_SETTINGS: granted=true
+      android.permission.CHANGE_WIFI_STATE: granted=true
+      android.permission.MANAGE_USERS: granted=true
+      android.permission.ACCESS_NETWORK_STATE: granted=true
+      android.permission.BACKUP: granted=true
+      android.permission.CHANGE_CONFIGURATION: granted=true
+      android.permission.USER_ACTIVITY: granted=true
+      android.permission.LOCAL_MAC_ADDRESS: granted=true
+      android.permission.READ_LOGS: granted=true
+      android.permission.COPY_PROTECTED_DATA: granted=true
+      android.permission.INTERACT_ACROSS_USERS: granted=true
+      android.permission.SET_KEYBOARD_LAYOUT: granted=true
+      android.permission.MANAGE_APP_OPS_RESTRICTIONS: granted=true
+      android.permission.MANAGE_USER_OEM_UNLOCK_STATE: granted=true
+      android.permission.REQUEST_NETWORK_SCORES: granted=true
+      android.permission.CONNECTIVITY_USE_RESTRICTED_NETWORKS: granted=true
+      android.permission.WRITE_USER_DICTIONARY: granted=true
+      android.permission.READ_SYNC_STATS: granted=true
+      android.permission.REBOOT: granted=true
+      android.permission.REQUEST_DELETE_PACKAGES: granted=true
+      android.permission.OEM_UNLOCK_STATE: granted=true
+      android.permission.MANAGE_DEVICE_ADMINS: granted=true
+      android.permission.CHANGE_APP_IDLE_STATE: granted=true
+      android.permission.BIND_SETTINGS_SUGGESTIONS_SERVICE: granted=true
+      android.permission.TEST_BLACKLISTED_PASSWORD: granted=true
+      android.permission.SET_POINTER_SPEED: granted=true
+      android.permission.MANAGE_NOTIFICATIONS: granted=true
+      android.permission.SEND_SHOW_SUSPENDED_APP_DETAILS: granted=true
+      android.permission.READ_SYNC_SETTINGS: granted=true
+      android.permission.BIND_CELL_BROADCAST_SERVICE: granted=true
+      android.permission.LOADER_USAGE_STATS: granted=true
+      android.permission.OVERRIDE_WIFI_CONFIG: granted=true
+      android.permission.FORCE_STOP_PACKAGES: granted=true
+      android.permission.SUGGEST_MANUAL_TIME_AND_ZONE: granted=true
+      android.permission.HIDE_NON_SYSTEM_OVERLAY_WINDOWS: granted=true
+      android.permission.ACCESS_NOTIFICATIONS: granted=true
+      android.permission.HANDLE_CALL_INTENT: granted=true
+      android.permission.MEDIA_RESOURCE_OVERRIDE_PID: granted=true
+      android.permission.VIBRATE: granted=true
+      com.android.certinstaller.INSTALL_AS_USER: granted=true
+      android.permission.HANDLE_CAR_MODE_CHANGES: granted=true
+      android.permission.READ_USER_DICTIONARY: granted=true
+      android.permission.MANAGE_SCOPED_ACCESS_DIRECTORY_PERMISSIONS: granted=true
+      android.permission.ACCESS_WIFI_STATE: granted=true
+      android.permission.USE_BIOMETRIC: granted=true
+      android.permission.MANAGE_APP_OPS_MODES: granted=true
+      android.permission.MODIFY_PHONE_STATE: granted=true
+      android.permission.STATUS_BAR: granted=true
+      android.permission.QUERY_ALL_PACKAGES: granted=true
+      android.permission.READ_DEVICE_CONFIG: granted=true
+      android.permission.LOCATION_HARDWARE: granted=true
+      android.permission.WAKE_LOCK: granted=true
+      android.permission.BIND_NETWORK_RECOMMENDATION_SERVICE: granted=true
+      android.permission.READ_OEM_UNLOCK_STATE: granted=true
+      android.permission.MEDIA_CONTENT_CONTROL: granted=true
+      android.permission.DELETE_PACKAGES: granted=true
+    User 0: 
+      gids=[1077, 1065, 3002, 3003, 3001, 3007, 1007]
+      runtime permissions:
+        android.permission.READ_CALL_LOG: granted=true, flags=[ SYSTEM_FIXED|GRANTED_BY_DEFAULT|RESTRICTION_SYSTEM_EXEMPT|RESTRICTION_UPGRADE_EXEMPT]
+        android.permission.ACCESS_FINE_LOCATION: granted=true, flags=[ SYSTEM_FIXED|GRANTED_BY_DEFAULT|RESTRICTION_SYSTEM_EXEMPT]
+        android.permission.READ_EXTERNAL_STORAGE: granted=true, flags=[ SYSTEM_FIXED|GRANTED_BY_DEFAULT|RESTRICTION_SYSTEM_EXEMPT|RESTRICTION_UPGRADE_EXEMPT]
+        android.permission.ACCESS_COARSE_LOCATION: granted=true, flags=[ SYSTEM_FIXED|GRANTED_BY_DEFAULT|RESTRICTION_SYSTEM_EXEMPT]
+        android.permission.READ_PHONE_STATE: granted=true, flags=[ SYSTEM_FIXED|GRANTED_BY_DEFAULT|USER_SENSITIVE_WHEN_GRANTED|USER_SENSITIVE_WHEN_DENIED|RESTRICTION_SYSTEM_EXEMPT]
+        android.permission.SEND_SMS: granted=true, flags=[ SYSTEM_FIXED|GRANTED_BY_DEFAULT|RESTRICTION_SYSTEM_EXEMPT|RESTRICTION_UPGRADE_EXEMPT]
+        android.permission.CALL_PHONE: granted=true, flags=[ SYSTEM_FIXED|GRANTED_BY_DEFAULT|USER_SENSITIVE_WHEN_GRANTED|USER_SENSITIVE_WHEN_DENIED|RESTRICTION_SYSTEM_EXEMPT]
+        android.permission.WRITE_CONTACTS: granted=true, flags=[ SYSTEM_FIXED|GRANTED_BY_DEFAULT|USER_SENSITIVE_WHEN_GRANTED|USER_SENSITIVE_WHEN_DENIED|RESTRICTION_SYSTEM_EXEMPT]
+        android.permission.CAMERA: granted=true, flags=[ SYSTEM_FIXED|GRANTED_BY_DEFAULT|USER_SENSITIVE_WHEN_GRANTED|USER_SENSITIVE_WHEN_DENIED|RESTRICTION_SYSTEM_EXEMPT]
+        android.permission.WRITE_CALL_LOG: granted=true, flags=[ SYSTEM_FIXED|GRANTED_BY_DEFAULT|RESTRICTION_SYSTEM_EXEMPT|RESTRICTION_UPGRADE_EXEMPT]
+        android.permission.GET_ACCOUNTS: granted=true, flags=[ SYSTEM_FIXED|GRANTED_BY_DEFAULT]
+        android.permission.WRITE_EXTERNAL_STORAGE: granted=true, flags=[ SYSTEM_FIXED|GRANTED_BY_DEFAULT|USER_SENSITIVE_WHEN_GRANTED|USER_SENSITIVE_WHEN_DENIED|RESTRICTION_SYSTEM_EXEMPT|RESTRICTION_UPGRADE_EXEMPT]
+        android.permission.READ_CONTACTS: granted=true, flags=[ SYSTEM_FIXED|GRANTED_BY_DEFAULT|USER_SENSITIVE_WHEN_GRANTED|USER_SENSITIVE_WHEN_DENIED|RESTRICTION_SYSTEM_EXEMPT]
+        android.permission.ACCESS_BACKGROUND_LOCATION: granted=true, flags=[ SYSTEM_FIXED|GRANTED_BY_DEFAULT|RESTRICTION_SYSTEM_EXEMPT|RESTRICTION_UPGRADE_EXEMPT]
+
+Package Changes:
+  Sequence number=27
+  User 0:
+    seq=0, package=com.google.android.googlequicksearchbox
+    seq=7, package=com.google.android.apps.wellbeing
+    seq=23, package=com.android.settings
+    seq=24, package=com.android.carrierdefaultapp
+    seq=26, package=com.google.android.gms
+
+
+Dexopt state:
+  [com.android.settings]
+    path: /system_ext/priv-app/Settings/Settings.apk
+      x86_64: [status=quicken] [reason=prebuilt]
+
+
+Compiler stats:
+  [com.android.settings]
+    (No recorded stats)
+
+APEX session state:
+
+Active APEX packages:
+
+
+Inactive APEX packages:
+
+
+Factory APEX packages:
+
+

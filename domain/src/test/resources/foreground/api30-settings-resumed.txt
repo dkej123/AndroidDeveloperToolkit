@@ -1,0 +1,3 @@
+    mResumedActivity: ActivityRecord{e17aff7 u0 com.android.settings/.Settings$DisplaySettingsActivity t7}
+    Resumed: ActivityRecord{e17aff7 u0 com.android.settings/.Settings$DisplaySettingsActivity t7}
+  ResumedActivity: ActivityRecord{e17aff7 u0 com.android.settings/.Settings$DisplaySettingsActivity t7}

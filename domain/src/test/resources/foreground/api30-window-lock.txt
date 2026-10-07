@@ -1,0 +1,3 @@
+  mCurrentFocus=Window{eb0596c u0 NotificationShade}
+  mFocusedApp=ActivityRecord{246a474 u0 com.google.android.apps.nexuslauncher/.NexusLauncherActivity t5}
+    mShowingDream=false mDreamingLockscreen=false    mStatusBar=Window{ab62270 u0 StatusBar}    mExpandedPanel=Window{eb0596c u0 NotificationShade} isKeyguardShowing=true

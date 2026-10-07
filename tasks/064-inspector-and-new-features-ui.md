@@ -16,6 +16,8 @@ Full page, 28px status bar win over the prototype).
 
 ## Scope
 
+- Current app freshness (design §3a): query triggers, 3 s poll while the Device view is visible and the IDE
+  focused, held changes under the pointer/focus/action/confirm, as a testable presentation state machine.
 - Exactly what the updated `design/README.md` and prototypes specify.
 
 ## Out of scope
