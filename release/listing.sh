@@ -68,7 +68,8 @@ if not m:
     sys.exit("no <description><![CDATA[...]]> in plugin.xml")
 print(json.dumps({"description": m.group(1).strip()}))
 PY
-    call -X PUT "$api/description" -H 'Content-Type: application/json' \
+    # preserveUIEdits=false: later uploads keep replacing the text with plugin.xml's (required parameter).
+    call -X PUT "$api/description?preserveUIEdits=false" -H 'Content-Type: application/json' \
         --data @"$RELEASE_LOGS/listing-description.json" >/dev/null
 fi
 
