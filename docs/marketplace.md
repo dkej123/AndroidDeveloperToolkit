@@ -24,6 +24,8 @@ capture, apps, display toggles, proxy and logcat in one tool window.
 
 **Issue tracker:** https://github.com/dkej123/AndroidDeveloperToolkit/issues
 
+**License:** MIT — https://github.com/dkej123/AndroidDeveloperToolkit/blob/main/LICENSE
+
 ## Screenshots
 
 `release/screenshots.sh` regenerates them for the current version into

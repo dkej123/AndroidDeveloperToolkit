@@ -1,52 +1,83 @@
 # ADB Toolbox
 
-Android Studio / IntelliJ IDEA plugin providing device, app, display, network, and logcat controls
-without leaving the IDE. Architecture is fixed by `docs/adr/` (start at `docs/adr/README.md`); final
-visual design lives under `design/` (start at `design/README.md`).
+Control your Android device from Android Studio or IntelliJ IDEA without opening a terminal.
+ADB Toolbox puts the adb commands you run every day into one tool window: mirroring, screenshots,
+app data, developer toggles, proxy and logcat.
 
-## Build requirements
+![Device view](marketplace/screenshots/1.0.0/01-device-dark.png)
 
-- **JDK 21** — set `JAVA_HOME` to a JDK 21 install (the toolchain also builds fine from a newer JDK
-  that can run Gradle, but the Kotlin/Java toolchain itself is pinned to 21 per
-  `docs/adr/0003-platform-and-toolchain-baseline.md`).
-- No local Gradle install needed or wanted — always use the wrapper (`./gradlew`), never a globally
-  installed `gradle`.
-- First build downloads the Gradle 9.6.1 distribution and IntelliJ Platform 2024.2 (build 242)
-  artifacts; both require network access and disk space, and can take several minutes.
-- The IntelliJ Plugin Verifier (`verifyPlugin`) is required in CI but **must never be run locally
-  or ad hoc by an agent** — see `CLAUDE.md`. It downloads/unpacks a full IDE distribution and is
-  slow; CI is the only place it should run.
+## Features
 
-## Common commands
+**Device**
+- Device facts at a glance: model, Android version, battery, screen size and density.
+- Screenshots, including full-page screenshots of scrolling screens, and screen recording.
+- Mirroring with [scrcpy](https://github.com/Genymobile/scrcpy), with its common options.
+- Font scale and display density presets, custom values and one-click reset.
+- Quick toggles: dark theme, animations, show touches, TalkBack, stay awake, don't keep
+  activities, show view/surface updates and the background process limit.
 
-```shell
-./gradlew clean build          # compile + test all modules
-./gradlew test                 # unit tests only (no adb/scrcpy/IDE fixture/device required)
-./gradlew architectureCheck    # dependency-direction + forbidden-import gate (docs/adr/0001, 0002)
-./gradlew koverVerify          # 80% line-coverage floor for :domain/:application/:adapters-jvm/:adapters-adb
-./gradlew :intellij:runIde     # launch a sandboxed IDE instance with the plugin installed
-e2e/scripts/run-e2e.sh         # end-to-end suite in real Android Studio + emulator (docs/e2e-testing.md)
-```
+**Apps**
+- Searchable list of installed apps with launcher icons; pin the ones you work on.
+- Launch, restart, force-stop, clear data and uninstall.
+- App details: edit shared preferences and SQLite databases in place, grant and revoke runtime
+  permissions, list deep links and open any URI in the app.
 
-Agents/local development: run `./gradlew clean build koverVerify` (never `:intellij:verifyPlugin`
-— see `CLAUDE.md`). `./gradlew check` runs tests, `architectureCheck`, and `koverVerify` together.
-CI (`.github/workflows/ci.yml`) additionally runs `:intellij:verifyPlugin`, scoped to the ADR 0003
-baseline IDE build (242 / 2024.2) only, on every push and pull request.
+**Network**
+- Set or clear a device-wide HTTP proxy (handy for Charles, Proxyman or mitmproxy).
+- Throttle the network speed and latency of an emulator.
 
-## Module layout
+**Logcat**
+- Fast live stream with level filter, search, package filter, pause, autoscroll and line wrap.
 
-Five Gradle modules per `docs/adr/0001-module-layout-and-dependency-direction.md`, dependency
-direction `:intellij -> :application -> :domain` (adapters depend downward on `:domain` only and are
-wired in by `:intellij` at the composition root):
+Also: several devices at once, pairing over Wi-Fi, and light and dark themes that match the IDE.
 
-- `:domain` — pure Kotlin, KMP-ready. Entities, value objects, and inward-facing ports.
-- `:application` — pure Kotlin, KMP-ready. Use cases, MVI reducers, ViewState/Intent/Effect types.
-- `:adapters-jvm` — JVM-only. Centralized process execution, filesystem, host LAN IP discovery.
-- `:adapters-adb` — JVM-only. `AdbTransport` port implementations (ddmlib, binary adb) and tool
-  discovery, built on `:adapters-jvm`.
-- `:intellij` — IntelliJ Platform frontend and composition root. The only module allowed to import
-  IntelliJ/Swing/ToolWindow APIs.
+| Apps | App databases | Logcat |
+|---|---|---|
+| ![Apps](marketplace/screenshots/1.0.0/02-apps-dark.png) | ![Databases](marketplace/screenshots/1.0.0/07-app-databases-dark.png) | ![Logcat](marketplace/screenshots/1.0.0/08-logcat-dark.png) |
 
-`gradle/scripts/check-architecture.sh` (wired into the `architectureCheck` Gradle task) enforces this
-boundary automatically — it fails the build on a forbidden import or a dependency pointing the wrong
-direction, rather than relying on review alone.
+## Installation
+
+In Android Studio or IntelliJ IDEA open **Settings → Plugins → Marketplace**, search for
+**ADB Toolbox** and click **Install**.
+
+Or download the ZIP from [Releases](https://github.com/dkej123/AndroidDeveloperToolkit/releases)
+and use **Settings → Plugins → ⚙ → Install Plugin from Disk…**.
+
+## Requirements
+
+- Android Studio or IntelliJ IDEA **2024.2 or newer**, on macOS, Windows or Linux.
+- **adb** from the Android SDK platform-tools. If you have Android Studio, you already have it.
+- **scrcpy** for mirroring only (`brew install scrcpy`, `winget install scrcpy` or your Linux
+  package manager). Without it the mirroring controls are greyed out; everything else works.
+- A device with USB debugging enabled, or an emulator.
+
+ADB Toolbox finds adb and scrcpy on its own: in the IDE's Android SDK, the default SDK location,
+`ANDROID_HOME` and your `PATH`. If yours live somewhere else, set the paths in
+**Settings → Tools → ADB Toolbox**.
+
+## Getting started
+
+1. Connect a device or start an emulator.
+2. Open the **ADB Toolbox** tool window on the right edge of the IDE.
+3. Pick the device in the selector at the top. To connect over Wi-Fi, open the selector and choose
+   **Pair device over Wi-Fi…**.
+
+## Settings
+
+**Settings → Tools → ADB Toolbox**: adb and scrcpy paths, where screenshots and recordings are
+saved, the logcat buffer size, and custom TalkBack commands for devices where the default does not
+work.
+
+## Problems and feedback
+
+Please [open an issue](https://github.com/dkej123/AndroidDeveloperToolkit/issues). It helps a lot to
+attach a diagnostics bundle: **Help → ADB Toolbox Diagnostics → Collect Diagnostics…** writes a ZIP
+with the plugin log and the adb state (details in [docs/diagnostics.md](docs/diagnostics.md)).
+
+## Contributing
+
+Building and testing the plugin is described in [docs/development.md](docs/development.md).
+
+## License
+
+[MIT](LICENSE)

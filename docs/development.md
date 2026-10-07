@@ -1,0 +1,57 @@
+# Developing ADB Toolbox
+
+How to build, test and change the plugin. For what it does and how to install it, see the
+[README](../README.md). Architecture is fixed by [`docs/adr/`](adr/README.md); final
+visual design lives under [`design/`](../design/README.md).
+
+## Build requirements
+
+- **JDK 21** — set `JAVA_HOME` to a JDK 21 install (the toolchain also builds fine from a newer JDK
+  that can run Gradle, but the Kotlin/Java toolchain itself is pinned to 21 per
+  `docs/adr/0003-platform-and-toolchain-baseline.md`).
+- No local Gradle install needed or wanted — always use the wrapper (`./gradlew`), never a globally
+  installed `gradle`.
+- First build downloads the Gradle 9.6.1 distribution and IntelliJ Platform 2024.2 (build 242)
+  artifacts; both require network access and disk space, and can take several minutes.
+- The IntelliJ Plugin Verifier (`verifyPlugin`) is required in CI but **must never be run locally
+  or ad hoc by an agent** — see `CLAUDE.md`. It downloads/unpacks a full IDE distribution and is
+  slow; CI is the only place it should run.
+
+## Common commands
+
+```shell
+./gradlew clean build          # compile + test all modules
+./gradlew test                 # unit tests only (no adb/scrcpy/IDE fixture/device required)
+./gradlew architectureCheck    # dependency-direction + forbidden-import gate (docs/adr/0001, 0002)
+./gradlew koverVerify          # 80% line-coverage floor for :domain/:application/:adapters-jvm/:adapters-adb
+./gradlew :intellij:runIde     # launch a sandboxed IDE instance with the plugin installed
+e2e/scripts/run-e2e.sh         # end-to-end suite in real Android Studio + emulator (docs/e2e-testing.md)
+```
+
+Agents/local development: run `./gradlew clean build koverVerify` (never `:intellij:verifyPlugin`
+— see `CLAUDE.md`). `./gradlew check` runs tests, `architectureCheck`, and `koverVerify` together.
+CI (`.github/workflows/ci.yml`) additionally runs `:intellij:verifyPlugin`, scoped to the ADR 0003
+baseline IDE build (242 / 2024.2) only, on every push and pull request.
+
+## Module layout
+
+Five Gradle modules per `docs/adr/0001-module-layout-and-dependency-direction.md`, dependency
+direction `:intellij -> :application -> :domain` (adapters depend downward on `:domain` only and are
+wired in by `:intellij` at the composition root):
+
+- `:domain` — pure Kotlin, KMP-ready. Entities, value objects, and inward-facing ports.
+- `:application` — pure Kotlin, KMP-ready. Use cases, MVI reducers, ViewState/Intent/Effect types.
+- `:adapters-jvm` — JVM-only. Centralized process execution, filesystem, host LAN IP discovery.
+- `:adapters-adb` — JVM-only. `AdbTransport` port implementations (ddmlib, binary adb) and tool
+  discovery, built on `:adapters-jvm`.
+- `:intellij` — IntelliJ Platform frontend and composition root. The only module allowed to import
+  IntelliJ/Swing/ToolWindow APIs.
+
+`gradle/scripts/check-architecture.sh` (wired into the `architectureCheck` Gradle task) enforces this
+boundary automatically — it fails the build on a forbidden import or a dependency pointing the wrong
+direction, rather than relying on review alone.
+
+## Releasing
+
+JetBrains Marketplace releases: [`release/README.md`](../release/README.md) and
+[`docs/marketplace.md`](marketplace.md).
