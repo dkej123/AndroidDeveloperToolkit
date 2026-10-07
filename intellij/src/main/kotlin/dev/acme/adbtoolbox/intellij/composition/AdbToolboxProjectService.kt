@@ -689,6 +689,44 @@ class AdbToolboxProjectService(private val project: Project) : Disposable {
             selectedDeviceState = selectedDeviceViewModel.state,
         )
 
+    private fun toast(text: String, severity: dev.acme.adbtoolbox.domain.feedback.FeedbackSeverity) {
+        feedbackViewModel.handle(
+            dev.acme.adbtoolbox.application.feedback.FeedbackIntent.Post(
+                dev.acme.adbtoolbox.domain.feedback.FeedbackMessage(id = "locale-${System.nanoTime()}", text = text, severity = severity),
+            ),
+        )
+    }
+
+    /** Language & region (design §3b) through the device helper's LocaleMain (task 060). */
+    val localeViewModel: dev.acme.adbtoolbox.application.locale.LocaleViewModel = dev.acme.adbtoolbox.application.locale.LocaleViewModel(
+        scope = childScope(),
+        dispatchers = dispatcherProvider,
+        useCase = dev.acme.adbtoolbox.application.locale.DeviceLocaleUseCase(
+            dev.acme.adbtoolbox.adapters.adb.packages.LocaleHelper(adbTransport, deviceHelperDeployment),
+            dev.acme.adbtoolbox.intellij.persistence.PropertiesOriginalLocaleStore(),
+        ),
+        selectedDeviceState = selectedDeviceViewModel.state,
+    ) { event ->
+        when (event) {
+            is dev.acme.adbtoolbox.application.locale.LocaleEvent.Applied ->
+                toast("Language set to ${event.tag} · activity restarted", dev.acme.adbtoolbox.domain.feedback.FeedbackSeverity.Success)
+            is dev.acme.adbtoolbox.application.locale.LocaleEvent.ResetTo ->
+                toast("Language reset to ${event.tag}", dev.acme.adbtoolbox.domain.feedback.FeedbackSeverity.Success)
+            is dev.acme.adbtoolbox.application.locale.LocaleEvent.Failed ->
+                toast("Couldn’t change the language: ${event.message}", dev.acme.adbtoolbox.domain.feedback.FeedbackSeverity.Error)
+        }
+    }
+
+    /** Emulator GPS location (design §3c). */
+    val locationViewModel: dev.acme.adbtoolbox.application.locale.LocationViewModel = dev.acme.adbtoolbox.application.locale.LocationViewModel(
+        scope = childScope(),
+        dispatchers = dispatcherProvider,
+        useCase = dev.acme.adbtoolbox.application.locale.EmulatorLocationUseCase(adbTransport),
+        selectedDeviceState = selectedDeviceViewModel.state,
+    ) { message, ok ->
+        toast(message, if (ok) dev.acme.adbtoolbox.domain.feedback.FeedbackSeverity.Success else dev.acme.adbtoolbox.domain.feedback.FeedbackSeverity.Error)
+    }
+
     /** Task 032's host-LAN-IPv4 discovery port ("Use my computer IP") and persisted MRU recents adapter. */
     val hostNetworkInfo: HostNetworkInfo = JvmHostNetworkInfo()
     val networkRecentsPersistence: NetworkRecentsPersistence =
@@ -768,6 +806,7 @@ class AdbToolboxProjectService(private val project: Project) : Disposable {
                 quickTogglesViewModel.handle(QuickTogglesIntent.Refresh)
                 developerOptionsViewModel.handle(DeveloperOptionsIntent.Refresh)
                 deviceSettingTogglesViewModel.handle(dev.acme.adbtoolbox.application.display.toggles.DeviceSettingTogglesIntent.Refresh)
+                localeViewModel.handle(dev.acme.adbtoolbox.application.locale.LocaleIntent.Refresh)
                 fontScaleViewModel.handle(FontScaleIntent.Retry)
                 densityViewModel.handle(DensityIntent.Retry)
             },
@@ -800,6 +839,7 @@ class AdbToolboxProjectService(private val project: Project) : Disposable {
             fontScaleViewModel.overrideResetUseCase(),
             DensityOverrideResetUseCase(densityUseCase, densityOverrideTracker),
             proxyController,
+            localeViewModel.overrideResetUseCase,
         ),
         reapplyPersistence = overrideReapplyPersistence,
         feedback = feedbackViewModel,

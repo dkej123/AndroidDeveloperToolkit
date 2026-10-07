@@ -146,6 +146,8 @@ class AdbToolboxToolWindowPanel(
     developerOptionsViewModel: dev.acme.adbtoolbox.application.display.developer.DeveloperOptionsViewModel? = null,
     deviceSettingTogglesViewModel: dev.acme.adbtoolbox.application.display.toggles.DeviceSettingTogglesViewModel? = null,
     selectedDeviceState: StateFlow<dev.acme.adbtoolbox.domain.device.SelectedDeviceState>? = null,
+    localeViewModel: dev.acme.adbtoolbox.application.locale.LocaleViewModel? = null,
+    locationViewModel: dev.acme.adbtoolbox.application.locale.LocationViewModel? = null,
     densityOverrideTracker: OverrideSummaryContributor,
     deviceContextAggregator: DeviceContextAggregator,
     private val displayScope: CoroutineScope,
@@ -278,6 +280,20 @@ class AdbToolboxToolWindowPanel(
         selectedDevice = selectedDeviceState,
     )
 
+    private val localeCoordinator = if (localeViewModel != null && locationViewModel != null && selectedDeviceState != null) {
+        dev.acme.adbtoolbox.intellij.display.LocaleCoordinator(
+            displayPanel = displayCoordinator.panel,
+            localeViewModel = localeViewModel,
+            locationViewModel = locationViewModel,
+            selectedDevice = selectedDeviceState,
+            aggregator = deviceContextAggregator,
+            scope = kotlinx.coroutines.CoroutineScope(displayScope.coroutineContext + kotlinx.coroutines.SupervisorJob(displayScope.coroutineContext[kotlinx.coroutines.Job])),
+            dispatchers = dispatchers,
+        )
+    } else {
+        null
+    }
+
     private val navigationCoordinator = NavigationRoutingCoordinator(
         host = host,
         rail = navigationRail,
@@ -309,6 +325,7 @@ class AdbToolboxToolWindowPanel(
     override fun dispose() {
         navigationCoordinator.dispose()
         feedbackCoordinator.dispose()
+        localeCoordinator?.dispose()
         displayCoordinator.dispose()
         logcatCoordinator.dispose()
         networkCoordinator.dispose()

@@ -38,17 +38,15 @@ data class CityPreset(val name: String, val point: GeoPoint)
 object EmulatorLocationCommand {
     private const val EMULATOR_SERIAL_PREFIX = "emulator-"
 
+    /** The design's presets (§3c), in its order. */
     val cities: List<CityPreset> = listOf(
         city("Warsaw", 52.2297, 21.0122),
         city("London", 51.5072, -0.1276),
-        city("Berlin", 52.5200, 13.4050),
-        city("Stockholm", 59.3293, 18.0686),
         city("New York", 40.7128, -74.0060),
         city("San Francisco", 37.7749, -122.4194),
-        city("São Paulo", -23.5505, -46.6333),
-        city("Dubai", 25.2048, 55.2708),
         city("Tokyo", 35.6895, 139.6917),
         city("Sydney", -33.8688, 151.2093),
+        city("Stockholm", 59.3293, 18.0686),
     )
 
     fun isSupported(serial: DeviceSerial): Boolean = serial.toString().startsWith(EMULATOR_SERIAL_PREFIX)

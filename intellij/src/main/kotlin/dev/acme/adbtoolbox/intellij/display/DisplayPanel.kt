@@ -330,11 +330,17 @@ class DisplayPanel(
         processLimitChipRow,
     )
 
+    /** Language & region (design §3b) and Location (§3c) mount here, after Display scale. */
+    val localeSlot: JPanel = sectionSlot()
+    val locationSlot: JPanel = sectionSlot()
+
     private val contentPanel = ViewportWidthPanel().apply {
         layout = BoxLayout(this, BoxLayout.Y_AXIS)
         background = AdbToolboxTheme.Colors.bg
         add(fontSection)
         add(densitySection)
+        add(localeSlot)
+        add(locationSlot)
         add(togglesSection)
     }
 
@@ -661,6 +667,13 @@ class DisplayPanel(
                 SolidChipBorder(AdbToolboxTheme.Colors.borderStrong, radius = { AdbToolboxTheme.Radii.field }),
                 JBUI.Borders.empty(0, AdbToolboxTheme.Spacing.s3),
             )
+        }
+
+        fun sectionSlot() = object : JPanel(BorderLayout()) {
+            override fun getMaximumSize(): Dimension = Dimension(Int.MAX_VALUE, preferredSize.height)
+        }.apply {
+            isOpaque = false
+            alignmentX = java.awt.Component.LEFT_ALIGNMENT
         }
 
         fun errorLabel() = JBLabel("").apply {

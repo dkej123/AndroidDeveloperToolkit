@@ -66,6 +66,8 @@ class AdbToolboxToolWindowFactory : ToolWindowFactory, DumbAware {
             quickTogglesViewModel = composition.quickTogglesViewModel,
             developerOptionsViewModel = composition.developerOptionsViewModel,
             deviceSettingTogglesViewModel = composition.deviceSettingTogglesViewModel,
+            localeViewModel = composition.localeViewModel,
+            locationViewModel = composition.locationViewModel,
             selectedDeviceState = composition.selectedDeviceViewModel.state,
             densityOverrideTracker = composition.densityOverrideTracker,
             deviceContextAggregator = composition.deviceContextAggregator,

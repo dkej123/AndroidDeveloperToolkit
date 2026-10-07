@@ -169,6 +169,32 @@ class VisualRegressionTest : BasePlatformTestCase() {
                 update(settingTogglesFixture())
             }
         }),
+        // Language & region with an override and Location on an emulator (design §3b, §3c).
+        Scenario("device-locale-location-dark-dock", 380, 620, dark = true, selected = ViewId.Device, view = {
+            javax.swing.JPanel().apply {
+                layout = javax.swing.BoxLayout(this, javax.swing.BoxLayout.Y_AXIS)
+                background = dev.acme.adbtoolbox.intellij.ui.common.AdbToolboxTheme.Colors.bg
+                add(dev.acme.adbtoolbox.intellij.display.LocaleSection({}, {}, {}).apply {
+                    update(
+                        dev.acme.adbtoolbox.application.locale.LocaleViewState(
+                            locale = dev.acme.adbtoolbox.application.locale.DeviceLocaleState("ar-XB", "en-US"),
+                            loading = false,
+                        ),
+                        deviceOnline = true,
+                    )
+                })
+                add(dev.acme.adbtoolbox.intellij.display.LocationSection({}, { _, _ -> }).apply {
+                    update(
+                        dev.acme.adbtoolbox.application.locale.LocationViewState(
+                            emulator = true,
+                            current = "Warsaw" to dev.acme.adbtoolbox.domain.location.GeoPoint.of(52.2297, 21.0122)!!,
+                        ),
+                        deviceOnline = true,
+                    )
+                })
+                add(javax.swing.Box.createVerticalGlue())
+            }
+        }, overrideCount = 1),
         Scenario("network-dark-dock", 380, 620, dark = true, selected = ViewId.Network, view = {
             val active = endpoint("10.0.4.117", 8888)
             NetworkPanel({}, {}, {}, {}, {}, {}).apply {

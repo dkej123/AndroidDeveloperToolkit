@@ -135,13 +135,25 @@ class PresetChipRow<T : Any>(
         }
     }
 
+    /** No chip selected (a choice with nothing applied yet, e.g. an emulator's location before a fix). */
+    fun clearSelection() {
+        cleared = true
+        chips.forEach { chip ->
+            chip.isSelected = false
+            chip.refreshPresentation()
+        }
+    }
+
     fun setSelectedValue(value: T) {
         require(chips.any { it.value == value }) { "Selected value must be one of the choices" }
         choose(value, notify = false)
     }
 
+    private var cleared = false
+
     private fun choose(value: T, notify: Boolean) {
-        if (value == selectedValue && chips.first { it.value == value }.isSelected) return
+        if (!cleared && value == selectedValue && chips.first { it.value == value }.isSelected) return
+        cleared = false
         selectedValue = value
         chips.forEach { chip ->
             chip.isSelected = chip.value == value
