@@ -48,6 +48,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -159,6 +160,9 @@ class AdbToolboxToolWindowPanel(
     onResetOverrides: () -> Unit = {},
     diagnosticsLog: DiagnosticsLog = NoOpDiagnosticsLog,
     sectionMeta: StateFlow<DeviceSectionMeta>? = null,
+    inspectorStatus: StateFlow<dev.acme.adbtoolbox.intellij.inspector.InspectorOpenStatus?>? = null,
+    onShowInspector: () -> Unit = {},
+    onRecaptureInspector: () -> Unit = {},
 ) : JBPanel<AdbToolboxToolWindowPanel>(BorderLayout()), Disposable {
 
     val host = AdbToolboxHostPanel()
@@ -227,6 +231,36 @@ class AdbToolboxToolWindowPanel(
         dispatchers = dispatchers,
         captureView = captureCoordinator.view,
     )
+
+    // Design §9: Capture → Inspect layout opens the selected device in a Layout Inspector tab.
+    private val inspectLayoutButton = dev.acme.adbtoolbox.intellij.ui.common.DesignButton(
+        "Inspect layout",
+        dev.acme.adbtoolbox.intellij.ui.common.DesignButtonStyle.SECONDARY,
+    ).apply {
+        toolTipText = dev.acme.adbtoolbox.intellij.ui.common.ShortcutHints.withAction(
+            "Capture the screen and its UI hierarchy into the Layout Inspector — sizes and distances in dp, accessibility audit",
+            "AdbToolbox.InspectLayout",
+        )
+        addActionListener {
+            com.intellij.openapi.actionSystem.ActionManager.getInstance().getAction("AdbToolbox.InspectLayout")?.let { action ->
+                com.intellij.openapi.actionSystem.ex.ActionUtil.invokeAction(action, this, "AdbToolboxCapture", null, null)
+            }
+        }
+    }.also { deviceFactsCoordinator.panel.captureSlot.add(it) }
+
+    // Design §9: while an inspector tab is open (and a device is online), Capture says so.
+    private val inspectorOpenRow = dev.acme.adbtoolbox.intellij.inspector.InspectorOpenRow(onShowInspector, onRecaptureInspector)
+        .also { deviceFactsCoordinator.panel.captureNoteSlot.add(it, BorderLayout.CENTER) }
+
+    init {
+        if (inspectorStatus != null) {
+            val online = selectedDeviceState?.map { it is dev.acme.adbtoolbox.domain.device.SelectedDeviceState.Online }
+                ?: kotlinx.coroutines.flow.flowOf(true)
+            kotlinx.coroutines.flow.combine(inspectorStatus, online) { status, isOnline -> status.takeIf { isOnline } }
+                .onEach { status -> withContext(dispatchers.main) { inspectorOpenRow.render(status) } }
+                .launchIn(deviceFactsScope)
+        }
+    }
 
     private val appsCoordinator = AppsCoordinator(
         viewModel = appsViewModel,

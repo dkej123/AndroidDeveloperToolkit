@@ -38,6 +38,13 @@ object AdbToolboxIcons {
         val uninstall: Icon get() = load("/icons/expui/actions/uninstall.svg")
         val usb: Icon get() = load("/icons/expui/actions/usb.svg")
         val wifi: Icon get() = load("/icons/expui/actions/wifi.svg")
+        val layoutInspector: Icon get() = load("/icons/expui/actions/layoutInspector.svg")
+        val a11yAudit: Icon get() = load("/icons/expui/actions/a11yAudit.svg")
+        val overlay: Icon get() = load("/icons/expui/actions/overlay.svg")
+        val location: Icon get() = load("/icons/expui/actions/location.svg")
+        val language: Icon get() = load("/icons/expui/actions/language.svg")
+        val mcpAgent: Icon get() = load("/icons/expui/actions/mcpAgent.svg")
+        val rotate: Icon get() = load("/icons/expui/actions/rotate.svg")
     }
 
     /** Complete loadable catalog, used by the package test and future feature call sites. */
@@ -65,6 +72,13 @@ object AdbToolboxIcons {
         Actions.uninstall,
         Actions.usb,
         Actions.wifi,
+        Actions.layoutInspector,
+        Actions.a11yAudit,
+        Actions.overlay,
+        Actions.location,
+        Actions.language,
+        Actions.mcpAgent,
+        Actions.rotate,
     )
 
     /**

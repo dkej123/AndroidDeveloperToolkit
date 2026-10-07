@@ -34,6 +34,8 @@ ADB Toolbox puts the adb commands you run every day into one tool window.</p>
     <extensions defaultExtensionNs="com.intellij">
         <!-- ADR 0015: the project's MCP tools are registered at startup when access is not Off. -->
         <postStartupActivity implementation="dev.acme.adbtoolbox.intellij.mcp.McpStartupActivity"/>
+        <!-- Design §9: the Layout Inspector is a file-less editor tab. -->
+        <fileEditorProvider implementation="dev.acme.adbtoolbox.intellij.inspector.LayoutInspectorEditorProvider"/>
         <toolWindow id="ADB Toolbox" anchor="right" secondary="false"
                     icon="/icons/expui/toolwindow/adbToolbox.svg"
                     factoryClass="dev.acme.adbtoolbox.intellij.toolwindow.AdbToolboxToolWindowFactory"/>
@@ -97,6 +99,16 @@ ADB Toolbox puts the adb commands you run every day into one tool window.</p>
             <keyboard-shortcut keymap="$default" first-keystroke="shift control alt R"/>
             <keyboard-shortcut keymap="Mac OS X" first-keystroke="shift meta alt R"/>
             <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="shift meta alt R"/>
+        </action>
+
+        <action id="AdbToolbox.InspectLayout"
+                class="dev.acme.adbtoolbox.intellij.inspector.InspectLayoutAction"
+                text="Inspect Layout"
+                icon="/icons/expui/actions/layoutInspector.svg"
+                description="Capture the selected device's screen and UI hierarchy into the Layout Inspector">
+            <keyboard-shortcut keymap="$default" first-keystroke="shift control alt I"/>
+            <keyboard-shortcut keymap="Mac OS X" first-keystroke="shift meta alt I"/>
+            <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="shift meta alt I"/>
         </action>
 
         <!-- Task 037's global focus-Logcat shortcut — forwards to the same NavigationViewModel.handle

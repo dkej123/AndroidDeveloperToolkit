@@ -84,6 +84,9 @@ class AdbToolboxToolWindowFactory : ToolWindowFactory, DumbAware {
             onResetOverrides = { composition.overrideResetCoordinator.resetAll() },
             diagnosticsLog = composition.diagnosticsLog,
             sectionMeta = composition.deviceSectionMetaViewModel.state,
+            inspectorStatus = project.service<dev.acme.adbtoolbox.intellij.inspector.LayoutInspectorService>().status,
+            onShowInspector = { project.service<dev.acme.adbtoolbox.intellij.inspector.LayoutInspectorService>().show() },
+            onRecaptureInspector = { project.service<dev.acme.adbtoolbox.intellij.inspector.LayoutInspectorService>().recaptureLatest() },
         )
         val content = ContentFactory.getInstance().createContent(panel, "", false)
         content.setDisposer(panel)

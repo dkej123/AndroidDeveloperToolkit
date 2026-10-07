@@ -20,9 +20,12 @@ the journey tests exercise controls independently of pixel output.
 | `device-current-app-dark-dock.png` | Device | Dark | 380px dock | Current app with a debuggable app in front: identity, facts, actions and the destructive group |
 | `network-dark-dock.png` | Network | Dark | 380px dock | active proxy, warning and recents |
 | `logcat-dark-wide.png` | Logcat | Dark | 560px wide | query, severity rows, paused stream and footer |
+| `inspector-light-wide.png` | Layout Inspector (editor tab) | Light | 1300×820 | API 30 Settings capture, Fit, 8 dp grid, Display selected with Battery hovered (51 dp redline), attributes and state chips |
+| `inspector-audit-dark-wide.png` | Layout Inspector, Accessibility mode | Dark | 1300×820 | numbered stops and the problem outline, summary cards, wrapped stop list with problems |
 
-Every image also includes the production 30px device bar, 34px navigation rail and 22px status
-bar. Together the matrix covers all five primary views, both supplied palettes, and each responsive
+Every tool-window image also includes the production 30px device bar, 34px navigation rail and
+22px status bar; the inspector goldens are an editor tab and render without them, in UTC so the
+capture time in the meta line is stable. Together the matrix covers all five primary views, both supplied palettes, and each responsive
 width class. The source of truth used for review is `design/designs/ADB Toolbox Plugin.dc.html`,
 `design/IMPLEMENTATION.md`, and `design/tokens/tokens.json`.
 

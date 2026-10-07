@@ -82,7 +82,10 @@ class VisualRegressionTest : BasePlatformTestCase() {
         val failures = mutableListOf<String>()
         val wasDark = !JBColor.isBright()
         val originalUiDefaults = HEADLESS_THEME_KEYS.associateWith(UIManager::get)
+        val originalTimeZone = java.util.TimeZone.getDefault()
         try {
+            // The inspector shows the capture time; CI runs in UTC, so render every golden in UTC.
+            java.util.TimeZone.setDefault(java.util.TimeZone.getTimeZone("UTC"))
             // Other platform tests can toggle the global loader. Production renders with it active,
             // and the visual gate must not depend on class/test execution order.
             IconLoader.activate()
@@ -92,6 +95,7 @@ class VisualRegressionTest : BasePlatformTestCase() {
             }
         } finally {
             originalUiDefaults.forEach { (key, value) -> UIManager.put(key, value) }
+            java.util.TimeZone.setDefault(originalTimeZone)
             JBColor.setDark(wasDark)
         }
         assertTrue(failures.joinToString("\n\n"), failures.isEmpty())
@@ -238,7 +242,28 @@ class VisualRegressionTest : BasePlatformTestCase() {
         Scenario("logcat-dark-wide", 560, 620, dark = true, selected = ViewId.Logcat, view = {
             logcatPanel(560)
         }, process = "scrcpy"),
+        // The Layout Inspector is an editor tab, so it renders without the tool-window chrome.
+        Scenario("inspector-light-wide", 1300, 820, dark = false, selected = ViewId.Device, chrome = false, view = {
+            inspectorPanel(audit = false)
+        }),
+        Scenario("inspector-audit-dark-wide", 1300, 820, dark = true, selected = ViewId.Device, chrome = false, view = {
+            inspectorPanel(audit = true)
+        }),
     )
+
+    /** The API 30 Settings capture with Display selected and Battery hovered (a 51 dp redline), grid on. */
+    private fun inspectorPanel(audit: Boolean): JComponent {
+        val capture = dev.acme.adbtoolbox.intellij.inspector.settingsCapture()
+        val panel = dev.acme.adbtoolbox.intellij.inspector.LayoutInspectorPanel(onRecapture = {}, onOpenQuickToggles = {}, chooseOverlayFile = { null })
+        panel.update(dev.acme.adbtoolbox.application.layout.LayoutInspectorState(capture = capture, deviceOnline = true, deviceName = "Pixel 9"))
+        val nodes = capture.snapshot.hierarchy.root.descendantsAndSelf().toList()
+        panel.gridChipForTest.doClick()
+        panel.selectForTest(nodes.first { it.text == "Display" })
+        panel.hoverForTest(nodes.first { it.text == "Battery" })
+        panel.canvasForTest.hovered = nodes.first { it.text == "Battery" }
+        if (audit) panel.auditChipForTest.doClick()
+        return panel
+    }
 
     private fun render(scenario: Scenario): BufferedImage {
         var result: BufferedImage? = null
@@ -262,10 +287,12 @@ class VisualRegressionTest : BasePlatformTestCase() {
             }
             val root = JPanel(BorderLayout()).apply {
                 background = AdbToolboxTheme.Colors.bg
-                add(deviceBar, BorderLayout.NORTH)
-                add(rail, BorderLayout.WEST)
+                if (scenario.chrome) {
+                    add(deviceBar, BorderLayout.NORTH)
+                    add(rail, BorderLayout.WEST)
+                    add(status, BorderLayout.SOUTH)
+                }
                 add(scenario.view(), BorderLayout.CENTER)
-                add(status, BorderLayout.SOUTH)
             }
             result = paint(root, scenario.width, scenario.height)
         }
@@ -360,6 +387,7 @@ class VisualRegressionTest : BasePlatformTestCase() {
         val noDevice: Boolean = false,
         val overrideCount: Int = 0,
         val process: String? = null,
+        val chrome: Boolean = true,
     )
 
     private companion object {

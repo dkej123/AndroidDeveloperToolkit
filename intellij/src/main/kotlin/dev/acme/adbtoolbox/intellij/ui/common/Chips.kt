@@ -212,7 +212,7 @@ private class SegmentedLayout : java.awt.LayoutManager {
 }
 
 /** FlowLayout with a preferred height that reflects the rows required by the current viewport. */
-private class WrappingFlowLayout(align: Int, hgap: Int, vgap: Int) : FlowLayout(align, hgap, vgap) {
+internal class WrappingFlowLayout(align: Int, hgap: Int, vgap: Int) : FlowLayout(align, hgap, vgap) {
     override fun preferredLayoutSize(target: Container): Dimension = wrappingSize(target)
 
     override fun minimumLayoutSize(target: Container): Dimension = wrappingSize(target)

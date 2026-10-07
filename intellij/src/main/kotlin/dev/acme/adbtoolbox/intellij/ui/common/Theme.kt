@@ -38,6 +38,8 @@ object AdbToolboxTheme {
         val greenBg = themed(rgba(0x2f8f52, 0.10), rgba(0x66b578, 0.14))
         val amber = themed(rgb(0xa9761f), rgb(0xd9a441))
         val amberBg = themed(rgba(0xa9761f, 0.10), rgba(0xd9a441, 0.14))
+        /** Layout Inspector redlines and distance labels only (design token `measure`). */
+        val measure = themed(rgb(0xe5583b), rgb(0xf2765a))
         val red = themed(rgb(0xc9424a), rgb(0xe0656b))
         val redBg = themed(rgba(0xc9424a, 0.09), rgba(0xe0656b, 0.14))
         val redBorder = themed(rgba(0xc9424a, 0.50), rgba(0xe0656b, 0.50))
