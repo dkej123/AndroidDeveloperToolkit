@@ -240,8 +240,9 @@ class AdbToolboxToolWindowPanel(
     ).apply {
         toolTipText = dev.acme.adbtoolbox.intellij.ui.common.ShortcutHints.withAction(INSPECT_TOOLTIP, "AdbToolbox.InspectLayout")
         addActionListener {
-            com.intellij.openapi.actionSystem.ActionManager.getInstance().getAction("AdbToolbox.InspectLayout")?.let { action ->
-                com.intellij.openapi.actionSystem.ex.ActionUtil.invokeAction(action, this, "AdbToolboxCapture", null, null)
+            val actions = com.intellij.openapi.actionSystem.ActionManager.getInstance()
+            actions.getAction("AdbToolbox.InspectLayout")?.let { action ->
+                actions.tryToExecute(action, null, this, "AdbToolboxCapture", true)
             }
         }
     }.also { deviceFactsCoordinator.panel.inspectSlot.add(it) }

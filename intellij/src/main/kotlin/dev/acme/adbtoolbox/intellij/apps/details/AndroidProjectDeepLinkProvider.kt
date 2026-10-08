@@ -2,7 +2,8 @@ package dev.acme.adbtoolbox.intellij.apps.details
 
 import com.android.tools.idea.model.AndroidModel
 import com.android.tools.idea.model.MergedManifestManager
-import com.intellij.openapi.application.ReadAction
+import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.util.Computable
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.module.ModuleManager
 import com.intellij.openapi.project.Project
@@ -22,7 +23,7 @@ import org.jetbrains.android.facet.AndroidFacet
 /** Supplies active-variant manifest and Navigation XML metadata from Android Studio's project model. */
 class AndroidProjectDeepLinkProvider(private val project: Project) : ProjectDeepLinkProvider {
     override fun load(packageName: String): DeepLinkCatalog? {
-        val module = ReadAction.compute<Module?, RuntimeException> {
+        val module = readAction {
             ModuleManager.getInstance(project).modules.firstOrNull { candidate ->
                 val facet = AndroidFacet.getInstance(candidate) ?: return@firstOrNull false
                 AndroidModel.get(facet)?.applicationId == packageName
@@ -33,10 +34,10 @@ class AndroidProjectDeepLinkProvider(private val project: Project) : ProjectDeep
         val supplier = MergedManifestManager.getMergedManifestSupplier(module)
         val snapshot = (supplier.now ?: supplier.get().get(MANIFEST_TIMEOUT_SECONDS, TimeUnit.SECONDS))
             ?.takeIf { it.isValid } ?: return null
-        return ReadAction.compute<DeepLinkCatalog?, RuntimeException> {
-            val facet = AndroidFacet.getInstance(module) ?: return@compute null
-            val manifest = snapshot.document?.let(::serialize) ?: return@compute null
-            val model = AndroidModel.get(facet) ?: return@compute null
+        return readAction {
+            val facet = AndroidFacet.getInstance(module) ?: return@readAction null
+            val manifest = snapshot.document?.let(::serialize) ?: return@readAction null
+            val model = AndroidModel.get(facet) ?: return@readAction null
             val graphs = linkedMapOf<String, String>()
             activeResDirectories(model).forEach { res ->
                 loadNavigationGraphs(res.toPath()).forEach { (name, xml) -> graphs[name] = xml }
@@ -95,3 +96,6 @@ class AndroidProjectDeepLinkProvider(private val project: Project) : ProjectDeep
 }
 
 private const val MANIFEST_TIMEOUT_SECONDS = 10L
+
+/** `Application.runReadAction`: `ReadAction.compute` is deprecated from 2026.x, its successors are not on 242. */
+private fun <T> readAction(body: () -> T): T = ApplicationManager.getApplication().runReadAction(Computable(body))

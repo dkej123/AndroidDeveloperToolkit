@@ -63,7 +63,7 @@ class AdbToolboxAppSettings : PersistentStateComponent<AdbToolboxAppSettings.Sta
     }
 
     companion object {
-        private val TOKEN = CredentialAttributes("ADB Toolbox MCP token")
+        private val TOKEN = McpTokenCredentials.TOKEN
 
         fun getInstance(): AdbToolboxAppSettings = service()
     }

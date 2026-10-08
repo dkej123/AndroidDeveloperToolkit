@@ -1,6 +1,6 @@
 package dev.acme.adbtoolbox.intellij.diagnostics
 
-import com.intellij.ide.plugins.PluginManagerCore
+import dev.acme.adbtoolbox.intellij.host.InstalledPlugins
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationInfo
 import com.intellij.openapi.application.PathManager
@@ -117,15 +117,15 @@ class DiagnosticsService : PersistentStateComponent<DiagnosticsService.Settings>
         /** Plugin, IDE, OS and JDK facts — the lifecycle header and the bundle's environment section. */
         fun environmentFields(): Map<String, Any?> {
             val app = ApplicationInfo.getInstance()
-            fun plugin(id: String) = PluginManagerCore.getPlugin(PluginId.getId(id))
             return linkedMapOf(
-                "plugin" to plugin(PLUGIN_ID)?.version,
+                "plugin" to InstalledPlugins.ownVersion(),
                 "ide" to app.fullApplicationName,
                 "build" to app.build.asString(),
                 "os" to "${System.getProperty("os.name")} ${System.getProperty("os.version")} ${System.getProperty("os.arch")}",
                 "jdk" to "${System.getProperty("java.version")} ${System.getProperty("java.vendor")}",
-                "androidPlugin" to plugin("org.jetbrains.android")?.let { "${it.version} enabled=${it.isEnabled}" },
-                "terminalPlugin" to plugin("org.jetbrains.plugins.terminal")?.let { "enabled=${it.isEnabled}" },
+                // No version: no lookup of another plugin's descriptor is public on both 242 and 2026.x.
+                "androidPlugin" to InstalledPlugins.describe(InstalledPlugins.ANDROID),
+                "terminalPlugin" to InstalledPlugins.describe(InstalledPlugins.TERMINAL),
             )
         }
     }

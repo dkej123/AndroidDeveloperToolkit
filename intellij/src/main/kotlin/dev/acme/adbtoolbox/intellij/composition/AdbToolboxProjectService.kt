@@ -12,11 +12,9 @@ import dev.acme.adbtoolbox.application.logcat.LogcatPackageChoice
 import dev.acme.adbtoolbox.application.logcat.LogcatPackageSelection
 import dev.acme.adbtoolbox.intellij.persistence.PinnedAppsPersistenceAdapter
 import dev.acme.adbtoolbox.application.devicefacts.DeviceFactsIntent
-import com.intellij.ide.plugins.PluginManagerCore
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
-import com.intellij.openapi.extensions.PluginId
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.application.PathManager
 import com.intellij.util.EnvironmentUtil
@@ -173,8 +171,6 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.security.MessageDigest
 
-private val ANDROID_PLUGIN_ID = PluginId.getId("org.jetbrains.android")
-private val TERMINAL_PLUGIN_ID = PluginId.getId("org.jetbrains.plugins.terminal")
 
 /**
  * The `:intellij` composition root (task 007, ADR 0001): the one place `:application` use cases
@@ -208,7 +204,7 @@ class AdbToolboxProjectService(private val project: Project) : Disposable {
     private val executableFileProbe = JvmExecutableFileProbe()
 
     /** Whether Android Studio's Android plugin can supply its shared adb/ddmlib runtime. */
-    val androidPluginPresent: Boolean = PluginManagerCore.getPlugin(ANDROID_PLUGIN_ID)?.isEnabled == true
+    val androidPluginPresent: Boolean = dev.acme.adbtoolbox.intellij.host.InstalledPlugins.androidLoaded
 
     private val hostPlatformProvider = JvmHostPlatformProvider()
 
@@ -449,7 +445,7 @@ class AdbToolboxProjectService(private val project: Project) : Disposable {
      * IntelliJ Platform install this module targets (unlike the optional Android plugin above),
      * but a user can still disable it, so [terminalLauncher] must not assume presence.
      */
-    val terminalPluginPresent: Boolean = PluginManagerCore.getPlugin(TERMINAL_PLUGIN_ID)?.isEnabled == true
+    val terminalPluginPresent: Boolean = dev.acme.adbtoolbox.intellij.host.InstalledPlugins.terminalLoaded
 
     /** Task 016/ADR 0007's Open-shell platform adapter. */
     val terminalLauncher: TerminalLauncher = TerminalLauncherAdapter(

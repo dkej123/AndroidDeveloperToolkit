@@ -1,4 +1,7 @@
 <idea-plugin>
-    <!-- Loaded only when org.jetbrains.android is present. Android-plugin-specific extensions
-         (e.g. preferring ddmlib/AdbLibService per docs/adr/0005) land in a later task. -->
+    <!-- Loaded only when org.jetbrains.android is loaded. The marker tells the plugin so through
+         public API on every supported platform (InstalledPlugins.androidLoaded). -->
+    <extensions defaultExtensionNs="com.intellij">
+        <applicationService serviceImplementation="dev.acme.adbtoolbox.intellij.host.AndroidPluginMarker"/>
+    </extensions>
 </idea-plugin>

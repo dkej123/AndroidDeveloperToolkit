@@ -1,12 +1,10 @@
 package dev.acme.adbtoolbox.intellij.mcp
 
-import com.intellij.ide.plugins.PluginManagerCore
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationActivationListener
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
-import com.intellij.openapi.extensions.PluginId
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.IdeFrame
 import dev.acme.adbtoolbox.adapters.jvm.mcp.LoopbackMcpHttpServer
@@ -139,7 +137,7 @@ class McpServerService : Disposable {
     }
 
     private fun pluginVersion(): String =
-        PluginManagerCore.getPlugin(PluginId.getId("com.github.dkwasniak.adbtoolbox"))?.version ?: "dev"
+        dev.acme.adbtoolbox.intellij.host.InstalledPlugins.ownVersion() ?: "dev"
 
     /** A catalog entry whose calls go to the active project's tool of the same name. */
     private inner class Delegating(template: McpTool) : McpTool {
