@@ -22,6 +22,15 @@ the Marketplace change notes and the GitHub release notes are generated from it
   control, Uninstall and Clear data always ask first; setup snippets in Settings.
 - Screenshots are also copied to the clipboard (Settings › Capture, on by default).
 
+### Changed
+- **Screen** section replaces Mirroring and Capture: one toolbar (Mirror, Screenshot, Record) with
+  running states on the buttons, mirroring options inline instead of a dialog (new: turn the
+  device screen off while mirroring), Full page under the Screenshot button's menu, and Inspect
+  layout on its own row.
+- **Display** section: font scale and display scale as two dropdowns side by side.
+- Device and Network sections can be collapsed; the choice is remembered across projects and restarts.
+- The device picker matches the design pixel for pixel, with an "Emulator" chip for emulators.
+
 ### Fixed
 - App icons were missing on current Android versions (the device could not load adaptive or
   vector icons from the helper process). Icons now also come from the launcher activity and stay

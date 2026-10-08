@@ -184,7 +184,7 @@
             <sc-if value="{{ showDeviceContent }}" hint-placeholder-val="{{ true }}">
               <div style="{{ sectionStyle }}" onMouseLeave="{{ caLeave }}">
                 <div style="{{ sectionHeaderStyle }}">
-                  <div style="{{ sectionTitleStyle }}">Current app</div>
+                  <div style="{{ secToggleStyle }}" style-hover="{{ secToggleHover }}" onClick="{{ sec.app.toggle }}" title="{{ sec.app.tip }}"><div style="{{ sec.app.chevStyle }}"></div><div style="{{ sectionTitleStyle }}">Current app</div></div>
                   <sc-if value="{{ caPending }}" hint-placeholder-val="{{ false }}">
                     <div style="{{ caPendingStyle }}" onClick="{{ caApplyPending }}" title="{{ caPendingTip }}">{{ caPendingLabel }}</div>
                   </sc-if>
@@ -192,6 +192,7 @@
                     <div style="{{ caMetaStyle }}" onClick="{{ caRefresh }}" title="Refresh now — also checks every 3 s while this view is visible">{{ caMeta }}</div>
                   </sc-if>
                 </div>
+                <sc-if value="{{ sec.app.open }}" hint-placeholder-val="{{ true }}">
 
                 <sc-if value="{{ caIsLoading }}" hint-placeholder-val="{{ false }}">
                   <div style="{{ caIdRowStyle }}">
@@ -279,65 +280,87 @@
                     <div style="{{ caUninstallStyle }}" style-hover="{{ caUninstallHover }}" onClick="{{ caUninstall }}" title="{{ caUninstallTip }}">Uninstall</div>
                   </div>
                 </sc-if>
-              </div>
-
-              <div style="{{ sectionStyle }}">
-                <div style="{{ sectionHeaderStyle }}">
-                  <div style="{{ sectionTitleStyle }}">Mirroring</div>
-                  <div style="{{ sectionMetaStyle }}">scrcpy 4.1</div>
-                </div>
-                <sc-if value="{{ isMirroring }}" hint-placeholder-val="{{ false }}">
-                  <div style="{{ runningRowStyle }}">
-                    <div style="{{ liveDotStyle }}"></div>
-                    <div style="{{ runningLabelStyle }}">Mirroring · 1080×2400 @ 60 fps</div>
-                    <div style="{{ spacerStyle }}"></div>
-                    <div style="{{ dangerGhostBtnStyle }}" style-hover="{{ hoverStyle }}" onClick="{{ toggleMirroring }}">Stop</div>
-                  </div>
-                  <div style="{{ helpTextStyle }}">Window is open on your desktop. Closing it also stops this session.</div>
-                </sc-if>
-                <sc-if value="{{ isNotMirroring }}" hint-placeholder-val="{{ true }}">
-                  <div style="{{ actionRowStyle }}">
-                    <div style="{{ primaryBtnStyle }}" style-hover="{{ primaryHoverStyle }}" onClick="{{ onStartMirroring }}" title="Start scrcpy for the selected device  ⇧⌘M">Start mirroring</div>
-                    <div style="{{ iconBtnStyle }}" style-hover="{{ hoverStyle }}" title="Mirroring options — bitrate, resolution, stay awake"><div style="{{ slidersIconStyle }}"></div></div>
-                  </div>
-                  <div style="{{ helpTextStyle }}">Launches Genymobile scrcpy. Turn on “stay awake” and “show touches” in options.</div>
                 </sc-if>
               </div>
 
               <div style="{{ sectionStyle }}">
                 <div style="{{ sectionHeaderStyle }}">
-                  <div style="{{ sectionTitleStyle }}">Capture</div>
-                  <div style="{{ sectionMetaStyle }}">~/Desktop</div>
+                  <div style="{{ secToggleStyle }}" style-hover="{{ secToggleHover }}" onClick="{{ sec.screen.toggle }}" title="{{ sec.screen.tip }}"><div style="{{ sec.screen.chevStyle }}"></div><div style="{{ sectionTitleStyle }}">Screen</div></div>
+                  <div style="{{ sectionMetaStyle }}">~/Desktop · scrcpy 4.1</div>
                 </div>
-                <sc-if value="{{ isRecording }}" hint-placeholder-val="{{ false }}">
-                  <div style="{{ recordingRowStyle }}">
-                    <div style="{{ recDotStyle }}"></div>
-                    <div style="{{ recLabelStyle }}">Recording · 00:42</div>
-                    <div style="{{ spacerStyle }}"></div>
-                    <div style="{{ dangerGhostBtnStyle }}" style-hover="{{ hoverStyle }}" onClick="{{ toggleRecording }}">Stop &amp; save</div>
+                <sc-if value="{{ sec.screen.open }}" hint-placeholder-val="{{ true }}">
+                  <div style="{{ screenBarStyle }}">
+                    <div style="{{ mirSplitStyle }}">
+                      <div style="{{ st.mirror.style }}" style-hover="{{ st.mirror.hover }}" onClick="{{ st.mirror.onClick }}" title="{{ st.mirror.tip }}">{{ st.mirror.icon }}</div>
+                      <div style="{{ mirCaretBtnStyle }}" style-hover="{{ mirCaretHover }}" onClick="{{ toggleMirOpts }}" title="Mirroring options — bitrate, resolution, stay awake, show touches"><div style="{{ caretIconStyle }}"></div></div>
+                    </div>
+                    <div style="{{ st.shot.style }}" style-hover="{{ st.shot.hover }}" onClick="{{ onScreenshot }}" title="{{ st.shot.tip }}">{{ st.shot.icon }}</div>
+                    <div style="{{ st.rec.style }}" style-hover="{{ st.rec.hover }}" onClick="{{ toggleRecording }}" title="{{ st.rec.tip }}">{{ st.rec.icon }}</div>
                   </div>
-                </sc-if>
-                <sc-if value="{{ isNotRecording }}" hint-placeholder-val="{{ true }}">
-                  <div style="{{ actionRowStyle }}">
-                    <div style="{{ secondaryBtnStyle }}" style-hover="{{ hoverStyle }}" onClick="{{ onScreenshot }}" title="{{ screenshotTip }}">Screenshot</div>
-                    <div style="{{ secondaryBtnStyle }}" style-hover="{{ hoverStyle }}" onClick="{{ toggleRecording }}" title="Record the screen — max 3 minutes per adb">Record</div>
-                    <div style="{{ secondaryBtnStyle }}" style-hover="{{ hoverStyle }}" onClick="{{ onInspect }}" title="Capture the screen and its view hierarchy into an editor tab  ⌥⇧⌘I">Inspect layout</div>
+                  <sc-if value="{{ mirOptsOpen }}" hint-placeholder-val="{{ false }}">
+                    <div style="{{ mirOptsPanelStyle }}">
+                      <div style="{{ mirOptsHeadStyle }}">
+                        <div style="{{ mirOptsTitleStyle }}">Mirroring options</div>
+                        <div style="{{ spacerStyle }}"></div>
+                        <div style="{{ mirOptsNoteStyle }}">{{ mirOptsNote }}</div>
+                      </div>
+                      <div style="{{ dispGridStyle }}">
+                        <sc-for list="{{ mirSelects }}" as="m" hint-placeholder-count="2">
+                          <div style="{{ dispColStyle }}">
+                            <div style="{{ dispLabelStyle }}">{{ m.label }}</div>
+                            <select style="{{ m.style }}" value="{{ m.value }}" onChange="{{ m.onChange }}" title="{{ m.tip }}">
+                              <sc-for list="{{ m.options }}" as="o" hint-placeholder-count="4">
+                                <option value="{{ o.value }}">{{ o.label }}</option>
+                              </sc-for>
+                            </select>
+                          </div>
+                        </sc-for>
+                      </div>
+                      <div style="{{ mirChecksStyle }}">
+                        <sc-for list="{{ mirChecks }}" as="c" hint-placeholder-count="3">
+                          <div style="{{ mirCheckRowStyle }}" onClick="{{ c.onClick }}" title="{{ c.tip }}">
+                            <div style="{{ c.boxStyle }}"><div style="{{ c.tickStyle }}"></div></div>
+                            <div style="{{ mirCheckLabelStyle }}">{{ c.label }}</div>
+                          </div>
+                        </sc-for>
+                      </div>
+                    </div>
+                  </sc-if>
+                  <div style="{{ screenInspectRowStyle }}">
+                    <div style="{{ st.inspect.style }}" style-hover="{{ st.inspect.hover }}" onClick="{{ onInspect }}" title="{{ st.inspect.tip }}">{{ st.inspect.icon }}<div>{{ st.inspect.label }}</div></div>
                   </div>
-                </sc-if>
-                <sc-if value="{{ inspectorOpen }}" hint-placeholder-val="{{ false }}">
+                  <sc-if value="{{ isMirroring }}" hint-placeholder-val="{{ false }}">
+                    <div style="{{ runningRowStyle }}">
+                      <div style="{{ liveDotStyle }}"></div>
+                      <div style="{{ runningLabelStyle }}">Mirroring · 1080×2400 @ 60 fps</div>
+                      <div style="{{ spacerStyle }}"></div>
+                      <div style="{{ dangerGhostBtnStyle }}" style-hover="{{ hoverStyle }}" onClick="{{ toggleMirroring }}">Stop</div>
+                    </div>
+                  </sc-if>
+                  <sc-if value="{{ isRecording }}" hint-placeholder-val="{{ false }}">
+                    <div style="{{ recordingRowStyle }}">
+                      <div style="{{ recDotStyle }}"></div>
+                      <div style="{{ recLabelStyle }}">Recording · 00:42</div>
+                      <div style="{{ spacerStyle }}"></div>
+                      <div style="{{ dangerGhostBtnStyle }}" style-hover="{{ hoverStyle }}" onClick="{{ toggleRecording }}">Stop &amp; save</div>
+                    </div>
+                  </sc-if>
+                  <sc-if value="{{ inspectorOpen }}" hint-placeholder-val="{{ false }}">
                   <div style="{{ resetRowStyle }}">
                     <div style="{{ overrideNoteStyle }}">Inspector open · captured 12:04:31</div>
                     <a href="ADB Toolbox Layout Inspector.dc.html" style="{{ linkStyle }}" title="Show the Layout Inspector editor tab">Show</a>
                     <div style="{{ linkStyle }}" onClick="{{ onInspect }}" title="Re-capture screen and hierarchy  ⌥⇧⌘I">Re-capture</div>
                   </div>
                 </sc-if>
+                </sc-if>
               </div>
 
               <div style="{{ sectionStyle }}">
                 <div style="{{ sectionHeaderStyle }}">
-                  <div style="{{ sectionTitleStyle }}">Device</div>
+                  <div style="{{ secToggleStyle }}" style-hover="{{ secToggleHover }}" onClick="{{ sec.device.toggle }}" title="{{ sec.device.tip }}"><div style="{{ sec.device.chevStyle }}"></div><div style="{{ sectionTitleStyle }}">Device</div></div>
                   <div style="{{ linkStyle }}">Copy report</div>
                 </div>
+                <sc-if value="{{ sec.device.open }}" hint-placeholder-val="{{ true }}">
                 <div style="{{ factsGridStyle }}">
                   <sc-for list="{{ deviceFacts }}" as="f" hint-placeholder-count="6">
                     <div style="{{ f.wrapStyle }}">
@@ -351,18 +374,33 @@
                   <div style="{{ secondaryBtnStyle }}" style-hover="{{ hoverStyle }}">Open shell</div>
                   <div style="{{ secondaryBtnStyle }}" style-hover="{{ hoverStyle }}">Wake</div>
                 </div>
+                </sc-if>
               </div>
 
             <div style="{{ sectionStyle }}">
               <div style="{{ sectionHeaderStyle }}">
-                <div style="{{ sectionTitleStyle }}">Font scale</div>
-                <div style="{{ fontStateStyle }}">{{ fontStateLabel }}</div>
+                <div style="{{ secToggleStyle }}" style-hover="{{ secToggleHover }}" onClick="{{ sec.display.toggle }}" title="{{ sec.display.tip }}"><div style="{{ sec.display.chevStyle }}"></div><div style="{{ sectionTitleStyle }}">Display</div></div>
+                <div style="{{ displayMetaStyle }}">{{ displayMeta }}</div>
               </div>
-              <div style="{{ chipRowStyle }}">
-                <sc-for list="{{ fontChips }}" as="c" hint-placeholder-count="7">
-                  <div style="{{ c.style }}" style-hover="{{ c.hoverStyle }}" onClick="{{ c.onClick }}" title="{{ c.tooltip }}">{{ c.label }}</div>
-                </sc-for>
-              </div>
+              <sc-if value="{{ sec.display.open }}" hint-placeholder-val="{{ true }}">
+                <div style="{{ dispGridStyle }}">
+                  <div style="{{ dispColStyle }}">
+                    <div style="{{ dispLabelStyle }}">Font scale</div>
+                    <select style="{{ fontSelectStyle }}" value="{{ fontSelectValue }}" onChange="{{ onFontSelect }}" disabled="{{ dis }}" title="settings put system font_scale">
+                      <sc-for list="{{ fontOptions }}" as="o" hint-placeholder-count="7">
+                        <option value="{{ o.value }}">{{ o.label }}</option>
+                      </sc-for>
+                    </select>
+                  </div>
+                  <div style="{{ dispColStyle }}">
+                    <div style="{{ dispLabelStyle }}">Display scale</div>
+                    <select style="{{ densitySelectStyle }}" value="{{ densitySelectValue }}" onChange="{{ onDensitySelect }}" disabled="{{ dis }}" title="wm density">
+                      <sc-for list="{{ densityOptions }}" as="o" hint-placeholder-count="7">
+                        <option value="{{ o.value }}">{{ o.label }}</option>
+                      </sc-for>
+                    </select>
+                  </div>
+                </div>
               <sc-if value="{{ fontCustomOpen }}" hint-placeholder-val="{{ false }}">
                 <div style="{{ customRowStyle }}">
                   <input style="{{ customFieldStyle }}" value="{{ fontCustomValue }}" onInput="{{ onFontCustomInput }}" />
@@ -373,24 +411,6 @@
                   </sc-if>
                 </div>
               </sc-if>
-              <sc-if value="{{ fontOverridden }}" hint-placeholder-val="{{ false }}">
-                <div style="{{ resetRowStyle }}">
-                  <div style="{{ overrideNoteStyle }}">Overriding device default (1×)</div>
-                  <div style="{{ linkStyle }}" onClick="{{ resetFont }}">Reset</div>
-                </div>
-              </sc-if>
-            </div>
-
-            <div style="{{ sectionStyle }}">
-              <div style="{{ sectionHeaderStyle }}">
-                <div style="{{ sectionTitleStyle }}">Display scale</div>
-                <div style="{{ densityStateStyle }}">{{ densityStateLabel }}</div>
-              </div>
-              <div style="{{ chipRowStyle }}">
-                <sc-for list="{{ densityChips }}" as="c" hint-placeholder-count="7">
-                  <div style="{{ c.style }}" style-hover="{{ c.hoverStyle }}" onClick="{{ c.onClick }}" title="{{ c.tooltip }}">{{ c.label }}</div>
-                </sc-for>
-              </div>
               <sc-if value="{{ densityCustomOpen }}" hint-placeholder-val="{{ false }}">
                 <div style="{{ customRowStyle }}">
                   <input style="{{ customFieldStyle }}" value="{{ densityCustomValue }}" onInput="{{ onDensityCustomInput }}" />
@@ -399,19 +419,27 @@
                 </div>
               </sc-if>
               <div style="{{ helpTextStyle }}">Percentages are relative to the physical density (420 dpi). Values outside 60–200% can make the UI unusable.</div>
+              <sc-if value="{{ fontOverridden }}" hint-placeholder-val="{{ false }}">
+                <div style="{{ resetRowStyle }}">
+                  <div style="{{ overrideNoteStyle }}">Overriding device default (1×)</div>
+                  <div style="{{ linkStyle }}" onClick="{{ resetFont }}">Reset</div>
+                </div>
+              </sc-if>
               <sc-if value="{{ densityOverridden }}" hint-placeholder-val="{{ false }}">
                 <div style="{{ resetRowStyle }}">
                   <div style="{{ overrideNoteStyle }}">Physical density is 420 dpi</div>
                   <div style="{{ linkStyle }}" onClick="{{ resetDensity }}">Reset to physical</div>
                 </div>
               </sc-if>
+              </sc-if>
             </div>
 
             <div style="{{ sectionStyle }}">
               <div style="{{ sectionHeaderStyle }}">
-                <div style="{{ sectionTitleStyle }}">Language &amp; region</div>
+                <div style="{{ secToggleStyle }}" style-hover="{{ secToggleHover }}" onClick="{{ sec.locale.toggle }}" title="{{ sec.locale.tip }}"><div style="{{ sec.locale.chevStyle }}"></div><div style="{{ sectionTitleStyle }}">Language &amp; region</div></div>
                 <div style="{{ localeStateStyle }}">{{ localeStateLabel }}</div>
               </div>
+              <sc-if value="{{ sec.locale.open }}" hint-placeholder-val="{{ true }}">
               <div style="{{ padRowStyle }}">
                 <div style="{{ searchWrapStyle }}">
                   <div style="{{ searchIconStyle }}"></div>
@@ -443,13 +471,15 @@
                   <div style="{{ linkStyle }}" onClick="{{ resetLocale }}">Reset to original</div>
                 </div>
               </sc-if>
+              </sc-if>
             </div>
 
             <div style="{{ sectionStyle }}">
               <div style="{{ sectionHeaderStyle }}">
-                <div style="{{ sectionTitleStyle }}">Location</div>
+                <div style="{{ secToggleStyle }}" style-hover="{{ secToggleHover }}" onClick="{{ sec.loc.toggle }}" title="{{ sec.loc.tip }}"><div style="{{ sec.loc.chevStyle }}"></div><div style="{{ sectionTitleStyle }}">Location</div></div>
                 <div style="{{ locMetaStyle }}">{{ locMeta }}</div>
               </div>
+              <sc-if value="{{ sec.loc.open }}" hint-placeholder-val="{{ true }}">
               <div style="{{ chipRowStyle }}">
                 <sc-for list="{{ locChips }}" as="c" hint-placeholder-count="8">
                   <div style="{{ c.style }}" style-hover="{{ c.hoverStyle }}" onClick="{{ c.onClick }}" title="{{ c.tooltip }}">{{ c.label }}</div>
@@ -467,13 +497,15 @@
                 </sc-if>
               </sc-if>
               <div style="{{ helpTextStyle }}">{{ locHelp }}</div>
+              </sc-if>
             </div>
 
             <div style="{{ sectionStyle }}">
               <div style="{{ sectionHeaderStyle }}">
-                <div style="{{ sectionTitleStyle }}">Quick toggles</div>
+                <div style="{{ secToggleStyle }}" style-hover="{{ secToggleHover }}" onClick="{{ sec.toggles.toggle }}" title="{{ sec.toggles.tip }}"><div style="{{ sec.toggles.chevStyle }}"></div><div style="{{ sectionTitleStyle }}">Quick toggles</div></div>
                 <div style="{{ togglesMetaStyle }}">{{ togglesMeta }}</div>
               </div>
+              <sc-if value="{{ sec.toggles.open }}" hint-placeholder-val="{{ true }}">
               <sc-for list="{{ toggleGroups }}" as="g" hint-placeholder-count="2">
                 <div style="{{ g.wrapStyle }}">
                   <div style="{{ g.labelStyle }}">{{ g.label }}</div>
@@ -514,6 +546,7 @@
                   </sc-for>
                 </div>
               </div>
+              </sc-if>
             </div>
             </sc-if>
           </div>
@@ -605,9 +638,10 @@
           <div style="{{ viewScrollStyle }}">
             <div style="{{ sectionStyle }}">
               <div style="{{ sectionHeaderStyle }}">
-                <div style="{{ sectionTitleStyle }}">Global HTTP proxy</div>
+                <div style="{{ secToggleStyle }}" style-hover="{{ secToggleHover }}" onClick="{{ sec.proxy.toggle }}" title="{{ sec.proxy.tip }}"><div style="{{ sec.proxy.chevStyle }}"></div><div style="{{ sectionTitleStyle }}">Global HTTP proxy</div></div>
                 <div style="{{ proxyStateStyle }}">{{ proxyStateLabel }}</div>
               </div>
+              <sc-if value="{{ sec.proxy.open }}" hint-placeholder-val="{{ true }}">
               <div style="{{ proxyFieldRowStyle }}">
                 <input style="{{ hostFieldStyle }}" value="{{ proxyHost }}" placeholder="host or IP" onInput="{{ onHostInput }}" />
                 <div style="{{ colonStyle }}">:</div>
@@ -633,12 +667,14 @@
               <sc-if value="{{ proxyDisabled }}" hint-placeholder-val="{{ true }}">
                 <div style="{{ helpTextStyle }}">Sets <span style="{{ inlineMonoStyle }}">settings put global http_proxy</span>. Recent targets are remembered per project.</div>
               </sc-if>
+              </sc-if>
             </div>
 
             <div style="{{ sectionStyle }}">
               <div style="{{ sectionHeaderStyle }}">
-                <div style="{{ sectionTitleStyle }}">Recent</div>
+                <div style="{{ secToggleStyle }}" style-hover="{{ secToggleHover }}" onClick="{{ sec.recent.toggle }}" title="{{ sec.recent.tip }}"><div style="{{ sec.recent.chevStyle }}"></div><div style="{{ sectionTitleStyle }}">Recent</div></div>
               </div>
+              <sc-if value="{{ sec.recent.open }}" hint-placeholder-val="{{ true }}">
               <sc-for list="{{ recentProxies }}" as="r" hint-placeholder-count="3">
                 <div style="{{ r.rowStyle }}" style-hover="{{ hoverStyle }}" onClick="{{ r.onClick }}">
                   <div style="{{ r.targetStyle }}">{{ r.target }}</div>
@@ -646,6 +682,7 @@
                   <div style="{{ r.noteStyle }}">{{ r.note }}</div>
                 </div>
               </sc-for>
+              </sc-if>
             </div>
           </div>
         </sc-if>
@@ -891,6 +928,7 @@ class Component extends DCLogic {
     toast: null, confirm: null, confirmPkg: null, confirmFrom: null, statusMessage: 'Ready',
     fg: 'debug', lastApp: 'debug', busy: null, pending: false, restarted: false, fresh: false, refreshing: false, appGone: false,
     detailPkg: null, detailFrom: null, detailTab: 'info',
+    mirOptsOpen: false, mirMaxSize: '0', mirBitrate: '8', mirStayAwake: true, mirShowTouches: true, mirScreenOff: false,
     clipCopy: true, inspectorOpen: false, localeQuery: '', locale: 'en-US',
     locName: null, locLat: 37.422, locLon: -122.0841, locCustomOpen: false, locLatIn: '52.2297', locLonIn: '21.0122', locErr: '',
     boldText: false, invert: false, layoutBounds: false, overdraw: false, profileBars: false, pointerLoc: false,
@@ -917,6 +955,7 @@ class Component extends DCLogic {
   caApplyPending() { clearTimeout(this._cp); this.setState({ fg: 'release', lastApp: 'release', pending: false, restarted: false, fresh: true }); }
 
   componentDidMount() {
+    try { const c = JSON.parse(localStorage.getItem('adbtb.collapsedSecs') || 'null'); if (c) this.setState({ collapsedSecs: c }); } catch (e) {}
     if (!this.frameRef.current || typeof ResizeObserver === 'undefined') return;
     this._ro = new ResizeObserver((e) => {
       const r = e[0].contentRect;
@@ -1037,7 +1076,7 @@ class Component extends DCLogic {
       hoverStyle: dis ? {} : th.hover,
       onClick: dis ? () => {} : () => { this.setState({ fontScale: v, fontCustomOpen: false }); this.flash(v === 1 ? 'Font scale reset to 1×' : 'Font scale set to ' + v + '×'); },
     })).concat([{
-      label: 'Custom…', tooltip: 'Enter any scale between 0.25 and 5',
+      label: '…', tooltip: 'Custom — enter any scale between 0.25 and 5',
       style: gate({ ...chipStyle(s.fontCustomOpen, false), borderStyle: 'dashed' }, dis),
       hoverStyle: dis ? {} : th.hover,
       onClick: dis ? () => {} : () => this.setState({ fontCustomOpen: !s.fontCustomOpen }),
@@ -1048,7 +1087,7 @@ class Component extends DCLogic {
       hoverStyle: dis ? {} : th.hover,
       onClick: dis ? () => {} : () => { this.setState({ density: v, densityCustomOpen: false }); this.flash(v === 100 ? 'Density reset to physical (420 dpi)' : 'Density set to ' + Math.round(420 * v / 100) + ' dpi'); },
     })).concat([{
-      label: 'Custom…', tooltip: 'Enter an absolute dpi value',
+      label: '…', tooltip: 'Custom — enter an absolute dpi value',
       style: gate({ ...chipStyle(s.densityCustomOpen, false), borderStyle: 'dashed' }, dis),
       hoverStyle: dis ? {} : th.hover,
       onClick: dis ? () => {} : () => this.setState({ densityCustomOpen: !s.densityCustomOpen }),
@@ -1389,7 +1428,7 @@ class Component extends DCLogic {
           label: n, tooltip: ld ? why : lat.toFixed(4) + ', ' + lon.toFixed(4) + ' — adb emu geo fix ' + lon + ' ' + lat,
           style: gate(chipStyle(!s.locCustomOpen && s.locName === n, false), ld), hoverStyle: ld ? {} : th.hover,
           onClick: ld ? () => {} : () => { this.setState({ locName: n, locLat: lat, locLon: lon, locCustomOpen: false, locErr: '' }); this.flash('Location set to ' + n + ' (' + lat.toFixed(4) + ', ' + lon.toFixed(4) + ')'); },
-        })).concat([{ label: 'Custom…', tooltip: ld ? why : 'Enter latitude and longitude in decimal degrees', style: gate({ ...chipStyle(s.locCustomOpen, false), borderStyle: 'dashed' }, ld), hoverStyle: ld ? {} : th.hover, onClick: ld ? () => {} : () => this.setState({ locCustomOpen: !s.locCustomOpen, locErr: '' }) }]);
+        })).concat([{ label: '…', tooltip: ld ? why : 'Custom — enter latitude and longitude in decimal degrees', style: gate({ ...chipStyle(s.locCustomOpen, false), borderStyle: 'dashed' }, ld), hoverStyle: ld ? {} : th.hover, onClick: ld ? () => {} : () => this.setState({ locCustomOpen: !s.locCustomOpen, locErr: '' }) }]);
       })(),
       locCustomOpen: s.locCustomOpen && !!dev.emulator && connected,
       locLatIn: s.locLatIn, locLonIn: s.locLonIn,
@@ -1458,6 +1497,9 @@ class Component extends DCLogic {
       emptyActionsStyle: { display: 'flex', gap: 6, marginTop: 4 },
       emptyFootStyle: { fontFamily: MONO, fontSize: 9.5, color: th.textFaint, marginTop: 8 },
 
+      sec: (() => { const o = {}; ["app","screen","device","display","font","density","locale","loc","toggles","proxy","recent"].forEach(k => { const open = !(this.state.collapsedSecs || {})[k]; o[k] = { open, tip: open ? 'Collapse section' : 'Expand section', chevStyle: { width: 0, height: 0, borderLeft: '4px solid ' + th.textDim, borderTop: '3.5px solid transparent', borderBottom: '3.5px solid transparent', transform: open ? 'rotate(90deg)' : 'none', transition: 'transform 120ms', flexShrink: 0 }, toggle: () => this.setState(st => { const c = { ...(st.collapsedSecs || {}), [k]: open }; try { localStorage.setItem('adbtb.collapsedSecs', JSON.stringify(c)); } catch (e) {} return { collapsedSecs: c }; }) }; }); return o; })(),
+      secToggleStyle: { display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', userSelect: 'none', minWidth: 0 },
+      secToggleHover: { opacity: 0.85 },
       sectionStyle: { display: 'flex', flexDirection: 'column', gap: 6, padding: '10px 0 12px', borderBottom: `1px solid ${th.border}`, flexShrink: 0 },
       sectionHeaderStyle: { display: 'flex', alignItems: 'baseline', gap: 8, padding: '0 10px' },
       sectionTitleStyle: sectionTitle,
@@ -1472,6 +1514,49 @@ class Component extends DCLogic {
       isMirroring: connected && s.mirroring, isNotMirroring: !(connected && s.mirroring),
       toggleMirroring: () => { const on = !s.mirroring; this.setState({ mirroring: on }); this.flash(on ? 'scrcpy started for ' + dev.name : 'Mirroring stopped'); },
       onStartMirroring: () => { if (dis) return; this.setState({ mirroring: true }); this.flash('scrcpy started for ' + dev.name); },
+      st: (() => {
+        const base = { width: 30, height: 28, borderRadius: 5, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: dis ? 'default' : 'pointer', flexShrink: 0, border: '1px solid ' + th.border, opacity: dis ? 0.45 : 1, position: 'relative' };
+        const mOn = connected && s.mirroring, rOn = connected && s.recording, iOn = connected && s.inspectorOpen;
+        const mk = (d, on, kind, tip) => ({
+          style: on ? { ...base, background: kind === 'red' ? th.redBg : kind === 'brand' ? th.brandBg : th.accentBg, borderColor: kind === 'red' ? th.redBorder : kind === 'brand' ? th.brandBorder : th.accentBorder } : base,
+          hover: dis || on ? {} : th.hover, tip,
+          icon: icon(d, on ? (kind === 'red' ? th.red : kind === 'brand' ? th.brand : th.accent) : th.textDim),
+        });
+        return {
+          mirror: { ...(b => ({ ...b, style: { ...b.style, borderRadius: '5px 0 0 5px' } }))(mk(['M2.5 3.2h11v7.3h-11z', 'M5.8 13.2h4.4', 'M8 10.5v2.7'], mOn, 'brand', mOn ? 'Stop mirroring  ⇧⌘M' : 'Start mirroring — opens a scrcpy window  ⇧⌘M')), onClick: () => { if (dis) return; this.setState({ mirroring: !mOn }); this.flash(mOn ? 'Mirroring stopped' : 'scrcpy started for ' + dev.name); } },
+          shot: mk(['M2.5 5.2h2.2l1.1-1.7h4.4l1.1 1.7h2.2v7.3h-11z', 'M8 6.6a2 2 0 1 0 0 4a2 2 0 0 0 0-4Z'], false, null, (s.clipCopy ? 'Screenshot — save PNG to ~/Desktop and copy to clipboard' : 'Screenshot — save PNG to ~/Desktop') + '  ⇧⌘S'),
+          rec: mk(rOn ? ['M5.3 5.3h5.4v5.4H5.3z'] : ['M8 2.8a5.2 5.2 0 1 0 0 10.4A5.2 5.2 0 0 0 8 2.8Z', 'M8 6.4a1.6 1.6 0 1 0 0 3.2a1.6 1.6 0 0 0 0-3.2Z'], rOn, 'red', rOn ? 'Stop & save recording' : 'Record the screen — max 3 minutes per adb'),
+          inspect: (() => { const b = mk(['M2.5 2.5h11v11h-11z', 'M2.5 6h11', 'M6.2 6v7.5', 'M8.6 8.6h2.8', 'M8.6 11h2'], iOn, 'accent', iOn ? 'Re-capture layout into the open Inspector tab  ⌥⇧⌘I' : 'Capture screen + view hierarchy into an editor tab  ⌥⇧⌘I'); return { ...b, label: iOn ? 'Re-capture layout' : 'Inspect layout', style: { ...b.style, width: 'auto', padding: '0 10px 0 8px', gap: 6, fontSize: 11.5, color: iOn ? th.accent : th.text, fontFamily: UI } }; })(),
+          opts: icon(['M2.8 4.5h10.4', 'M2.8 11.5h10.4', 'M6 3v3', 'M10 10v3'], th.textDim),
+        };
+      })(),
+      mirSplitStyle: { display: 'flex', flexShrink: 0 },
+      mirCaretBtnStyle: { width: 16, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '0 5px 5px 0', border: '1px solid ' + th.border, borderLeft: 'none', cursor: 'pointer', opacity: dis ? 0.45 : 1, background: s.mirOptsOpen ? th.accentBg : 'transparent' },
+      mirCaretHover: th.hover,
+      mirOptsOpen: s.mirOptsOpen,
+      toggleMirOpts: () => this.setState({ mirOptsOpen: !s.mirOptsOpen }),
+      mirOptsPanelStyle: { display: 'flex', flexDirection: 'column', gap: 8, margin: '0 10px', padding: '8px 0 10px', borderRadius: 5, border: '1px solid ' + th.border, background: th.header },
+      mirOptsHeadStyle: { display: 'flex', alignItems: 'baseline', gap: 6, padding: '0 10px' },
+      mirOptsTitleStyle: { fontSize: 11.5, fontWeight: 700 },
+      mirOptsNoteStyle: { fontSize: 10, color: th.textFaint, fontFamily: UI },
+      mirOptsNote: connected && s.mirroring ? 'applies on next start' : 'saved per device',
+      mirSelects: [
+        { label: 'Max resolution', key: 'mirMaxSize', tip: 'scrcpy --max-size', options: [['0', 'Original (2400)'], ['1920', '1920'], ['1280', '1280'], ['1024', '1024']] },
+        { label: 'Bitrate', key: 'mirBitrate', tip: 'scrcpy --video-bit-rate', options: [['4', '4 Mbps'], ['8', '8 Mbps (default)'], ['16', '16 Mbps'], ['32', '32 Mbps']] },
+      ].map(m => ({ ...m, value: s[m.key], style: { ...field, width: '100%', minWidth: 0, height: 24, padding: '0 4px', cursor: 'pointer', color: th.text }, options: m.options.map(([value, label]) => ({ value, label })), onChange: (e) => this.setState({ [m.key]: e.target.value }) })),
+      mirChecks: [
+        { key: 'mirStayAwake', label: 'Stay awake while mirroring', tip: 'scrcpy --stay-awake (USB only)' },
+        { key: 'mirShowTouches', label: 'Show touches', tip: 'scrcpy --show-touches' },
+        { key: 'mirScreenOff', label: 'Turn device screen off', tip: 'scrcpy --turn-screen-off — mirror stays on' },
+      ].map(c => ({ ...c, onClick: () => this.setState({ [c.key]: !s[c.key] }),
+        boxStyle: { width: 13, height: 13, borderRadius: 3, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: s[c.key] ? th.accent : 'transparent', border: '1px solid ' + (s[c.key] ? th.accent : th.borderStrong) },
+        tickStyle: s[c.key] ? { width: 6, height: 3.5, borderLeft: '1.5px solid #fff', borderBottom: '1.5px solid #fff', transform: 'rotate(-45deg)', marginTop: -2 } : { display: 'none' } })),
+      mirChecksStyle: { display: 'flex', flexDirection: 'column', gap: 5, padding: '0 10px' },
+      mirCheckRowStyle: { display: 'flex', alignItems: 'center', gap: 7, cursor: 'pointer', userSelect: 'none' },
+      mirCheckLabelStyle: { fontSize: 11.5, color: th.text },
+      screenInspectRowStyle: { display: 'flex', padding: '0 10px' },
+      screenBarStyle: { display: 'flex', alignItems: 'center', gap: 4, padding: '0 10px' },
+      screenDividerStyle: { width: 1, height: 16, background: th.border, margin: '0 4px', flexShrink: 0 },
       runningRowStyle: { display: 'flex', alignItems: 'center', gap: 7, margin: '0 10px', padding: '6px 8px', borderRadius: 5, background: th.brandBg, border: `1px solid ${th.brandBorder}` },
       liveDotStyle: { width: 7, height: 7, borderRadius: '50%', background: th.brand, animation: 'adb-pulse 1.6s ease-in-out infinite', flexShrink: 0 },
       runningLabelStyle: { fontSize: 11.5, fontWeight: 600, color: th.brand },
@@ -1515,7 +1600,27 @@ class Component extends DCLogic {
       onClearData: () => { if (dis) return; this.askConfirm('clear', selApp.pkg, 'apps'); },
       onUninstall: () => { if (dis) return; this.askConfirm('uninstall', selApp.pkg, 'apps'); },
 
-      fontChips, densityChips,
+      fontChips, densityChips, dis,
+      ...(() => {
+        const fOpts = [...FONT_PRESETS]; if (!fOpts.includes(s.fontScale)) fOpts.push(s.fontScale); fOpts.sort((a, b) => a - b);
+        const dOpts = [...DENSITY_PRESETS]; if (!dOpts.includes(s.density)) dOpts.push(s.density); dOpts.sort((a, b) => a - b);
+        const sel = (ov, open) => ({ ...field, width: '100%', minWidth: 0, height: 24, padding: '0 4px', cursor: dis ? 'default' : 'pointer', opacity: dis ? 0.45 : 1, color: ov && !open ? th.amber : th.text, borderColor: ov && !open ? th.amber : th.borderStrong, fontWeight: ov && !open ? 600 : 400 });
+        return {
+          fontOptions: fOpts.map(v => ({ value: String(v), label: v + '×' + (v === 1 ? '  (default)' : '') })).concat([{ value: 'custom', label: 'Custom…' }]),
+          densityOptions: dOpts.map(v => ({ value: String(v), label: v + '%  ·  ' + Math.round(420 * v / 100) + ' dpi' + (v === 100 ? ' (physical)' : '') })).concat([{ value: 'custom', label: 'Custom…' }]),
+          fontSelectValue: s.fontCustomOpen ? 'custom' : String(s.fontScale),
+          densitySelectValue: s.densityCustomOpen ? 'custom' : String(s.density),
+          fontSelectStyle: sel(s.fontScale !== 1, s.fontCustomOpen),
+          densitySelectStyle: sel(s.density !== 100, s.densityCustomOpen),
+          onFontSelect: (e) => { const v = e.target.value; if (v === 'custom') return this.setState({ fontCustomOpen: true }); const n = parseFloat(v); this.setState({ fontScale: n, fontCustomOpen: false }); this.flash(n === 1 ? 'Font scale reset to 1×' : 'Font scale set to ' + n + '×'); },
+          onDensitySelect: (e) => { const v = e.target.value; if (v === 'custom') return this.setState({ densityCustomOpen: true }); const n = parseFloat(v); this.setState({ density: n, densityCustomOpen: false }); this.flash(n === 100 ? 'Density reset to physical (420 dpi)' : 'Density set to ' + Math.round(420 * n / 100) + ' dpi'); },
+          dispGridStyle: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 8, padding: '0 10px' },
+          dispColStyle: { display: 'flex', flexDirection: 'column', gap: 3, minWidth: 0 },
+          dispLabelStyle: { fontSize: 10.5, color: th.textDim, fontFamily: UI },
+          displayMetaStyle: { fontFamily: MONO, fontSize: 10, color: (s.fontScale !== 1 || s.density !== 100) ? th.amber : th.textFaint, marginLeft: 'auto' },
+          displayMeta: dis ? '—' : ((s.fontScale !== 1 || s.density !== 100) ? [s.fontScale !== 1 ? s.fontScale + '×' : null, s.density !== 100 ? Math.round(420 * s.density / 100) + ' dpi' : null].filter(Boolean).join(' · ') + ' applied' : 'default'),
+        };
+      })(),
       chipRowStyle: { display: 'flex', gap: 4, flexWrap: 'wrap', padding: '0 10px' },
       fontStateStyle: { fontFamily: MONO, fontSize: 10, color: fontOverridden ? th.amber : th.textFaint, marginLeft: 'auto' },
       fontStateLabel: dis ? '—' : (fontOverridden ? s.fontScale + '× applied' : 'default'),

@@ -67,7 +67,7 @@ shelling out to `adb`, and fall back to the binary path from settings when it is
 | tool window root | `SimpleToolWindowPanel(true, true)` or plain `JPanel(BorderLayout())` |
 | title bar gear / more | tool window **title actions** (`ToolWindowEx.setTitleActions`) — do not draw your own |
 | device bar | custom `JPanel` with `JBUI.Borders.customLine(bottom)`; background `UIUtil.getPanelBackground()`-equivalent token |
-| device picker | `JBPopupFactory.createPopupChooserBuilder(devices)` with a custom renderer |
+| device picker | **pixel-faithful** custom overlay (`DevicePickerListPanel`): header, `JBList` + custom `ListCellRenderer` (dot · name · mono serial · chip) and footer; match `screenshots/device-picker.png` and README §1, no default chooser styling |
 | rail | `JPanel(VerticalFlowLayout)` of `ActionButton`s (`Presentation.icon`, `toggleable`), or a `ContentManager` with `ToolWindow.setTabActions` |
 | view host | `JBCardLayout` / `Wrapper`, one panel per view; keep instances alive so scroll and filters survive switching |
 | sections | `panel { group(...) }` (UI DSL v2) with `JBUI.Borders.customLineBottom` |

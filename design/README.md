@@ -98,13 +98,25 @@ States:
 - **no device** — 7px hollow dot (1.5px `textFaint` border) + "No device connected" (11.5px `textDim`)
   + refresh icon button.
 
-**Device picker popup** (click the selector): absolutely positioned `top: 62, left: 8, right: 8`,
-`panel` background, 1px `borderStrong`, radius 8, popup shadow. Uppercase header "Connected devices"
-(9.5px/700, letter-spacing .5, `textFaint`, padding 7px 10px 4px). Rows 28px: state dot (green online /
-amber unauthorized) · name (11.5px, 700 when selected) · serial (mono 9.5px, flex, ellipsis) ·
-connection chip. Selected row background `accentBg`. Footer on `header` background with a
-"Pair device over Wi-Fi…" link and the hint "↑↓ to select · ⏎ to apply" (mono 9px).
-In the platform, implement as a `JBPopup` list; keep ↑↓/Enter/Esc working.
+**Device picker popup** — ⚠ **reproduced pixel-faithfully** (handoff 4). Reference:
+`screenshots/device-picker.png`; golden `device-picker-dark-wide`.
+
+- **Container:** anchored under the device bar (`top: 62, left: 8, right: 8`), `panel` background,
+  1px `borderStrong`, radius 8, content clipped to the rounded shape. No max-height until > 8
+  devices; then the list scrolls and header/footer stay fixed. (A tool-window overlay, so the
+  CSS popup shadow is not drawn.)
+- **Header:** "CONNECTED DEVICES" — 9.5px / 700, uppercase, `textFaint`, padding 7px 10px 4px.
+- **Row** (28px, padding 0 10px, gap 7, centered; full-width `hover` fill under the pointer / ↑↓):
+  state dot 7px (`green` online, `amber` unauthorized) · name 11.5px, bold for the current device,
+  never truncated · serial mono 9.5px `textFaint`, remaining width, ellipsis · connection chip
+  right-aligned — "USB" / "Wi-Fi" / "Emulator", 9px / 700, padding 1px 4px, radius 3, 1px `border`
+  + `textDim`; unauthorized: chip border **and** text `amber`.
+- **Selected row:** full-bleed `accentBg` (composed over `panel`), bold name.
+- **Footer:** 1px top `border`, `header` background, padding 6px 10px: link "Pair device over
+  Wi-Fi…" left; hint "↑↓ to select · ⏎ to apply" right (mono 9px `textFaint`).
+- **Behaviour:** opens on click of the selector, or Space / ↓ when the selector has focus; ↑↓ move
+  the highlight, ⏎ applies, Esc / click outside closes without change. Opens with the current
+  device highlighted.
 
 ### 2. Rail (global)
 
@@ -122,34 +134,44 @@ uninstall", "Network — global proxy", "Logcat — severity, filters, search".
 
 ### 3. Device view
 
-Three sections, each `padding: 10px 0 12px` with a 1px bottom border; section header row
+Sections, each `padding: 10px 0 12px` with a 1px bottom border; section header row
 `padding: 0 10px`, title 12.5px/700, right-aligned meta in mono 9.5px `textFaint`.
 
-1. **Mirroring** — meta "scrcpy 2.7".
-   - idle: primary button **"Start mirroring"** (26px, accent, radius 5, 11.5px/600,
-     tooltip "Start scrcpy for the selected device  ⇧⌘M") + 22px options icon button
-     (tooltip "Mirroring options — bitrate, resolution, stay awake").
-     Help text (10.5px `textFaint`, padding 0 10px 2px): "Launches Genymobile scrcpy. Turn on
-     “stay awake” and “show touches” in options."
-   - scrcpy missing (user decision, 2026-09-29 — supersedes the toast-only story below): resolved
-     up front; **"Start mirroring"** is disabled (grey) and both its tooltip and the help text say why
-     and how to fix it, e.g. "scrcpy is not installed, or not on PATH. Install it (brew install
-     scrcpy) or set its path in Settings." (per OS: `brew install scrcpy`, `winget install --exact
-     Genymobile.scrcpy`, `sudo apt install scrcpy`; a broken Settings path says "Fix or clear it in
-     Settings."). Below it, link buttons **Open Settings · Check again · Install guide**.
-   - running: teal banner row (margin 0 10px, padding 6px 8px, radius 5, `brandBg`, 1px `brandBorder`):
-     pulsing 7px teal dot + "Mirroring · 1080×2400 @ 60 fps" (11.5px/600 teal) + outlined red
-     **"Stop"** (24px). Help text: "Window is open on your desktop. Closing it also stops this session."
-2. **Capture** — meta "~/Desktop".
-   - idle: three secondary buttons **"Screenshot"** (tooltip "Save a PNG to ~/Desktop"),
-     **"Full page"** (the foreground app's whole scrolling content, ADR 0013; tooltip "Save the
-     app's whole scrolling content as a PNG to ~/Desktop. The app is briefly moved to a tall virtual
-     screen, so its current screen is recreated.") and **"Record"** (tooltip "Record the screen —
-     max 3 minutes per adb").
-   - recording: red banner row (`redBg`, 1px `redBorder`) with pulsing red dot +
-     mono "Recording · 00:42" (11px/700 red) + outlined red **"Stop & save"**.
-     On stop: toast "Saved screen-2026-09-01.mp4" with a **Reveal** action.
-3. **Device** — header link "Copy report". Facts grid (3 cols, 2 when narrow, gap 8, padding 2px 10px 6px):
+**Collapsible** (handoff 4): every section header in the Device and Network views starts with a
+7×8px chevron (`textDim`, pointing down while open); clicking the chevron or the title folds the
+section to its header row (tooltip "Collapse section" / "Expand section"). Header meta and links
+stay visible and don't toggle. The collapsed set is application-level (`PropertiesComponent`
+`adbToolbox.collapsedSections`): the same in every project and for every device, restored after a
+restart. Keys: `app, screen, device, display, locale, loc, toggles, proxy, recent, throttle`.
+
+**Current app** (§3a) is the first section; then:
+
+1. **Screen** — merges the former Mirroring and Capture sections (handoff 4). Meta
+   "~/Desktop · scrcpy 4.1" (capture directory · resolved scrcpy).
+   - One toolbar row (padding 0 10, gap 4) of 30×28 icon buttons (radius 5, 1px `border`, 16px
+     glyph), tooltips carry the full description + shortcut:
+     **Mirror** — split button; its 16px caret ("Mirroring options — bitrate, resolution, stay
+     awake, show touches") opens the inline options panel; **Screenshot** — split button; its caret
+     opens a menu with **Full page** (ADR 0013; user decision 2026-10-08); **Record**.
+   - **Mirroring options** panel under the toolbar (margin 0 10, `header` fill, 1px `border`,
+     radius 5, padding 8 0 10, gap 8): title + note ("saved for this project"; "applies on next
+     start" while running — options are per project, not per device as the handoff suggests);
+     **Max resolution** (Original / 1920 / 1280 / 1024, `--max-size`) and **Bitrate** (4 / 8
+     default / 16 / 32 Mbps, `--video-bit-rate`) dropdowns side by side; checkboxes **Stay awake
+     while mirroring**, **Show touches**, **Turn device screen off** (`--turn-screen-off`). Every
+     change applies at once (no OK button); a persisted custom value joins its list in order.
+   - Second row: labelled 28px button **[layoutInspector] Inspect layout** ("Capture screen + view
+     hierarchy into an editor tab  ⌥⇧⌘I"); "Re-capture layout" in the accent tone while the tab is open.
+   - Active states are on the buttons: Mirror running → `brandBg` + `brandBorder`, teal glyph
+     (click stops); Record running → `redBg` + `redBorder`, red stop glyph (click = stop & save).
+     Status rows only while active: teal "Mirroring · 1080×2400 @ 60 fps" + **Stop**; red mono
+     "Recording · 00:42" + **Stop & save** (toast "Saved screen-….mp4" + **Reveal**).
+   - scrcpy missing (user decision, 2026-09-29): resolved up front; Mirror and its caret are
+     disabled, the tooltip and a help line under the toolbar say why and how to fix it, e.g.
+     "scrcpy is not installed, or not on PATH. Install it (brew install scrcpy) or set its path in
+     Settings." Below it, link buttons **Open Settings · Check again · Install guide**.
+   - Inspector open: note row "Inspector open · captured 12:04:31" + **Show** + **Re-capture**.
+2. **Device** — header link "Copy report".2. **Device** — header link "Copy report". Facts grid (3 cols, 2 when narrow, gap 8, padding 2px 10px 6px):
    key 9.5px/700 uppercase letter-spacing .4 `textFaint`, value mono 11px.
    Android "15 · API 35" / Resolution "1080×2400" / Density "428 dpi" (or the overridden dpi) /
    Battery "72% · charging" / ABI "arm64-v8a" / Uptime "4h 12m".
@@ -298,7 +320,7 @@ After Display scale. Header meta mono 10px: current locale "en-US" (`textFaint`)
 
 After Language & region. Header meta mono 9.5px: "Warsaw · 52.2297, 21.0122" / "37.4220, -122.0841" on emulators;
 "emulator only" on physical devices.
-- Chip row (preset chip primitive): Warsaw, London, New York, San Francisco, Tokyo, Sydney, Stockholm + dashed **Custom…**.
+- Chip row (preset chip primitive): Warsaw, London, New York, San Francisco, Tokyo, Sydney, Stockholm + dashed **"…"** (custom; accessible name "Custom location").
   Tooltip "52.2297, 21.0122 — adb emu geo fix 21.0122 52.2297" (note: longitude first). Selected chip uses the neutral
   selected style, not amber: an emulator has no "real" location to revert to, so it is not an override.
 - Custom: 84px "latitude" field, mono ",", 92px "longitude" field, secondary **Apply**. Errors (10.5px red, field turns red):
@@ -356,20 +378,17 @@ button is never the default. Esc = cancel.
 Shown in the Device view, below its Device section, while a device is connected — not a view of
 their own.
 
-1. **Font scale** — header meta mono 10px: "default" or "1.15× applied" (amber when overridden).
-   Chip row (gap 4, wrap, padding 0 10px): `0.85× 1× 1.15× 1.3× 1.5× 2×` + dashed **"Custom…"**.
-   Chip = 22px, radius 5, padding 0 9px, 11px. Unselected: `textDim` + 1px `border`.
-   Selected & default (1×): `text` + 700 + 1px `borderStrong`.
-   Selected & override: amber text + 700 + `amberBg` + 1px amber.
-   Tooltip on each preset: "settings put system font_scale <v>" (1× → "Device default").
-   Custom disclosure: 64px mono field + "×" unit + secondary **Apply**; invalid shows "0.25–5.0" in red.
-   When overridden: row with "Overriding device default (1×)" (10.5px `textFaint`) + **Reset** link.
-2. **Display scale** — header meta mono 10px "428 dpi" (amber when overridden).
-   Chips `80% 90% 100% 110% 125% 150%` + dashed **"Custom…"** (absolute dpi field, unit "dpi").
-   Preset tooltips show the resolved value, e.g. 125% → "535 dpi"; 100% → "Physical density — 428 dpi".
-   Help: "Percentages are relative to the physical density (428 dpi). Values outside 60–200% can make
-   the UI unusable." When overridden: "Physical density is 428 dpi" + **"Reset to physical"** link.
-3. **Quick toggles** — tile redesign (2026-09-30, user-supplied prototype revision). Header meta
+1. **Display** (handoff 4) — one section with **Font scale** and **Display scale** as two
+   dropdowns side by side (grid `repeat(auto-fit, minmax(130px,1fr))`, gap 8; stacks below ~290px).
+   Each column: 10.5px `textDim` label above a 24px combo. Font items: `0.85× 1× (default) 1.15×
+   1.3× 1.5× 2× Custom…`. Display items: `80% · 336 dpi … 100% · 420 dpi (physical) … 150% · 630 dpi
+   Custom…`. An applied custom value joins the list in order. Overridden combo: amber text + the
+   platform's warning outline. "Custom…" opens the inline field row below (× / dpi + Apply);
+   invalid shows the range in red. Header meta mono 10px: "default" or e.g. "1.15× · 504 dpi
+   applied" (amber). Help text ("Percentages are relative to the physical density (428 dpi). Values
+   outside 60–200% can make the UI unusable.") and the Reset rows ("Overriding device default (1×)"
+   + **Reset**; "Physical density is 428 dpi" + **Reset to physical**) follow below the grid.
+2. **Quick toggles** — tile redesign (2026-09-30, user-supplied prototype revision). Header meta
    mono 10px `textFaint` "N of 8 on" ("—" until loaded). Two groups, each a caption (9.5px/700
    uppercase `textFaint`) above a grid `repeat(auto-fill, minmax(150px, 1fr))`, gap 5, 10px inset:
    **Appearance & accessibility** — "Dark theme / night yes|no" (tooltip "cmd uimode night yes|no"),
@@ -635,7 +654,8 @@ when the dialog opens), `foreground = loading|app|home|lock|error` + `foreground
 `inspectorTabs[]` (`capture {png, tree, device, activity, time}`, `zoom`, `grid`, `picker`, `audit`, `problemsOnly`,
 `overlay {png, scale, opacity, blend, nudge}`, `selectedNode`), `mcp {access = off|read|full, port, token, sessions[], lastCall}`,
 `pendingConfirm.from` gains `agent`.
-Per application (not per project): `copyScreenshotsToClipboard = true`, `mcpAccess = off`, `mcpPort`, `mcpToken`.
+Per application (not per project): `copyScreenshotsToClipboard = true`, `mcpAccess = off`, `mcpPort`, `mcpToken`,
+`collapsedSections: Set<String>` (§3).
 Derived: `overrideCount = (fontScale != 1) + (density != 100) + proxyEnabled + (locale != originalLocale)` → status-bar chip and
 the amber rail badges. Everything device-touching is disabled when `deviceState != connected`.
 
@@ -750,5 +770,6 @@ designs/ADB Toolbox Layout Inspector.dc.html  inspector editor tab + accessibili
 designs/ADB Toolbox Settings.dc.html        Settings page incl. clipboard and AI agents (MCP)
 designs/ADB Toolbox Icons v2.dc.html        icon set v2 specimen incl. batch 2 icons
 icons/…                                     production SVGs (set v2 under icons/expui)
+screenshots/device-picker.png               pixel reference for the device picker (§1, handoff 4)
 IMPLEMENTATION.md                           IntelliJ Platform mapping + adb/scrcpy command reference
 ```
