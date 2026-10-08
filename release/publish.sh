@@ -37,7 +37,9 @@ fi
 git rev-parse -q --verify "refs/tags/$tag" >/dev/null && rdie "tag $tag already exists"
 
 # JetBrains requires the very first version of a new plugin ID to be uploaded through the website.
-if ! curl -fs "https://plugins.jetbrains.com/plugins/list?pluginId=$plugin_id" | grep -q "<id>$plugin_id</id>"; then
+# Ask by numeric ID: /plugins/list leaves out a plugin that is still awaiting its first approval,
+# while /api/plugins/<id> answers for it too.
+if ! curl -fs "https://plugins.jetbrains.com/api/plugins/$MARKETPLACE_PLUGIN_ID" | grep -q "\"xmlId\":\"$plugin_id\""; then
     zip="$(plugin_zip)"
     cat >&2 <<MSG
 [release] $plugin_id is not on JetBrains Marketplace yet. The first upload must be manual:
