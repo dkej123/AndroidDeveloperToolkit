@@ -305,8 +305,9 @@ class DisplayPanel(
         onSelectionChanged = { limit -> onSetProcessLimit(limit) }
     }
 
+    private val togglesTitleLabel = sectionTitleLabel("Quick toggles")
     private val togglesSection = section(
-        sectionHeader(sectionTitleLabel("Quick toggles"), togglesMetaLabel),
+        sectionHeader(togglesTitleLabel, togglesMetaLabel),
         toggleGroup(
             "Appearance & accessibility",
             listOf(darkThemeTile, animationsTile, showTouchesTile, talkBackTile) +
@@ -329,7 +330,7 @@ class DisplayPanel(
         rotationChipRow,
         processLimitRow,
         processLimitChipRow,
-    )
+    ).also { DesignSections.makeCollapsible(it, "toggles", togglesTitleLabel) }
 
     /** Language & region (design §3b) and Location (§3c) mount here, after Display scale. */
     val localeSlot: JPanel = sectionSlot()

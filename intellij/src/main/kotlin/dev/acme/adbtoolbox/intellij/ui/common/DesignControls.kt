@@ -185,6 +185,13 @@ class FlexRowLayout(private val gap: Int) : LayoutManager2 {
         addLayoutComponent(comp, name)
     }
 
+    /** The [FILL] / [SHRINK] constraint [comp] was added with, so a child can be swapped in place. */
+    internal fun constraintOf(comp: Component): String? = when {
+        fill === comp -> FILL
+        shrink === comp -> SHRINK
+        else -> null
+    }
+
     override fun removeLayoutComponent(comp: Component) {
         if (fill === comp) fill = null
         if (shrink === comp) shrink = null
@@ -392,6 +399,14 @@ object DesignSections {
         WrappingText(text, AdbToolboxTheme.Typography.caption, AdbToolboxTheme.Colors.textFaint).apply {
             border = JBUI.Borders.empty(0, AdbToolboxTheme.Spacing.sectionInset, AdbToolboxTheme.Spacing.s1, AdbToolboxTheme.Spacing.sectionInset)
         }
+
+    /** Makes [section] collapsible from its [title]; see [CollapsibleSection]. */
+    fun makeCollapsible(
+        section: JPanel,
+        key: String,
+        title: JComponent,
+        store: CollapsedSectionsStore = CollapsedSectionsStore(),
+    ): CollapsibleSection = CollapsibleSection.install(section, key, title, store)
 
     /** Applies the section's 10px horizontal inset to a row. */
     fun inset(component: JComponent): JComponent = component.apply {

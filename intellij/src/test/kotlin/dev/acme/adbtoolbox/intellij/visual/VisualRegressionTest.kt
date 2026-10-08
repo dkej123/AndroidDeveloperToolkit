@@ -86,6 +86,9 @@ class VisualRegressionTest : BasePlatformTestCase() {
         try {
             // The inspector shows the capture time; CI runs in UTC, so render every golden in UTC.
             java.util.TimeZone.setDefault(java.util.TimeZone.getTimeZone("UTC"))
+            // Goldens show every section expanded, whatever an earlier test or run left collapsed.
+            com.intellij.ide.util.PropertiesComponent.getInstance()
+                .unsetValue(dev.acme.adbtoolbox.intellij.ui.common.CollapsedSectionsStore.KEY)
             // Other platform tests can toggle the global loader. Production renders with it active,
             // and the visual gate must not depend on class/test execution order.
             IconLoader.activate()

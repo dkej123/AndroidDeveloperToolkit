@@ -66,7 +66,8 @@ class CurrentAppSection(
         toolTipText = "Held while the pointer is over this section. Applies when you move away, or click to update now."
         addActionListener { onApplyPending() }
     }
-    private val header = DesignSections.header(DesignSections.titleLabel("Current app"), flexRow(0, metaLabel, pendingLink))
+    private val titleLabel = DesignSections.titleLabel("Current app")
+    private val header = DesignSections.header(titleLabel, flexRow(0, metaLabel, pendingLink))
 
     private val tile = IconTile()
     private val labelLabel = JBLabel("").apply {
@@ -198,6 +199,7 @@ class CurrentAppSection(
     }
 
     private val section = DesignSections.section(header, skeleton, identityRow, errorBlock, factsPanel, helpLabel, actionRow, noteRow, destructiveZone)
+        .also { DesignSections.makeCollapsible(it, "app", titleLabel) }
 
     init {
         isOpaque = false

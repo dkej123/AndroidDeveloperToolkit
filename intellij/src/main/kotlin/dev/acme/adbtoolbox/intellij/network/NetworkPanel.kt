@@ -146,10 +146,12 @@ class NetworkPanel(
     private val helpTextLabel = DesignSections.helpText("")
 
     private val proxySection = DesignSections.section(proxyHeader, fieldRow, fieldErrorLabel, actionRow, activeBannerWrap, helpTextLabel)
+        .also { DesignSections.makeCollapsible(it, "proxy", proxyTitleLabel) }
 
     // ---- Recent section (`design/README.md` §6.2) ----
 
-    private val recentHeader = DesignSections.header(DesignSections.titleLabel("Recent"), null)
+    private val recentTitleLabel = DesignSections.titleLabel("Recent")
+    private val recentHeader = DesignSections.header(recentTitleLabel, null)
 
     private val recentsModel = DefaultListModel<ProxyEndpoint>()
     // `recentProxies[].rowStyle`: 26px rows, `padding: 0 10px`, mono 11px target on the leading edge.
@@ -172,6 +174,7 @@ class NetworkPanel(
     }
 
     private val recentSection = DesignSections.section(recentHeader, recentsList)
+        .also { DesignSections.makeCollapsible(it, "recent", recentTitleLabel) }
 
     // ---- Network throttling section (emulator console `network speed`/`delay`) ----
 
@@ -183,11 +186,12 @@ class NetworkPanel(
         onSelectionChanged = { throttle -> onApplyThrottle(throttle) }
     }
     private val throttleHelpLabel = DesignSections.helpText(THROTTLE_HELP_EMULATOR)
+    private val throttleTitleLabel = DesignSections.titleLabel("Network throttling")
     private val throttleSection = DesignSections.section(
-        DesignSections.header(DesignSections.titleLabel("Network throttling"), throttleMetaLabel),
+        DesignSections.header(throttleTitleLabel, throttleMetaLabel),
         DesignSections.inset(throttleChipRow),
         throttleHelpLabel,
-    )
+    ).also { DesignSections.makeCollapsible(it, "throttle", throttleTitleLabel) }
 
     private val contentPanel = ViewportWidthPanel().apply {
         layout = BoxLayout(this, BoxLayout.Y_AXIS)

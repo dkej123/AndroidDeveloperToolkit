@@ -113,20 +113,22 @@ class LocaleSection(
     private var activeTag: String? = null
     private var enabledForDevice = false
 
+    private val titleLabel = DesignSections.titleLabel("Language & region")
+
     init {
         layout = BorderLayout()
         isOpaque = false
         alignmentX = Component.LEFT_ALIGNMENT
         add(
             DesignSections.section(
-                DesignSections.header(DesignSections.titleLabel("Language & region"), metaLabel),
+                DesignSections.header(titleLabel, metaLabel),
                 searchRow,
                 DesignSections.inset(groupLabel),
                 rowsPanel,
                 emptyLabel,
                 helpLabel,
                 overrideRow,
-            ),
+            ).also { DesignSections.makeCollapsible(it, "locale", titleLabel) },
             BorderLayout.CENTER,
         )
         emptyLabel.isVisible = false
@@ -319,17 +321,19 @@ class LocationSection(
     private val helpLabel: dev.acme.adbtoolbox.intellij.ui.common.WrappingText = DesignSections.helpText(EMULATOR_HELP)
     private var emulator = false
 
+    private val titleLabel = DesignSections.titleLabel("Location")
+
     init {
         layout = BorderLayout()
         isOpaque = false
         alignmentX = Component.LEFT_ALIGNMENT
         add(
             DesignSections.section(
-                DesignSections.header(DesignSections.titleLabel("Location"), metaLabel),
+                DesignSections.header(titleLabel, metaLabel),
                 chipRow,
                 customBlock,
                 helpLabel,
-            ),
+            ).also { DesignSections.makeCollapsible(it, "loc", titleLabel) },
             BorderLayout.CENTER,
         )
     }

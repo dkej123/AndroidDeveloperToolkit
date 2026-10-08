@@ -223,13 +223,16 @@ class DeviceFactsPanel(
         DesignSections.section(DesignSections.header(DesignSections.titleLabel(title), meta), body)
 
     // The Device header keeps "Copy report" next to its title (`sectionHeaderStyle` gap 8, no spacer).
-    private fun deviceSection(): JPanel = DesignSections.section(
-        flexRow(AdbToolboxTheme.Spacing.s4, DesignSections.titleLabel("Device"), copyReportButton).apply {
-            border = JBUI.Borders.empty(0, AdbToolboxTheme.Spacing.sectionInset)
-        },
-        factsGrid,
-        deviceActionsSlot,
-    )
+    private fun deviceSection(): JPanel {
+        val title = DesignSections.titleLabel("Device")
+        return DesignSections.section(
+            flexRow(AdbToolboxTheme.Spacing.s4, title, copyReportButton).apply {
+                border = JBUI.Borders.empty(0, AdbToolboxTheme.Spacing.sectionInset)
+            },
+            factsGrid,
+            deviceActionsSlot,
+        ).also { DesignSections.makeCollapsible(it, "device", title) }
+    }
 
     private fun factCell(id: DeviceFactId, value: JBLabel): JPanel = JBPanel<Nothing>(BorderLayout()).apply {
         isOpaque = false
