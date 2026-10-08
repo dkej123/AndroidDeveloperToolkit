@@ -80,11 +80,19 @@ if (( do_screenshots )); then
     rlog "uploading ${#files[@]} screenshots from $dir"
     form=()
     for f in "${files[@]}"; do form+=(-F "$(basename "$f")=@$f;type=image/png"); done
+    before="$(curl -fs "$api?fullInfo=true" | python3 -c 'import json,sys; print(json.dumps([s["url"] for s in (json.load(sys.stdin).get("screens") or [])]))')"
     uploaded="$(call -X POST "$api/screenshots" "${form[@]}")"
-    # The upload adds images; PUT sets the page's list (and order) to exactly these.
-    order="$(python3 -c 'import json,sys; print(json.dumps([{"url": s["url"]} for s in json.load(sys.stdin)]))' <<<"$uploaded")"
+    # The upload answers with the page's whole list (earlier images included); PUT sets the page
+    # to exactly the images just uploaded, in file-name order.
+    order="$(BEFORE="$before" python3 -c '
+import json, os, sys
+before = {u.rsplit("/", 1)[-1] for u in json.loads(os.environ["BEFORE"])}
+print(json.dumps([{"url": s["url"]} for s in json.load(sys.stdin) if s["url"].rsplit("/", 1)[-1] not in before]))
+' <<<"$uploaded")"
+    count="$(python3 -c 'import json,sys; print(len(json.load(sys.stdin)))' <<<"$order")"
+    (( count == ${#files[@]} )) || rdie "expected ${#files[@]} new screenshots after the upload, found $count; page left unchanged"
     call -X PUT "$api/screenshots" -H 'Content-Type: application/json' --data "$order" >/dev/null
-    rlog "screenshots set: $(python3 -c 'import json,sys; print(len(json.load(sys.stdin)))' <<<"$order")"
+    rlog "screenshots set: $count"
 fi
 
 rlog "done: https://plugins.jetbrains.com/plugin/$MARKETPLACE_PLUGIN_ID"
