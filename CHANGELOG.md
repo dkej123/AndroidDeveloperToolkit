@@ -4,7 +4,7 @@ All notable changes to ADB Toolbox. Each release needs a `## [<version>] - <YYYY
 the Marketplace change notes and the GitHub release notes are generated from it
 (`release/README.md`).
 
-## [1.1.0] - 2026-10-07
+## [1.1.0] - 2026-10-08
 
 ### Added
 - **Layout Inspector** (Capture → Inspect layout, ⌥⇧⌘I): the screen and its UI hierarchy in an
