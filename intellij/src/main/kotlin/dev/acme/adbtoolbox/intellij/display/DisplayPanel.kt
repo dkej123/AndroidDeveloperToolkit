@@ -1,5 +1,12 @@
 package dev.acme.adbtoolbox.intellij.display
 
+import dev.acme.adbtoolbox.domain.display.density.DensityReading
+import dev.acme.adbtoolbox.intellij.ui.common.responsiveColumns
+import dev.acme.adbtoolbox.intellij.ui.common.labeledColumn
+import javax.swing.JComboBox
+import javax.swing.DefaultComboBoxModel
+import com.intellij.ui.SimpleListCellRenderer
+import com.intellij.openapi.ui.ComboBox
 import com.intellij.ui.scale.JBUIScale
 import dev.acme.adbtoolbox.domain.display.TalkBackProfile
 
@@ -76,57 +83,55 @@ class DisplayPanel(
     embedded: Boolean = false,
 ) : JBPanel<DisplayPanel>(BorderLayout()) {
 
-    private sealed interface FontChoice {
-        data class Preset(val value: Double) : FontChoice
-        data object Custom : FontChoice
+    /** A Font scale dropdown entry: a scale (preset, or an applied custom one) or "Custom…". */
+    private sealed interface FontItem {
+        data class Scale(val value: Double) : FontItem
+        data object Custom : FontItem
     }
 
-    private sealed interface DensityChoice {
-        data class Preset(val percent: Int) : DensityChoice
-        data object Custom : DensityChoice
+    /** A Display scale dropdown entry: a preset percentage, an applied custom dpi, or "Custom…". */
+    private sealed interface DensityItem {
+        data class Percent(val percent: Int) : DensityItem
+        data class Dpi(val dpi: Int) : DensityItem
+        data object Custom : DensityItem
     }
 
-    // ---- Font scale section (`design/README.md` §5.1) ----
+    // ---- Display section (design §5 "Display": font scale and display scale side by side) ----
 
-    private val fontTitleLabel = sectionTitleLabel("Font scale")
-    private val fontMetaLabel = sectionMetaLabel()
-    private val fontHeader = sectionHeader(fontTitleLabel, fontMetaLabel)
+    private val displayTitleLabel = sectionTitleLabel("Display")
+    private val displayMetaLabel = sectionMetaLabel()
 
-    private val fontChipRow: PresetChipRow<FontChoice> = PresetChipRow(
-        choices = FontScalePresets.VALUES.map { value ->
-            PresetChipChoice<FontChoice>(
-                value = FontChoice.Preset(value),
-                label = fontChipLabel(value),
-                isDefault = value == FontScalePresets.DEFAULT,
-            )
-        } + PresetChipChoice(
-            value = FontChoice.Custom,
-            label = "Custom…",
-            kind = PresetChipKind.CUSTOM,
-        ),
-        selected = FontChoice.Preset(FontScalePresets.DEFAULT),
-    ).apply {
-        // FlowLayout adds one hgap before the first chip; keep the chips on the 10px section inset.
-        border = JBUI.Borders.empty(0, AdbToolboxTheme.Spacing.sectionInset - AdbToolboxTheme.Spacing.s2)
-        chips.forEach { chip ->
-            chip.toolTipText = when (val value = chip.value) {
-                is FontChoice.Preset -> if (value.value == FontScalePresets.DEFAULT) {
-                    "Device default"
-                } else {
-                    "settings put system font_scale ${formatFontScale(value.value)}"
-                }
-                FontChoice.Custom -> "Enter any scale between ${formatFontScale(FontScaleRange.MIN)} and ${formatFontScale(FontScaleRange.MAX)}"
-            }
+    private var fontOverridden = false
+    private var densityOverridden = false
+    private var physicalDpi: Int? = null
+
+    /** Last confirmed values and whether a change is in flight, so picking the confirmed item applies only to undo a pending change. */
+    private var fontConfirmed: Double? = null
+    private var fontPending = false
+    private var densityConfirmed: DensityItem? = null
+    private var densityPending = false
+
+    /** Set while [update] rebuilds the dropdowns, so that never echoes back as a user choice. */
+    private var rendering = false
+
+    private val fontCombo: ComboBox<FontItem> = displayCombo<FontItem> { item ->
+        when (item) {
+            is FontItem.Scale -> fontChipLabel(item.value) + if (item.value == FontScalePresets.DEFAULT) "  (default)" else ""
+            FontItem.Custom -> "Custom…"
+            else -> ""
         }
-        onSelectionChanged = { choice ->
-            when (choice) {
-                is FontChoice.Preset -> {
-                    fontCustomRow.isVisible = false
-                    onApplyFontScale(choice.value)
-                }
-                FontChoice.Custom -> fontCustomRow.isVisible = true
-            }
-        }
+    }.apply {
+        getAccessibleContext().accessibleName = "Font scale"
+        model = DefaultComboBoxModel(fontItems(null).toTypedArray())
+        selectedItem = FontItem.Scale(FontScalePresets.DEFAULT)
+        addActionListener { if (!rendering) onFontChosen(selectedItem as? FontItem) }
+    }
+
+    private val densityCombo: ComboBox<DensityItem> = displayCombo<DensityItem> { item -> densityLabel(item) }.apply {
+        getAccessibleContext().accessibleName = "Display scale"
+        model = DefaultComboBoxModel(densityItems(null).toTypedArray())
+        selectedItem = DensityItem.Percent(100)
+        addActionListener { if (!rendering) onDensityChosen(selectedItem as? DensityItem) }
     }
 
     private val fontCustomField = customField()
@@ -141,40 +146,6 @@ class DisplayPanel(
     private val fontOverrideNoteLabel = overrideNoteLabel("Overriding device default (${fontChipLabel(FontScalePresets.DEFAULT)})")
     private val fontResetLink = linkButton("Reset") { onResetFontScale() }
     private val fontOverrideRow = overrideRow(fontOverrideNoteLabel, fontResetLink)
-
-    private val fontSection = section(fontHeader, fontChipRow, fontCustomRow, fontOverrideRow)
-
-    // ---- Display scale (density) section (`design/README.md` §5.2) ----
-
-    private val densityTitleLabel = sectionTitleLabel("Display scale")
-    private val densityMetaLabel = sectionMetaLabel()
-    private val densityHeader = sectionHeader(densityTitleLabel, densityMetaLabel)
-
-    private val densityChipRow: PresetChipRow<DensityChoice> = PresetChipRow(
-        choices = DensityPresets.PERCENTAGES.map { percent ->
-            PresetChipChoice<DensityChoice>(
-                value = DensityChoice.Preset(percent),
-                label = "$percent%",
-                isDefault = percent == 100,
-            )
-        } + PresetChipChoice(
-            value = DensityChoice.Custom,
-            label = "Custom…",
-            kind = PresetChipKind.CUSTOM,
-        ),
-        selected = DensityChoice.Preset(100),
-    ).apply {
-        border = JBUI.Borders.empty(0, AdbToolboxTheme.Spacing.sectionInset - AdbToolboxTheme.Spacing.s2)
-        onSelectionChanged = { choice ->
-            when (choice) {
-                is DensityChoice.Preset -> {
-                    densityCustomRow.isVisible = false
-                    onApplyDensityPreset(choice.percent)
-                }
-                DensityChoice.Custom -> densityCustomRow.isVisible = true
-            }
-        }
-    }
 
     private val densityCustomField = customField()
     private val densityCustomErrorLabel = errorLabel()
@@ -191,7 +162,93 @@ class DisplayPanel(
     private val densityResetLink = linkButton("Reset to physical") { onResetDensity() }
     private val densityOverrideRow = overrideRow(densityOverrideNoteLabel, densityResetLink)
 
-    private val densitySection = section(densityHeader, densityChipRow, densityCustomRow, densityHelpLabel, densityOverrideRow)
+    private val displaySection = section(
+        sectionHeader(displayTitleLabel, displayMetaLabel),
+        responsiveColumns(labeledColumn("Font scale", fontCombo), labeledColumn("Display scale", densityCombo)),
+        fontCustomRow,
+        densityCustomRow,
+        densityHelpLabel,
+        fontOverrideRow,
+        densityOverrideRow,
+    ).also { DesignSections.makeCollapsible(it, "display", displayTitleLabel) }
+
+    private fun onFontChosen(item: FontItem?) {
+        when (item) {
+            is FontItem.Scale -> {
+                fontCustomRow.isVisible = false
+                if (item.value != fontConfirmed || fontPending) onApplyFontScale(item.value)
+            }
+            FontItem.Custom -> fontCustomRow.isVisible = true
+            null -> Unit
+        }
+        revalidate()
+    }
+
+    private fun onDensityChosen(item: DensityItem?) {
+        when (item) {
+            is DensityItem.Percent -> {
+                densityCustomRow.isVisible = false
+                if (item != densityConfirmed || densityPending) onApplyDensityPreset(item.percent)
+            }
+            is DensityItem.Dpi -> {
+                densityCustomRow.isVisible = false
+                if (item != densityConfirmed || densityPending) onApplyCustomDensity(item.dpi)
+            }
+            DensityItem.Custom -> densityCustomRow.isVisible = true
+            null -> Unit
+        }
+        revalidate()
+    }
+
+    /** Presets plus an applied custom scale in order, then "Custom…". */
+    private fun fontItems(current: Double?): List<FontItem> =
+        (FontScalePresets.VALUES + listOfNotNull(current)).distinct().sorted().map { FontItem.Scale(it) } + FontItem.Custom
+
+    /** Preset percentages plus an applied dpi that matches none of them, in dpi order, then "Custom…". */
+    private fun densityItems(reading: DensityReading?): List<DensityItem> {
+        val presets = DensityPresets.PERCENTAGES.map { DensityItem.Percent(it) }
+        val custom = reading?.overrideDpi?.takeIf { dpi -> DensityPresets.PERCENTAGES.none { percentToDpi(reading.physicalDpi, it) == dpi } }
+        val items = if (custom == null || reading == null) {
+            presets
+        } else {
+            (presets + DensityItem.Dpi(custom)).sortedBy { item ->
+                when (item) {
+                    is DensityItem.Percent -> percentToDpi(reading.physicalDpi, item.percent)
+                    is DensityItem.Dpi -> item.dpi
+                    DensityItem.Custom -> Int.MAX_VALUE
+                }
+            }
+        }
+        return items + DensityItem.Custom
+    }
+
+    /** "125% · 525 dpi", "100% · 420 dpi (physical)"; just the percentage until the physical density is known. */
+    private fun densityLabel(item: DensityItem?): String {
+        val physical = physicalDpi
+        return when (item) {
+            is DensityItem.Percent -> when {
+                physical == null -> "${item.percent}%"
+                item.percent == 100 -> "100% · $physical dpi (physical)"
+                else -> "${item.percent}% · ${percentToDpi(physical, item.percent)} dpi"
+            }
+            is DensityItem.Dpi -> if (physical == null) "${item.dpi} dpi" else "${Math.round(item.dpi * 100.0 / physical)}% · ${item.dpi} dpi"
+            DensityItem.Custom -> "Custom…"
+            null -> ""
+        }
+    }
+
+    /** `header` meta: "default", or what is applied — "1.15× · 504 dpi applied" — in amber. */
+    private fun renderDisplayMeta(fontScale: Double?, overrideDpi: Int?) {
+        val applied = listOfNotNull(
+            fontScale?.takeIf { fontOverridden }?.let { "${formatFontScale(it)}×" },
+            overrideDpi?.takeIf { densityOverridden }?.let { "$it dpi" },
+        )
+        displayMetaLabel.text = if (applied.isEmpty()) "default" else applied.joinToString(" · ") + " applied"
+        displayMetaLabel.foreground = if (applied.isEmpty()) AdbToolboxTheme.Colors.textFaint else AdbToolboxTheme.Colors.amber
+    }
+
+    private var lastFontScale: Double? = null
+    private var lastOverrideDpi: Int? = null
 
     // ---- Quick toggles section (`design/README.md` §5.3; tile redesign 2026-09-30) ----
 
@@ -339,8 +396,7 @@ class DisplayPanel(
     private val contentPanel = ViewportWidthPanel().apply {
         layout = BoxLayout(this, BoxLayout.Y_AXIS)
         background = AdbToolboxTheme.Colors.bg
-        add(fontSection)
-        add(densitySection)
+        add(displaySection)
         add(localeSlot)
         add(locationSlot)
         add(togglesSection)
@@ -363,20 +419,29 @@ class DisplayPanel(
     }
 
     // ---- Test-only visibility hooks ----
-    internal val fontChipRowForTest: PresetChipRow<*> get() = fontChipRow
+    internal val fontComboForTest: JComboBox<*> get() = fontCombo
     internal val fontCustomFieldForTest: JTextField get() = fontCustomField
     internal val fontCustomRowForTest: JPanel get() = fontCustomRow
     internal val fontCustomErrorLabelForTest: JBLabel get() = fontCustomErrorLabel
     internal val fontResetButtonForTest: JButton get() = fontResetLink
     internal val fontOverrideRowForTest: JPanel get() = fontOverrideRow
-    internal val fontMetaLabelForTest: JBLabel get() = fontMetaLabel
+    internal val displayMetaLabelForTest: JBLabel get() = displayMetaLabel
 
-    internal val densityChipRowForTest: PresetChipRow<*> get() = densityChipRow
+    internal val densityComboForTest: JComboBox<*> get() = densityCombo
+
+    /** Picks the dropdown entry whose text is [label], as a user would. */
+    internal fun chooseForTest(combo: JComboBox<*>, label: String) {
+        val renderer = combo.renderer
+        @Suppress("UNCHECKED_CAST")
+        val index = (0 until combo.itemCount).first { i ->
+            ((renderer as javax.swing.ListCellRenderer<Any?>).getListCellRendererComponent(javax.swing.JList(), combo.getItemAt(i), i, false, false) as javax.swing.JLabel).text == label
+        }
+        combo.selectedIndex = index
+    }
     internal val densityCustomFieldForTest: JTextField get() = densityCustomField
     internal val densityCustomRowForTest: JPanel get() = densityCustomRow
     internal val densityResetButtonForTest: JButton get() = densityResetLink
     internal val densityOverrideRowForTest: JPanel get() = densityOverrideRow
-    internal val densityMetaLabelForTest: JBLabel get() = densityMetaLabel
     internal val densityHelpLabelForTest: javax.swing.text.JTextComponent get() = densityHelpLabel
 
     internal val darkThemeToggleForTest: JToggleButton get() = darkThemeToggle
@@ -405,24 +470,30 @@ class DisplayPanel(
             is FontScaleState.Applying -> state.current
             is FontScaleState.Error -> state.current
         }
-        val overridden = current != null && current != FontScalePresets.DEFAULT
-        fontMetaLabel.text = when {
-            current == null -> "—"
-            overridden -> "${formatFontScale(current)}× applied"
-            else -> "default"
+        fontOverridden = current != null && current != FontScalePresets.DEFAULT
+        fontConfirmed = current
+        fontPending = state is FontScaleState.Applying
+        lastFontScale = current
+        rendering = true
+        try {
+            if (current != null) {
+                val customShown = fontCombo.selectedItem == FontItem.Custom && fontCustomRow.isVisible
+                fontCombo.model = DefaultComboBoxModel(fontItems(current.takeIf { it !in FontScalePresets.VALUES }).toTypedArray())
+                fontCombo.selectedItem = if (customShown) FontItem.Custom else FontItem.Scale(current)
+            }
+            fontCombo.isEnabled = !fontPending
+            markOverridden(fontCombo, fontOverridden)
+        } finally {
+            rendering = false
         }
-        fontMetaLabel.foreground = if (overridden) AdbToolboxTheme.Colors.amber else AdbToolboxTheme.Colors.textFaint
-        if (current != null) {
-            val selection = if (current in FontScalePresets.VALUES) FontChoice.Preset(current) else FontChoice.Custom
-            fontChipRow.setSelectedValue(selection)
-        }
-        fontChipRow.applyPending = state is FontScaleState.Applying
-        fontOverrideRow.isVisible = overridden
+        renderDisplayMeta(lastFontScale, lastOverrideDpi)
+        fontOverrideRow.isVisible = fontOverridden
         if (state is FontScaleState.Error) {
             fontCustomErrorLabel.text = state.message
             fontCustomErrorLabel.isVisible = true
             fontCustomRow.isVisible = true
         }
+        fontCombo.repaint()
     }
 
     fun update(state: DensityViewState) {
@@ -432,46 +503,41 @@ class DisplayPanel(
             is DensityViewState.Applying -> state.reading
             is DensityViewState.Error -> state.reading
         }
-        val overridden = reading?.overrideDpi != null
-        densityMetaLabel.text = when {
-            reading == null -> "—"
-            overridden -> "${reading.overrideDpi} dpi"
-            else -> "${reading.physicalDpi} dpi"
-        }
-        densityMetaLabel.foreground = if (overridden) AdbToolboxTheme.Colors.amber else AdbToolboxTheme.Colors.textFaint
-        if (reading != null) {
-            densityChipRow.chips.forEach { chip ->
-                val value = chip.value
-                chip.toolTipText = when (value) {
-                    is DensityChoice.Preset -> if (value.percent == 100) {
-                        "Physical density — ${reading.physicalDpi} dpi"
-                    } else {
-                        "${percentToDpi(reading.physicalDpi, value.percent)} dpi"
-                    }
-                    DensityChoice.Custom -> "Enter an absolute dpi value"
+        densityOverridden = reading?.overrideDpi != null
+        densityPending = state is DensityViewState.Applying
+        lastOverrideDpi = reading?.overrideDpi
+        rendering = true
+        try {
+            if (reading != null) {
+                physicalDpi = reading.physicalDpi
+                val selection = when (val dpi = reading.overrideDpi) {
+                    null -> DensityItem.Percent(100)
+                    else -> DensityPresets.PERCENTAGES.firstOrNull { percentToDpi(reading.physicalDpi, it) == dpi }
+                        ?.let { DensityItem.Percent(it) } ?: DensityItem.Dpi(dpi)
                 }
+                densityConfirmed = selection
+                val customShown = densityCombo.selectedItem == DensityItem.Custom && densityCustomRow.isVisible
+                densityCombo.model = DefaultComboBoxModel(densityItems(reading).toTypedArray())
+                densityCombo.selectedItem = if (customShown) DensityItem.Custom else selection
+                densityCombo.toolTipText = "Percentages are relative to the physical density — ${reading.physicalDpi} dpi"
+                densityHelpLabel.text =
+                    "Percentages are relative to the physical density (${reading.physicalDpi} dpi). " +
+                        "Values outside ${DensityPresets.SAFE_RANGE_MIN_PERCENT}–${DensityPresets.SAFE_RANGE_MAX_PERCENT}% can make the UI unusable."
+                densityOverrideNoteLabel.text = "Physical density is ${reading.physicalDpi} dpi"
             }
-            densityHelpLabel.text =
-                "Percentages are relative to the physical density (${reading.physicalDpi} dpi). " +
-                    "Values outside ${DensityPresets.SAFE_RANGE_MIN_PERCENT}–${DensityPresets.SAFE_RANGE_MAX_PERCENT}% can make the UI unusable."
-            densityOverrideNoteLabel.text = "Physical density is ${reading.physicalDpi} dpi"
-            val selection = if (reading.overrideDpi == null) {
-                DensityChoice.Preset(100)
-            } else {
-                DensityPresets.PERCENTAGES
-                    .firstOrNull { percentToDpi(reading.physicalDpi, it) == reading.overrideDpi }
-                    ?.let { DensityChoice.Preset(it) }
-                    ?: DensityChoice.Custom
-            }
-            densityChipRow.setSelectedValue(selection)
+            densityCombo.isEnabled = !densityPending
+            markOverridden(densityCombo, densityOverridden)
+        } finally {
+            rendering = false
         }
-        densityChipRow.applyPending = state is DensityViewState.Applying
-        densityOverrideRow.isVisible = overridden
+        renderDisplayMeta(lastFontScale, lastOverrideDpi)
+        densityOverrideRow.isVisible = densityOverridden
         if (state is DensityViewState.Error) {
             densityCustomErrorLabel.text = state.message
             densityCustomErrorLabel.isVisible = true
             densityCustomRow.isVisible = true
         }
+        densityCombo.repaint()
     }
 
     fun update(state: QuickTogglesViewState) {
@@ -655,6 +721,26 @@ class DisplayPanel(
     }
 
     private companion object {
+        /** A 24px dropdown for the Display section; [markOverridden] colours its shown value. */
+        fun <T> displayCombo(label: (T?) -> String): ComboBox<T> = ComboBox<T>().apply {
+            font = AdbToolboxTheme.Typography.body.deriveFont(JBUIScale.scale(11.5f))
+            @Suppress("UNCHECKED_CAST")
+            renderer = SimpleListCellRenderer.create { cell, value, _ -> cell.text = label(value as T?) }
+            putClientProperty(DEFAULT_FOREGROUND, foreground)
+        }
+
+        private const val DEFAULT_FOREGROUND = "adbToolbox.defaultForeground"
+
+        /**
+         * Design §5 "Overridden combo: amber text + amber border". The combo UI paints its shown value
+         * in the combo's own foreground, so that is what turns amber; the platform's warning outline
+         * is the closest native border.
+         */
+        fun markOverridden(combo: JComboBox<*>, overridden: Boolean) {
+            combo.foreground = if (overridden) AdbToolboxTheme.Colors.amber else combo.getClientProperty(DEFAULT_FOREGROUND) as? java.awt.Color
+            combo.putClientProperty("JComponent.outline", if (overridden) "warning" else null)
+        }
+
         fun sectionTitleLabel(text: String) = DesignSections.titleLabel(text)
 
         fun sectionMetaLabel() = DesignSections.metaLabel()

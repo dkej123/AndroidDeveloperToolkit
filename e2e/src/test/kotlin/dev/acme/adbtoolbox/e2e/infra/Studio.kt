@@ -211,6 +211,24 @@ class Studio(val robot: RemoteRobot = RemoteRobot(E2eConfig.robotUrl)) {
 
     fun pressEnter() = robot.keyboard { enter() }
 
+    /** Chooses the first entry of the dropdown named [name] whose shown text starts with [prefix], as a user would. */
+    fun choose(name: String, prefix: String) {
+        awaitUntil(E2eConfig.deviceTimeout(15), Duration.ofMillis(300), "'$name' to be enabled") { isEnabled(byName(name)) }
+        byName(name).runJs(
+            """
+            var r = component.getRenderer();
+            var found = -1;
+            for (var i = 0; i < component.getItemCount() && found < 0; i++) {
+                var c = r.getListCellRendererComponent(new javax.swing.JList(), component.getItemAt(i), i, false, false);
+                if (String(c.getText()).indexOf(${quoteJs(prefix)}) == 0) found = i;
+            }
+            if (found < 0) throw new Error("no entry starting with " + ${quoteJs(prefix)});
+            component.setSelectedIndex(found);
+            """.trimIndent(),
+            true,
+        )
+    }
+
     /** Clicks the item [text] of the popup menu that is open now (menus live outside the tool window). */
     fun clickMenuItem(text: String) {
         robot.find(ComponentFixture::class.java, byXpath("//div[@class='JBMenuItem' and @text=${quote(text)}]"), ui).click()

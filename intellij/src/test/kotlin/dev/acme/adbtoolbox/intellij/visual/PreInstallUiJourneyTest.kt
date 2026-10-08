@@ -65,7 +65,7 @@ class PreInstallUiJourneyTest : BasePlatformTestCase() {
             onSetAnimationsOff = {},
         )
 
-        panel.fontChipRowForTest.chips.first { it.text == "Custom…" }.doClick()
+        panel.chooseForTest(panel.fontComboForTest, "Custom…")
         panel.fontCustomFieldForTest.text = "abc"
         panel.fontCustomFieldForTest.postActionEvent()
         assertTrue(panel.fontCustomErrorLabelForTest.isVisible)

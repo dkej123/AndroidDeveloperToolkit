@@ -52,61 +52,57 @@ class DisplayPanelTest : BasePlatformTestCase() {
 
     // ---- Font scale ----
 
-    fun `test clicking a font-scale preset chip invokes onApplyFontScale with its value`() {
+    fun `test choosing a font-scale preset invokes onApplyFontScale with its value`() {
         var applied: Double? = null
         val p = panel(onApplyFontScale = { applied = it })
 
-        p.fontChipRowForTest.chips.first { it.label == "1.3×" }.doClick()
+        p.chooseForTest(p.fontComboForTest, "1.3×")
 
         assertEquals(1.3, applied)
     }
 
-    fun `test clicking the still-confirmed chip while another scale is being applied applies it again`() {
+    fun `test choosing the still-confirmed scale while another is being applied applies it again`() {
         val applied = mutableListOf<Double>()
         val p = panel(onApplyFontScale = { applied += it })
         p.update(FontScaleState.Idle(current = 1.0))
-        p.fontChipRowForTest.chips.first { it.label == "1.5×" }.doClick()
+        p.chooseForTest(p.fontComboForTest, "1.5×")
         // Until the readback confirms 1.5, the row still shows the confirmed 1× as selected.
         p.update(FontScaleState.Applying(current = 1.0, target = 1.5))
 
-        p.fontChipRowForTest.chips.first { it.label == "1×" }.doClick()
+        p.chooseForTest(p.fontComboForTest, "1×  (default)")
 
         assertEquals(listOf(1.5, 1.0), applied)
     }
 
-    fun `test clicking the already-selected font-scale chip when nothing is pending applies nothing`() {
+    fun `test choosing the confirmed font scale when nothing is pending applies nothing`() {
         val applied = mutableListOf<Double>()
         val p = panel(onApplyFontScale = { applied += it })
         p.update(FontScaleState.Idle(current = 1.0))
 
-        p.fontChipRowForTest.chips.first { it.label == "1×" }.doClick()
+        p.chooseForTest(p.fontComboForTest, "1×  (default)")
 
         assertEquals(emptyList<Double>(), applied)
     }
 
-    fun `test clicking the font-scale Custom chip reveals the custom disclosure row without applying`() {
+    fun `test choosing Custom… reveals the custom disclosure row without applying`() {
         var invoked = false
         val p = panel(onApplyFontScale = { invoked = true })
 
-        p.fontChipRowForTest.chips.first { it.label == "Custom…" }.doClick()
+        p.chooseForTest(p.fontComboForTest, "Custom…")
 
         assertTrue(p.fontCustomRowForTest.isVisible)
         assertFalse(invoked)
     }
 
-    fun `test every font-scale chip remains inside the row at dock width`() {
+    fun `test the two dropdowns sit side by side at dock width and stack when narrow`() {
         val p = panel()
         p.setSize(346, 620)
         recursivelyLayout(p)
-        // The wrapped row publishes its new height after the layout pass (PresetChipRow.setBounds).
-        com.intellij.testFramework.PlatformTestUtil.dispatchAllEventsInIdeEventQueue()
-        recursivelyLayout(p)
+        assertEquals(p.fontComboForTest.parent.y, p.densityComboForTest.parent.y)
 
-        val row = p.fontChipRowForTest
-        row.chips.forEach { chip ->
-            assertTrue("${chip.text} exceeds row width", chip.x + chip.width <= row.width)
-            assertTrue("${chip.text} exceeds row height", chip.y + chip.height <= row.height)
-        }
+        p.setSize(260, 620)
+        recursivelyLayout(p)
+        assertTrue(p.densityComboForTest.parent.y > p.fontComboForTest.parent.y)
     }
 
     fun `test pressing Enter in the font-scale custom field applies the parsed value`() {
@@ -145,8 +141,8 @@ class DisplayPanelTest : BasePlatformTestCase() {
 
         p.update(FontScaleState.Idle(1.0))
 
-        assertEquals("default", p.fontMetaLabelForTest.text)
-        assertEquals(AdbToolboxTheme.Colors.textFaint, p.fontMetaLabelForTest.foreground)
+        assertEquals("default", p.displayMetaLabelForTest.text)
+        assertEquals(AdbToolboxTheme.Colors.textFaint, p.displayMetaLabelForTest.foreground)
         assertFalse(p.fontOverrideRowForTest.isVisible)
     }
 
@@ -155,9 +151,16 @@ class DisplayPanelTest : BasePlatformTestCase() {
 
         p.update(FontScaleState.Idle(1.3))
 
-        assertEquals("1.3× applied", p.fontMetaLabelForTest.text)
-        assertEquals(AdbToolboxTheme.Colors.amber, p.fontMetaLabelForTest.foreground)
+        assertEquals("1.3× applied", p.displayMetaLabelForTest.text)
+        assertEquals(AdbToolboxTheme.Colors.amber, p.displayMetaLabelForTest.foreground)
+        assertEquals(AdbToolboxTheme.Colors.amber, p.fontComboForTest.foreground)
+        assertEquals("warning", p.fontComboForTest.getClientProperty("JComponent.outline"))
         assertTrue(p.fontOverrideRowForTest.isVisible)
+
+        p.update(FontScaleState.Idle(1.0))
+        assertFalse(p.fontComboForTest.foreground == AdbToolboxTheme.Colors.amber)
+        assertNull(p.fontComboForTest.getClientProperty("JComponent.outline"))
+        assertFalse(p.fontOverrideRowForTest.isVisible)
     }
 
     fun `test update with FontScaleState Error shows the error message next to the custom field`() {
@@ -172,23 +175,23 @@ class DisplayPanelTest : BasePlatformTestCase() {
 
     // ---- Display scale (density) ----
 
-    fun `test clicking a density preset chip invokes onApplyDensityPreset with its percent`() {
+    fun `test choosing a density preset invokes onApplyDensityPreset with its percent`() {
         var applied: Int? = null
         val p = panel(onApplyDensityPreset = { applied = it })
 
-        p.densityChipRowForTest.chips.first { it.label == "125%" }.doClick()
+        p.chooseForTest(p.densityComboForTest, "125%")
 
         assertEquals(125, applied)
     }
 
-    fun `test clicking the still-confirmed density chip while another density is being applied applies it again`() {
+    fun `test choosing the still-confirmed density while another is being applied applies it again`() {
         val applied = mutableListOf<Int>()
         val p = panel(onApplyDensityPreset = { applied += it })
         p.update(DensityViewState.Idle(DensityReading(420, null)))
-        p.densityChipRowForTest.chips.first { it.label == "125%" }.doClick()
+        p.chooseForTest(p.densityComboForTest, "125% · 525 dpi")
         p.update(DensityViewState.Applying(DensityReading(420, null)))
 
-        p.densityChipRowForTest.chips.first { it.label == "100%" }.doClick()
+        p.chooseForTest(p.densityComboForTest, "100% · 420 dpi (physical)")
 
         assertEquals(listOf(125, 100), applied)
     }
@@ -227,8 +230,8 @@ class DisplayPanelTest : BasePlatformTestCase() {
 
         p.update(DensityViewState.Idle(DensityReading(420, null)))
 
-        assertEquals("420 dpi", p.densityMetaLabelForTest.text)
-        assertEquals(AdbToolboxTheme.Colors.textFaint, p.densityMetaLabelForTest.foreground)
+        assertEquals("default", p.displayMetaLabelForTest.text)
+        assertEquals(AdbToolboxTheme.Colors.textFaint, p.displayMetaLabelForTest.foreground)
         assertFalse(p.densityOverrideRowForTest.isVisible)
         assertTrue(p.densityHelpLabelForTest.text.contains("420 dpi"))
     }
@@ -238,9 +241,29 @@ class DisplayPanelTest : BasePlatformTestCase() {
 
         p.update(DensityViewState.Idle(DensityReading(420, 525)))
 
-        assertEquals("525 dpi", p.densityMetaLabelForTest.text)
-        assertEquals(AdbToolboxTheme.Colors.amber, p.densityMetaLabelForTest.foreground)
+        assertEquals("525 dpi applied", p.displayMetaLabelForTest.text)
+        assertEquals(AdbToolboxTheme.Colors.amber, p.displayMetaLabelForTest.foreground)
         assertTrue(p.densityOverrideRowForTest.isVisible)
+    }
+
+    fun `test the header meta names everything applied and an applied custom value joins its dropdown in order`() {
+        val p = panel()
+
+        p.update(FontScaleState.Idle(1.4))
+        p.update(DensityViewState.Idle(DensityReading(420, 500)))
+
+        assertEquals("1.4× · 500 dpi applied", p.displayMetaLabelForTest.text)
+        val fontLabels = (0 until p.fontComboForTest.itemCount).map { label(p.fontComboForTest, it) }
+        assertEquals(listOf("0.85×", "1×  (default)", "1.15×", "1.3×", "1.4×", "1.5×", "2×", "Custom…"), fontLabels)
+        assertEquals("1.4×", label(p.fontComboForTest, p.fontComboForTest.selectedIndex))
+        assertEquals("119% · 500 dpi", label(p.densityComboForTest, p.densityComboForTest.selectedIndex))
+        assertEquals("125% · 525 dpi", label(p.densityComboForTest, p.densityComboForTest.selectedIndex + 1))
+    }
+
+    private fun label(combo: javax.swing.JComboBox<*>, index: Int): String {
+        @Suppress("UNCHECKED_CAST")
+        val renderer = combo.renderer as javax.swing.ListCellRenderer<Any?>
+        return (renderer.getListCellRendererComponent(javax.swing.JList(), combo.getItemAt(index), index, false, false) as javax.swing.JLabel).text
     }
 
     // ---- Quick toggles ----

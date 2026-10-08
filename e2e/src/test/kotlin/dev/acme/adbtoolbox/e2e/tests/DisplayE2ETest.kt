@@ -45,24 +45,24 @@ class DisplayE2ETest : E2eTest() {
 
     @Test
     fun `font scale preset is applied on the device`() {
-        studio.click("1.3×", "PresetChip")
+        studio.choose("Font scale", "1.3×")
 
         awaitDevice("font_scale 1.3") { Adb.setting("system", "font_scale").toFloat() == 1.3f }
     }
 
     @Test
     fun `font scale reset restores the device default`() {
-        studio.click("1.5×", "PresetChip")
+        studio.choose("Font scale", "1.5×")
         awaitDevice("font_scale 1.5") { Adb.setting("system", "font_scale").toFloat() == 1.5f }
 
-        studio.click("1×", "PresetChip")
+        studio.choose("Font scale", "1×")
 
         awaitDevice("default font scale") { Adb.setting("system", "font_scale").let { it == "null" || it.toFloat() == 1.0f } }
     }
 
     @Test
     fun `custom font scale is applied and invalid input is rejected`() {
-        studio.clickWhenShowing { customChips()[0] }
+        studio.choose("Font scale", "Custom…")
         val field = visibleCustomField()
 
         studio.typeInto(field, "9")
@@ -79,7 +79,7 @@ class DisplayE2ETest : E2eTest() {
     fun `density preset overrides and Reset to physical restores it`() {
         val physical = Adb.shell("wm density").lines().first().substringAfterLast(": ").trim().toInt()
 
-        studio.click("110%", "PresetChip")
+        studio.choose("Display scale", "110%")
 
         awaitDevice("override density ${physical * 110 / 100}") { overrideDensity() == physical * 110 / 100 }
         studio.click("Reset to physical")
@@ -88,7 +88,7 @@ class DisplayE2ETest : E2eTest() {
 
     @Test
     fun `custom density in dpi is applied`() {
-        studio.clickWhenShowing { customChips()[1] }
+        studio.choose("Display scale", "Custom…")
         studio.typeInto(visibleCustomField(), "400")
         studio.clickWhenShowing { visibleApply() }
 
@@ -212,9 +212,6 @@ class DisplayE2ETest : E2eTest() {
                 .none { studio.valueAfterCaption(it) == "—" }
         }
     }
-
-    private fun customChips(): List<ComponentFixture> =
-        studio.toolWindow().findAll(ComponentFixture::class.java, byXpath("//div[@class='PresetChip' and @accessiblename='Custom…']"))
 
     private fun visibleCustomField(): ComponentFixture {
         var field: ComponentFixture? = null
