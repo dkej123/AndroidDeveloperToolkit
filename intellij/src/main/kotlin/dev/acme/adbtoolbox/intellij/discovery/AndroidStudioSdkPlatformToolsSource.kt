@@ -23,7 +23,7 @@ class AndroidStudioSdkPlatformToolsSource(
     private val adbPathProvider: () -> File?,
 ) : AndroidSdkPlatformToolsSource {
 
-    constructor(project: Project) : this(adbPathProvider = { AndroidSdkUtils.getAdb(project) })
+    constructor(project: Project) : this(adbPathProvider = { AndroidSdkUtils.findAdb(project).adbPath })
 
     override suspend fun platformToolsDirectory(): String? = readAction {
         platformToolsDirectory(adbPathProvider())

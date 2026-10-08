@@ -5,6 +5,7 @@ import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBRadioButton
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.components.JBTabbedPane
+import com.intellij.ui.scale.JBUIScale
 import com.intellij.ui.table.JBTable
 import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.UIUtil
@@ -72,7 +73,7 @@ class McpSettingsPanel(
     private val statusDetail = JBLabel().apply { foreground = AdbToolboxTheme.Colors.textDim }
     private val copyUrl = JButton("Copy URL").apply { addActionListener { status().port?.let { copy(url(it)) } } }
     private val statusBox = RoundedSurface(null, AdbToolboxTheme.Colors.border).apply {
-        layout = BorderLayout(JBUI.scale(8), 0)
+        layout = BorderLayout(JBUIScale.scale(8), 0)
         border = JBUI.Borders.empty(8, 10)
         add(JPanel().apply {
             isOpaque = false
@@ -82,7 +83,7 @@ class McpSettingsPanel(
         }, BorderLayout.CENTER)
         add(copyUrl, BorderLayout.EAST)
         alignmentX = Component.LEFT_ALIGNMENT
-        maximumSize = Dimension(Int.MAX_VALUE, JBUI.scale(52))
+        maximumSize = Dimension(Int.MAX_VALUE, JBUIScale.scale(52))
     }
     private val portLabel = JBLabel().apply { font = AdbToolboxTheme.Typography.mono }
     private val tokenLabel = JBLabel().apply { font = AdbToolboxTheme.Typography.mono }
@@ -94,7 +95,7 @@ class McpSettingsPanel(
             refresh()
         }
     }
-    private val credentialsRow = JPanel(FlowLayout(FlowLayout.LEADING, JBUI.scale(8), 0)).apply {
+    private val credentialsRow = JPanel(FlowLayout(FlowLayout.LEADING, JBUIScale.scale(8), 0)).apply {
         alignmentX = Component.LEFT_ALIGNMENT
         add(JBLabel("Port"))
         add(portLabel)
@@ -136,7 +137,7 @@ class McpSettingsPanel(
             }
             val target = JBLabel(snippet.target).apply { foreground = AdbToolboxTheme.Colors.textDim }
             snippetAreas += area to target
-            snippetTabs.addTab(snippet.agent, JPanel(BorderLayout(0, JBUI.scale(4))).apply {
+            snippetTabs.addTab(snippet.agent, JPanel(BorderLayout(0, JBUIScale.scale(4))).apply {
                 border = JBUI.Borders.empty(6)
                 add(target, BorderLayout.NORTH)
                 add(JBScrollPane(area), BorderLayout.CENTER)
@@ -146,7 +147,7 @@ class McpSettingsPanel(
             })
         }
         snippetTabs.alignmentX = Component.LEFT_ALIGNMENT
-        snippetTabs.maximumSize = Dimension(Int.MAX_VALUE, JBUI.scale(190))
+        snippetTabs.maximumSize = Dimension(Int.MAX_VALUE, JBUIScale.scale(190))
         add(snippetTabs)
         add(comment("Copy inserts the real token. Check the agent’s docs if its config format has changed."))
         add(gap())
@@ -162,8 +163,8 @@ class McpSettingsPanel(
         }
         add(JBScrollPane(JBTable(toolsModel).apply { setShowGrid(false) }).apply {
             alignmentX = Component.LEFT_ALIGNMENT
-            preferredSize = Dimension(JBUI.scale(560), JBUI.scale(200))
-            maximumSize = Dimension(Int.MAX_VALUE, JBUI.scale(220))
+            preferredSize = Dimension(JBUIScale.scale(560), JBUIScale.scale(200))
+            maximumSize = Dimension(Int.MAX_VALUE, JBUIScale.scale(220))
         })
         add(comment(
             "Uninstall and Clear data always open the same confirmation as in the tool window, naming the agent — also in Full control. " +
@@ -248,5 +249,5 @@ class McpSettingsPanel(
         border = JBUI.Borders.empty(4, 0)
     }
 
-    private fun gap() = javax.swing.Box.createVerticalStrut(JBUI.scale(8))
+    private fun gap() = javax.swing.Box.createVerticalStrut(JBUIScale.scale(8))
 }

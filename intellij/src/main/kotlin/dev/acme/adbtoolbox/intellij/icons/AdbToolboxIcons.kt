@@ -85,17 +85,40 @@ object AdbToolboxIcons {
      * [icon] painted in solid [color] with its own alpha kept — the selected rail glyph. Unlike
      * `IconUtil.colorize`, which blends by brightness and leaves the glyph dimmer than `accent`.
      */
-    fun tinted(icon: Icon, color: java.awt.Color): Icon = IconLoader.filterIcon(
-        icon,
-        object : com.intellij.ui.icons.RgbImageFilterSupplier {
-            override fun getFilter(): java.awt.image.RGBImageFilter = SolidTint(color)
-        },
-    )
+    fun tinted(icon: Icon, color: java.awt.Color): Icon = TintedIcon(icon, color)
 
-    private class SolidTint(color: java.awt.Color) : java.awt.image.RGBImageFilter() {
-        private val rgb = color.rgb and 0xFFFFFF
+    /**
+     * Paints [icon] into an offscreen buffer at the target's device scale (so it stays sharp on
+     * HiDPI), then fills it with [color] through `SrcIn`, which keeps each pixel's alpha. Plain AWT
+     * on purpose: `IconLoader.filterIcon`/`RgbImageFilterSupplier` are internal platform API.
+     */
+    private class TintedIcon(private val icon: Icon, private val color: java.awt.Color) : Icon {
+        override fun getIconWidth(): Int = icon.iconWidth
 
-        override fun filterRGB(x: Int, y: Int, argb: Int): Int = (argb and -0x1000000) or rgb
+        override fun getIconHeight(): Int = icon.iconHeight
+
+        override fun paintIcon(c: java.awt.Component?, g: java.awt.Graphics, x: Int, y: Int) {
+            val width = iconWidth
+            val height = iconHeight
+            if (width <= 0 || height <= 0) return
+            val scale = (g as? java.awt.Graphics2D)?.transform?.scaleX?.takeIf { it > 0 } ?: 1.0
+            val buffer = java.awt.image.BufferedImage(
+                kotlin.math.ceil(width * scale).toInt(),
+                kotlin.math.ceil(height * scale).toInt(),
+                java.awt.image.BufferedImage.TYPE_INT_ARGB,
+            )
+            val bg = buffer.createGraphics()
+            try {
+                bg.scale(scale, scale)
+                icon.paintIcon(c, bg, 0, 0)
+                bg.composite = java.awt.AlphaComposite.SrcIn
+                bg.color = color
+                bg.fillRect(0, 0, width, height)
+            } finally {
+                bg.dispose()
+            }
+            g.drawImage(buffer, x, y, width, height, null)
+        }
     }
 
     private fun load(path: String): Icon = requireNotNull(IconLoader.getIcon(path, AdbToolboxIcons::class.java)) {

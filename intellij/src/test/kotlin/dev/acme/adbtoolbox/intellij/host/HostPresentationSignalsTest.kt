@@ -46,6 +46,18 @@ class HostPresentationSignalsTest : BasePlatformTestCase() {
         assertEquals(listOf(Unit), signals.themeChanges.replayCache)
     }
 
+    fun `test a theme change published on the application bus reaches an attached signal only`() {
+        val attached = HostPresentationSignals(JPanel()).apply { attach() }
+        val detached = HostPresentationSignals(JPanel()).apply { attach(); detach() }
+
+        com.intellij.openapi.application.ApplicationManager.getApplication().messageBus
+            .syncPublisher(com.intellij.ide.ui.LafManagerListener.TOPIC).lookAndFeelChanged(LafManager.getInstance())
+
+        assertEquals(listOf(Unit), attached.themeChanges.replayCache)
+        assertTrue(detached.themeChanges.replayCache.isEmpty())
+        attached.detach()
+    }
+
     fun `test detach tears down the theme listener connection`() {
         val component = JPanel()
         val signals = HostPresentationSignals(component)

@@ -1,7 +1,8 @@
 package dev.acme.adbtoolbox.intellij.host
 
-import com.intellij.ide.ui.LafManager
 import com.intellij.ide.ui.LafManagerListener
+import com.intellij.openapi.application.ApplicationManager
+import com.intellij.util.messages.MessageBusConnection
 import java.awt.Component
 import java.awt.event.ComponentAdapter
 import java.awt.event.ComponentEvent
@@ -40,28 +41,29 @@ class HostPresentationSignals(private val hostComponent: JComponent) {
 
     internal val lafListener = LafManagerListener { _themeChanges.tryEmit(Unit) }
 
-    private var attached = false
+    private var connection: MessageBusConnection? = null
 
     /** Test-only visibility hook: whether the theme listener is currently wired up. */
-    internal val isThemeListenerAttached: Boolean get() = attached
+    internal val isThemeListenerAttached: Boolean get() = connection != null
 
     /**
-     * Wires both listeners. This platform version's [LafManager] only exposes the plain
-     * `addLafManagerListener(listener)`/`removeLafManagerListener(listener)` pair (no
-     * `Disposable`-scoped overload), so [detach] removes it explicitly rather than relying on a
-     * `Disposer` cascade — matching this module's established manual-cleanup `dispose()`
+     * Wires both listeners. The theme listener subscribes to [LafManagerListener.TOPIC] on the
+     * application message bus — `LafManager.add/removeLafManagerListener` are removed in 2026.1+ —
+     * and [detach] disconnects it explicitly, matching this module's manual-cleanup `dispose()`
      * convention (`AdbToolboxProjectService`, `AdbToolboxToolWindowPanel`, task 007).
      */
     fun attach() {
+        if (connection != null) return
         hostComponent.addComponentListener(resizeListener)
-        LafManager.getInstance().addLafManagerListener(lafListener)
-        attached = true
+        connection = ApplicationManager.getApplication().messageBus.connect().apply {
+            subscribe(LafManagerListener.TOPIC, lafListener)
+        }
     }
 
     fun detach() {
-        if (!attached) return
+        val current = connection ?: return
         hostComponent.removeComponentListener(resizeListener)
-        LafManager.getInstance().removeLafManagerListener(lafListener)
-        attached = false
+        current.disconnect()
+        connection = null
     }
 }

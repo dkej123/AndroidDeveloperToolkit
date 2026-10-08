@@ -1,6 +1,7 @@
 package dev.acme.adbtoolbox.intellij.display
 
 import com.intellij.ui.components.JBLabel
+import com.intellij.ui.scale.JBUIScale
 import com.intellij.util.ui.JBUI
 import dev.acme.adbtoolbox.intellij.ui.common.AdbToolboxTheme
 import dev.acme.adbtoolbox.intellij.ui.common.ToggleSwitch
@@ -32,7 +33,7 @@ internal class QuickToggleTile(
     // Labels are never truncated (design §5.3 extended grid): an HTML label wraps at its width; its
     // accessible name stays the plain label for assistive tech and the E2E caption lookup.
     private val labelComponent = JBLabel("<html>${com.intellij.openapi.util.text.StringUtil.escapeXmlEntities(label)}</html>").apply {
-        font = AdbToolboxTheme.Typography.body.deriveFont(JBUI.scale(11.5f))
+        font = AdbToolboxTheme.Typography.body.deriveFont(JBUIScale.scale(11.5f))
         foreground = AdbToolboxTheme.Colors.text
         getAccessibleContext().accessibleName = label
         verticalAlignment = javax.swing.SwingConstants.TOP
@@ -48,16 +49,16 @@ internal class QuickToggleTile(
 
     /** The tile's height at [width], with the label wrapped (rows of the grid use the tallest). */
     fun heightFor(width: Int): Int {
-        val labelWidth = width - JBUI.scale(9) - JBUI.scale(8) - JBUI.scale(6) - toggle.preferredSize.width
-        val top = maxOf(labelHeight(labelWidth), toggle.preferredSize.height + JBUI.scale(2))
-        return JBUI.scale(7) + top + JBUI.scale(3) + valueLabel.preferredSize.height + JBUI.scale(7)
+        val labelWidth = width - JBUIScale.scale(9) - JBUIScale.scale(8) - JBUIScale.scale(6) - toggle.preferredSize.width
+        val top = maxOf(labelHeight(labelWidth), toggle.preferredSize.height + JBUIScale.scale(2))
+        return JBUIScale.scale(7) + top + JBUIScale.scale(3) + valueLabel.preferredSize.height + JBUIScale.scale(7)
     }
     private var hovered = false
 
     init {
         isOpaque = false
         toggle.getAccessibleContext().accessibleName = label
-        valueLabel.font = AdbToolboxTheme.Typography.mono.deriveFont(JBUI.scale(9.5f))
+        valueLabel.font = AdbToolboxTheme.Typography.mono.deriveFont(JBUIScale.scale(9.5f))
         add(labelComponent)
         add(valueLabel)
         add(toggle)
@@ -120,7 +121,7 @@ internal class QuickToggleTile(
         val g2 = graphics.create() as Graphics2D
         try {
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
-            val arc = JBUI.scale(6) * 2
+            val arc = JBUIScale.scale(6) * 2
             val on = toggle.isSelected
             val fill = when {
                 on -> AdbToolboxTheme.Colors.accentBg
@@ -140,20 +141,20 @@ internal class QuickToggleTile(
 
     /** `padding: 7px 8px 7px 9px`, top row gap 6, 3px between the top row and the value line. */
     private inner class TileLayout : LayoutManager {
-        private val top get() = JBUI.scale(7)
-        private val right get() = JBUI.scale(8)
-        private val left get() = JBUI.scale(9)
-        private val rowGap get() = JBUI.scale(6)
-        private val lineGap get() = JBUI.scale(3)
+        private val top get() = JBUIScale.scale(7)
+        private val right get() = JBUIScale.scale(8)
+        private val left get() = JBUIScale.scale(9)
+        private val rowGap get() = JBUIScale.scale(6)
+        private val lineGap get() = JBUIScale.scale(3)
 
         private fun labelWidth(width: Int) = maxOf(0, width - left - rowGap - toggle.preferredSize.width - right)
 
-        private fun topRowHeight(width: Int) = maxOf(labelHeight(labelWidth(width)), toggle.preferredSize.height + JBUI.scale(2))
+        private fun topRowHeight(width: Int) = maxOf(labelHeight(labelWidth(width)), toggle.preferredSize.height + JBUIScale.scale(2))
 
         override fun preferredLayoutSize(parent: Container): Dimension {
-            val width = if (parent.width > 0) parent.width else JBUI.scale(150)
+            val width = if (parent.width > 0) parent.width else JBUIScale.scale(150)
             return Dimension(
-                left + rowGap + toggle.preferredSize.width + right + JBUI.scale(60),
+                left + rowGap + toggle.preferredSize.width + right + JBUIScale.scale(60),
                 top + topRowHeight(width) + lineGap + valueLabel.preferredSize.height + top,
             )
         }
@@ -166,7 +167,7 @@ internal class QuickToggleTile(
             val switchSize = toggle.preferredSize
             val switchX = parent.width - right - switchSize.width
             // The track stays top-aligned with the first label line (margin-top 2px).
-            toggle.setBounds(switchX, top + JBUI.scale(2), switchSize.width, switchSize.height)
+            toggle.setBounds(switchX, top + JBUIScale.scale(2), switchSize.width, switchSize.height)
             val labelWidth = labelWidth(parent.width)
             labelComponent.setBounds(left, top, labelWidth, labelHeight(labelWidth))
             valueLabel.setBounds(
@@ -203,8 +204,8 @@ internal class QuickToggleGrid(tiles: List<QuickToggleTile>) : JPanel(null) {
     internal fun columnsFor(width: Int): Int {
         val insets = insets
         val available = width - insets.left - insets.right
-        val gap = JBUI.scale(5)
-        return maxOf(1, (available + gap) / (JBUI.scale(150) + gap))
+        val gap = JBUIScale.scale(5)
+        return maxOf(1, (available + gap) / (JBUIScale.scale(150) + gap))
     }
 
     override fun setBounds(x: Int, y: Int, width: Int, height: Int) {
@@ -229,7 +230,7 @@ internal class QuickToggleGrid(tiles: List<QuickToggleTile>) : JPanel(null) {
     }
 
     private inner class GridLayout : LayoutManager {
-        private val gap get() = JBUI.scale(5)
+        private val gap get() = JBUIScale.scale(5)
 
         private fun widthOf(parent: Container) =
             if (parent.width > 0) parent.width else parent.parent?.width ?: 0
@@ -251,9 +252,9 @@ internal class QuickToggleGrid(tiles: List<QuickToggleTile>) : JPanel(null) {
             if (count == 0) return Dimension(insets.left + insets.right, insets.top + insets.bottom)
             val columns = columnsFor(widthOf(parent))
             val rows = (count + columns - 1) / columns
-            val width = widthOf(parent).takeIf { it > 0 } ?: (insets.left + insets.right + JBUI.scale(150))
+            val width = widthOf(parent).takeIf { it > 0 } ?: (insets.left + insets.right + JBUIScale.scale(150))
             return Dimension(
-                insets.left + insets.right + JBUI.scale(150),
+                insets.left + insets.right + JBUIScale.scale(150),
                 insets.top + insets.bottom + rows * rowHeight(parent, width) + (rows - 1) * gap,
             )
         }

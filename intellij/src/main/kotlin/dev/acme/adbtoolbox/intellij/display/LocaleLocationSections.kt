@@ -3,6 +3,7 @@ package dev.acme.adbtoolbox.intellij.display
 import com.intellij.icons.AllIcons
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBTextField
+import com.intellij.ui.scale.JBUIScale
 import com.intellij.util.ui.JBUI
 import dev.acme.adbtoolbox.application.locale.LocaleRow
 import dev.acme.adbtoolbox.application.locale.LocaleViewState
@@ -50,7 +51,7 @@ class LocaleSection(
     private val searchField = JBTextField().apply {
         isOpaque = false
         border = BorderFactory.createEmptyBorder()
-        font = AdbToolboxTheme.Typography.body.deriveFont(JBUI.scale(11f))
+        font = AdbToolboxTheme.Typography.body.deriveFont(JBUIScale.scale(11f))
         emptyText.text = "Search languages and regions…"
         getAccessibleContext().accessibleName = "Search languages and regions"
         document.addDocumentListener(object : DocumentListener {
@@ -72,7 +73,7 @@ class LocaleSection(
     }
     private val searchWrap = RoundedSurface(AdbToolboxTheme.Colors.field, AdbToolboxTheme.Colors.borderStrong, radius = { AdbToolboxTheme.Radii.field }).apply {
         layout = FlexRowLayout(AdbToolboxTheme.Spacing.s3)
-        border = JBUI.Borders.empty(0, JBUI.scale(7))
+        border = JBUI.Borders.empty(0, JBUIScale.scale(7))
         preferredSize = Dimension(0, AdbToolboxTheme.Sizes.field)
         add(JBLabel(AllIcons.Actions.Search))
         add(searchField, FlexRowLayout.FILL)
@@ -100,7 +101,7 @@ class LocaleSection(
         "Changes the system language; the foreground activity restarts. Pseudo-locales only change strings in builds with pseudoLocalesEnabled.",
     )
     private val originalNote = JBLabel("").apply {
-        font = AdbToolboxTheme.Typography.caption.deriveFont(JBUI.scale(10.5f))
+        font = AdbToolboxTheme.Typography.caption.deriveFont(JBUIScale.scale(10.5f))
         foreground = AdbToolboxTheme.Colors.textFaint
     }
     private val resetLink = DesignButton("Reset to original", DesignButtonStyle.LINK).apply { addActionListener { onReset() } }
@@ -179,16 +180,16 @@ class LocaleSection(
             alignmentX = Component.LEFT_ALIGNMENT
             layout = FlexRowLayout(AdbToolboxTheme.Spacing.s4)
             border = JBUI.Borders.empty(0, AdbToolboxTheme.Spacing.sectionInset)
-            preferredSize = Dimension(0, JBUI.scale(26))
-            maximumSize = Dimension(Int.MAX_VALUE, JBUI.scale(26))
+            preferredSize = Dimension(0, JBUIScale.scale(26))
+            maximumSize = Dimension(Int.MAX_VALUE, JBUIScale.scale(26))
             val code = JBLabel(row.tag).apply {
-                font = AdbToolboxTheme.Typography.mono.deriveFont(if (active) Font.BOLD else Font.PLAIN, JBUI.scale(11f))
+                font = AdbToolboxTheme.Typography.mono.deriveFont(if (active) Font.BOLD else Font.PLAIN, JBUIScale.scale(11f))
                 foreground = if (active) AdbToolboxTheme.Colors.amber else AdbToolboxTheme.Colors.text
-                preferredSize = Dimension(JBUI.scale(44), preferredSize.height)
+                preferredSize = Dimension(JBUIScale.scale(44), preferredSize.height)
                 minimumSize = preferredSize
             }
             val explanation = JBLabel(if (applying) "Applying…" else row.explanation).apply {
-                font = AdbToolboxTheme.Typography.caption.deriveFont(JBUI.scale(10.5f))
+                font = AdbToolboxTheme.Typography.caption.deriveFont(JBUIScale.scale(10.5f))
                 foreground = AdbToolboxTheme.Colors.textFaint
                 minimumSize = Dimension(0, preferredSize.height)
             }
@@ -196,7 +197,7 @@ class LocaleSection(
             add(explanation, FlexRowLayout.FILL)
             if (active) {
                 add(JBLabel("applied").apply {
-                    font = AdbToolboxTheme.Typography.groupLabel.deriveFont(Font.BOLD, JBUI.scale(9f))
+                    font = AdbToolboxTheme.Typography.groupLabel.deriveFont(Font.BOLD, JBUIScale.scale(9f))
                     foreground = AdbToolboxTheme.Colors.amber
                 })
             }
@@ -290,7 +291,7 @@ class LocationSection(
     private val latitudeField: JBTextField = coordinateField(84, "latitude")
     private val longitudeField: JBTextField = coordinateField(92, "longitude")
     private val errorLabel: JBLabel = JBLabel("").apply {
-        font = AdbToolboxTheme.Typography.caption.deriveFont(JBUI.scale(10.5f))
+        font = AdbToolboxTheme.Typography.caption.deriveFont(JBUIScale.scale(10.5f))
         foreground = AdbToolboxTheme.Colors.red
         isVisible = false
     }
@@ -336,7 +337,7 @@ class LocationSection(
     private fun coordinateField(width: Int, name: String): JBTextField = JBTextField().apply {
         font = AdbToolboxTheme.Typography.mono
         background = AdbToolboxTheme.Colors.field
-        preferredSize = Dimension(JBUI.scale(width), AdbToolboxTheme.Sizes.field)
+        preferredSize = Dimension(JBUIScale.scale(width), AdbToolboxTheme.Sizes.field)
         emptyText.text = name
         getAccessibleContext().accessibleName = name.replaceFirstChar(Char::uppercase)
         border = BorderFactory.createCompoundBorder(

@@ -1,6 +1,7 @@
 package dev.acme.adbtoolbox.intellij.devicebar
 
 import com.intellij.icons.AllIcons
+import com.intellij.ui.scale.JBUIScale
 import dev.acme.adbtoolbox.intellij.ui.common.ShortcutHints
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBPanel
@@ -44,7 +45,7 @@ class DeviceContextBarPanel(
     // was a mouse click. JButton gives Tab-reachability, Enter/Space activation, a platform focus
     // ring, and an accessible name derived from its own text for free.
     private val selectorLabel = JButton("").apply {
-        font = AdbToolboxTheme.Typography.body.deriveFont(Font.BOLD, JBUI.scale(11.5f))
+        font = AdbToolboxTheme.Typography.body.deriveFont(Font.BOLD, JBUIScale.scale(11.5f))
         foreground = AdbToolboxTheme.Colors.text
         iconTextGap = AdbToolboxTheme.Spacing.s3
         border = JBUI.Borders.empty()
@@ -64,10 +65,10 @@ class DeviceContextBarPanel(
     }
 
     private val chipLabel = JBLabel("").apply {
-        font = AdbToolboxTheme.Typography.groupLabel.deriveFont(JBUI.scale(9f))
+        font = AdbToolboxTheme.Typography.groupLabel.deriveFont(JBUIScale.scale(9f))
         foreground = AdbToolboxTheme.Colors.textDim
         border = BorderFactory.createCompoundBorder(
-            SolidChipBorder(AdbToolboxTheme.Colors.border, radius = { JBUI.scale(3) }),
+            SolidChipBorder(AdbToolboxTheme.Colors.border, radius = { JBUIScale.scale(3) }),
             JBUI.Borders.empty(1, 4),
         )
         isVisible = false
@@ -81,7 +82,7 @@ class DeviceContextBarPanel(
     // Same JButton-over-JBLabel fix as [selectorLabel] — this was the unauthorized-state's only
     // recovery action and was previously unreachable by keyboard.
     private val retryLabel = JButton("Retry").apply {
-        font = AdbToolboxTheme.Typography.body.deriveFont(Font.BOLD, JBUI.scale(11f))
+        font = AdbToolboxTheme.Typography.body.deriveFont(Font.BOLD, JBUIScale.scale(11f))
         border = JBUI.Borders.empty()
         foreground = AdbToolboxTheme.Colors.accent
         cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
@@ -106,7 +107,7 @@ class DeviceContextBarPanel(
     }
 
     private val bannerLabel = JBLabel(UNAUTHORIZED_BANNER_TEXT).apply {
-        font = AdbToolboxTheme.Typography.caption.deriveFont(JBUI.scale(10.5f))
+        font = AdbToolboxTheme.Typography.caption.deriveFont(JBUIScale.scale(10.5f))
         foreground = AdbToolboxTheme.Colors.amber
         background = AdbToolboxTheme.Colors.amberBg
         isOpaque = true
@@ -135,7 +136,7 @@ class DeviceContextBarPanel(
             // `deviceBarStyle`: 30px row, `padding: 0 4px 0 4px` (the selector's own 4px inset
             // keeps its content at the prototype's 8px), gap 6, every child vertically centered.
             border = JBUI.Borders.empty(0, AdbToolboxTheme.Spacing.s2, 0, AdbToolboxTheme.Spacing.s2)
-            preferredSize = java.awt.Dimension(0, AdbToolboxTheme.Sizes.deviceBar - JBUI.scale(1))
+            preferredSize = java.awt.Dimension(0, AdbToolboxTheme.Sizes.deviceBar - JBUIScale.scale(1))
         }
     }
 
@@ -223,7 +224,7 @@ class DeviceContextBarPanel(
         val emphasized = bar is DeviceBarPresentation.Online || bar is DeviceBarPresentation.Unauthorized
         selectorLabel.font = AdbToolboxTheme.Typography.body.deriveFont(
             if (emphasized) Font.BOLD else Font.PLAIN,
-            JBUI.scale(11.5f),
+            JBUIScale.scale(11.5f),
         )
 
         when (bar) {
@@ -328,7 +329,7 @@ private class SelectorGroup(
     }
 
     override fun getPreferredSize(): java.awt.Dimension =
-        java.awt.Dimension(super.getPreferredSize().width, JBUI.scale(24))
+        java.awt.Dimension(super.getPreferredSize().width, JBUIScale.scale(24))
 
     override fun paintComponent(g: java.awt.Graphics) {
         super.paintComponent(g)
@@ -361,8 +362,8 @@ private class DeviceStatusIcon(private val color: java.awt.Color, private val fi
         val g2 = g.create() as java.awt.Graphics2D
         try {
             g2.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING, java.awt.RenderingHints.VALUE_ANTIALIAS_ON)
-            val dot = JBUI.scale(6)
-            val ring = JBUI.scale(2)
+            val dot = JBUIScale.scale(6)
+            val ring = JBUIScale.scale(2)
             val dx = x + iconWidth - dot
             val dy = y + iconHeight - dot
             g2.color = AdbToolboxTheme.Colors.header
@@ -370,24 +371,24 @@ private class DeviceStatusIcon(private val color: java.awt.Color, private val fi
         } finally {
             g2.dispose()
         }
-        val dotX = x + iconWidth - JBUI.scale(6)
-        val dotY = y + iconHeight - JBUI.scale(6)
+        val dotX = x + iconWidth - JBUIScale.scale(6)
+        val dotY = y + iconHeight - JBUIScale.scale(6)
         dev.acme.adbtoolbox.intellij.ui.common.StatusDotIcon(color, filled, diameter = 6).paintIcon(c, g, dotX, dotY)
     }
 }
 
 /** The selector's 5px caret (`caretIconStyle`: a 1.3px chevron pointing down). */
 private class CaretIcon(private val color: java.awt.Color) : javax.swing.Icon {
-    override fun getIconWidth(): Int = JBUI.scale(8)
-    override fun getIconHeight(): Int = JBUI.scale(8)
+    override fun getIconWidth(): Int = JBUIScale.scale(8)
+    override fun getIconHeight(): Int = JBUIScale.scale(8)
 
     override fun paintIcon(c: java.awt.Component?, g: java.awt.Graphics, x: Int, y: Int) {
         val g2 = g.create() as java.awt.Graphics2D
         try {
             g2.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING, java.awt.RenderingHints.VALUE_ANTIALIAS_ON)
             g2.color = color
-            g2.stroke = java.awt.BasicStroke(JBUI.scale(1.3f), java.awt.BasicStroke.CAP_ROUND, java.awt.BasicStroke.JOIN_ROUND)
-            val half = JBUI.scale(3f)
+            g2.stroke = java.awt.BasicStroke(JBUIScale.scale(1.3f), java.awt.BasicStroke.CAP_ROUND, java.awt.BasicStroke.JOIN_ROUND)
+            val half = JBUIScale.scale(3f)
             val cx = x + iconWidth / 2f
             val cy = y + iconHeight / 2f
             val path = java.awt.geom.Path2D.Float().apply {

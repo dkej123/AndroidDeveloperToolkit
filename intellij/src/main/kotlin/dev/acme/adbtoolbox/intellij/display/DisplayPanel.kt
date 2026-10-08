@@ -1,5 +1,6 @@
 package dev.acme.adbtoolbox.intellij.display
 
+import com.intellij.ui.scale.JBUIScale
 import dev.acme.adbtoolbox.domain.display.TalkBackProfile
 
 import com.intellij.ui.components.JBLabel
@@ -662,7 +663,7 @@ class DisplayPanel(
         fun customField() = JBTextField().apply {
             font = AdbToolboxTheme.Typography.mono
             background = AdbToolboxTheme.Colors.field
-            preferredSize = Dimension(JBUI.scale(64), AdbToolboxTheme.Sizes.field)
+            preferredSize = Dimension(JBUIScale.scale(64), AdbToolboxTheme.Sizes.field)
             border = BorderFactory.createCompoundBorder(
                 SolidChipBorder(AdbToolboxTheme.Colors.borderStrong, radius = { AdbToolboxTheme.Radii.field }),
                 JBUI.Borders.empty(0, AdbToolboxTheme.Spacing.s3),
@@ -677,7 +678,7 @@ class DisplayPanel(
         }
 
         fun errorLabel() = JBLabel("").apply {
-            font = AdbToolboxTheme.Typography.caption.deriveFont(JBUI.scale(10.5f))
+            font = AdbToolboxTheme.Typography.caption.deriveFont(JBUIScale.scale(10.5f))
             foreground = AdbToolboxTheme.Colors.red
             isVisible = false
         }
@@ -699,7 +700,7 @@ class DisplayPanel(
         }
 
         fun overrideNoteLabel(text: String) = JBLabel(text).apply {
-            font = AdbToolboxTheme.Typography.caption.deriveFont(JBUI.scale(10.5f))
+            font = AdbToolboxTheme.Typography.caption.deriveFont(JBUIScale.scale(10.5f))
             foreground = AdbToolboxTheme.Colors.textFaint
         }
 
@@ -718,7 +719,7 @@ class DisplayPanel(
         fun section(vararg children: java.awt.Component) = DesignSections.section(*children)
 
         fun toggleValueLabel() = JBLabel("").apply {
-            font = AdbToolboxTheme.Typography.mono.deriveFont(JBUI.scale(10f))
+            font = AdbToolboxTheme.Typography.mono.deriveFont(JBUIScale.scale(10f))
             foreground = AdbToolboxTheme.Colors.textFaint
         }
 
@@ -735,7 +736,7 @@ class DisplayPanel(
             isOpaque = false
             alignmentX = java.awt.Component.LEFT_ALIGNMENT
             add(DesignSections.inset(groupLabel(label)))
-            add(javax.swing.Box.createVerticalStrut(JBUI.scale(5)))
+            add(javax.swing.Box.createVerticalStrut(JBUIScale.scale(5)))
             add(QuickToggleGrid(tiles))
         }
 

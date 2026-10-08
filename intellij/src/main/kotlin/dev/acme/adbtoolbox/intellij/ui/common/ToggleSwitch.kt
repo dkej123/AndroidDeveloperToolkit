@@ -1,6 +1,6 @@
 package dev.acme.adbtoolbox.intellij.ui.common
 
-import com.intellij.util.ui.JBUI
+import com.intellij.ui.scale.JBUIScale
 import java.awt.Color
 import java.awt.Dimension
 import java.awt.Graphics
@@ -21,7 +21,7 @@ class ToggleSwitch(private val compact: Boolean = false) : JToggleButton() {
         isContentAreaFilled = false
         isFocusPainted = false
         isBorderPainted = false
-        preferredSize = if (compact) Dimension(JBUI.scale(22), JBUI.scale(12)) else Dimension(JBUI.scale(24), JBUI.scale(13))
+        preferredSize = if (compact) Dimension(JBUIScale.scale(22), JBUIScale.scale(12)) else Dimension(JBUIScale.scale(24), JBUIScale.scale(13))
         addItemListener { repaint() }
         getAccessibleContext().accessibleName = "Toggle"
     }
@@ -33,7 +33,7 @@ class ToggleSwitch(private val compact: Boolean = false) : JToggleButton() {
             g2.color = if (isSelected) AdbToolboxTheme.Colors.accent else AdbToolboxTheme.Colors.borderStrong
             g2.fillRoundRect(0, 0, width, height, height, height)
 
-            val knobSize = JBUI.scale(if (compact) 9 else 10)
+            val knobSize = JBUIScale.scale(if (compact) 9 else 10)
             val knobInset = (height - knobSize) / 2
             val knobLeft = if (isSelected) width - knobSize - knobInset else knobInset
             g2.color = Color.WHITE

@@ -2,6 +2,7 @@ package dev.acme.adbtoolbox.intellij.feedback
 
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBPanel
+import com.intellij.ui.scale.JBUIScale
 import com.intellij.util.ui.JBUI
 import dev.acme.adbtoolbox.domain.feedback.ProcessIndicator
 import dev.acme.adbtoolbox.domain.feedback.StatusState
@@ -38,17 +39,17 @@ class FeedbackStatusPanel(
 
     // MCP chip (design §8): teal, only while an agent is connected; the dot fills while a call runs.
     private val mcpChip = JButton("").apply {
-        font = AdbToolboxTheme.Typography.mono.deriveFont(Font.BOLD, JBUI.scale(9f))
+        font = AdbToolboxTheme.Typography.mono.deriveFont(Font.BOLD, JBUIScale.scale(9f))
         foreground = AdbToolboxTheme.Colors.brand
         isContentAreaFilled = false
         isFocusPainted = false
         isBorderPainted = false
-        iconTextGap = JBUI.scale(5)
+        iconTextGap = JBUIScale.scale(5)
         border = JBUI.Borders.empty(1, 6)
         isVisible = false
         addActionListener { onOpenMcpSettings() }
     }
-    private val mcpChipSurface = RoundedSurface(AdbToolboxTheme.Colors.brandBg, AdbToolboxTheme.Colors.brandBorder, radius = { JBUI.scale(4) }).apply {
+    private val mcpChipSurface = RoundedSurface(AdbToolboxTheme.Colors.brandBg, AdbToolboxTheme.Colors.brandBorder, radius = { JBUIScale.scale(4) }).apply {
         layout = BorderLayout()
         isVisible = false
         add(mcpChip, BorderLayout.CENTER)
@@ -72,21 +73,21 @@ class FeedbackStatusPanel(
     internal val mcpChipForTest: JButton get() = mcpChip
 
     private val processLabel = JBLabel("").apply {
-        font = AdbToolboxTheme.Typography.mono.deriveFont(Font.BOLD, JBUI.scale(9f))
+        font = AdbToolboxTheme.Typography.mono.deriveFont(Font.BOLD, JBUIScale.scale(9f))
         icon = StatusDotIcon(AdbToolboxTheme.Colors.brand, filled = true, diameter = 5)
-        iconTextGap = JBUI.scale(5)
+        iconTextGap = JBUIScale.scale(5)
         border = JBUI.Borders.empty(1, 6)
     }
 
     // `runningChipStyle`: padding 1px 6px, radius 4, tinted fill + 1px border.
-    private val processChip = RoundedSurface(null, null, radius = { JBUI.scale(4) }).apply {
+    private val processChip = RoundedSurface(null, null, radius = { JBUIScale.scale(4) }).apply {
         layout = BorderLayout()
         isVisible = false
         add(processLabel, BorderLayout.CENTER)
     }
 
     private val messageLabel = JBLabel("").apply {
-        font = AdbToolboxTheme.Typography.caption.deriveFont(JBUI.scale(9.5f))
+        font = AdbToolboxTheme.Typography.caption.deriveFont(JBUIScale.scale(9.5f))
         foreground = AdbToolboxTheme.Colors.textDim
     }
 
@@ -96,10 +97,10 @@ class FeedbackStatusPanel(
     // ([dev.acme.adbtoolbox.intellij.devicebar.DeviceContextBarPanel]).
     private val overrideChipLabel = JButton("").apply {
         // `overrideChipStyle`: 9px/700 UI font, amber text and 1px amber border, radius 3, padding 1px 5px.
-        font = AdbToolboxTheme.Typography.body.deriveFont(Font.BOLD, JBUI.scale(9f))
+        font = AdbToolboxTheme.Typography.body.deriveFont(Font.BOLD, JBUIScale.scale(9f))
         foreground = AdbToolboxTheme.Colors.amber
         border = BorderFactory.createCompoundBorder(
-            SolidChipBorder(AdbToolboxTheme.Colors.amber, radius = { JBUI.scale(3) }),
+            SolidChipBorder(AdbToolboxTheme.Colors.amber, radius = { JBUIScale.scale(3) }),
             JBUI.Borders.empty(1, 5),
         )
         cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)

@@ -3,6 +3,7 @@ package dev.acme.adbtoolbox.intellij.ui.common
 import com.intellij.openapi.editor.colors.EditorColorsManager
 import com.intellij.openapi.editor.colors.EditorFontType
 import com.intellij.ui.JBColor
+import com.intellij.ui.scale.JBUIScale
 import com.intellij.util.ui.JBFont
 import com.intellij.util.ui.JBUI
 import java.awt.Color
@@ -72,51 +73,51 @@ object AdbToolboxTheme {
     }
 
     object Spacing {
-        val s1 get() = JBUI.scale(2)
-        val s2 get() = JBUI.scale(4)
-        val s3 get() = JBUI.scale(6)
-        val s4 get() = JBUI.scale(8)
-        val s5 get() = JBUI.scale(12)
-        val s6 get() = JBUI.scale(16)
+        val s1 get() = JBUIScale.scale(2)
+        val s2 get() = JBUIScale.scale(4)
+        val s3 get() = JBUIScale.scale(6)
+        val s4 get() = JBUIScale.scale(8)
+        val s5 get() = JBUIScale.scale(12)
+        val s6 get() = JBUIScale.scale(16)
 
         /** The prototype's 10px horizontal inset for section rows (`padding: 0 10px` throughout
          * `ADB Toolbox Plugin.dc.html`); not part of the 2/4/6/8/12/16 scale but used by every view. */
-        val sectionInset get() = JBUI.scale(10)
+        val sectionInset get() = JBUIScale.scale(10)
     }
 
     object Sizes {
-        val iconButton get() = JBUI.scale(22)
-        val field get() = JBUI.scale(24)
-        val secondaryButton get() = JBUI.scale(26)
-        val primaryButton get() = JBUI.scale(26)
-        val railButton get() = JBUI.scale(26)
-        val rail get() = JBUI.scale(34)
-        val titleBar get() = JBUI.scale(32)
-        val deviceBar get() = JBUI.scale(30)
+        val iconButton get() = JBUIScale.scale(22)
+        val field get() = JBUIScale.scale(24)
+        val secondaryButton get() = JBUIScale.scale(26)
+        val primaryButton get() = JBUIScale.scale(26)
+        val railButton get() = JBUIScale.scale(26)
+        val rail get() = JBUIScale.scale(34)
+        val titleBar get() = JBUIScale.scale(32)
+        val deviceBar get() = JBUIScale.scale(30)
         // 28, not the design's original 22: at 22 the override chip touched the bar's edges.
-        val statusBar get() = JBUI.scale(28)
-        val logcatFooter get() = JBUI.scale(22)
-        val toolbarRow get() = JBUI.scale(26)
-        val appRow get() = JBUI.scale(34)
-        val listRow get() = JBUI.scale(28)
-        val toggleRow get() = JBUI.scale(28)
-        val logLineHeight get() = JBUI.scale(16)
-        val logTagColumn get() = JBUI.scale(104)
+        val statusBar get() = JBUIScale.scale(28)
+        val logcatFooter get() = JBUIScale.scale(22)
+        val toolbarRow get() = JBUIScale.scale(26)
+        val appRow get() = JBUIScale.scale(34)
+        val listRow get() = JBUIScale.scale(28)
+        val toggleRow get() = JBUIScale.scale(28)
+        val logLineHeight get() = JBUIScale.scale(16)
+        val logTagColumn get() = JBUIScale.scale(104)
     }
 
     object Radii {
-        val field get() = JBUI.scale(4)
-        val button get() = JBUI.scale(5)
-        val chip get() = JBUI.scale(5)
-        val railButton get() = JBUI.scale(6)
-        val card get() = JBUI.scale(8)
-        val pill get() = JBUI.scale(999)
+        val field get() = JBUIScale.scale(4)
+        val button get() = JBUIScale.scale(5)
+        val chip get() = JBUIScale.scale(5)
+        val railButton get() = JBUIScale.scale(6)
+        val card get() = JBUIScale.scale(8)
+        val pill get() = JBUIScale.scale(999)
     }
 
     /** Popup-only shadow from the light/dark design-system specimens. */
     object Shadows {
-        val popupOffsetY get() = JBUI.scale(if (JBColor.isBright()) 18 else 20)
-        val popupBlurRadius get() = JBUI.scale(if (JBColor.isBright()) 44 else 50)
+        val popupOffsetY get() = JBUIScale.scale(if (JBColor.isBright()) 18 else 20)
+        val popupBlurRadius get() = JBUIScale.scale(if (JBColor.isBright()) 44 else 50)
         val popupColor = themed(rgba(0x14141e, 0.18), rgba(0x000000, 0.50))
     }
 
@@ -146,9 +147,9 @@ object AdbToolboxTheme {
     }
 
     object Breakpoints {
-        val narrow get() = JBUI.scale(340)
-        val wide get() = JBUI.scale(470)
-        val defaultDock get() = JBUI.scale(380)
+        val narrow get() = JBUIScale.scale(340)
+        val wide get() = JBUIScale.scale(470)
+        val defaultDock get() = JBUIScale.scale(380)
     }
 
     object States {
@@ -159,10 +160,10 @@ object AdbToolboxTheme {
         EditorColorsManager.getInstance()
             .globalScheme
             .getFont(EditorFontType.PLAIN)
-            .deriveFont(JBUI.scale(size))
+            .deriveFont(JBUIScale.scale(size))
 
     private fun labelFont(size: Float, style: Int): Font =
-        JBUI.Fonts.label().deriveFont(style, JBUI.scale(size))
+        JBUI.Fonts.label().deriveFont(style, JBUIScale.scale(size))
 
     private fun palette(
         lightLevel: Int,

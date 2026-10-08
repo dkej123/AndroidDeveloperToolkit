@@ -1,6 +1,7 @@
 package dev.acme.adbtoolbox.intellij.ui.common
 
 import com.intellij.ui.components.JBPanel
+import com.intellij.ui.scale.JBUIScale
 import com.intellij.util.ui.JBUI
 import dev.acme.adbtoolbox.domain.logcat.LogSeverity
 import java.awt.BasicStroke
@@ -109,7 +110,7 @@ class PresetChipRow<T : Any>(
             val y = insets.top
             val w = width - insets.left - insets.right
             val h = height - insets.top - insets.bottom
-            val arc = JBUI.scale(6) * 2
+            val arc = JBUIScale.scale(6) * 2
             copy.color = AdbToolboxTheme.Colors.field
             copy.fillRoundRect(x, y, w, h, arc, arc)
             copy.color = AdbToolboxTheme.Colors.borderStrong
@@ -177,9 +178,9 @@ class PresetChipRow<T : Any>(
 
 /** [PresetChipRowStyle.SEGMENTED]: 22px chips inside a 1px track with 2px padding and gap; default chip weighs 2. */
 private class SegmentedLayout : java.awt.LayoutManager {
-    private val pad get() = JBUI.scale(1) + JBUI.scale(2)
-    private val gap get() = JBUI.scale(2)
-    private val chipHeight get() = JBUI.scale(22)
+    private val pad get() = JBUIScale.scale(1) + JBUIScale.scale(2)
+    private val gap get() = JBUIScale.scale(2)
+    private val chipHeight get() = JBUIScale.scale(22)
 
     private fun weight(component: Component) = (component as? PresetChip<*>)?.segmentWeight ?: 1
 
@@ -271,11 +272,11 @@ class PresetChip<T : Any> internal constructor(
         isContentAreaFilled = false
         isFocusPainted = false
         font = AdbToolboxTheme.Typography.body
-        margin = Insets(0, JBUI.scale(if (segmented) 6 else 9), 0, JBUI.scale(if (segmented) 6 else 9))
+        margin = Insets(0, JBUIScale.scale(if (segmented) 6 else 9), 0, JBUIScale.scale(if (segmented) 6 else 9))
         val widestFont = baseFont().deriveFont(java.awt.Font.BOLD)
         preferredSize = Dimension(
             getFontMetrics(widestFont).stringWidth(text) + margin.left + margin.right,
-            if (segmented) JBUI.scale(22) else AdbToolboxTheme.Sizes.iconButton,
+            if (segmented) JBUIScale.scale(22) else AdbToolboxTheme.Sizes.iconButton,
         )
         addItemListener { refreshPresentation() }
         getAccessibleContext().accessibleName = choice.label
@@ -285,8 +286,8 @@ class PresetChip<T : Any> internal constructor(
     /** Segmented numbers are mono 11 and the default ("Standard") is UI 11, per the prototype. */
     private fun baseFont(): java.awt.Font = when {
         !segmented -> AdbToolboxTheme.Typography.body
-        !choice.monospaced -> AdbToolboxTheme.Typography.body.deriveFont(JBUI.scale(11f))
-        else -> AdbToolboxTheme.Typography.mono.deriveFont(JBUI.scale(11f))
+        !choice.monospaced -> AdbToolboxTheme.Typography.body.deriveFont(JBUIScale.scale(11f))
+        else -> AdbToolboxTheme.Typography.mono.deriveFont(JBUIScale.scale(11f))
     }
 
     private val highlighted: Boolean
@@ -376,7 +377,7 @@ class LevelChip(val level: LogSeverity) : JToggleButton(level.symbol) {
         isFocusPainted = false
         font = AdbToolboxTheme.Typography.mono
         margin = Insets(0, 0, 0, 0)
-        preferredSize = Dimension(JBUI.scale(20), JBUI.scale(20))
+        preferredSize = Dimension(JBUIScale.scale(20), JBUIScale.scale(20))
         addItemListener { refreshPresentation() }
         getAccessibleContext().accessibleName = "Minimum Logcat level: ${level.symbol}"
         refreshPresentation()
@@ -436,17 +437,17 @@ internal open class SolidChipBorder(
     private val radius: () -> Int = { AdbToolboxTheme.Radii.chip },
 ) : AbstractBorder() {
     override fun getBorderInsets(component: Component): Insets = Insets(
-        JBUI.scale(1),
-        JBUI.scale(1),
-        JBUI.scale(1),
-        JBUI.scale(1),
+        JBUIScale.scale(1),
+        JBUIScale.scale(1),
+        JBUIScale.scale(1),
+        JBUIScale.scale(1),
     )
 
     override fun paintBorder(component: Component, graphics: Graphics, x: Int, y: Int, width: Int, height: Int) {
         val copy = graphics.create() as Graphics2D
         try {
             copy.color = color
-            val strokeWidth = JBUI.scale(1).toFloat()
+            val strokeWidth = JBUIScale.scale(1).toFloat()
             val offset = strokeWidth / 2f
             val arc = (radius() * 2).toFloat()
             copy.stroke = borderStroke(strokeWidth)
@@ -475,7 +476,7 @@ internal class DashedChipBorder(color: Color) : SolidChipBorder(color) {
         BasicStroke.CAP_BUTT,
         BasicStroke.JOIN_ROUND,
         1f,
-        floatArrayOf(JBUI.scale(3).toFloat(), JBUI.scale(2).toFloat()),
+        floatArrayOf(JBUIScale.scale(3).toFloat(), JBUIScale.scale(2).toFloat()),
         0f,
     )
 }

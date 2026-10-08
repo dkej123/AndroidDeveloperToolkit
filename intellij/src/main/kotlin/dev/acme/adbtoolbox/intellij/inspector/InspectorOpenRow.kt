@@ -1,6 +1,7 @@
 package dev.acme.adbtoolbox.intellij.inspector
 
 import com.intellij.ui.components.JBLabel
+import com.intellij.ui.scale.JBUIScale
 import com.intellij.util.ui.JBUI
 import dev.acme.adbtoolbox.intellij.ui.common.AdbToolboxTheme
 import dev.acme.adbtoolbox.intellij.ui.common.DesignButton
@@ -25,7 +26,7 @@ class InspectorOpenRow(
     private val timeZone: TimeZone = TimeZone.getDefault(),
 ) : JPanel(FlexRowLayout(AdbToolboxTheme.Spacing.s4)) {
     private val note = JBLabel("").apply {
-        font = AdbToolboxTheme.Typography.caption.deriveFont(JBUI.scale(10.5f))
+        font = AdbToolboxTheme.Typography.caption.deriveFont(JBUIScale.scale(10.5f))
         foreground = AdbToolboxTheme.Colors.textFaint
     }
     private val showLink = DesignButton("Show", DesignButtonStyle.LINK).apply {

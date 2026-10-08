@@ -20,7 +20,6 @@ import com.intellij.openapi.extensions.PluginId
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.application.PathManager
 import com.intellij.util.EnvironmentUtil
-import com.intellij.util.net.HttpConfigurable
 import dev.acme.adbtoolbox.adapters.adb.binary.BinaryAdbTransport
 import dev.acme.adbtoolbox.adapters.adb.ddmlib.DdmlibAdbTransport
 import dev.acme.adbtoolbox.adapters.adb.device.AdbDeviceRepository
@@ -815,7 +814,8 @@ class AdbToolboxProjectService(private val project: Project) : Disposable {
             apksigner = signer?.toString(),
             cacheRoot = Path.of(PathManager.getSystemPath(), "adb-toolbox", "deep-links"),
             projectHash = projectKey,
-            assetLinksFetcher = JvmAssetLinksFetcher(proxySelector = HttpConfigurable.getInstance().onlyBySettingsSelector),
+            // The platform registers the IDE's proxy settings as the JVM default ProxySelector (242+).
+            assetLinksFetcher = JvmAssetLinksFetcher(),
             projectDeepLinks = if (androidPluginPresent) AndroidProjectDeepLinkProvider(project) else null,
         )
     }

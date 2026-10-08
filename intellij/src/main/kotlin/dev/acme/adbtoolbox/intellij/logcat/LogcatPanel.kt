@@ -1,6 +1,7 @@
 package dev.acme.adbtoolbox.intellij.logcat
 
 import com.intellij.icons.AllIcons
+import com.intellij.ui.scale.JBUIScale
 import dev.acme.adbtoolbox.intellij.ui.common.ShortcutHints
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBPanel
@@ -84,7 +85,7 @@ class LogcatPanel(
     private val searchField = JBTextField().apply {
         isOpaque = false
         border = BorderFactory.createEmptyBorder()
-        font = AdbToolboxTheme.Typography.body.deriveFont(JBUI.scale(11f))
+        font = AdbToolboxTheme.Typography.body.deriveFont(JBUIScale.scale(11f))
         emptyText.text = ShortcutHints.withKeyStroke("Search log…", focusSearchKeyStroke())
         toolTipText = ShortcutHints.withKeyStroke("Search log…", focusSearchKeyStroke())
         getAccessibleContext().accessibleName = "Search log"
@@ -124,7 +125,7 @@ class LogcatPanel(
         radius = { AdbToolboxTheme.Radii.field },
     ).apply {
         layout = FlexRowLayout(AdbToolboxTheme.Spacing.s3)
-        border = JBUI.Borders.empty(0, JBUI.scale(7))
+        border = JBUI.Borders.empty(0, JBUIScale.scale(7))
         preferredSize = Dimension(0, AdbToolboxTheme.Sizes.field)
         add(searchIconLabel)
         add(searchField, FlexRowLayout.FILL)
@@ -172,7 +173,7 @@ class LogcatPanel(
     // `logFilterRowStyle`: five level chips, spacer, package chip; gap 3, `padding: 0 8px 6px`.
     private val filterRow = run {
         val spacer = flexSpacer()
-        flexRow(JBUI.scale(3), *levelChips.values.toTypedArray(), spacer, packageFilterChip, fill = spacer)
+        flexRow(JBUIScale.scale(3), *levelChips.values.toTypedArray(), spacer, packageFilterChip, fill = spacer)
     }.apply {
         border = BorderFactory.createCompoundBorder(
             BorderFactory.createMatteBorder(0, 0, 1, 0, AdbToolboxTheme.Colors.border),
@@ -196,13 +197,13 @@ class LogcatPanel(
     private val jumpToLatestLink = linkButton("Jump to latest") { onJumpToLatest() }
     private val pausedDotLabel = JBLabel(StatusDotIcon(AdbToolboxTheme.Colors.amber, filled = true, diameter = 6))
     private val pausedTextLabel = JBLabel("").apply {
-        font = AdbToolboxTheme.Typography.body.deriveFont(Font.BOLD, JBUI.scale(10.5f))
+        font = AdbToolboxTheme.Typography.body.deriveFont(Font.BOLD, JBUIScale.scale(10.5f))
         foreground = AdbToolboxTheme.Colors.amber
     }
     // `pausedPillStyle`: fully rounded, `panel` fill, 1px amber, `padding: 4px 8px 4px 7px`, gap 7.
     private val pausedPill = RoundedSurface(AdbToolboxTheme.Colors.panel, AdbToolboxTheme.Colors.amber, radius = { AdbToolboxTheme.Radii.pill }).apply {
-        layout = FlexRowLayout(JBUI.scale(7))
-        border = JBUI.Borders.empty(AdbToolboxTheme.Spacing.s2, JBUI.scale(7), AdbToolboxTheme.Spacing.s2, AdbToolboxTheme.Spacing.s4)
+        layout = FlexRowLayout(JBUIScale.scale(7))
+        border = JBUI.Borders.empty(AdbToolboxTheme.Spacing.s2, JBUIScale.scale(7), AdbToolboxTheme.Spacing.s2, AdbToolboxTheme.Spacing.s4)
         add(pausedDotLabel)
         add(pausedTextLabel)
         add(jumpToLatestLink)
@@ -234,7 +235,7 @@ class LogcatPanel(
         alignmentX = Component.CENTER_ALIGNMENT
     }
     private val emptyStateBodyLabel = JBLabel("").apply {
-        font = AdbToolboxTheme.Typography.body.deriveFont(JBUI.scale(11f))
+        font = AdbToolboxTheme.Typography.body.deriveFont(JBUIScale.scale(11f))
         foreground = AdbToolboxTheme.Colors.textDim
         alignmentX = Component.CENTER_ALIGNMENT
     }
@@ -245,7 +246,7 @@ class LogcatPanel(
     private val emptyStatePanel = JPanel().apply {
         layout = BoxLayout(this, BoxLayout.Y_AXIS)
         isOpaque = false
-        border = JBUI.Borders.empty(JBUI.scale(34), AdbToolboxTheme.Spacing.s6, AdbToolboxTheme.Spacing.s6, AdbToolboxTheme.Spacing.s6)
+        border = JBUI.Borders.empty(JBUIScale.scale(34), AdbToolboxTheme.Spacing.s6, AdbToolboxTheme.Spacing.s6, AdbToolboxTheme.Spacing.s6)
         isVisible = false
         add(emptyStateTitleLabel)
         add(javax.swing.Box.createVerticalStrut(AdbToolboxTheme.Spacing.s3))
@@ -527,13 +528,13 @@ private fun actionOf(action: () -> Unit): javax.swing.Action = object : javax.sw
  * (`design/README.md` §7's toolbar; no delivered SVG for a bare rule, so it is drawn directly). */
 private class DividerLine : JComponent() {
     init {
-        preferredSize = Dimension(JBUI.scale(1), JBUI.scale(14))
+        preferredSize = Dimension(JBUIScale.scale(1), JBUIScale.scale(14))
         isOpaque = false
     }
 
     override fun paintComponent(g: Graphics) {
         g.color = AdbToolboxTheme.Colors.border
-        g.fillRect(0, (height - JBUI.scale(14)) / 2, width, JBUI.scale(14))
+        g.fillRect(0, (height - JBUIScale.scale(14)) / 2, width, JBUIScale.scale(14))
     }
 }
 
@@ -543,19 +544,19 @@ private class DividerLine : JComponent() {
  */
 private class PackageFilterChip : JToggleButton() {
     init {
-        font = AdbToolboxTheme.Typography.mono.deriveFont(JBUI.scale(10f))
+        font = AdbToolboxTheme.Typography.mono.deriveFont(JBUIScale.scale(10f))
         isContentAreaFilled = false
         isFocusPainted = false
         isBorderPainted = false
         isOpaque = false
-        border = JBUI.Borders.empty(0, JBUI.scale(7))
+        border = JBUI.Borders.empty(0, JBUIScale.scale(7))
         margin = java.awt.Insets(0, 0, 0, 0)
     }
 
     override fun getPreferredSize(): Dimension {
         val insets = insets
         val textWidth = getFontMetrics(font).stringWidth(text.orEmpty()) + insets.left + insets.right
-        return Dimension(minOf(textWidth, JBUI.scale(160)), JBUI.scale(20))
+        return Dimension(minOf(textWidth, JBUIScale.scale(160)), JBUIScale.scale(20))
     }
 
     override fun getMaximumSize(): Dimension = preferredSize

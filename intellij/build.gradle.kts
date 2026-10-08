@@ -1,3 +1,4 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmDefaultMode
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
@@ -118,25 +119,29 @@ intellijPlatform {
     }
 
     pluginVerification {
-        // Verify against the ADR 0003 baseline build only (242, i.e. 2024.2) rather than
-        // `recommended()`'s full multi-version matrix, which pulls down several full IDE
-        // distributions and is unnecessarily heavy for this bootstrap gate.
+        // Both ends of the supported range, not `recommended()`'s full matrix (several full IDE
+        // downloads): the ADR 0003 baseline (242, i.e. 2024.2) and the newest stable IntelliJ IDEA.
+        // The Marketplace verifies every release in between; problems found there so far all
+        // appeared at one end (APIs removed or reshaped in newer builds, internal ones in older).
         ides {
             select {
                 sinceBuild = "242"
                 untilBuild = "242.*"
                 types = listOf(org.jetbrains.intellij.platform.gradle.IntelliJPlatformType.IntellijIdeaCommunity)
             }
+            create(org.jetbrains.intellij.platform.gradle.IntelliJPlatformType.IntellijIdea, "2026.2.3")
         }
 
-        // Excludes COMPATIBILITY_PROBLEMS: against IC-242.26775.15 the verifier's only finding is
-        // "kotlin.reflect.TypeVariableImpl ... doesn't implement getAnnotatedBounds()" — a class
-        // from the IDE's own bundled Kotlin runtime, not from this plugin's dependency graph (it is
-        // absent from `dependencies.txt` in the verifier report; `kotlin-reflect` is not a
-        // dependency of any module here), so it is not something this plugin's code can fix.
-        // INVALID_PLUGIN/MISSING_DEPENDENCIES/NOT_DYNAMIC/PLUGIN_STRUCTURE_WARNINGS — the checks
-        // actually actionable from this plugin's own manifest/classpath — still fail the build.
+        // Everything the Marketplace's Compatibility verification turns non-green fails the build.
+        // Deprecated (not scheduled for removal) API is reported but not fatal: some of it — the
+        // classic Terminal API, deprecated only in 2026.3 — has no replacement on the 242 baseline.
         failureLevel = listOf(
+            org.jetbrains.intellij.platform.gradle.tasks.VerifyPluginTask.FailureLevel.COMPATIBILITY_PROBLEMS,
+            org.jetbrains.intellij.platform.gradle.tasks.VerifyPluginTask.FailureLevel.INTERNAL_API_USAGES,
+            org.jetbrains.intellij.platform.gradle.tasks.VerifyPluginTask.FailureLevel.SCHEDULED_FOR_REMOVAL_API_USAGES,
+            org.jetbrains.intellij.platform.gradle.tasks.VerifyPluginTask.FailureLevel.EXPERIMENTAL_API_USAGES,
+            org.jetbrains.intellij.platform.gradle.tasks.VerifyPluginTask.FailureLevel.OVERRIDE_ONLY_API_USAGES,
+            org.jetbrains.intellij.platform.gradle.tasks.VerifyPluginTask.FailureLevel.NON_EXTENDABLE_API_USAGES,
             org.jetbrains.intellij.platform.gradle.tasks.VerifyPluginTask.FailureLevel.INVALID_PLUGIN,
             org.jetbrains.intellij.platform.gradle.tasks.VerifyPluginTask.FailureLevel.MISSING_DEPENDENCIES,
             org.jetbrains.intellij.platform.gradle.tasks.VerifyPluginTask.FailureLevel.NOT_DYNAMIC,
@@ -203,6 +208,11 @@ tasks.withType<KotlinCompile>().configureEach {
     // compiler never emits calls into newer stdlib classes (e.g. Kotlin 2.2's coroutine
     // `SpillingKt`), which fail with NoClassDefFoundError inside older IDEs.
     compilerOptions.apiVersion.set(KotlinVersion.KOTLIN_1_9)
+    // With API 1.9 the compiler falls back to generating DefaultImpls-style bridges in every class
+    // that implements a platform interface, so e.g. AdbToolboxToolWindowFactory "overrides" the
+    // internal/experimental ToolWindowFactory.getAnchor/getIcon/manage in the Plugin Verifier's
+    // eyes. The platform ships real JVM default methods (242+), so inherit them instead.
+    compilerOptions.jvmDefault.set(JvmDefaultMode.NO_COMPATIBILITY)
 }
 
 tasks.withType<JavaCompile>().configureEach {

@@ -1,6 +1,7 @@
 package dev.acme.adbtoolbox.intellij.apps
 
 import com.intellij.icons.AllIcons
+import com.intellij.ui.scale.JBUIScale
 import dev.acme.adbtoolbox.intellij.icons.AdbToolboxIcons
 import dev.acme.adbtoolbox.intellij.ui.common.ShortcutHints
 import com.intellij.ui.components.JBLabel
@@ -69,7 +70,7 @@ class AppsPanel(
     private val searchField = JBTextField().apply {
         isOpaque = false
         border = BorderFactory.createEmptyBorder()
-        font = AdbToolboxTheme.Typography.body.deriveFont(JBUI.scale(11f))
+        font = AdbToolboxTheme.Typography.body.deriveFont(JBUIScale.scale(11f))
         emptyText.text = "Filter packages…"
         getAccessibleContext().accessibleName = "Filter packages"
         document.addDocumentListener(object : DocumentListener {
@@ -96,7 +97,7 @@ class AppsPanel(
         radius = { AdbToolboxTheme.Radii.field },
     ).apply {
         layout = FlexRowLayout(AdbToolboxTheme.Spacing.s3)
-        border = JBUI.Borders.empty(0, JBUI.scale(7))
+        border = JBUI.Borders.empty(0, JBUIScale.scale(7))
         preferredSize = Dimension(0, AdbToolboxTheme.Sizes.field)
         add(searchIconLabel)
         add(searchField, FlexRowLayout.FILL)
@@ -138,7 +139,7 @@ class AppsPanel(
         alignmentX = Component.CENTER_ALIGNMENT
     }
     private val emptyStateBodyLabel = JBLabel("").apply {
-        font = AdbToolboxTheme.Typography.body.deriveFont(JBUI.scale(11f))
+        font = AdbToolboxTheme.Typography.body.deriveFont(JBUIScale.scale(11f))
         foreground = AdbToolboxTheme.Colors.textDim
         alignmentX = Component.CENTER_ALIGNMENT
     }
@@ -149,7 +150,7 @@ class AppsPanel(
     private val emptyStatePanel = JPanel().apply {
         layout = javax.swing.BoxLayout(this, javax.swing.BoxLayout.Y_AXIS)
         isOpaque = false
-        border = JBUI.Borders.empty(JBUI.scale(34), AdbToolboxTheme.Spacing.s6, AdbToolboxTheme.Spacing.s6, AdbToolboxTheme.Spacing.s6)
+        border = JBUI.Borders.empty(JBUIScale.scale(34), AdbToolboxTheme.Spacing.s6, AdbToolboxTheme.Spacing.s6, AdbToolboxTheme.Spacing.s6)
         add(emptyStateTitleLabel)
         add(javax.swing.Box.createVerticalStrut(AdbToolboxTheme.Spacing.s3))
         add(emptyStateBodyLabel)
@@ -167,7 +168,7 @@ class AppsPanel(
     // ---- pinned action footer (`design/README.md` §4) ----
 
     private val selectedAppLabel = JBLabel("").apply {
-        font = AdbToolboxTheme.Typography.sectionTitle.deriveFont(JBUI.scale(12f))
+        font = AdbToolboxTheme.Typography.sectionTitle.deriveFont(JBUIScale.scale(12f))
         foreground = AdbToolboxTheme.Colors.text
     }
     private val selectedAppPackageLabel = JBLabel("").apply {
@@ -248,7 +249,7 @@ class AppsPanel(
         isOpaque = true
         border = BorderFactory.createCompoundBorder(
             BorderFactory.createMatteBorder(1, 0, 0, 0, AdbToolboxTheme.Colors.border),
-            JBUI.Borders.empty(AdbToolboxTheme.Spacing.s4, 0, JBUI.scale(10), 0),
+            JBUI.Borders.empty(AdbToolboxTheme.Spacing.s4, 0, JBUIScale.scale(10), 0),
         )
         add(selectedAppRow)
         add(javax.swing.Box.createVerticalStrut(AdbToolboxTheme.Spacing.s4))
@@ -411,18 +412,18 @@ class AppsPanel(
 
 /** The destructive group's dashed top divider (`design/README.md` §4: "a 1px dashed top border"). */
 internal class DashedTopBorder(private val color: Color) : AbstractBorder() {
-    override fun getBorderInsets(c: Component) = java.awt.Insets(JBUI.scale(1), 0, 0, 0)
+    override fun getBorderInsets(c: Component) = java.awt.Insets(JBUIScale.scale(1), 0, 0, 0)
 
     override fun paintBorder(c: Component, g: Graphics, x: Int, y: Int, width: Int, height: Int) {
         val g2 = g.create() as Graphics2D
         try {
             g2.color = color
             g2.stroke = BasicStroke(
-                JBUI.scale(1f),
+                JBUIScale.scale(1f),
                 BasicStroke.CAP_BUTT,
                 BasicStroke.JOIN_ROUND,
                 1f,
-                floatArrayOf(JBUI.scale(3f), JBUI.scale(2f)),
+                floatArrayOf(JBUIScale.scale(3f), JBUIScale.scale(2f)),
                 0f,
             )
             g2.drawLine(x, y, x + width, y)

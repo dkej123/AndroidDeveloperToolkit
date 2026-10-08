@@ -1,6 +1,6 @@
 package dev.acme.adbtoolbox.intellij.inspector
 
-import com.intellij.util.ui.JBUI
+import com.intellij.ui.scale.JBUIScale
 import dev.acme.adbtoolbox.domain.layout.AccessibilityReport
 import dev.acme.adbtoolbox.domain.layout.LayoutMeasurement
 import dev.acme.adbtoolbox.domain.layout.PixelRect
@@ -150,7 +150,7 @@ class InspectorCanvas(
 
     // ---- geometry ----
 
-    private val padding get() = JBUI.scale(24)
+    private val padding get() = JBUIScale.scale(24)
 
     /** The effective zoom (canvas px per dp). */
     val effectiveZoom: Double
@@ -259,7 +259,7 @@ class InspectorCanvas(
         g.color = AdbToolboxTheme.Colors.bg
         g.fillRect(0, 0, width, height)
         g.color = AdbToolboxTheme.Colors.border
-        val step = JBUI.scale(16)
+        val step = JBUIScale.scale(16)
         var y = step / 2
         while (y < height) {
             var x = step / 2
@@ -272,7 +272,7 @@ class InspectorCanvas(
     }
 
     private fun paintScreen(g: Graphics2D, screen: Rectangle, h: UiHierarchy) {
-        val arc = JBUI.scale(20).toFloat()
+        val arc = JBUIScale.scale(20).toFloat()
         val shape = RoundRectangle2D.Float(screen.x.toFloat(), screen.y.toFloat(), screen.width.toFloat(), screen.height.toFloat(), arc, arc)
         g.color = Color(0, 0, 0, 40)
         g.fill(RoundRectangle2D.Float(screen.x + 0f, screen.y + 3f, screen.width.toFloat(), screen.height.toFloat(), arc, arc))
@@ -363,14 +363,14 @@ class InspectorCanvas(
 
     private fun paintAudit(g: Graphics2D) {
         val report = audit ?: return
-        val badge = JBUI.scale(16)
-        g.font = AdbToolboxTheme.Typography.mono.deriveFont(Font.BOLD, JBUI.scale(9f))
+        val badge = JBUIScale.scale(16)
+        g.font = AdbToolboxTheme.Typography.mono.deriveFont(Font.BOLD, JBUIScale.scale(9f))
         report.stops.forEach { stop ->
             val r = toCanvas(stop.node.bounds)
             val problem = stop.issues.isNotEmpty()
             if (problem) {
                 g.color = AdbToolboxTheme.Colors.red
-                g.stroke = BasicStroke(JBUI.scale(1.5f), BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER, 1f, floatArrayOf(JBUI.scale(4f), JBUI.scale(3f)), 0f)
+                g.stroke = BasicStroke(JBUIScale.scale(1.5f), BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER, 1f, floatArrayOf(JBUIScale.scale(4f), JBUIScale.scale(3f)), 0f)
                 g.draw(r)
             }
             g.color = if (problem) AdbToolboxTheme.Colors.red else AdbToolboxTheme.Colors.accent
@@ -387,21 +387,21 @@ class InspectorCanvas(
         g.color = AdbToolboxTheme.Colors.accentBg
         g.fill(r)
         g.color = AdbToolboxTheme.Colors.accent
-        g.stroke = BasicStroke(1f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER, 1f, floatArrayOf(JBUI.scale(3f), JBUI.scale(2f)), 0f)
+        g.stroke = BasicStroke(1f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER, 1f, floatArrayOf(JBUIScale.scale(3f), JBUIScale.scale(2f)), 0f)
         g.draw(r)
-        pill(g, "${node.shortClassName.ifEmpty { "View" }} · ${size(node, h)}", r.x, r.y - JBUI.scale(4), above = true, fill = AdbToolboxTheme.Colors.panel, text = AdbToolboxTheme.Colors.text)
+        pill(g, "${node.shortClassName.ifEmpty { "View" }} · ${size(node, h)}", r.x, r.y - JBUIScale.scale(4), above = true, fill = AdbToolboxTheme.Colors.panel, text = AdbToolboxTheme.Colors.text)
     }
 
     private fun paintSelected(g: Graphics2D, node: UiNode, h: UiHierarchy) {
         val r = toCanvas(node.bounds)
         g.color = AdbToolboxTheme.Colors.accent
-        g.stroke = BasicStroke(JBUI.scale(2f))
+        g.stroke = BasicStroke(JBUIScale.scale(2f))
         g.draw(r)
-        pill(g, size(node, h), r.x, r.y + r.height + JBUI.scale(4), above = false, fill = AdbToolboxTheme.Colors.accent, text = Color.WHITE)
+        pill(g, size(node, h), r.x, r.y + r.height + JBUIScale.scale(4), above = false, fill = AdbToolboxTheme.Colors.accent, text = Color.WHITE)
     }
 
     private fun paintRedlines(g: Graphics2D, selected: UiNode, hovered: UiNode, h: UiHierarchy) {
-        val cap = JBUI.scale(7) / 2
+        val cap = JBUIScale.scale(7) / 2
         g.color = AdbToolboxTheme.Colors.measure
         g.stroke = BasicStroke(1f)
         LayoutMeasurement.between(selected.bounds, hovered.bounds, h).forEach { line ->
@@ -412,12 +412,12 @@ class InspectorCanvas(
                 g.drawLine(from, fixed, to, fixed)
                 g.drawLine(from, fixed - cap, from, fixed + cap)
                 g.drawLine(to, fixed - cap, to, fixed + cap)
-                pill(g, "${line.dp} dp", (from + to) / 2, fixed - JBUI.scale(3), above = true, fill = AdbToolboxTheme.Colors.measure, text = Color.WHITE, centered = true)
+                pill(g, "${line.dp} dp", (from + to) / 2, fixed - JBUIScale.scale(3), above = true, fill = AdbToolboxTheme.Colors.measure, text = Color.WHITE, centered = true)
             } else {
                 g.drawLine(fixed, from, fixed, to)
                 g.drawLine(fixed - cap, from, fixed + cap, from)
                 g.drawLine(fixed - cap, to, fixed + cap, to)
-                pill(g, "${line.dp} dp", fixed + JBUI.scale(4), (from + to) / 2 + JBUI.scale(6), above = true, fill = AdbToolboxTheme.Colors.measure, text = Color.WHITE)
+                pill(g, "${line.dp} dp", fixed + JBUIScale.scale(4), (from + to) / 2 + JBUIScale.scale(6), above = true, fill = AdbToolboxTheme.Colors.measure, text = Color.WHITE)
             }
             g.color = AdbToolboxTheme.Colors.measure
         }
@@ -425,42 +425,42 @@ class InspectorCanvas(
 
     private fun paintLoupe(g: Graphics2D, p: Point) {
         val color = sample(p) ?: return
-        val swatch = JBUI.scale(18)
-        val x = p.x + JBUI.scale(14)
-        val y = p.y + JBUI.scale(14)
+        val swatch = JBUIScale.scale(18)
+        val x = p.x + JBUIScale.scale(14)
+        val y = p.y + JBUIScale.scale(14)
         val text = hex(color)
-        g.font = AdbToolboxTheme.Typography.mono.deriveFont(JBUI.scale(10f))
+        g.font = AdbToolboxTheme.Typography.mono.deriveFont(JBUIScale.scale(10f))
         val fm = g.fontMetrics
         val hint = "click to copy"
-        val w = swatch + JBUI.scale(8) + maxOf(fm.stringWidth(text), fm.stringWidth(hint)) + JBUI.scale(10)
-        val hgt = JBUI.scale(34)
+        val w = swatch + JBUIScale.scale(8) + maxOf(fm.stringWidth(text), fm.stringWidth(hint)) + JBUIScale.scale(10)
+        val hgt = JBUIScale.scale(34)
         g.color = AdbToolboxTheme.Colors.panel
-        g.fillRoundRect(x, y, w, hgt, JBUI.scale(8), JBUI.scale(8))
+        g.fillRoundRect(x, y, w, hgt, JBUIScale.scale(8), JBUIScale.scale(8))
         g.color = AdbToolboxTheme.Colors.borderStrong
-        g.drawRoundRect(x, y, w, hgt, JBUI.scale(8), JBUI.scale(8))
+        g.drawRoundRect(x, y, w, hgt, JBUIScale.scale(8), JBUIScale.scale(8))
         g.color = color
-        g.fillRect(x + JBUI.scale(6), y + (hgt - swatch) / 2, swatch, swatch)
+        g.fillRect(x + JBUIScale.scale(6), y + (hgt - swatch) / 2, swatch, swatch)
         g.color = AdbToolboxTheme.Colors.text
-        g.drawString(text, x + swatch + JBUI.scale(12), y + JBUI.scale(14))
+        g.drawString(text, x + swatch + JBUIScale.scale(12), y + JBUIScale.scale(14))
         g.color = AdbToolboxTheme.Colors.textFaint
-        g.drawString(hint, x + swatch + JBUI.scale(12), y + JBUI.scale(27))
+        g.drawString(hint, x + swatch + JBUIScale.scale(12), y + JBUIScale.scale(27))
     }
 
     private fun pill(g: Graphics2D, label: String, x: Int, y: Int, above: Boolean, fill: Color, text: Color, centered: Boolean = false) {
-        g.font = AdbToolboxTheme.Typography.mono.deriveFont(Font.BOLD, JBUI.scale(10f))
+        g.font = AdbToolboxTheme.Typography.mono.deriveFont(Font.BOLD, JBUIScale.scale(10f))
         val fm = g.fontMetrics
-        val w = fm.stringWidth(label) + JBUI.scale(10)
-        val hgt = fm.height + JBUI.scale(2)
+        val w = fm.stringWidth(label) + JBUIScale.scale(10)
+        val hgt = fm.height + JBUIScale.scale(2)
         val left = if (centered) x - w / 2 else x
         val top = if (above) y - hgt else y
         g.color = fill
-        g.fillRoundRect(left, top, w, hgt, JBUI.scale(8), JBUI.scale(8))
+        g.fillRoundRect(left, top, w, hgt, JBUIScale.scale(8), JBUIScale.scale(8))
         if (fill == AdbToolboxTheme.Colors.panel) {
             g.color = AdbToolboxTheme.Colors.borderStrong
-            g.drawRoundRect(left, top, w, hgt, JBUI.scale(8), JBUI.scale(8))
+            g.drawRoundRect(left, top, w, hgt, JBUIScale.scale(8), JBUIScale.scale(8))
         }
         g.color = text
-        g.drawString(label, left + JBUI.scale(5), top + fm.ascent + JBUI.scale(1))
+        g.drawString(label, left + JBUIScale.scale(5), top + fm.ascent + JBUIScale.scale(1))
     }
 
     private fun size(node: UiNode, h: UiHierarchy) = "${h.dp(node.bounds.width).roundToInt()} × ${h.dp(node.bounds.height).roundToInt()} dp"

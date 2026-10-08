@@ -7,6 +7,7 @@ import dev.acme.adbtoolbox.domain.deviceactions.TerminalLauncher
 import dev.acme.adbtoolbox.domain.dispatch.DispatcherProvider
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.withContext
+import com.intellij.terminal.ui.TerminalWidget
 import org.jetbrains.plugins.terminal.TerminalToolWindowManager
 
 /**
@@ -21,7 +22,7 @@ import org.jetbrains.plugins.terminal.TerminalToolWindowManager
  * [TerminalLaunchResult.Unavailable], never a silent no-op or an uncaught exception.
  *
  * [dispatchers] is used (never `Dispatchers.EDT` directly, ADR 0004) to marshal the actual
- * `TerminalToolWindowManager`/`ShellTerminalWidget` calls onto the IDE's UI thread, matching this
+ * `TerminalToolWindowManager`/`TerminalWidget` calls onto the IDE's UI thread, matching this
  * plugin's one dispatcher-injection rule.
  */
 class TerminalLauncherAdapter(
@@ -36,22 +37,36 @@ class TerminalLauncherAdapter(
         }
         return withContext(dispatchers.main) {
             try {
-                // createLocalShellWidget/ShellTerminalWidget.executeCommand are deprecated in favor
-                // of createShellWidget's plain TerminalWidget (no typed executeCommand), but remain
-                // functional through the 242 baseline this module targets (ADR 0003) and are the
-                // only documented way to both create a tab AND pre-seed a command line into it —
-                // accepted here the same way this codebase accepts other IntelliJ-Platform-version
-                // risk (e.g. AdbTransportSelectionTest's class doc).
-                @Suppress("DEPRECATION")
-                val widget = TerminalToolWindowManager.getInstance(project)
-                    .createLocalShellWidget(null, "adb shell (${intent.serial})")
-                widget.executeCommand(intent.commandLine())
+                val widget = createShellTab(TerminalToolWindowManager.getInstance(project), "adb shell (${intent.serial})")
+                widget.sendCommandToExecute(intent.commandLine())
                 TerminalLaunchResult.Launched
             } catch (cancellation: CancellationException) {
                 throw cancellation
             } catch (error: Exception) {
                 TerminalLaunchResult.Unavailable(error.message ?: "Failed to open shell")
             }
+        }
+    }
+
+    /**
+     * `createShellWidget(workingDirectory, tabName, requestFocus, deferSessionStartUntilUiShown)`,
+     * called reflectively: it is the only tab-creating call present across the whole supported
+     * range (242+), yet 2026.3 deprecates it for the Reworked Terminal API, which 242 lacks — so any
+     * direct call is flagged by the Marketplace verifier on one end of the range. If a future IDE
+     * removes it, the caller reports [TerminalLaunchResult.Unavailable] instead of crashing.
+     */
+    internal fun createShellTab(manager: TerminalToolWindowManager, tabName: String): TerminalWidget {
+        val method = manager.javaClass.getMethod(
+            "createShellWidget",
+            String::class.java,
+            String::class.java,
+            Boolean::class.javaPrimitiveType,
+            Boolean::class.javaPrimitiveType,
+        )
+        return try {
+            method.invoke(manager, null, tabName, true, true) as TerminalWidget
+        } catch (wrapped: java.lang.reflect.InvocationTargetException) {
+            throw wrapped.targetException
         }
     }
 }

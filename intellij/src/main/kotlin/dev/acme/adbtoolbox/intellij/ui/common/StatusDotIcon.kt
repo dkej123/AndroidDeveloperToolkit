@@ -1,6 +1,6 @@
 package dev.acme.adbtoolbox.intellij.ui.common
 
-import com.intellij.util.ui.JBUI
+import com.intellij.ui.scale.JBUIScale
 import java.awt.BasicStroke
 import java.awt.Color
 import java.awt.Component
@@ -16,8 +16,8 @@ import javax.swing.Icon
  */
 class StatusDotIcon(private val color: Color, private val filled: Boolean, private val diameter: Int = 7) : Icon {
 
-    override fun getIconWidth(): Int = JBUI.scale(diameter)
-    override fun getIconHeight(): Int = JBUI.scale(diameter)
+    override fun getIconWidth(): Int = JBUIScale.scale(diameter)
+    override fun getIconHeight(): Int = JBUIScale.scale(diameter)
 
     override fun paintIcon(c: Component?, g: Graphics, x: Int, y: Int) {
         val g2 = g.create() as Graphics2D
@@ -27,7 +27,7 @@ class StatusDotIcon(private val color: Color, private val filled: Boolean, priva
             if (filled) {
                 g2.fillOval(x, y, iconWidth, iconHeight)
             } else {
-                val strokeWidth = JBUI.scale(1.5f)
+                val strokeWidth = JBUIScale.scale(1.5f)
                 g2.stroke = BasicStroke(strokeWidth)
                 val inset = strokeWidth / 2f
                 g2.draw(

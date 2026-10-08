@@ -1,5 +1,6 @@
 package dev.acme.adbtoolbox.intellij.ui.mirroring
 
+import com.intellij.ui.scale.JBUIScale
 import dev.acme.adbtoolbox.intellij.ui.common.ShortcutHints
 import dev.acme.adbtoolbox.intellij.ui.common.DesignButton
 import dev.acme.adbtoolbox.intellij.ui.common.DesignButtonStyle
@@ -67,14 +68,14 @@ class MirroringView(
     private val idleRow = flexRow(AdbToolboxTheme.Spacing.s3, startButton, optionsButton)
 
     val runningLabel = JBLabel("Mirroring · Running").apply {
-        font = AdbToolboxTheme.Typography.body.deriveFont(Font.BOLD, JBUI.scale(11.5f))
+        font = AdbToolboxTheme.Typography.body.deriveFont(Font.BOLD, JBUIScale.scale(11.5f))
         foreground = AdbToolboxTheme.Colors.brand
         icon = StatusDotIcon(AdbToolboxTheme.Colors.brand, filled = true)
     }
 
     // `runningRowStyle`: radius 5, `brandBg` + 1px `brandBorder`, `padding: 6px 8px`, gap 7.
     val runningBanner = RoundedSurface(AdbToolboxTheme.Colors.brandBg, AdbToolboxTheme.Colors.brandBorder).apply {
-        layout = FlexRowLayout(JBUI.scale(7))
+        layout = FlexRowLayout(JBUIScale.scale(7))
         border = JBUI.Borders.empty(6, 8)
         add(runningLabel, FlexRowLayout.FILL)
         add(stopButton)

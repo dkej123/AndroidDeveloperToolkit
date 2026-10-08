@@ -2,6 +2,7 @@ package dev.acme.adbtoolbox.intellij.devicefacts
 
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBPanel
+import com.intellij.ui.scale.JBUIScale
 import com.intellij.util.ui.JBUI
 import dev.acme.adbtoolbox.application.devicefacts.DeviceFactsViewState
 import dev.acme.adbtoolbox.application.devicefacts.DeviceSectionMeta
@@ -152,9 +153,9 @@ class DeviceFactsPanel(
     // their own content width.
     private val emptyBodyLabel = CenteredWrappingText(
         EMPTY_BODY,
-        AdbToolboxTheme.Typography.body.deriveFont(JBUI.scale(11f)),
+        AdbToolboxTheme.Typography.body.deriveFont(JBUIScale.scale(11f)),
         AdbToolboxTheme.Colors.textDim,
-        maxWidth = { JBUI.scale(250) },
+        maxWidth = { JBUIScale.scale(250) },
     )
 
     private val emptyPanel = emptyState(onRefresh, onPairOverWifi)
@@ -294,8 +295,8 @@ private fun linkButton(text: String, action: () -> Unit): JButton = DesignButton
 
 private class SkeletonBar(private val widthPercent: Int) : JComponent() {
     init {
-        preferredSize = Dimension(JBUI.scale(widthPercent * 3), JBUI.scale(10))
-        maximumSize = Dimension(Int.MAX_VALUE, JBUI.scale(10))
+        preferredSize = Dimension(JBUIScale.scale(widthPercent * 3), JBUIScale.scale(10))
+        maximumSize = Dimension(Int.MAX_VALUE, JBUIScale.scale(10))
         alignmentX = Component.LEFT_ALIGNMENT
     }
 
@@ -304,7 +305,7 @@ private class SkeletonBar(private val widthPercent: Int) : JComponent() {
         try {
             copy.color = AdbToolboxTheme.Colors.header
             copy.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
-            copy.fillRoundRect(0, 0, width * widthPercent / 100, height, JBUI.scale(6), JBUI.scale(6))
+            copy.fillRoundRect(0, 0, width * widthPercent / 100, height, JBUIScale.scale(6), JBUIScale.scale(6))
         } finally {
             copy.dispose()
         }
@@ -313,7 +314,7 @@ private class SkeletonBar(private val widthPercent: Int) : JComponent() {
 
 private class EmptyDeviceGlyph : JComponent() {
     init {
-        preferredSize = Dimension(JBUI.scale(26), JBUI.scale(34))
+        preferredSize = Dimension(JBUIScale.scale(26), JBUIScale.scale(34))
         maximumSize = preferredSize
     }
 
@@ -323,7 +324,7 @@ private class EmptyDeviceGlyph : JComponent() {
             // `emptyIconStyle`: radius 5, 1.6px `borderStrong` outline.
             copy.color = AdbToolboxTheme.Colors.borderStrong
             copy.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
-            val stroke = JBUI.scale(1.6f)
+            val stroke = JBUIScale.scale(1.6f)
             copy.stroke = java.awt.BasicStroke(stroke)
             val arc = AdbToolboxTheme.Radii.button * 2f
             copy.draw(java.awt.geom.RoundRectangle2D.Float(stroke / 2, stroke / 2, width - stroke, height - stroke, arc, arc))

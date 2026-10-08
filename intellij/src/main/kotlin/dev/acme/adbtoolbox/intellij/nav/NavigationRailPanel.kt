@@ -1,10 +1,10 @@
 package dev.acme.adbtoolbox.intellij.nav
 
 import com.intellij.icons.AllIcons
+import com.intellij.ui.scale.JBUIScale
 import dev.acme.adbtoolbox.intellij.icons.AdbToolboxIcons
 import com.intellij.ui.components.JBList
 import com.intellij.ui.components.JBPanel
-import com.intellij.util.ui.JBUI
 import dev.acme.adbtoolbox.domain.nav.NavigationBadge
 import dev.acme.adbtoolbox.domain.nav.ViewId
 import dev.acme.adbtoolbox.intellij.ui.common.AdbToolboxTheme
@@ -234,8 +234,8 @@ private class RailCellRenderer(
             }
             if (badge != NavigationBadge.None) {
                 g2.color = badgeColor(badge)
-                val dotSize = JBUI.scale(5)
-                val inset = JBUI.scale(2)
+                val dotSize = JBUIScale.scale(5)
+                val inset = JBUIScale.scale(2)
                 g2.fillOval(x + size - dotSize - inset, y + inset, dotSize, dotSize)
             }
         } finally {

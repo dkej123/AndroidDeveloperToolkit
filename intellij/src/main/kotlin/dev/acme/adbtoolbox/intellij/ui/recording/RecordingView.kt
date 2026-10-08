@@ -1,5 +1,6 @@
 package dev.acme.adbtoolbox.intellij.ui.recording
 
+import com.intellij.ui.scale.JBUIScale
 import dev.acme.adbtoolbox.intellij.ui.common.DesignButton
 import dev.acme.adbtoolbox.intellij.ui.common.DesignButtonStyle
 import dev.acme.adbtoolbox.intellij.ui.common.FlexRowLayout
@@ -49,7 +50,7 @@ class RecordingView(
         font = AdbToolboxTheme.Typography.mono.deriveFont(Font.BOLD)
         foreground = AdbToolboxTheme.Colors.red
         icon = StatusDotIcon(AdbToolboxTheme.Colors.red, filled = true)
-        iconTextGap = JBUI.scale(7)
+        iconTextGap = JBUIScale.scale(7)
     }
 
     // Vertically centered so the idle button lines up with Screenshot in the shared capture row.
@@ -57,7 +58,7 @@ class RecordingView(
 
     // `recordingRowStyle`: radius 5, `redBg` + 1px `redBorder`, `padding: 6px 8px`, gap 7.
     val recordingBanner = RoundedSurface(AdbToolboxTheme.Colors.redBg, AdbToolboxTheme.Colors.redBorder).apply {
-        layout = FlexRowLayout(JBUI.scale(7))
+        layout = FlexRowLayout(JBUIScale.scale(7))
         border = JBUI.Borders.empty(6, 8)
         add(statusLabel, FlexRowLayout.FILL)
         add(stopButton)

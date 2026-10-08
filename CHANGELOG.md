@@ -22,6 +22,14 @@ the Marketplace change notes and the GitHub release notes are generated from it
   control, Uninstall and Clear data always ask first; setup snippets in Settings.
 - Screenshots are also copied to the clipboard (Settings › Capture, on by default).
 
+### Fixed
+- App icons were missing on current Android versions (the device could not load adaptive or
+  vector icons from the helper process). Icons now also come from the launcher activity and stay
+  sharp on HiDPI screens.
+- Compatibility with IntelliJ IDEA / Android Studio 2025.2 – 2026.3: no removed, internal or
+  experimental platform API is used any more (theme listener, Navigation graphs for deep links,
+  Open shell, proxy settings, rail icon tint).
+
 ## [1.0.0] - 2026-10-01
 
 First public release.

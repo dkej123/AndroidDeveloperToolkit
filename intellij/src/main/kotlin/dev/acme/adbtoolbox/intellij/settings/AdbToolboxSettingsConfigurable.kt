@@ -169,7 +169,7 @@ class AdbToolboxSettingsConfigurable internal constructor(
         val verboseDiagnostics = JBCheckBox("Verbose diagnostics (debug level)").apply {
             name = "verboseDiagnosticsCheckBox"
         }
-        private val diagnosticsButtons = JPanel(FlowLayout(FlowLayout.LEADING, com.intellij.util.ui.JBUI.scale(6), 0)).apply {
+        private val diagnosticsButtons = JPanel(FlowLayout(FlowLayout.LEADING, com.intellij.ui.scale.JBUIScale.scale(6), 0)).apply {
             add(JButton("Collect Diagnostics…").apply { addActionListener { DiagnosticsActions.collect(project) } })
             add(JButton("Record Performance (60 s)").apply { addActionListener { DiagnosticsActions.recordPerformance(project) } })
             add(JButton("Open Log Folder").apply { addActionListener { DiagnosticsActions.openLogFolder() } })

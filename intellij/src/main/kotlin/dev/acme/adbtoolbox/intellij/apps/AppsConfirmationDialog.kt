@@ -3,7 +3,7 @@ package dev.acme.adbtoolbox.intellij.apps
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.ui.components.JBLabel
-import com.intellij.util.ui.JBUI
+import com.intellij.ui.scale.JBUIScale
 import dev.acme.adbtoolbox.intellij.ui.common.AdbToolboxTheme
 import java.awt.BorderLayout
 import java.awt.Color
@@ -49,24 +49,24 @@ internal class AppsConfirmationDialog(
             font = AdbToolboxTheme.Typography.sectionTitle
             foreground = AdbToolboxTheme.Colors.text
         }
-        val bodyWidth = JBUI.scale(272)
+        val bodyWidth = JBUIScale.scale(272)
         val bodyLabel = JBLabel("<html><body style='width:${bodyWidth}px'>$bodyText</body></html>").apply {
             font = AdbToolboxTheme.Typography.body
             foreground = AdbToolboxTheme.Colors.textDim
             verticalAlignment = SwingConstants.TOP
-            border = EmptyBorder(JBUI.scale(4), 0, 0, 0)
+            border = EmptyBorder(JBUIScale.scale(4), 0, 0, 0)
         }
         return JPanel(BorderLayout()).apply {
             background = AdbToolboxTheme.Colors.panel
-            border = EmptyBorder(JBUI.scale(14), JBUI.scale(14), JBUI.scale(14), JBUI.scale(14))
-            preferredSize = Dimension(JBUI.scale(300), preferredSize.height)
+            border = EmptyBorder(JBUIScale.scale(14), JBUIScale.scale(14), JBUIScale.scale(14), JBUIScale.scale(14))
+            preferredSize = Dimension(JBUIScale.scale(300), preferredSize.height)
             add(titleLabel, BorderLayout.NORTH)
             add(bodyLabel, BorderLayout.CENTER)
             agentNote?.let { note ->
                 add(JBLabel("<html><body style='width:${bodyWidth}px'>$note</body></html>").apply {
-                    font = AdbToolboxTheme.Typography.caption.deriveFont(JBUI.scale(10.5f))
+                    font = AdbToolboxTheme.Typography.caption.deriveFont(JBUIScale.scale(10.5f))
                     foreground = AdbToolboxTheme.Colors.brand
-                    border = EmptyBorder(JBUI.scale(6), 0, 0, 0)
+                    border = EmptyBorder(JBUIScale.scale(6), 0, 0, 0)
                 }, BorderLayout.SOUTH)
             }
         }

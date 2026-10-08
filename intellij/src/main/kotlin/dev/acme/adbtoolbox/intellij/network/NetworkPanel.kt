@@ -1,5 +1,6 @@
 package dev.acme.adbtoolbox.intellij.network
 
+import com.intellij.ui.scale.JBUIScale
 import dev.acme.adbtoolbox.intellij.ui.common.PresetChipChoice
 import dev.acme.adbtoolbox.intellij.ui.common.PresetChipRow
 import dev.acme.adbtoolbox.domain.network.NetworkThrottle
@@ -68,7 +69,7 @@ class NetworkPanel(
 
     // `proxyStateStyle`: 10px/700 UI font, `textFaint` when off, amber when active.
     private val proxyStateLabel = JBLabel("—").apply {
-        font = AdbToolboxTheme.Typography.body.deriveFont(Font.BOLD, JBUI.scale(10f))
+        font = AdbToolboxTheme.Typography.body.deriveFont(Font.BOLD, JBUIScale.scale(10f))
         foreground = AdbToolboxTheme.Colors.textFaint
     }
     private val proxyHeader = DesignSections.header(proxyTitleLabel, proxyStateLabel)
@@ -83,11 +84,11 @@ class NetworkPanel(
         })
     }
     private val colonLabel = JBLabel(":").apply {
-        font = AdbToolboxTheme.Typography.mono.deriveFont(JBUI.scale(12f))
+        font = AdbToolboxTheme.Typography.mono.deriveFont(JBUIScale.scale(12f))
         foreground = AdbToolboxTheme.Colors.textFaint
     }
     private val portField = monoField().apply {
-        preferredSize = Dimension(JBUI.scale(66), AdbToolboxTheme.Sizes.field)
+        preferredSize = Dimension(JBUIScale.scale(66), AdbToolboxTheme.Sizes.field)
         getAccessibleContext().accessibleName = "Proxy port"
         document.addDocumentListener(object : DocumentListener {
             override fun insertUpdate(e: DocumentEvent) = onPortChange(text)
@@ -96,7 +97,7 @@ class NetworkPanel(
         })
     }
     // `proxyFieldRowStyle`: host (flex) · mono ":" · 66px port, gap 5, `padding: 0 10px`.
-    private val fieldRow = flexRow(JBUI.scale(5), hostField, colonLabel, portField, fill = hostField).apply {
+    private val fieldRow = flexRow(JBUIScale.scale(5), hostField, colonLabel, portField, fill = hostField).apply {
         border = JBUI.Borders.empty(0, AdbToolboxTheme.Spacing.sectionInset)
     }
 
@@ -121,7 +122,7 @@ class NetworkPanel(
 
     private val liveDotLabel = JBLabel(StatusDotIcon(AdbToolboxTheme.Colors.amber, filled = true))
     private val activeBannerTextLabel = JBLabel("").apply {
-        font = AdbToolboxTheme.Typography.body.deriveFont(Font.BOLD, JBUI.scale(11f))
+        font = AdbToolboxTheme.Typography.body.deriveFont(Font.BOLD, JBUIScale.scale(11f))
         foreground = AdbToolboxTheme.Colors.amber
     }
     private val resetLink = linkButton("Reset") { onReset() }
@@ -129,7 +130,7 @@ class NetworkPanel(
     // `proxyActiveBannerStyle`: `padding: 6px 8px`, radius 5, `amberBg` + 1px amber, gap 7. The text
     // is the row's only flexible child, so it ellipsises before it can reach the Reset action.
     private val activeBanner = RoundedSurface(AdbToolboxTheme.Colors.amberBg, AdbToolboxTheme.Colors.amber).apply {
-        layout = FlexRowLayout(JBUI.scale(7))
+        layout = FlexRowLayout(JBUIScale.scale(7))
         border = JBUI.Borders.empty(AdbToolboxTheme.Spacing.s3, AdbToolboxTheme.Spacing.s4)
         add(liveDotLabel)
         add(activeBannerTextLabel, FlexRowLayout.FILL)
@@ -155,7 +156,7 @@ class NetworkPanel(
     private val recentsList = JBList(recentsModel).apply {
         isOpaque = false
         border = JBUI.Borders.empty()
-        fixedCellHeight = JBUI.scale(26)
+        fixedCellHeight = JBUIScale.scale(26)
         cellRenderer = ListCellRenderer<ProxyEndpoint> { _, value, _, _, _ ->
             JBLabel(value.render()).apply {
                 font = AdbToolboxTheme.Typography.mono
@@ -333,7 +334,7 @@ class NetworkPanel(
         }
 
         fun errorLabel() = JBLabel("").apply {
-            font = AdbToolboxTheme.Typography.caption.deriveFont(JBUI.scale(10.5f))
+            font = AdbToolboxTheme.Typography.caption.deriveFont(JBUIScale.scale(10.5f))
             foreground = AdbToolboxTheme.Colors.red
             isVisible = false
             border = JBUI.Borders.empty(0, AdbToolboxTheme.Spacing.sectionInset)

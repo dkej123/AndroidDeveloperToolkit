@@ -39,4 +39,18 @@ class TerminalLauncherAdapterTest : BasePlatformTestCase() {
             (result as TerminalLaunchResult.Unavailable).reason,
         )
     }
+
+    fun `test the reflectively called createShellWidget exists with the expected signature and return type`() {
+        // createShellTab looks the method up by name; a renamed/reshaped platform method must fail
+        // here rather than only at runtime in the user's IDE.
+        val method = org.jetbrains.plugins.terminal.TerminalToolWindowManager::class.java.getMethod(
+            "createShellWidget",
+            String::class.java,
+            String::class.java,
+            Boolean::class.javaPrimitiveType,
+            Boolean::class.javaPrimitiveType,
+        )
+
+        assertTrue(com.intellij.terminal.ui.TerminalWidget::class.java.isAssignableFrom(method.returnType))
+    }
 }

@@ -14,7 +14,9 @@ These rules apply to every session in this repository.
   agent sessions. For local task validation, use `./gradlew build`, `./gradlew test`, and the
   architecture/coverage gates instead. `verifyPlugin` still belongs in CI (GitHub Actions), scoped to
   a single IDE build target (not the full `recommended()` matrix) so it stays fast there — CI running
-  it is expected and required; only ad hoc/local agent invocation is banned.
+  it is expected and required; only ad hoc/local agent invocation is banned. Exception to the
+  single-target rule (user decision, 2026-10-08): CI verifies the 242 baseline and the newest
+  stable IntelliJ IDEA, failing on anything the Marketplace marks non-green.
 - End-to-end tests: `docs/e2e-testing.md`. `e2e/scripts/run-e2e.sh` provisions everything they
   need (Android SDK + emulator, Android Studio, headless X11 — no root) and runs `:e2e:e2eTest`
   against a real Android Studio with a real emulator. Run it for any change that affects what a

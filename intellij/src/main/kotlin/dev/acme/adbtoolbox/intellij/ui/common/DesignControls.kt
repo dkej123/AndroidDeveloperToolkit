@@ -1,6 +1,7 @@
 package dev.acme.adbtoolbox.intellij.ui.common
 
 import com.intellij.ui.components.JBLabel
+import com.intellij.ui.scale.JBUIScale
 import com.intellij.util.ui.JBUI
 import java.awt.AlphaComposite
 import java.awt.BasicStroke
@@ -54,10 +55,10 @@ class DesignButton(text: String, style: DesignButtonStyle) : JButton(text) {
 
     private fun applyStyle() {
         font = when (style) {
-            DesignButtonStyle.PRIMARY -> AdbToolboxTheme.Typography.body.deriveFont(Font.BOLD, JBUI.scale(11.5f))
-            DesignButtonStyle.SECONDARY -> AdbToolboxTheme.Typography.body.deriveFont(Font.PLAIN, JBUI.scale(11.5f))
-            DesignButtonStyle.DANGER -> AdbToolboxTheme.Typography.body.deriveFont(Font.BOLD, JBUI.scale(11f))
-            DesignButtonStyle.LINK -> AdbToolboxTheme.Typography.body.deriveFont(Font.BOLD, JBUI.scale(11f))
+            DesignButtonStyle.PRIMARY -> AdbToolboxTheme.Typography.body.deriveFont(Font.BOLD, JBUIScale.scale(11.5f))
+            DesignButtonStyle.SECONDARY -> AdbToolboxTheme.Typography.body.deriveFont(Font.PLAIN, JBUIScale.scale(11.5f))
+            DesignButtonStyle.DANGER -> AdbToolboxTheme.Typography.body.deriveFont(Font.BOLD, JBUIScale.scale(11f))
+            DesignButtonStyle.LINK -> AdbToolboxTheme.Typography.body.deriveFont(Font.BOLD, JBUIScale.scale(11f))
         }
         foreground = when (style) {
             DesignButtonStyle.PRIMARY -> Color.WHITE
@@ -72,9 +73,9 @@ class DesignButton(text: String, style: DesignButtonStyle) : JButton(text) {
 
     private val horizontalPadding: Int
         get() = when (style) {
-            DesignButtonStyle.PRIMARY -> JBUI.scale(12)
-            DesignButtonStyle.SECONDARY -> JBUI.scale(10)
-            DesignButtonStyle.DANGER -> JBUI.scale(9)
+            DesignButtonStyle.PRIMARY -> JBUIScale.scale(12)
+            DesignButtonStyle.SECONDARY -> JBUIScale.scale(10)
+            DesignButtonStyle.DANGER -> JBUIScale.scale(9)
             DesignButtonStyle.LINK -> 0
         }
 
@@ -83,7 +84,7 @@ class DesignButton(text: String, style: DesignButtonStyle) : JButton(text) {
             DesignButtonStyle.PRIMARY -> AdbToolboxTheme.Sizes.primaryButton
             DesignButtonStyle.SECONDARY -> AdbToolboxTheme.Sizes.secondaryButton
             DesignButtonStyle.DANGER -> AdbToolboxTheme.Sizes.field
-            DesignButtonStyle.LINK -> getFontMetrics(font).height + JBUI.scale(2)
+            DesignButtonStyle.LINK -> getFontMetrics(font).height + JBUIScale.scale(2)
         }
 
     override fun getPreferredSize(): Dimension {
@@ -114,7 +115,7 @@ class DesignButton(text: String, style: DesignButtonStyle) : JButton(text) {
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
             g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON)
             val arc = (AdbToolboxTheme.Radii.button * 2).toFloat()
-            val stroke = JBUI.scale(1f)
+            val stroke = JBUIScale.scale(1f)
             val outline = RoundRectangle2D.Float(stroke / 2, stroke / 2, width - stroke, height - stroke, arc, arc)
             val hovered = isEnabled && model.isRollover
             when (style) {
@@ -155,7 +156,7 @@ class DesignButton(text: String, style: DesignButtonStyle) : JButton(text) {
             val textY = (height - metrics.height) / 2 + metrics.ascent
             g2.drawString(label, textX, textY)
             if (isFocusOwner && style == DesignButtonStyle.LINK) {
-                g2.drawLine(textX, textY + JBUI.scale(1), textX + metrics.stringWidth(label), textY + JBUI.scale(1))
+                g2.drawLine(textX, textY + JBUIScale.scale(1), textX + metrics.stringWidth(label), textY + JBUIScale.scale(1))
             }
         } finally {
             g2.dispose()
@@ -329,7 +330,7 @@ open class RoundedSurface(
         try {
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
             val arc = (radius() * 2).toFloat().coerceAtMost(height.toFloat())
-            val stroke = JBUI.scale(1f)
+            val stroke = JBUIScale.scale(1f)
             fill?.let {
                 g2.color = it
                 g2.fill(RoundRectangle2D.Float(0f, 0f, width.toFloat(), height.toFloat(), arc, arc))
@@ -373,7 +374,7 @@ object DesignSections {
     }
 
     fun metaLabel(text: String = "—", size: Float = 10f): JBLabel = JBLabel(text).apply {
-        font = AdbToolboxTheme.Typography.mono.deriveFont(JBUI.scale(size))
+        font = AdbToolboxTheme.Typography.mono.deriveFont(JBUIScale.scale(size))
         foreground = AdbToolboxTheme.Colors.textFaint
     }
 
