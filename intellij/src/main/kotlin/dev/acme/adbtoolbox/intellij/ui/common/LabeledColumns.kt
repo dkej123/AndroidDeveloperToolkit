@@ -77,10 +77,20 @@ fun responsiveColumns(vararg columns: JComponent): JPanel = object : JPanel(Resp
 
 /** A 24px platform combo for a [labeledColumn]; every item — `null` included — renders through [label]. */
 fun <T> designCombo(label: (T) -> String): ComboBox<T> = ComboBox<T>().apply {
-    @Suppress("UNCHECKED_CAST")
-    renderer = com.intellij.ui.SimpleListCellRenderer.create { cell, value, _ -> cell.text = label(value as T) }
+    renderer = textRenderer(label)
     font = AdbToolboxTheme.Typography.body.deriveFont(JBUIScale.scale(11.5f))
 }
+
+/**
+ * A list renderer showing [label] for each item, `null` included. A subclass rather than
+ * `SimpleListCellRenderer.create(...)`, which 2026.x schedules for removal.
+ */
+fun <T> textRenderer(label: (T) -> String): com.intellij.ui.SimpleListCellRenderer<T> =
+    object : com.intellij.ui.SimpleListCellRenderer<T>() {
+        override fun customize(list: javax.swing.JList<out T>, value: T, index: Int, selected: Boolean, hasFocus: Boolean) {
+            text = label(value)
+        }
+    }
 
 private fun verticalStackWithGap(gap: Int, vararg children: Component): JPanel =
     JPanel(VerticalStackLayout { gap }).apply {

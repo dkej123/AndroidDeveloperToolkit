@@ -132,10 +132,12 @@ intellijPlatform {
             create(org.jetbrains.intellij.platform.gradle.IntelliJPlatformType.IntellijIdea, "2026.2.3")
         }
 
-        // Everything the Marketplace's Compatibility verification turns non-green fails the build.
-        // Deprecated (not scheduled for removal) API is reported but not fatal: some of it — the
-        // classic Terminal API, deprecated only in 2026.3 — has no replacement on the 242 baseline.
+        // Everything the Marketplace's Compatibility verification turns non-green fails the build,
+        // deprecated API included: the verifier files some scheduled-for-removal methods under
+        // "Deprecated API usages" (SimpleListCellRenderer.create on 262), so only failing on both
+        // catches them. Both ends of the range are free of deprecated API as of 2026-10-08.
         failureLevel = listOf(
+            org.jetbrains.intellij.platform.gradle.tasks.VerifyPluginTask.FailureLevel.DEPRECATED_API_USAGES,
             org.jetbrains.intellij.platform.gradle.tasks.VerifyPluginTask.FailureLevel.COMPATIBILITY_PROBLEMS,
             org.jetbrains.intellij.platform.gradle.tasks.VerifyPluginTask.FailureLevel.INTERNAL_API_USAGES,
             org.jetbrains.intellij.platform.gradle.tasks.VerifyPluginTask.FailureLevel.SCHEDULED_FOR_REMOVAL_API_USAGES,

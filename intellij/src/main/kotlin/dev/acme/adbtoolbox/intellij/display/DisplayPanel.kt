@@ -5,7 +5,7 @@ import dev.acme.adbtoolbox.intellij.ui.common.responsiveColumns
 import dev.acme.adbtoolbox.intellij.ui.common.labeledColumn
 import javax.swing.JComboBox
 import javax.swing.DefaultComboBoxModel
-import com.intellij.ui.SimpleListCellRenderer
+import dev.acme.adbtoolbox.intellij.ui.common.textRenderer
 import com.intellij.openapi.ui.ComboBox
 import com.intellij.ui.scale.JBUIScale
 import dev.acme.adbtoolbox.domain.display.TalkBackProfile
@@ -724,8 +724,7 @@ class DisplayPanel(
         /** A 24px dropdown for the Display section; [markOverridden] colours its shown value. */
         fun <T> displayCombo(label: (T?) -> String): ComboBox<T> = ComboBox<T>().apply {
             font = AdbToolboxTheme.Typography.body.deriveFont(JBUIScale.scale(11.5f))
-            @Suppress("UNCHECKED_CAST")
-            renderer = SimpleListCellRenderer.create { cell, value, _ -> cell.text = label(value as T?) }
+            renderer = textRenderer<T> { value -> label(value) }
             putClientProperty(DEFAULT_FOREGROUND, foreground)
         }
 
