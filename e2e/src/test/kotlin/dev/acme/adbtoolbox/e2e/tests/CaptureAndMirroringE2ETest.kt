@@ -52,7 +52,9 @@ class CaptureAndMirroringE2ETest : E2eTest() {
         Adb.shell("am start -W -a android.settings.SETTINGS")
         val screenHeight = Adb.shell("wm size").substringAfterLast(": ").trim().split("x")[1].toInt()
 
-        studio.click("Full page")
+        // Full page lives in the Screenshot split button's menu (design handoff 4, user decision 2026-10-08).
+        studio.click("More screenshot options")
+        studio.clickMenuItem("Full page")
 
         val png = awaitNewFile("-full.png", E2eConfig.deviceTimeout(60))
         ImageIO.read(png).height shouldBeGreaterThan screenHeight
@@ -99,12 +101,9 @@ class CaptureAndMirroringE2ETest : E2eTest() {
 
     @Test
     fun `mirroring options are persisted and passed to scrcpy`() {
+        // Design handoff 4: the options open inline under the Screen toolbar and apply at once.
         studio.click("Mirroring options")
-        val dialog = studio.dialog("Mirroring Options")
-        val bitRate = dialog.find(com.intellij.remoterobot.fixtures.JTextFieldFixture::class.java,
-            com.intellij.remoterobot.search.locators.byXpath("//div[@name='mirroringVideoBitRateField']"), Duration.ofSeconds(5))
-        bitRate.text = "4"
-        studio.dialogButton(dialog, "OK").click()
+        studio.byName("Bitrate").runJs("component.setSelectedItem(java.lang.Integer.valueOf(4))", true)
 
         studio.click("Start mirroring")
 
@@ -115,18 +114,16 @@ class CaptureAndMirroringE2ETest : E2eTest() {
             }
         }
         studio.click("Stop")
+        studio.byName("Bitrate").runJs("component.setSelectedItem(null)", true)
+        studio.click("Mirroring options")
     }
 
     @Test
-    fun `Show touches from the options dialog reaches scrcpy and the device`() {
-        // Regression: the dialog saved options the Start button never saw until an IDE restart.
+    fun `Show touches from the options panel reaches scrcpy and the device`() {
+        // Regression: saved options the Start button never saw until an IDE restart.
         Adb.putSetting("system", "show_touches", "0")
         studio.click("Mirroring options")
-        val dialog = studio.dialog("Mirroring Options")
-        val checkBox = dialog.find(com.intellij.remoterobot.fixtures.JCheckboxFixture::class.java,
-            com.intellij.remoterobot.search.locators.byXpath("//div[@name='mirroringShowTouchesCheckBox']"), Duration.ofSeconds(5))
-        checkBox.select()
-        studio.dialogButton(dialog, "OK").click()
+        studio.click("Show touches")
 
         studio.click("Start mirroring")
 
@@ -140,12 +137,8 @@ class CaptureAndMirroringE2ETest : E2eTest() {
         awaitUntil(E2eConfig.deviceTimeout(15), Duration.ofMillis(500), "scrcpy to exit") { scrcpyProcesses().isEmpty() }
 
         // Leave the persisted options as the other tests expect them.
+        studio.click("Show touches")
         studio.click("Mirroring options")
-        val reopened = studio.dialog("Mirroring Options")
-        reopened.find(com.intellij.remoterobot.fixtures.JCheckboxFixture::class.java,
-            com.intellij.remoterobot.search.locators.byXpath("//div[@name='mirroringShowTouchesCheckBox']"), Duration.ofSeconds(5))
-            .setValue(false)
-        studio.dialogButton(reopened, "OK").click()
     }
 
     private fun awaitNewFile(suffix: String, timeout: Duration): File {

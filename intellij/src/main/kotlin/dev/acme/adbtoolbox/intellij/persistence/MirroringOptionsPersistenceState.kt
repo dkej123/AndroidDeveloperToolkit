@@ -14,6 +14,9 @@ class MirroringOptionsPersistenceState {
     var maxSize: Int = NO_LIMIT
     var videoBitRateMbps: Int = NO_LIMIT
 
+    /** Added after schema 1 without a bump: an older file simply lacks it and reads as `false`. */
+    var turnScreenOff: Boolean = false
+
     companion object {
         const val CURRENT_SCHEMA_VERSION: Int = 1
 

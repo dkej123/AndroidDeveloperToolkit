@@ -156,7 +156,8 @@ class AdbToolboxToolWindowPanel(
     deviceContextAggregator: DeviceContextAggregator,
     private val displayScope: CoroutineScope,
     openSettings: () -> Unit = {},
-    openMirroringOptions: () -> Unit = {},
+    /** Backs the Screen section's inline "Mirroring options" panel (design §3). */
+    mirroringOptionsViewModel: dev.acme.adbtoolbox.application.mirroring.MirroringOptionsViewModel? = null,
     onResetOverrides: () -> Unit = {},
     diagnosticsLog: DiagnosticsLog = NoOpDiagnosticsLog,
     sectionMeta: StateFlow<DeviceSectionMeta>? = null,
@@ -220,7 +221,7 @@ class AdbToolboxToolWindowPanel(
         viewModel = mirroringViewModel,
         scope = mirroringScope,
         dispatchers = dispatchers,
-        openOptions = openMirroringOptions,
+        optionsViewModel = mirroringOptionsViewModel,
     )
 
     // Mounted after captureCoordinator, into the same already-registered captureSlot.
@@ -229,24 +230,21 @@ class AdbToolboxToolWindowPanel(
         viewModel = recordingViewModel,
         scope = recordingScope,
         dispatchers = dispatchers,
-        captureView = captureCoordinator.view,
     )
 
-    // Design §9: Capture → Inspect layout opens the selected device in a Layout Inspector tab.
-    private val inspectLayoutButton = dev.acme.adbtoolbox.intellij.ui.common.DesignButton(
-        "Inspect layout",
-        dev.acme.adbtoolbox.intellij.ui.common.DesignButtonStyle.SECONDARY,
+    // Design §3 Screen / §9: "Inspect layout" opens the selected device in a Layout Inspector tab;
+    // while that tab is open it reads "Re-capture layout" in the accent tone (see the init below).
+    private val inspectLayoutButton = dev.acme.adbtoolbox.intellij.ui.common.ScreenToolButton(
+        dev.acme.adbtoolbox.intellij.icons.AdbToolboxIcons.Actions.layoutInspector,
+        INSPECT_LABEL,
     ).apply {
-        toolTipText = dev.acme.adbtoolbox.intellij.ui.common.ShortcutHints.withAction(
-            "Capture the screen and its UI hierarchy into the Layout Inspector — sizes and distances in dp, accessibility audit",
-            "AdbToolbox.InspectLayout",
-        )
+        toolTipText = dev.acme.adbtoolbox.intellij.ui.common.ShortcutHints.withAction(INSPECT_TOOLTIP, "AdbToolbox.InspectLayout")
         addActionListener {
             com.intellij.openapi.actionSystem.ActionManager.getInstance().getAction("AdbToolbox.InspectLayout")?.let { action ->
                 com.intellij.openapi.actionSystem.ex.ActionUtil.invokeAction(action, this, "AdbToolboxCapture", null, null)
             }
         }
-    }.also { deviceFactsCoordinator.panel.captureSlot.add(it) }
+    }.also { deviceFactsCoordinator.panel.inspectSlot.add(it) }
 
     // Design §9: while an inspector tab is open (and a device is online), Capture says so.
     private val inspectorOpenRow = dev.acme.adbtoolbox.intellij.inspector.InspectorOpenRow(onShowInspector, onRecaptureInspector)
@@ -257,9 +255,25 @@ class AdbToolboxToolWindowPanel(
             val online = selectedDeviceState?.map { it is dev.acme.adbtoolbox.domain.device.SelectedDeviceState.Online }
                 ?: kotlinx.coroutines.flow.flowOf(true)
             kotlinx.coroutines.flow.combine(inspectorStatus, online) { status, isOnline -> status.takeIf { isOnline } }
-                .onEach { status -> withContext(dispatchers.main) { inspectorOpenRow.render(status) } }
+                .onEach { status ->
+                    withContext(dispatchers.main) {
+                        inspectorOpenRow.render(status)
+                        renderInspectButton(open = status != null)
+                    }
+                }
                 .launchIn(deviceFactsScope)
         }
+    }
+
+    private fun renderInspectButton(open: Boolean) {
+        inspectLayoutButton.text = if (open) RECAPTURE_LABEL else INSPECT_LABEL
+        inspectLayoutButton.tone = if (open) dev.acme.adbtoolbox.intellij.ui.common.ToolButtonTone.ACCENT else null
+        inspectLayoutButton.toolTipText = dev.acme.adbtoolbox.intellij.ui.common.ShortcutHints.withAction(
+            if (open) RECAPTURE_TOOLTIP else INSPECT_TOOLTIP,
+            "AdbToolbox.InspectLayout",
+        )
+        inspectLayoutButton.revalidate()
+        inspectLayoutButton.repaint()
     }
 
     private val appsCoordinator = AppsCoordinator(
@@ -424,3 +438,8 @@ class AdbToolboxToolWindowPanel(
         host.dispose()
     }
 }
+
+private const val INSPECT_LABEL = "Inspect layout"
+private const val RECAPTURE_LABEL = "Re-capture layout"
+private const val INSPECT_TOOLTIP = "Capture screen + view hierarchy into an editor tab"
+private const val RECAPTURE_TOOLTIP = "Re-capture layout into the open Inspector tab"

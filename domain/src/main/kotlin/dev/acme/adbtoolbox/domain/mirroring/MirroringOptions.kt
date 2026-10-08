@@ -14,6 +14,8 @@ data class MirroringOptions(
     val showTouches: Boolean = false,
     val maxSize: Int? = null,
     val videoBitRateMbps: Int? = null,
+    /** `--turn-screen-off`: the device's own display goes dark while the mirror stays on. */
+    val turnScreenOff: Boolean = false,
 ) {
     init {
         require(maxSize == null || maxSize > 0) { "maxSize must be positive, was $maxSize" }
@@ -54,4 +56,5 @@ fun buildScrcpyArguments(serial: DeviceSerial, options: MirroringOptions): List<
         add("--video-bit-rate")
         add("${it}M")
     }
+    if (options.turnScreenOff) add("--turn-screen-off")
 }

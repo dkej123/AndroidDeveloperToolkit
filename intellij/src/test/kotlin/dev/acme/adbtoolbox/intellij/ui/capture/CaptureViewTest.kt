@@ -74,13 +74,15 @@ class CaptureViewTest : BasePlatformTestCase() {
 
         view.render(CaptureViewState(controlPolicy = ControlPolicy.Enabled, isCapturing = false))
         assertTrue(view.screenshotButton.isEnabled)
-        assertEquals("Screenshot", view.screenshotButton.text)
-        assertTrue(view.fullScreenshotButton.isEnabled)
-        assertEquals("Full page", view.fullScreenshotButton.text)
+        assertEquals("Screenshot", view.screenshotButton.accessibleContext.accessibleName)
+        assertTrue(view.moreButton.isEnabled)
+        assertTrue(view.fullScreenshotItem.isEnabled)
+        assertEquals("Full page", view.fullScreenshotItem.text)
 
         view.render(CaptureViewState(controlPolicy = ControlPolicy.Enabled, isCapturing = true))
         assertFalse(view.screenshotButton.isEnabled)
-        assertFalse(view.fullScreenshotButton.isEnabled)
+        assertFalse(view.moreButton.isEnabled)
+        assertFalse(view.fullScreenshotItem.isEnabled)
 
         view.dispose()
         assertFalse(scope.isActive)
@@ -94,11 +96,11 @@ class CaptureViewTest : BasePlatformTestCase() {
 
         view.setDestinationLabel("~/captures")
 
-        assertEquals("Save a PNG to ~/captures", view.screenshotButton.toolTipText)
+        assertEquals("Screenshot — save a PNG to ~/captures", view.screenshotButton.toolTipText)
         assertEquals(
             "Save the app's whole scrolling content as a PNG to ~/captures. " +
                 "The app is briefly moved to a tall virtual screen, so its current screen is recreated.",
-            view.fullScreenshotButton.toolTipText,
+            view.fullScreenshotItem.toolTipText,
         )
         view.dispose()
     }
@@ -139,7 +141,7 @@ class CaptureViewTest : BasePlatformTestCase() {
         val view = CaptureView(vm, viewScope, dispatchers)
         viewScope.cancel()
 
-        view.fullScreenshotButton.doClick()
+        view.fullScreenshotItem.doClick()
 
         assertTrue(vm.state.value.isCapturing)
         vmScope.cancel()

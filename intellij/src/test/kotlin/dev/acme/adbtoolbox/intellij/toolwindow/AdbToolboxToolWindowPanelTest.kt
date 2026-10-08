@@ -475,8 +475,8 @@ class AdbToolboxToolWindowPanelTest : BasePlatformTestCase() {
 
         val deviceView = panel.host.activeViewHost.componentFor(ViewId.Device.routeKey)
         assertTrue(deviceView is DeviceFactsPanel)
-        val captureSlot = (deviceView as DeviceFactsPanel).captureSlot
-        assertTrue(captureSlot.componentCount > 0)
+        val toolbar = (deviceView as DeviceFactsPanel).screenToolbar
+        assertTrue(toolbar.components.any { it is dev.acme.adbtoolbox.intellij.ui.capture.CaptureView })
 
         panel.dispose()
     }
@@ -514,8 +514,15 @@ class AdbToolboxToolWindowPanelTest : BasePlatformTestCase() {
 
         val deviceView = panel.host.activeViewHost.componentFor(ViewId.Device.routeKey)
         assertTrue(deviceView is DeviceFactsPanel)
-        val captureSlot = (deviceView as DeviceFactsPanel).captureSlot
-        assertTrue(captureSlot.componentCount > 1)
+        val panelView = deviceView as DeviceFactsPanel
+        // Mirror, Screenshot and Record share the Screen toolbar, in that order; Inspect has its own row.
+        assertEquals(
+            listOf("Start mirroring", "Screenshot", "Record"),
+            panelView.screenToolbar.components.map { group ->
+                ((group as java.awt.Container).getComponent(0) as javax.swing.JComponent).accessibleContext.accessibleName
+            },
+        )
+        assertEquals(1, panelView.inspectSlot.componentCount)
 
         panel.dispose()
     }

@@ -14,7 +14,6 @@ import com.intellij.ui.content.ContentFactory
 import dev.acme.adbtoolbox.intellij.composition.AdbToolboxProjectService
 import dev.acme.adbtoolbox.intellij.settings.AdbToolboxSettingsOpener
 import dev.acme.adbtoolbox.intellij.settings.OpenAdbToolboxSettingsAction
-import dev.acme.adbtoolbox.intellij.ui.mirroring.MirroringOptionsDialog
 
 /**
  * Registers the plugin's project ToolWindow (`plugin.xml`) and creates its neutral placeholder
@@ -80,7 +79,7 @@ class AdbToolboxToolWindowFactory : ToolWindowFactory, DumbAware {
             deviceContextAggregator = composition.deviceContextAggregator,
             displayScope = composition.childScope(),
             openSettings = { AdbToolboxSettingsOpener.open(project) },
-            openMirroringOptions = { MirroringOptionsDialog(project).show() },
+            mirroringOptionsViewModel = composition.mirroringOptionsViewModel,
             onResetOverrides = { composition.overrideResetCoordinator.resetAll() },
             diagnosticsLog = composition.diagnosticsLog,
             sectionMeta = composition.deviceSectionMetaViewModel.state,

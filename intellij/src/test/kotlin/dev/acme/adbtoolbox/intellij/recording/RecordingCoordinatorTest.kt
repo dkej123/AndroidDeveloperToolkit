@@ -79,12 +79,13 @@ class RecordingCoordinatorTest : BasePlatformTestCase() {
         return RecordingCoordinator(deviceFactsPanel = panel, viewModel = viewModel(scope, dispatchers), scope = scope, dispatchers = dispatchers)
     }
 
-    fun `test construction mounts the recording control into the Capture section`() {
+    fun `test construction mounts the Record button into the Screen toolbar and its status row below`() {
         val panel = DeviceFactsPanel(onCopyReport = {})
 
         val coordinator = coordinator(panel)
 
-        assertTrue(panel.captureSlot.components.contains(coordinator.view))
+        assertTrue(panel.screenToolbar.components.contains(coordinator.view))
+        assertTrue(panel.screenStatusSlot.components.contains(coordinator.view.statusRow))
         coordinator.dispose()
     }
 

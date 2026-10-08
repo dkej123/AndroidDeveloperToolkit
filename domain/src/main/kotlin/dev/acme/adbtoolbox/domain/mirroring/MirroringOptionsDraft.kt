@@ -11,6 +11,7 @@ data class MirroringOptionsDraft(
     val showTouches: Boolean = false,
     val maxSize: Int? = null,
     val videoBitRateMbps: Int? = null,
+    val turnScreenOff: Boolean = false,
 ) {
     companion object {
         val DEFAULT: MirroringOptionsDraft = MirroringOptionsDraft()
@@ -23,6 +24,7 @@ fun MirroringOptions.toDraft(): MirroringOptionsDraft = MirroringOptionsDraft(
     showTouches = showTouches,
     maxSize = maxSize,
     videoBitRateMbps = videoBitRateMbps,
+    turnScreenOff = turnScreenOff,
 )
 
 /** Why a candidate [MirroringOptionsDraft] was rejected by [validateMirroringOptions] — invalid
@@ -67,6 +69,7 @@ fun validateMirroringOptions(candidate: MirroringOptionsDraft): MirroringOptions
                 showTouches = candidate.showTouches,
                 maxSize = candidate.maxSize,
                 videoBitRateMbps = candidate.videoBitRateMbps,
+                turnScreenOff = candidate.turnScreenOff,
             ),
         )
     }

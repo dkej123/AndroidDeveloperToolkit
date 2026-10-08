@@ -99,11 +99,11 @@ class RecordingViewTest : BasePlatformTestCase() {
             ),
         )
         assertFalse(view.toggleButton.isEnabled)
-        assertEquals("Record", view.toggleButton.text)
+        assertEquals("Record", view.toggleButton.accessibleContext.accessibleName)
 
         view.render(RecordingViewState(controlPolicy = ControlPolicy.Enabled, presentationState = RecordingPresentationState.Idle))
         assertTrue(view.toggleButton.isEnabled)
-        assertEquals("Record", view.toggleButton.text)
+        assertEquals("Record", view.toggleButton.accessibleContext.accessibleName)
 
         view.render(
             RecordingViewState(
@@ -115,15 +115,15 @@ class RecordingViewTest : BasePlatformTestCase() {
         assertTrue(view.toggleButton.isEnabled)
         assertEquals("Stop & save", view.toggleButton.text)
         assertEquals("Recording · 00:42", view.statusLabel.text)
-        assertTrue(view.recordingBanner.isVisible)
+        assertTrue(view.statusRow.isVisible)
 
         view.render(RecordingViewState(controlPolicy = ControlPolicy.Enabled, presentationState = RecordingPresentationState.Stopping))
         assertFalse(view.toggleButton.isEnabled)
-        assertEquals("Stopping…", view.toggleButton.text)
+        assertEquals("Stopping the recording…", view.toggleButton.toolTipText)
 
         view.render(RecordingViewState(controlPolicy = ControlPolicy.Enabled, presentationState = RecordingPresentationState.Pulling))
         assertFalse(view.toggleButton.isEnabled)
-        assertEquals("Saving…", view.toggleButton.text)
+        assertEquals("Saving the recording…", view.toggleButton.toolTipText)
 
         view.dispose()
         assertFalse(scope.isActive)
@@ -157,28 +157,24 @@ class RecordingViewTest : BasePlatformTestCase() {
         view.render(RecordingViewState(controlPolicy = ControlPolicy.Enabled, presentationState = RecordingPresentationState.Idle))
 
         assertEquals("", view.statusLabel.text)
-        assertFalse(view.recordingBanner.isVisible)
+        assertFalse(view.statusRow.isVisible)
         view.dispose()
     }
 
-    fun `test recording visibility callback lets the Capture section replace its idle actions`() {
+    fun `test while recording the Record button turns red with a stop glyph and the status row shows`() {
         val dispatchers = TestDispatchers()
         val scope = CoroutineScope(SupervisorJob() + dispatchers.default)
-        val vm = viewModel(scope, dispatchers, MutableStateFlow(SelectedDeviceState.None))
-        var recordingVisible = false
-        val view = RecordingView(vm, scope, dispatchers) { recordingVisible = it }
+        val view = RecordingView(viewModel(scope, dispatchers, MutableStateFlow(SelectedDeviceState.None)), scope, dispatchers)
 
         view.render(RecordingViewState(ControlPolicy.Enabled, RecordingPresentationState.Idle))
-        assertFalse(recordingVisible)
+        assertNull(view.recordButton.tone)
+        assertFalse(view.statusRow.isVisible)
 
-        view.render(
-            RecordingViewState(
-                ControlPolicy.Enabled,
-                RecordingPresentationState.Recording,
-                elapsedLabel = "00:42",
-            ),
-        )
-        assertTrue(recordingVisible)
+        view.render(RecordingViewState(ControlPolicy.Enabled, RecordingPresentationState.Recording, elapsedLabel = "00:42"))
+        assertEquals(dev.acme.adbtoolbox.intellij.ui.common.ToolButtonTone.RED, view.recordButton.tone)
+        assertEquals(dev.acme.adbtoolbox.intellij.icons.AdbToolboxIcons.Actions.stopRecording.toString(), view.recordButton.glyph.toString())
+        assertEquals("Stop recording", view.recordButton.accessibleContext.accessibleName)
+        assertTrue(view.statusRow.isVisible)
         view.dispose()
     }
 

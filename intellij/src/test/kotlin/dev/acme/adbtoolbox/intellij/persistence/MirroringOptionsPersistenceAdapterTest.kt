@@ -18,7 +18,7 @@ class MirroringOptionsPersistenceAdapterTest : BasePlatformTestCase() {
 
     fun `test written options round-trip back out, including a null maxSize and bit rate`() {
         val adapter = MirroringOptionsPersistenceAdapter(AdbToolboxProjectState())
-        val options = MirroringOptions(stayAwake = true, showTouches = true, maxSize = 1920, videoBitRateMbps = 8)
+        val options = MirroringOptions(stayAwake = true, showTouches = true, maxSize = 1920, videoBitRateMbps = 8, turnScreenOff = true)
 
         adapter.writeOptionsNow(options)
 

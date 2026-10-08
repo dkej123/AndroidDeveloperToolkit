@@ -53,12 +53,12 @@ class CaptureCoordinatorTest : BasePlatformTestCase() {
         return CaptureCoordinator(deviceFactsPanel = panel, viewModel = viewModel, scope = scope, dispatchers = dispatchers)
     }
 
-    fun `test construction mounts the screenshot control into the Capture section`() {
+    fun `test construction mounts the screenshot control into the Screen toolbar`() {
         val panel = DeviceFactsPanel(onCopyReport = {})
 
         val coordinator = coordinator(panel)
 
-        assertTrue(panel.captureSlot.components.contains(coordinator.view))
+        assertTrue(panel.screenToolbar.components.contains(coordinator.view))
         coordinator.dispose()
     }
 

@@ -4,7 +4,6 @@ import com.intellij.openapi.Disposable
 import dev.acme.adbtoolbox.application.recording.RecordingViewModel
 import dev.acme.adbtoolbox.domain.dispatch.DispatcherProvider
 import dev.acme.adbtoolbox.intellij.devicefacts.DeviceFactsPanel
-import dev.acme.adbtoolbox.intellij.ui.capture.CaptureView
 import dev.acme.adbtoolbox.intellij.ui.recording.RecordingView
 import kotlinx.coroutines.CoroutineScope
 
@@ -25,15 +24,12 @@ class RecordingCoordinator(
     viewModel: RecordingViewModel,
     scope: CoroutineScope,
     dispatchers: DispatcherProvider,
-    captureView: CaptureView? = null,
 ) : Disposable {
 
-    val view: RecordingView = RecordingView(
-        viewModel,
-        scope,
-        dispatchers,
-        onRecordingVisibilityChanged = { recording -> captureView?.isVisible = !recording },
-    ).also { deviceFactsPanel.captureSlot.add(it) }
+    val view: RecordingView = RecordingView(viewModel, scope, dispatchers).also { view ->
+        deviceFactsPanel.screenToolbar.add(view)
+        deviceFactsPanel.screenStatusSlot.add(view.statusRow)
+    }
 
     override fun dispose() {
         view.dispose()

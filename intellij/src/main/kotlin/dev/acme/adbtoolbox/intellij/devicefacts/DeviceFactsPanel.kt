@@ -15,8 +15,10 @@ import dev.acme.adbtoolbox.intellij.ui.common.DesignButton
 import dev.acme.adbtoolbox.intellij.ui.common.DesignButtonStyle
 import dev.acme.adbtoolbox.intellij.ui.common.DesignSections
 import dev.acme.adbtoolbox.intellij.ui.common.FlexRowLayout
+import dev.acme.adbtoolbox.intellij.ui.common.VerticalStackLayout
 import dev.acme.adbtoolbox.intellij.ui.common.ViewportWidthPanel
 import dev.acme.adbtoolbox.intellij.ui.common.flexRow
+import dev.acme.adbtoolbox.intellij.ui.common.verticalStack
 import java.awt.BorderLayout
 import java.awt.CardLayout
 import java.awt.Component
@@ -73,20 +75,33 @@ class DeviceFactsPanel(
 
     private val cards: CardLayout get() = layout as CardLayout
 
-    // Slot rows carry the sections' 10px inset. Mirroring fills the row (its help text wraps to
-    // the section width); capture and device actions are `actionRowStyle` rows with a 6px gap.
-    /** Current app (design §3a) is the first section, above Mirroring. */
+    /** Current app (design §3a) is the first section, above Screen. */
     val currentAppSlot: JPanel = object : JPanel(BorderLayout()) {
         override fun getMaximumSize(): java.awt.Dimension = java.awt.Dimension(Int.MAX_VALUE, preferredSize.height)
     }.apply {
         isOpaque = false
         alignmentX = Component.LEFT_ALIGNMENT
     }
-    val mirroringSlot: JBPanel<Nothing> = slot(BorderLayout())
-    val captureSlot: JBPanel<Nothing> = slot(FlexRowLayout(AdbToolboxTheme.Spacing.s3))
+
+    // ---- Screen (design §3 "Screen": the former Mirroring and Capture sections) ----
+
+    /** `screenBarStyle`: Mirror (split) · Screenshot (split) · Record, 4px apart, 10px inset. */
+    val screenToolbar: JPanel = flexRow(AdbToolboxTheme.Spacing.s2).apply {
+        border = JBUI.Borders.empty(0, AdbToolboxTheme.Spacing.sectionInset)
+    }
+
+    /** Under the toolbar: the inline mirroring options and the scrcpy-missing help (own insets). */
+    val mirroringSlot: JBPanel<Nothing> = stackSlot()
+
+    /** `screenInspectRowStyle`: the labelled Inspect layout button on its own row. */
+    val inspectSlot: JBPanel<Nothing> = slot(FlexRowLayout(AdbToolboxTheme.Spacing.s3))
+
+    /** Status rows shown only while active: Mirroring · … + Stop, Recording · … + Stop & save. */
+    val screenStatusSlot: JBPanel<Nothing> = stackSlot()
+
     val deviceActionsSlot: JBPanel<Nothing> = slot(FlexRowLayout(AdbToolboxTheme.Spacing.s3))
 
-    /** Under the capture actions: the "Inspector open" row (design §9), which carries its own inset. */
+    /** Last in Screen: the "Inspector open" row (design §9), which carries its own inset. */
     val captureNoteSlot: JPanel = JPanel(BorderLayout()).apply {
         isOpaque = false
         alignmentX = Component.LEFT_ALIGNMENT
@@ -107,9 +122,8 @@ class DeviceFactsPanel(
 
     val copyReportButton = linkButton("Copy report") { onCopyReport() }.apply { isEnabled = false }
 
-    // Header meta text comes from DeviceSectionMetaViewModel (resolved scrcpy, effective capture dir).
-    private val mirroringMetaLabel = DesignSections.metaLabel("scrcpy", 9.5f)
-    private val captureMetaLabel = DesignSections.metaLabel("", 9.5f)
+    // Header meta "~/Desktop · scrcpy 4.1" from DeviceSectionMetaViewModel (capture dir, resolved scrcpy).
+    private val screenMetaLabel = DesignSections.metaLabel("scrcpy", 9.5f)
 
     private val factsGrid = JBPanel<Nothing>(GridLayout(0, 3, AdbToolboxTheme.Spacing.s4, AdbToolboxTheme.Spacing.s4)).apply {
         isOpaque = false
@@ -127,14 +141,7 @@ class DeviceFactsPanel(
             layout = BoxLayout(this, BoxLayout.Y_AXIS)
             isOpaque = false
             add(currentAppSlot)
-            add(section("Mirroring", mirroringMetaLabel, mirroringSlot))
-            // The note row sits right under the actions (no section gap), so a hidden row takes no space.
-            add(section("Capture", captureMetaLabel, JBPanel<Nothing>().apply {
-                layout = BoxLayout(this, BoxLayout.Y_AXIS)
-                isOpaque = false
-                add(captureSlot.apply { alignmentX = Component.LEFT_ALIGNMENT })
-                add(captureNoteSlot)
-            }))
+            add(screenSection())
             add(deviceSection())
             add(displaySlot)
         }, BorderLayout.NORTH)
@@ -215,12 +222,19 @@ class DeviceFactsPanel(
     }
 
     fun updateSectionMeta(meta: DeviceSectionMeta) {
-        mirroringMetaLabel.text = meta.mirroring
-        captureMetaLabel.text = meta.capture
+        screenMetaLabel.text = listOf(meta.capture, meta.mirroring).filter(String::isNotBlank).joinToString(" · ")
     }
 
-    private fun section(title: String, meta: JBLabel, body: JComponent): JPanel =
-        DesignSections.section(DesignSections.header(DesignSections.titleLabel(title), meta), body)
+    // Rows that are empty or hidden take no space and no gap (VerticalStackLayout), so the Screen
+    // section is toolbar + Inspect layout until something is open or running.
+    private fun screenSection(): JPanel {
+        val title = DesignSections.titleLabel("Screen")
+        return DesignSections.section(
+            DesignSections.header(title, screenMetaLabel),
+            screenToolbar,
+            verticalStack(mirroringSlot, inspectSlot, screenStatusSlot, captureNoteSlot),
+        ).also { DesignSections.makeCollapsible(it, "screen", title) }
+    }
 
     // The Device header keeps "Copy report" next to its title (`sectionHeaderStyle` gap 8, no spacer).
     private fun deviceSection(): JPanel {
@@ -285,6 +299,14 @@ class DeviceFactsPanel(
         const val EMPTY_BODY = "Connect over USB with USB debugging enabled, or pair wirelessly. Actions stay disabled until a device is online."
         val SKELETON_WIDTHS = intArrayOf(62, 88, 40, 74, 54, 82)
     }
+}
+
+/** A full-width slot whose children stack with the 6px row gap; empty while nothing is mounted/visible. */
+private fun stackSlot(): JBPanel<Nothing> = object : JBPanel<Nothing>(VerticalStackLayout { AdbToolboxTheme.Spacing.s3 }) {
+    override fun getMaximumSize(): Dimension = Dimension(Int.MAX_VALUE, preferredSize.height)
+}.apply {
+    isOpaque = false
+    alignmentX = Component.LEFT_ALIGNMENT
 }
 
 private fun slot(layout: java.awt.LayoutManager): JBPanel<Nothing> = JBPanel<Nothing>(layout).apply {

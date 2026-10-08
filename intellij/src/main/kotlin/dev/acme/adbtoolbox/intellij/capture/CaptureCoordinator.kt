@@ -25,7 +25,7 @@ class CaptureCoordinator(
     dispatchers: DispatcherProvider,
 ) : Disposable {
 
-    val view: CaptureView = CaptureView(viewModel, scope, dispatchers).also { deviceFactsPanel.captureSlot.add(it) }
+    val view: CaptureView = CaptureView(viewModel, scope, dispatchers).also { deviceFactsPanel.screenToolbar.add(it) }
 
     override fun dispose() {
         view.dispose()

@@ -38,6 +38,19 @@ class MirroringOptionsTest {
     }
 
     @Test
+    fun `turn-screen-off option appends --turn-screen-off`() {
+        buildScrcpyArguments(serial, MirroringOptions(turnScreenOff = true)) shouldBe
+            listOf("-s", "R58N90ABCDE", "--turn-screen-off")
+    }
+
+    @Test
+    fun `turn screen off survives validation of a draft`() {
+        validateMirroringOptions(MirroringOptionsDraft(turnScreenOff = true)) shouldBe
+            MirroringOptionsValidationResult.Valid(MirroringOptions(turnScreenOff = true))
+        MirroringOptions(turnScreenOff = true).toDraft().turnScreenOff shouldBe true
+    }
+
+    @Test
     fun `every option combines into one structured argument vector, never a shell string`() {
         val options = MirroringOptions(
             stayAwake = true,

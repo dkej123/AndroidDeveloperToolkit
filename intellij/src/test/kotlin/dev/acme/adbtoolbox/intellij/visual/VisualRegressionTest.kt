@@ -114,6 +114,9 @@ class VisualRegressionTest : BasePlatformTestCase() {
         Scenario("device-connected-dark-dock", 380, 620, dark = true, selected = ViewId.Device, view = {
             DeviceViewFixture.connected(SERIAL).apply { applyResponsiveLayout(380 - AdbToolboxTheme.Sizes.rail) }
         }),
+        Scenario("device-screen-active-light-dock", 380, 620, dark = false, selected = ViewId.Device, view = {
+            DeviceViewFixture.connected(SERIAL, active = true).apply { applyResponsiveLayout(380 - AdbToolboxTheme.Sizes.rail) }
+        }),
         Scenario("device-scrcpy-missing-light-dock", 380, 620, dark = false, selected = ViewId.Device, view = {
             val missing = ScrcpyAvailability.Missing(
                 reason = "scrcpy is not installed, or not on PATH.",

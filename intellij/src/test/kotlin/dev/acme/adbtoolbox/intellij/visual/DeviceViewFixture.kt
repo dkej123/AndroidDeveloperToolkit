@@ -1,5 +1,11 @@
 package dev.acme.adbtoolbox.intellij.visual
 
+import dev.acme.adbtoolbox.application.mirroring.MirroringOptionsUseCase
+import dev.acme.adbtoolbox.application.mirroring.MirroringOptionsViewModel
+import dev.acme.adbtoolbox.application.mirroring.MirroringOptionsViewState
+import dev.acme.adbtoolbox.domain.mirroring.FakeMirroringOptionsRepository
+import dev.acme.adbtoolbox.domain.mirroring.MirroringOptionsDraft
+import dev.acme.adbtoolbox.intellij.ui.mirroring.MirroringOptionsPanel
 import dev.acme.adbtoolbox.application.capture.CaptureScreenshotUseCase
 import dev.acme.adbtoolbox.application.capture.CaptureViewModel
 import dev.acme.adbtoolbox.application.capture.CaptureViewState
@@ -73,6 +79,8 @@ internal object DeviceViewFixture {
     fun connected(
         serial: DeviceSerial,
         scrcpy: ScrcpyAvailability = ScrcpyAvailability.Available(ToolVersion.of("2.7")),
+        /** Screen section with everything running: mirroring, recording, options open, inspector tab open. */
+        active: Boolean = false,
     ): DeviceFactsPanel {
         // A pre-cancelled scope: no view/view-model collector can asynchronously re-render the
         // views after the explicit design-state `render` calls below.
@@ -97,9 +105,29 @@ internal object DeviceViewFixture {
             ),
             scope,
             TestDispatchers,
+            optionsPanel = MirroringOptionsPanel(
+                MirroringOptionsViewModel(scope, TestDispatchers, MirroringOptionsUseCase(FakeMirroringOptionsRepository())),
+                scope,
+                TestDispatchers,
+            ).apply {
+                val draft = MirroringOptionsDraft(stayAwake = true, showTouches = true, maxSize = 1920)
+                render(MirroringOptionsViewState(persisted = draft, draft = draft, isLoading = false))
+            },
         )
-        mirroring.render(MirroringViewState(controlPolicy = ControlPolicy.Enabled, presentationState = MirroringPresentationState.Idle, scrcpy = scrcpy))
+        mirroring.render(
+            MirroringViewState(
+                controlPolicy = ControlPolicy.Enabled,
+                presentationState = if (active) MirroringPresentationState.Running else MirroringPresentationState.Idle,
+                scrcpy = scrcpy,
+            ),
+        )
+        if (active) {
+            mirroring.runningLabel.text = "Mirroring · 1080×2400 @ 60 fps"
+            mirroring.setOptionsOpen(true)
+        }
+        panel.screenToolbar.add(mirroring.toolbarPart)
         panel.mirroringSlot.add(mirroring)
+        panel.screenStatusSlot.add(mirroring.statusRow)
 
         val transport = FakeAdbTransport(
             textScript = { AdbTextResult(AdbOutcome.Completed(0), "", "") },
@@ -118,7 +146,7 @@ internal object DeviceViewFixture {
             TestDispatchers,
         )
         capture.render(CaptureViewState(controlPolicy = ControlPolicy.Enabled, isCapturing = false))
-        panel.captureSlot.add(capture)
+        panel.screenToolbar.add(capture)
 
         val recording = RecordingView(
             RecordingViewModel(
@@ -139,8 +167,21 @@ internal object DeviceViewFixture {
             scope,
             TestDispatchers,
         )
-        recording.render(RecordingViewState(controlPolicy = ControlPolicy.Enabled, presentationState = RecordingPresentationState.Idle))
-        panel.captureSlot.add(recording)
+        recording.render(
+            RecordingViewState(
+                controlPolicy = ControlPolicy.Enabled,
+                presentationState = if (active) RecordingPresentationState.Recording else RecordingPresentationState.Idle,
+                elapsedLabel = "00:42".takeIf { active },
+            ),
+        )
+        panel.screenToolbar.add(recording)
+        panel.screenStatusSlot.add(recording.statusRow)
+        panel.inspectSlot.add(
+            dev.acme.adbtoolbox.intellij.ui.common.ScreenToolButton(
+                dev.acme.adbtoolbox.intellij.icons.AdbToolboxIcons.Actions.layoutInspector,
+                if (active) "Re-capture layout" else "Inspect layout",
+            ).apply { if (active) tone = dev.acme.adbtoolbox.intellij.ui.common.ToolButtonTone.ACCENT },
+        )
 
         val actions = DeviceActionsView(
             DeviceActionsViewModel(

@@ -211,6 +211,11 @@ class Studio(val robot: RemoteRobot = RemoteRobot(E2eConfig.robotUrl)) {
 
     fun pressEnter() = robot.keyboard { enter() }
 
+    /** Clicks the item [text] of the popup menu that is open now (menus live outside the tool window). */
+    fun clickMenuItem(text: String) {
+        robot.find(ComponentFixture::class.java, byXpath("//div[@class='JBMenuItem' and @text=${quote(text)}]"), ui).click()
+    }
+
     // --- dialogs --------------------------------------------------------------------------------
 
     fun dialogXpath(title: String? = null): String =

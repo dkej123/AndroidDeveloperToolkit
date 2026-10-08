@@ -486,7 +486,7 @@ class AdbToolboxProjectService(private val project: Project) : Disposable {
 
     internal val mirroringOptionsUseCase = MirroringOptionsUseCase(repository = mirroringOptionsRepository)
 
-    /** Task 040's native options editor state, backing [dev.acme.adbtoolbox.intellij.ui.mirroring.MirroringOptionsDialog]
+    /** Task 040's options editor state, backing the Screen section's inline [dev.acme.adbtoolbox.intellij.ui.mirroring.MirroringOptionsPanel]
      * and the sole source [mirroringViewModel] reads from at `start()` time via [MirroringOptionsViewModel.currentOptions]. */
     val mirroringOptionsViewModel: MirroringOptionsViewModel = MirroringOptionsViewModel(
         scope = childScope(),

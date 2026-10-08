@@ -1,7 +1,10 @@
 package dev.acme.adbtoolbox.intellij.ui.capture
 
-import dev.acme.adbtoolbox.intellij.ui.common.DesignButton
-import dev.acme.adbtoolbox.intellij.ui.common.DesignButtonStyle
+import com.intellij.openapi.ui.JBMenuItem
+import com.intellij.openapi.ui.JBPopupMenu
+import dev.acme.adbtoolbox.intellij.icons.AdbToolboxIcons
+import dev.acme.adbtoolbox.intellij.ui.common.ScreenToolButton
+import dev.acme.adbtoolbox.intellij.ui.common.ToolButtonSegment
 import dev.acme.adbtoolbox.intellij.ui.common.FlexRowLayout
 import dev.acme.adbtoolbox.intellij.ui.common.AdbToolboxTheme
 import com.intellij.openapi.Disposable
@@ -41,27 +44,45 @@ class CaptureView(
     private val viewModel: CaptureViewModel,
     private val scope: CoroutineScope,
     private val dispatchers: DispatcherProvider,
-) : JBPanel<CaptureView>(FlexRowLayout(AdbToolboxTheme.Spacing.s3)), Disposable {
+) : JBPanel<CaptureView>(FlexRowLayout(0)), Disposable {
 
     /** Where screenshots go, as shown to the user (see DeviceSectionMetaViewModel). */
     private var destinationLabel = "~/Desktop"
     private var lastState = CaptureViewState()
 
-    val screenshotButton = DesignButton("Screenshot", DesignButtonStyle.SECONDARY).apply {
-        toolTipText = "Save a PNG to $destinationLabel"
+    /** The Screen toolbar's camera button (design §3): saves a PNG of the current screen. */
+    val screenshotButton = ScreenToolButton(AdbToolboxIcons.Actions.screenshot, segment = ToolButtonSegment.MAIN).apply {
+        getAccessibleContext().accessibleName = "Screenshot"
+        toolTipText = screenshotTooltip()
         addActionListener { viewModel.handle(CaptureIntent.CaptureScreenshot) }
     }
 
     /** ADR 0013: the foreground app's whole scrolling content, captured on a tall virtual display. */
-    val fullScreenshotButton = DesignButton("Full page", DesignButtonStyle.SECONDARY).apply {
+    val fullScreenshotItem = JBMenuItem("Full page").apply {
         toolTipText = fullScreenshotTooltip()
         addActionListener { viewModel.handle(CaptureIntent.CaptureFullScreenshot) }
+    }
+
+    private val moreMenu = JBPopupMenu().apply {
+        add(fullScreenshotItem)
+        addPopupMenuListener(object : javax.swing.event.PopupMenuListener {
+            override fun popupMenuWillBecomeVisible(e: javax.swing.event.PopupMenuEvent) { moreButton.isOpen = true }
+            override fun popupMenuWillBecomeInvisible(e: javax.swing.event.PopupMenuEvent) { moreButton.isOpen = false }
+            override fun popupMenuCanceled(e: javax.swing.event.PopupMenuEvent) { moreButton.isOpen = false }
+        })
+    }
+
+    /** The split button's caret (user decision, 2026-10-08: Full page lives in this menu). */
+    val moreButton: ScreenToolButton = ScreenToolButton(null, segment = ToolButtonSegment.CARET).apply {
+        getAccessibleContext().accessibleName = "More screenshot options"
+        toolTipText = "More screenshots — Full page"
+        addActionListener { moreMenu.show(this, 0, height) }
     }
 
     init {
         isOpaque = false
         add(screenshotButton)
-        add(fullScreenshotButton)
+        add(moreButton)
 
         viewModel.state
             .onEach { state -> withContext(dispatchers.main) { render(state) } }
@@ -71,19 +92,15 @@ class CaptureView(
     /** Production code always reaches this already marshaled onto [dispatchers]' `main` context. */
     internal fun render(state: CaptureViewState) {
         lastState = state
-        screenshotButton.isEnabled = state.controlPolicy is ControlPolicy.Enabled && !state.isCapturing
-        fullScreenshotButton.isEnabled = screenshotButton.isEnabled
-        screenshotButton.toolTipText = if (state.controlPolicy is ControlPolicy.Enabled) {
-            "Save a PNG to $destinationLabel"
-        } else {
-            "Save a PNG to $destinationLabel — Connect a device to use this"
-        }
-        fullScreenshotButton.toolTipText = if (state.controlPolicy is ControlPolicy.Enabled) {
-            fullScreenshotTooltip()
-        } else {
-            "${fullScreenshotTooltip()} — Connect a device to use this"
-        }
+        val enabled = state.controlPolicy is ControlPolicy.Enabled
+        screenshotButton.isEnabled = enabled && !state.isCapturing
+        moreButton.isEnabled = screenshotButton.isEnabled
+        fullScreenshotItem.isEnabled = screenshotButton.isEnabled
+        screenshotButton.toolTipText = if (enabled) screenshotTooltip() else "${screenshotTooltip()} — Connect a device to use this"
+        fullScreenshotItem.toolTipText = if (enabled) fullScreenshotTooltip() else "${fullScreenshotTooltip()} — Connect a device to use this"
     }
+
+    private fun screenshotTooltip() = "Screenshot — save a PNG to $destinationLabel"
 
     private fun fullScreenshotTooltip() =
         "Save the app's whole scrolling content as a PNG to $destinationLabel. " +

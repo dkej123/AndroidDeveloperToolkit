@@ -26,6 +26,7 @@ private fun migrateV0ToV1(legacy: MirroringOptionsPersistenceState): MirroringOp
         showTouches = legacy.showTouches
         maxSize = legacy.maxSize
         videoBitRateMbps = legacy.videoBitRateMbps
+        turnScreenOff = legacy.turnScreenOff
     }
 
 /**
@@ -51,6 +52,7 @@ internal fun resolveMirroringOptionsState(state: MirroringOptionsPersistenceStat
         showTouches = migrated.showTouches,
         maxSize = maxSize,
         videoBitRateMbps = videoBitRateMbps,
+        turnScreenOff = migrated.turnScreenOff,
     )
 }
 
@@ -75,6 +77,7 @@ class MirroringOptionsPersistenceAdapter(
             showTouches = options.showTouches
             maxSize = options.maxSize ?: MirroringOptionsPersistenceState.NO_LIMIT
             videoBitRateMbps = options.videoBitRateMbps ?: MirroringOptionsPersistenceState.NO_LIMIT
+            turnScreenOff = options.turnScreenOff
         }
     }
 }

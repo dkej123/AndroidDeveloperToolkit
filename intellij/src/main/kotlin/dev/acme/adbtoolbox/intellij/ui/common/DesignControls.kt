@@ -252,6 +252,57 @@ class FlexRowLayout(private val gap: Int) : LayoutManager2 {
     }
 }
 
+/**
+ * Stacks children top to bottom at full width and preferred height, [gap] apart — but only
+ * between children that are visible *and* non-empty, so rows that come and go (status rows,
+ * disclosures, empty slots) never leave a double gap behind.
+ */
+class VerticalStackLayout(private val gap: () -> Int) : java.awt.LayoutManager {
+    override fun addLayoutComponent(name: String?, comp: Component) = Unit
+
+    override fun removeLayoutComponent(comp: Component) = Unit
+
+    /** Wrapping text answers its height for its current width, so give it the column width first. */
+    private fun heightAt(child: Component, width: Int): Int {
+        if (width > 0 && child.width != width) child.setSize(width, maxOf(child.height, 1))
+        return child.preferredSize.height
+    }
+
+    private fun shown(parent: Container, width: Int) =
+        parent.components.filter { it.isVisible }.map { it to heightAt(it, width) }.filter { (_, height) -> height > 0 }
+
+    override fun preferredLayoutSize(parent: Container): Dimension {
+        val insets = parent.insets
+        val children = shown(parent, parent.width - insets.left - insets.right)
+        val height = children.sumOf { it.second } + gap() * (children.size - 1).coerceAtLeast(0)
+        val width = children.maxOfOrNull { it.first.preferredSize.width } ?: 0
+        return Dimension(width + insets.left + insets.right, if (children.isEmpty()) 0 else height + insets.top + insets.bottom)
+    }
+
+    override fun minimumLayoutSize(parent: Container): Dimension = preferredLayoutSize(parent)
+
+    override fun layoutContainer(parent: Container) {
+        val insets = parent.insets
+        val width = parent.width - insets.left - insets.right
+        var y = insets.top
+        val children = shown(parent, width)
+        parent.components.filter { child -> children.none { it.first === child } }.forEach { it.setBounds(0, 0, 0, 0) }
+        children.forEach { (child, height) ->
+            child.setBounds(insets.left, y, width, height)
+            y += height + gap()
+        }
+    }
+}
+
+/** A transparent full-width [VerticalStackLayout] panel with the 6px row gap. */
+fun verticalStack(vararg children: Component): JPanel = object : JPanel(VerticalStackLayout { AdbToolboxTheme.Spacing.s3 }) {
+    override fun getMaximumSize(): Dimension = Dimension(Int.MAX_VALUE, preferredSize.height)
+}.apply {
+    isOpaque = false
+    alignmentX = Component.LEFT_ALIGNMENT
+    children.forEach(::add)
+}
+
 /** A transparent [FlexRowLayout] row; [fill] (a child or a [flexSpacer]) takes the remaining width. */
 fun flexRow(gap: Int, vararg children: Component, fill: Component? = null, shrink: Component? = null): JPanel =
     JPanel(FlexRowLayout(gap)).apply {

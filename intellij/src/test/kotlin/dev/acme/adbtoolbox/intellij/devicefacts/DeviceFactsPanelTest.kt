@@ -71,23 +71,24 @@ class DeviceFactsPanelTest : BasePlatformTestCase() {
         assertTrue(copyClicked)
     }
 
-    fun `test connected content exposes the three supplied sections and dedicated feature slots`() {
+    fun `test connected content exposes the Screen and Device sections and dedicated feature slots`() {
         val panel = DeviceFactsPanel(onCopyReport = {})
         panel.update(DeviceFactsViewState.Partial(DeviceFactsSnapshot.loading(serial)))
 
-        assertContainsElements(panel.visibleTexts(), "Mirroring", "Capture", "Device", "Copy report")
-        assertNotSame(panel.mirroringSlot, panel.captureSlot)
-        assertNotSame(panel.captureSlot, panel.deviceActionsSlot)
+        assertContainsElements(panel.visibleTexts(), "Screen", "Device", "Copy report")
+        assertFalse(panel.visibleTexts().contains("Mirroring"))
+        assertFalse(panel.visibleTexts().contains("Capture"))
+        assertEquals(5, setOf(panel.screenToolbar, panel.mirroringSlot, panel.inspectSlot, panel.screenStatusSlot, panel.deviceActionsSlot).size)
     }
 
-    fun `test section headers show the resolved scrcpy version and capture directory`() {
+    fun `test the Screen header shows the capture directory and the resolved scrcpy version`() {
         // Regression (docs/e2e-testing.md): the headers were fixed "scrcpy 2.7" and "~/Desktop".
         val panel = DeviceFactsPanel(onCopyReport = {})
         panel.update(DeviceFactsViewState.Partial(DeviceFactsSnapshot.loading(serial)))
 
         panel.updateSectionMeta(DeviceSectionMeta(mirroring = "scrcpy 4.1", capture = "~/captures"))
 
-        assertContainsElements(panel.visibleTexts(), "scrcpy 4.1", "~/captures")
+        assertContainsElements(panel.visibleTexts(), "~/captures · scrcpy 4.1")
         assertDoesntContain(panel.visibleTexts(), "scrcpy 2.7", "~/Desktop")
     }
 

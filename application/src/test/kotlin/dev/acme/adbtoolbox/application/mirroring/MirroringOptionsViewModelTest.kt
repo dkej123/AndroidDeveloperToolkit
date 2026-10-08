@@ -73,12 +73,14 @@ class MirroringOptionsViewModelTest {
         h.viewModel.handle(MirroringOptionsIntent.UpdateShowTouches(true))
         h.viewModel.handle(MirroringOptionsIntent.UpdateMaxSize(1280))
         h.viewModel.handle(MirroringOptionsIntent.UpdateVideoBitRateMbps(4))
+        h.viewModel.handle(MirroringOptionsIntent.UpdateTurnScreenOff(true))
 
         h.viewModel.state.value.draft shouldBe MirroringOptionsDraft(
             stayAwake = true,
             showTouches = true,
             maxSize = 1280,
             videoBitRateMbps = 4,
+            turnScreenOff = true,
         )
         h.viewModel.state.value.isModified shouldBe true
     }

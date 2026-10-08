@@ -7,6 +7,7 @@ sealed interface MirroringOptionsIntent {
     data class UpdateShowTouches(val value: Boolean) : MirroringOptionsIntent
     data class UpdateMaxSize(val value: Int?) : MirroringOptionsIntent
     data class UpdateVideoBitRateMbps(val value: Int?) : MirroringOptionsIntent
+    data class UpdateTurnScreenOff(val value: Boolean) : MirroringOptionsIntent
     data object Apply : MirroringOptionsIntent
     data object Reset : MirroringOptionsIntent
     data object RetryLoad : MirroringOptionsIntent

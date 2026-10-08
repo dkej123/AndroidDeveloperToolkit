@@ -61,6 +61,7 @@ class MirroringOptionsViewModel(
             is MirroringOptionsIntent.UpdateShowTouches -> edit(Field.ShowTouches) { it.copy(showTouches = intent.value) }
             is MirroringOptionsIntent.UpdateMaxSize -> edit(Field.MaxSize) { it.copy(maxSize = intent.value) }
             is MirroringOptionsIntent.UpdateVideoBitRateMbps -> edit(Field.VideoBitRate) { it.copy(videoBitRateMbps = intent.value) }
+            is MirroringOptionsIntent.UpdateTurnScreenOff -> edit(Field.TurnScreenOff) { it.copy(turnScreenOff = intent.value) }
             MirroringOptionsIntent.Apply -> apply()
             MirroringOptionsIntent.Reset -> reset()
             MirroringOptionsIntent.RetryLoad -> load()
@@ -140,6 +141,7 @@ class MirroringOptionsViewModel(
     private enum class Field(val errors: Set<MirroringOptionFieldError>) {
         StayAwake(emptySet()),
         ShowTouches(emptySet()),
+        TurnScreenOff(emptySet()),
         MaxSize(setOf(MirroringOptionFieldError.MaxSizeOutOfRange)),
         VideoBitRate(setOf(MirroringOptionFieldError.VideoBitRateOutOfRange)),
     }
@@ -150,7 +152,7 @@ class MirroringOptionsViewModel(
  * throw in practice — falling back to [MirroringOptions.DEFAULT] only guards a corrupt in-memory
  * state from ever crashing a `start()` call. */
 private fun MirroringOptionsDraft.toOptionsOrDefault(): MirroringOptions =
-    runCatching { MirroringOptions(stayAwake, showTouches, maxSize, videoBitRateMbps) }
+    runCatching { MirroringOptions(stayAwake, showTouches, maxSize, videoBitRateMbps, turnScreenOff) }
         .getOrDefault(MirroringOptions.DEFAULT)
 
 private fun Throwable.describe(): String = message ?: this::class.simpleName ?: "Unknown error"
