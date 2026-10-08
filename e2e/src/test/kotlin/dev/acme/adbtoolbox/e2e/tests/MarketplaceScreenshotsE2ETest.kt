@@ -80,11 +80,17 @@ class MarketplaceScreenshotsE2ETest : E2eTest() {
     @Test
     fun `capture the Marketplace screenshot set`() {
         scene(1, "device", DARK) {
+            // Current app (first section) shows a real app with its facts, not the home screen.
+            Adb.shell("monkey -p $LOGCAT_APP -c android.intent.category.LAUNCHER 1")
             studio.navigate(View.Device)
+            awaitUntil(E2eConfig.deviceTimeout(60), Duration.ofMillis(500), "the current app facts") {
+                studio.visibleTexts().let { texts -> texts.any { it.startsWith("updated") } && "reading…" !in texts }
+            }
             // Every quick toggle and the process limit read back (they show "—" while reading).
             awaitUntil(E2eConfig.deviceTimeout(60), Duration.ofMillis(500), "the quick toggles") {
                 studio.visibleTexts().let { texts -> texts.any { Regex("""\d+ of \d+ on""").matches(it) } && "standard" in texts }
             }
+            scrollDeviceViewToTop()
         }
         scene(2, "apps", DARK) { selectSampleApp() }
         scene(3, "app-info", DARK) {
@@ -128,6 +134,23 @@ class MarketplaceScreenshotsE2ETest : E2eTest() {
             studio.setTextOf(studio.byName("Proxy host"), "10.0.2.2")
             studio.setTextOf(studio.byName("Proxy port"), "8888")
         }
+    }
+
+    /** The Device view keeps its scroll position across navigation; the picture starts at Current app. */
+    private fun scrollDeviceViewToTop() {
+        studio.component("//div[@class='DeviceFactsPanel']").runJs(
+            """
+            var scroll = java.lang.Class.forName("javax.swing.JScrollPane");
+            var found = null;
+            function walk(c) {
+                if (found == null && scroll.isInstance(c) && c.isShowing()) found = c;
+                var ch = c.getComponents(); for (var i = 0; i < ch.length; i++) walk(ch[i]);
+            }
+            walk(component);
+            if (found != null) found.getViewport().setViewPosition(new java.awt.Point(0, 0));
+            """.trimIndent(),
+            true,
+        )
     }
 
     private fun scene(index: Int, name: String, theme: String, arrange: () -> Unit) {
