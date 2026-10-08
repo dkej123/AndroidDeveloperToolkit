@@ -1,5 +1,9 @@
 package dev.acme.adbtoolbox.intellij.visual
 
+import dev.acme.adbtoolbox.domain.device.DeviceConnectionKind
+import dev.acme.adbtoolbox.intellij.devicebar.DevicePickerListPanel
+import dev.acme.adbtoolbox.application.devicebar.DevicePickerState
+import dev.acme.adbtoolbox.application.devicebar.DevicePickerItem
 import dev.acme.adbtoolbox.domain.display.TalkBackProfile
 
 import com.intellij.openapi.util.IconLoader
@@ -113,6 +117,37 @@ class VisualRegressionTest : BasePlatformTestCase() {
         }, noDevice = true),
         Scenario("device-connected-dark-dock", 380, 620, dark = true, selected = ViewId.Device, view = {
             DeviceViewFixture.connected(SERIAL).apply { applyResponsiveLayout(380 - AdbToolboxTheme.Sizes.rail) }
+        }),
+        // Design handoff 4 §1 QA: compare with design/screenshots/device-picker.png.
+        Scenario("device-picker-dark-wide", 560, 196, dark = true, selected = ViewId.Device, chrome = false, view = {
+            fun item(serial: String, model: String, state: DeviceConnectionState, selected: Boolean = false) =
+                DevicePickerItem(
+                    serial = DeviceSerial.of(serial),
+                    model = model,
+                    product = null,
+                    connectionKind = DeviceConnectionKind.of(serial),
+                    connectionState = state,
+                    isSelected = selected,
+                )
+            val picker = DevicePickerListPanel({}, {}, {}, {}, {}).apply {
+                update(
+                    DevicePickerState(
+                        isOpen = true,
+                        items = listOf(
+                            item("49060DLAQ002W7", "Pixel 9", DeviceConnectionState.Online, selected = true),
+                            item("10.0.4.91:5555", "Pixel Tablet", DeviceConnectionState.Online),
+                            item("R5CT90XKPQZ", "Galaxy S23", DeviceConnectionState.Unauthorized),
+                            item("emulator-5554", "Pixel 9 API 37", DeviceConnectionState.Online),
+                        ),
+                        highlightedIndex = 0,
+                    ),
+                )
+            }
+            JPanel(BorderLayout()).apply {
+                background = AdbToolboxTheme.Colors.bg
+                border = javax.swing.BorderFactory.createEmptyBorder(8, 8, 8, 8)
+                add(picker, BorderLayout.NORTH)
+            }
         }),
         Scenario("device-screen-active-light-dock", 380, 620, dark = false, selected = ViewId.Device, view = {
             DeviceViewFixture.connected(SERIAL, active = true).apply { applyResponsiveLayout(380 - AdbToolboxTheme.Sizes.rail) }

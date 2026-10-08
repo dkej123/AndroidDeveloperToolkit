@@ -3,6 +3,8 @@ package dev.acme.adbtoolbox.intellij.devicebar
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBList
 import com.intellij.ui.components.JBPanel
+import com.intellij.ui.components.JBScrollPane
+import com.intellij.ui.scale.JBUIScale
 import com.intellij.util.ui.JBUI
 import dev.acme.adbtoolbox.application.devicebar.DevicePickerItem
 import dev.acme.adbtoolbox.application.devicebar.DevicePickerState
@@ -10,10 +12,14 @@ import dev.acme.adbtoolbox.domain.adb.DeviceSerial
 import dev.acme.adbtoolbox.domain.device.DeviceConnectionKind
 import dev.acme.adbtoolbox.domain.device.DeviceConnectionState
 import dev.acme.adbtoolbox.intellij.ui.common.AdbToolboxTheme
+import dev.acme.adbtoolbox.intellij.ui.common.DesignButton
+import dev.acme.adbtoolbox.intellij.ui.common.DesignButtonStyle
+import dev.acme.adbtoolbox.intellij.ui.common.FlexRowLayout
+import dev.acme.adbtoolbox.intellij.ui.common.SolidChipBorder
 import dev.acme.adbtoolbox.intellij.ui.common.StatusDotIcon
 import java.awt.BorderLayout
 import java.awt.Component
-import java.awt.FlowLayout
+import java.awt.Dimension
 import java.awt.Font
 import java.awt.event.KeyAdapter
 import java.awt.event.KeyEvent
@@ -56,16 +62,11 @@ class DevicePickerListPanel(
     }
 
     private val hintLabel = JBLabel("↑↓ to select · ⏎ to apply").apply {
-        font = AdbToolboxTheme.Typography.monoMeta
+        font = AdbToolboxTheme.Typography.mono.deriveFont(JBUIScale.scale(9f))
         foreground = AdbToolboxTheme.Colors.textFaint
     }
 
-    private val pairOverWifiButton = JButton("Pair device over Wi-Fi…").apply {
-        isContentAreaFilled = false
-        isBorderPainted = false
-        isFocusPainted = false
-        foreground = AdbToolboxTheme.Colors.accent
-        font = AdbToolboxTheme.Typography.body.deriveFont(Font.BOLD)
+    private val pairOverWifiButton: JButton = DesignButton("Pair device over Wi-Fi…", DesignButtonStyle.LINK).apply {
         addActionListener { onPairOverWifi() }
     }
 
@@ -82,9 +83,22 @@ class DevicePickerListPanel(
     /** Guards [update]'s own `list.selectedIndex` write from re-entering [onHighlightChange]. */
     private var applyingExternalState = false
 
+    /** No max height until more than [MAX_ROWS] devices; then the list scrolls and header/footer stay put. */
+    private val listScroll = object : JBScrollPane(list) {
+        override fun getPreferredSize(): Dimension =
+            Dimension(super.getPreferredSize().width, AdbToolboxTheme.Sizes.listRow * model.size().coerceIn(1, MAX_ROWS))
+    }.apply {
+        border = BorderFactory.createEmptyBorder()
+        isOpaque = false
+        viewport.isOpaque = false
+        horizontalScrollBarPolicy = javax.swing.ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER
+    }
+
     init {
         background = AdbToolboxTheme.Colors.panel
-        border = BorderFactory.createLineBorder(AdbToolboxTheme.Colors.borderStrong, 1)
+        isOpaque = false
+        // 1px for the rounded `borderStrong` outline painted in paintBorder.
+        border = JBUI.Borders.empty(1)
 
         list.selectionMode = ListSelectionModel.SINGLE_SELECTION
         list.isOpaque = false
@@ -104,6 +118,13 @@ class DevicePickerListPanel(
                 }
             }
         })
+        // Full-width hover fill: the pointer moves the same highlight as ↑↓.
+        list.addMouseMotionListener(object : java.awt.event.MouseMotionAdapter() {
+            override fun mouseMoved(e: MouseEvent) {
+                val index = list.locationToIndex(e.point)
+                if (index in 0 until model.size() && index != list.selectedIndex) list.selectedIndex = index
+            }
+        })
         list.addKeyListener(object : KeyAdapter() {
             override fun keyPressed(e: KeyEvent) {
                 when (e.keyCode) {
@@ -114,8 +135,47 @@ class DevicePickerListPanel(
         })
 
         add(headerLabel, BorderLayout.NORTH)
-        add(list, BorderLayout.CENTER)
+        add(listScroll, BorderLayout.CENTER)
         add(footer, BorderLayout.SOUTH)
+    }
+
+    // Container: `panel` fill, 1px `borderStrong`, radius 8, content clipped to the rounded shape.
+    private fun outline(): java.awt.geom.RoundRectangle2D.Float {
+        val arc = JBUIScale.scale(16f)
+        return java.awt.geom.RoundRectangle2D.Float(0.5f, 0.5f, width - 1f, height - 1f, arc, arc)
+    }
+
+    override fun paintComponent(g: java.awt.Graphics) {
+        val g2 = g.create() as java.awt.Graphics2D
+        try {
+            g2.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING, java.awt.RenderingHints.VALUE_ANTIALIAS_ON)
+            g2.color = AdbToolboxTheme.Colors.panel
+            g2.fill(outline())
+        } finally {
+            g2.dispose()
+        }
+    }
+
+    override fun paintChildren(g: java.awt.Graphics) {
+        val g2 = g.create() as java.awt.Graphics2D
+        try {
+            g2.clip(outline())
+            super.paintChildren(g2)
+        } finally {
+            g2.dispose()
+        }
+    }
+
+    override fun paintBorder(g: java.awt.Graphics) {
+        val g2 = g.create() as java.awt.Graphics2D
+        try {
+            g2.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING, java.awt.RenderingHints.VALUE_ANTIALIAS_ON)
+            g2.color = AdbToolboxTheme.Colors.borderStrong
+            g2.stroke = java.awt.BasicStroke(JBUIScale.scale(1f))
+            g2.draw(outline())
+        } finally {
+            g2.dispose()
+        }
     }
 
     /** Test/verification seam: the rows currently rendered, in order. */
@@ -158,8 +218,35 @@ class DevicePickerListPanel(
     }
 }
 
-/** One 28px picker row: status dot, name (bold when selected), mono serial, connection chip. */
+/**
+ * One 28px picker row (design §1, `screenshots/device-picker.png`): padding 0 10, gap 7, items
+ * centred — 7px state dot (green online, amber unauthorized) · name 11.5px, bold for the current
+ * device, never truncated · mono 9.5px `textFaint` serial taking the remaining width with an
+ * ellipsis · right-aligned connection chip (9px bold, padding 1 4, radius 3, 1px `border` +
+ * `textDim`; amber border and text for an unauthorized device). The current device's row is a
+ * full-bleed `accentBg`; the keyboard/hover highlight on another row is the `hover` fill.
+ */
 private class DeviceRowRenderer : ListCellRenderer<DevicePickerItem> {
+
+    private val dotLabel = JBLabel()
+    private val nameLabel = JBLabel()
+    private val serialLabel = JBLabel().apply {
+        font = AdbToolboxTheme.Typography.monoMeta
+        foreground = AdbToolboxTheme.Colors.textFaint
+    }
+    private val chipLabel = JBLabel().apply {
+        font = AdbToolboxTheme.Typography.groupLabel.deriveFont(JBUIScale.scale(9f))
+    }
+    private val row = object : JBPanel<Nothing>(FlexRowLayout(JBUIScale.scale(7))) {
+        override fun getPreferredSize(): Dimension = Dimension(super.getPreferredSize().width, AdbToolboxTheme.Sizes.listRow)
+    }.apply {
+        isOpaque = true
+        border = BorderFactory.createEmptyBorder(0, AdbToolboxTheme.Spacing.sectionInset, 0, AdbToolboxTheme.Spacing.sectionInset)
+        add(dotLabel)
+        add(nameLabel)
+        add(serialLabel, FlexRowLayout.FILL)
+        add(chipLabel)
+    }
 
     override fun getListCellRendererComponent(
         list: javax.swing.JList<out DevicePickerItem>,
@@ -168,42 +255,49 @@ private class DeviceRowRenderer : ListCellRenderer<DevicePickerItem> {
         isSelected: Boolean,
         cellHasFocus: Boolean,
     ): Component {
-        val row = JBPanel<Nothing>(FlowLayout(FlowLayout.LEADING, AdbToolboxTheme.Spacing.s3, 0))
-        row.isOpaque = true
-        row.background = if (value.isSelected) AdbToolboxTheme.Colors.accentBg else AdbToolboxTheme.Colors.panel
-        row.border = BorderFactory.createEmptyBorder(0, AdbToolboxTheme.Spacing.s4, 0, AdbToolboxTheme.Spacing.s4)
-
-        val dotColor = when (value.connectionState) {
-            DeviceConnectionState.Online -> AdbToolboxTheme.Colors.green
-            DeviceConnectionState.Unauthorized -> AdbToolboxTheme.Colors.amber
-            else -> AdbToolboxTheme.Colors.textFaint
+        // `accentBg` and `hover` are translucent: compose them over the popup's `panel` so the list's
+        // own selection painting underneath never shows through.
+        row.background = when {
+            value.isSelected -> blend(AdbToolboxTheme.Colors.panel, AdbToolboxTheme.Colors.accentBg)
+            isSelected -> blend(AdbToolboxTheme.Colors.panel, AdbToolboxTheme.Colors.hover)
+            else -> AdbToolboxTheme.Colors.panel
         }
-        row.add(JBLabel(StatusDotIcon(dotColor, filled = true)))
-
-        val name = value.model ?: value.product ?: value.serial.toString()
-        row.add(
-            JBLabel(name).apply {
-                font = AdbToolboxTheme.Typography.body.deriveFont(if (value.isSelected) Font.BOLD else Font.PLAIN)
-                foreground = AdbToolboxTheme.Colors.text
+        val unauthorized = value.connectionState == DeviceConnectionState.Unauthorized
+        dotLabel.icon = StatusDotIcon(
+            when (value.connectionState) {
+                DeviceConnectionState.Online -> AdbToolboxTheme.Colors.green
+                DeviceConnectionState.Unauthorized -> AdbToolboxTheme.Colors.amber
+                else -> AdbToolboxTheme.Colors.textFaint
             },
+            filled = true,
         )
-        row.add(
-            JBLabel(value.serial.toString()).apply {
-                font = AdbToolboxTheme.Typography.monoMeta
-                foreground = AdbToolboxTheme.Colors.textFaint
-            },
+        nameLabel.text = value.model ?: value.product ?: value.serial.toString()
+        nameLabel.font = AdbToolboxTheme.Typography.body.deriveFont(if (value.isSelected) Font.BOLD else Font.PLAIN, JBUIScale.scale(11.5f))
+        nameLabel.foreground = AdbToolboxTheme.Colors.text
+        serialLabel.text = value.serial.toString()
+        chipLabel.text = chipText(value.connectionKind)
+        chipLabel.foreground = if (unauthorized) AdbToolboxTheme.Colors.amber else AdbToolboxTheme.Colors.textDim
+        chipLabel.border = BorderFactory.createCompoundBorder(
+            SolidChipBorder(if (unauthorized) AdbToolboxTheme.Colors.amber else AdbToolboxTheme.Colors.border, radius = { JBUIScale.scale(3) }),
+            JBUI.Borders.empty(1, 4),
         )
-        row.add(
-            JBLabel(chipText(value.connectionKind)).apply {
-                font = AdbToolboxTheme.Typography.groupLabel.deriveFont(9f)
-                foreground = AdbToolboxTheme.Colors.textFaint
-            },
-        )
+        row.setSize(list.width, AdbToolboxTheme.Sizes.listRow)
+        row.doLayout()
         return row
+    }
+
+    /** [over] composed onto the opaque [base]. */
+    private fun blend(base: java.awt.Color, over: java.awt.Color): java.awt.Color {
+        val a = over.alpha / 255f
+        fun mix(b: Int, o: Int) = (b * (1 - a) + o * a).toInt()
+        return java.awt.Color(mix(base.red, over.red), mix(base.green, over.green), mix(base.blue, over.blue))
     }
 
     private fun chipText(kind: DeviceConnectionKind) = when (kind) {
         DeviceConnectionKind.Usb -> "USB"
         DeviceConnectionKind.Wifi -> "Wi-Fi"
+        DeviceConnectionKind.Emulator -> "Emulator"
     }
 }
+
+private const val MAX_ROWS = 8

@@ -57,6 +57,12 @@ class DeviceContextBarPanel(
         horizontalAlignment = JButton.LEFT
         margin = java.awt.Insets(0, 0, 0, 0)
         addActionListener { onToggle() }
+        // Design §1: Space (the button's own activation) or ↓ opens the picker from the focused selector.
+        getInputMap(javax.swing.JComponent.WHEN_FOCUSED)
+            .put(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_DOWN, 0), OPEN_PICKER)
+        actionMap.put(OPEN_PICKER, object : javax.swing.AbstractAction() {
+            override fun actionPerformed(e: java.awt.event.ActionEvent) = onToggle()
+        })
     }
 
     private val serialLabel = JBLabel("").apply {
@@ -283,9 +289,11 @@ class DeviceContextBarPanel(
     private fun connectionChipText(kind: DeviceConnectionKind) = when (kind) {
         DeviceConnectionKind.Usb -> "USB"
         DeviceConnectionKind.Wifi -> "Wi-Fi"
+        DeviceConnectionKind.Emulator -> "Emulator"
     }
 
     private companion object {
+        const val OPEN_PICKER = "adbToolbox.openDevicePicker"
         const val UNAUTHORIZED_BANNER_TEXT =
             "Accept the “Allow USB debugging” prompt on the device, then retry."
     }

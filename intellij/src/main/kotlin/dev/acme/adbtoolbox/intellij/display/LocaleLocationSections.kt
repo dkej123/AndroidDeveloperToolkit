@@ -265,10 +265,12 @@ class LocationSection(
     private val chipRow: PresetChipRow<Choice> = PresetChipRow(
         choices = EmulatorLocationCommand.cities.map { city ->
             PresetChipChoice<Choice>(value = Choice.City(city.name), label = city.name, isDefault = true)
-        } + PresetChipChoice(value = Choice.Custom, label = "Custom…", kind = PresetChipKind.CUSTOM),
+        // Design handoff 4: the dashed custom chip reads just "…" here; its accessible name keeps the meaning.
+        } + PresetChipChoice(value = Choice.Custom, label = "…", kind = PresetChipKind.CUSTOM),
         selected = Choice.City(EmulatorLocationCommand.cities.first().name),
     ).apply {
         clearSelection()
+        chips.last().accessibleContext.accessibleName = "Custom location"
         border = JBUI.Borders.empty(0, AdbToolboxTheme.Spacing.sectionInset - AdbToolboxTheme.Spacing.s2)
         chips.forEach { chip ->
             chip.toolTipText = when (val value = chip.value) {
@@ -309,7 +311,7 @@ class LocationSection(
     }
     private val errorRow = DesignSections.inset(errorLabel)
 
-    /** The custom fields and their errors appear and hide together with the "Custom…" chip. */
+    /** The custom fields and their errors appear and hide together with the "…" (custom) chip. */
     private val customBlock: JPanel = JPanel().apply {
         layout = BoxLayout(this, BoxLayout.Y_AXIS)
         isOpaque = false

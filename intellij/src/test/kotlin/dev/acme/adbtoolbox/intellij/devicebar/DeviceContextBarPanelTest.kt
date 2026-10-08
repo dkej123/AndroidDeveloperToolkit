@@ -158,6 +158,18 @@ class DeviceContextBarPanelTest : BasePlatformTestCase() {
         assertTrue(panel.selectorComponentForTest.isFocusable)
     }
 
+    fun `test Down on the focused selector opens the picker like Space`() {
+        var toggles = 0
+        val bar = DeviceContextBarPanel(onToggle = { toggles++ }, onRefresh = {})
+        val selector = bar.selectorComponentForTest
+        val down = javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_DOWN, 0)
+
+        val actionKey = selector.getInputMap(javax.swing.JComponent.WHEN_FOCUSED).get(down)
+        selector.actionMap.get(actionKey).actionPerformed(java.awt.event.ActionEvent(selector, 0, ""))
+
+        assertEquals(1, toggles)
+    }
+
     fun `test the retry control is a focusable button reachable by keyboard, not a mouse-only label`() {
         val panel = DeviceContextBarPanel(onToggle = {}, onRefresh = {})
         panel.update(DeviceBarPresentation.Unauthorized(device()))

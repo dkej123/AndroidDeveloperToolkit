@@ -63,7 +63,10 @@ class LocaleLocationSectionsTest : BasePlatformTestCase() {
 
         section.chipRowForTest.chips.first { it.text == "Warsaw" }.doClick()
         assertEquals(listOf("Warsaw"), presets)
-        section.chipRowForTest.chips.first { it.text == "Custom…" }.doClick()
+        val custom = section.chipRowForTest.chips.last()
+        assertEquals("…", custom.text)
+        assertEquals("Custom location", custom.accessibleContext.accessibleName)
+        custom.doClick()
         assertTrue(section.customRowForTest.isVisible)
         section.typeCustomForTest("52.1", "21.0")
         assertEquals(listOf("52.1" to "21.0"), customs)
