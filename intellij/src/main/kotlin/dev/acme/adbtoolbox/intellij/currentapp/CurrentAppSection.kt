@@ -1,5 +1,6 @@
 package dev.acme.adbtoolbox.intellij.currentapp
 
+import dev.acme.adbtoolbox.intellij.ui.common.ShortcutHints
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.scale.JBUIScale
 import com.intellij.util.ui.JBUI
@@ -222,7 +223,7 @@ class CurrentAppSection(
                 showPlaceholder("Home screen", display.launcherPackage)
                 val last = display.lastApp
                 if (last != null) {
-                    note("Last app: ${identity(last)?.label ?: last}", "Launch", "Launch $last  ⌥⇧⌘R") { onLaunchLast(last) }
+                    note("Last app: ${identity(last)?.label ?: last}", "Launch", ShortcutHints.withAction("Launch $last", RESTART_FOREGROUND_ACTION)) { onLaunchLast(last) }
                 } else {
                     note("No app in the foreground.", null, null) {}
                 }
@@ -317,7 +318,11 @@ class CurrentAppSection(
             display.killed -> "Launch"
             else -> "Restart"
         }
-        primaryButton.toolTipText = if (display.killed) "Launch the main activity  ⌥⇧⌘R" else "Force-stop, then launch the main activity  ⌥⇧⌘R"
+        // The chord comes from the active keymap (ShortcutHints), never a hardcoded "⌥⇧⌘R".
+        primaryButton.toolTipText = ShortcutHints.withAction(
+            if (display.killed) "Launch the main activity" else "Force-stop, then launch the main activity",
+            RESTART_FOREGROUND_ACTION,
+        )
         killButton.text = if (busy == CurrentAppAction.Kill) "Killing…" else "Kill"
         killButton.toolTipText = if (display.killed) "Not running" else "am force-stop — leaves data intact"
         resetPermissionsButton.text = if (busy == CurrentAppAction.ResetPermissions) "Resetting…" else "Reset permissions"
@@ -499,3 +504,5 @@ class CurrentAppSection(
         }
     }
 }
+
+private const val RESTART_FOREGROUND_ACTION = "AdbToolbox.RestartForegroundApp"

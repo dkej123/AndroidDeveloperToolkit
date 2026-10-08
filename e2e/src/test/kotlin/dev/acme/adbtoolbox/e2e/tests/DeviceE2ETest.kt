@@ -32,7 +32,9 @@ class DeviceE2ETest : E2eTest() {
     fun `device bar shows the human readable model name`() {
         // design/README.md §1 shows the model as a user reads it ("Pixel 8 Pro"), not adb's
         // underscore-joined `model:` token from `adb devices -l`.
-        val model = Adb.prop("ro.product.model")
+        // `adb devices -l` turns spaces into underscores, so a model that really contains "_"
+        // (the SDK emulator's "sdk_gphone_x86_64") is shown with spaces too.
+        val model = Adb.prop("ro.product.model").replace('_', ' ')
         studio.visibleTexts(studio.component("//div[@class='DeviceContextBarPanel']")) shouldContain model
     }
 

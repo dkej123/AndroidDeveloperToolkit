@@ -52,7 +52,9 @@ class SettingsE2ETest : E2eTest() {
         studio.dialogButton(dialog, "OK").click()
 
         studio.navigate(View.Device)
-        studio.visibleTexts() shouldContain dir.path.replace(System.getProperty("user.home"), "~")
+        // Screen header meta: "<capture dir> · scrcpy <version>".
+        val shown = dir.path.replace(System.getProperty("user.home"), "~")
+        studio.visibleTexts().any { it == shown || it.startsWith("$shown · ") } shouldBe true
         studio.click("Screenshot")
 
         awaitUntil(E2eConfig.deviceTimeout(15), Duration.ofMillis(500), "a PNG in $dir") {
@@ -91,7 +93,7 @@ class SettingsE2ETest : E2eTest() {
         studio.visibleTexts().any { "Fix or clear it in Settings." in it } shouldBe true
         studio.byName("Check again")
         // The options only configure scrcpy (user request 2026-10-01).
-        studio.isEnabled(studio.byName("Mirroring options")) shouldBe false
+        studio.isEnabled(studio.byName("Mirroring options", "ScreenToolButton")) shouldBe false
 
         // "Open Settings" opens the plugin page every time, also after the dialog was closed once.
         repeat(2) {

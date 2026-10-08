@@ -213,8 +213,9 @@ class Studio(val robot: RemoteRobot = RemoteRobot(E2eConfig.robotUrl)) {
 
     /** Chooses the first entry of the dropdown named [name] whose shown text starts with [prefix], as a user would. */
     fun choose(name: String, prefix: String) {
-        awaitUntil(E2eConfig.deviceTimeout(15), Duration.ofMillis(300), "'$name' to be enabled") { isEnabled(byName(name)) }
-        byName(name).runJs(
+        // The caption label above a dropdown carries the same name; the combo is the ComboBox.
+        awaitUntil(E2eConfig.deviceTimeout(15), Duration.ofMillis(300), "'$name' to be enabled") { isEnabled(byName(name, "ComboBox")) }
+        byName(name, "ComboBox").runJs(
             """
             var r = component.getRenderer();
             var found = -1;

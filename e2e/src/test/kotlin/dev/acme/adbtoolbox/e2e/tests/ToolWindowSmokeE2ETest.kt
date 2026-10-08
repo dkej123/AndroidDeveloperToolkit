@@ -16,7 +16,7 @@ class ToolWindowSmokeE2ETest : E2eTest() {
 
     @Test
     fun `device bar shows the connected emulator as the selected device`() {
-        val model = Adb.prop("ro.product.model")
+        val model = Adb.prop("ro.product.model").replace('_', ' ') // adb devices -l: spaces → "_"
         val texts = studio.visibleTexts(studio.component("//div[@class='DeviceContextBarPanel']"))
 
         texts shouldContain model
@@ -36,7 +36,8 @@ class ToolWindowSmokeE2ETest : E2eTest() {
     @Test
     fun `plugin runs on Android Studio's ddmlib transport`() {
         val lines = pluginLog.linesSince(dev.acme.adbtoolbox.e2e.infra.PluginLog.Mark(0))
-        lines.last { "diagnostics started" in it } shouldContain "androidPlugin=\""
+        // Diagnostics report whether the Android plugin is loaded (no version: see InstalledPlugins).
+        lines.last { "diagnostics started" in it } shouldContain "androidPlugin=loaded"
         lines.last { "project opened" in it } shouldContain "androidPlugin=true"
     }
 }
