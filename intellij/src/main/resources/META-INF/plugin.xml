@@ -9,16 +9,22 @@
 <p>Control your Android device from Android Studio or IntelliJ IDEA without opening a terminal.
 ADB Toolbox puts the adb commands you run every day into one tool window.</p>
 <ul>
-  <li><b>Device</b> &ndash; device facts, screenshots (also full-page, of scrolling screens) and
-      screen recording, scrcpy mirroring,
-      font scale and display density presets, quick toggles for dark theme, animations, show
-      touches, TalkBack and common developer options.</li>
+  <li><b>Device</b> &ndash; the app in front with restart, kill and reset permissions; screenshots
+      (also full-page, of scrolling screens), screen recording and scrcpy mirroring; device facts;
+      font scale and display density; language &amp; region overrides (incl. pseudo-locales) and
+      emulator GPS location; quick toggles for dark theme, animations, show touches, TalkBack and
+      common developer options.</li>
+  <li><b>Layout Inspector</b> &ndash; any app's screen and view hierarchy in an editor tab: sizes and
+      distances in dp, redlines, 8 dp grid, color picker, Figma overlay, and an accessibility audit
+      (TalkBack order, unlabeled controls, small touch targets).</li>
   <li><b>Apps</b> &ndash; searchable package list with launcher icons and pins; restart,
       force-stop, launch, clear data, uninstall; app details with shared preferences and
       SQLite databases, runtime permissions and deep links.</li>
   <li><b>Network</b> &ndash; device-wide HTTP proxy and emulator network throttling.</li>
   <li><b>Logcat</b> &ndash; a fast, filterable stream with levels, search, package filter,
       pause and wrap.</li>
+  <li><b>AI agents</b> &ndash; an optional local MCP server so Claude Code, Codex CLI, Cursor or
+      Gemini CLI can use the selected device; destructive actions always ask first.</li>
   <li>Wi-Fi pairing, multiple devices, light and dark themes, a one-click diagnostics bundle for
       bug reports.</li>
 </ul>
