@@ -1,5 +1,6 @@
 package dev.acme.adbtoolbox.devicehelper;
 
+import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
@@ -83,7 +84,10 @@ public final class AppInfoMain {
 
     private static String icon(PackageManager packageManager, ApplicationInfo info, int size) {
         try {
-            Drawable drawable = packageManager.getApplicationIcon(info);
+            Drawable drawable = launcherIcon(packageManager, info.packageName);
+            if (drawable == null) {
+                drawable = packageManager.getApplicationIcon(info);
+            }
             Bitmap bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888);
             drawable.setBounds(0, 0, size, size);
             drawable.draw(new Canvas(bitmap));
@@ -95,6 +99,20 @@ public final class AppInfoMain {
             // Any icon failure (resources missing, a drawable that cannot render off-screen) only
             // costs this row its thumbnail; the label and flags are still reported.
             return "-";
+        }
+    }
+
+    /**
+     * The icon the launcher shows, which is the launcher activity's own icon when it sets one —
+     * apps may leave {@code <application android:icon>} unset or different. {@code null} for apps
+     * without a launcher activity or whose activity icon cannot be loaded.
+     */
+    private static Drawable launcherIcon(PackageManager packageManager, String packageName) {
+        try {
+            Intent launch = packageManager.getLaunchIntentForPackage(packageName);
+            return launch == null ? null : packageManager.getActivityIcon(launch);
+        } catch (Exception unavailable) {
+            return null;
         }
     }
 

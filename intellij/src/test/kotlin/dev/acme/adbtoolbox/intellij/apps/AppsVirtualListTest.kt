@@ -91,14 +91,14 @@ class AppsVirtualListTest : BasePlatformTestCase() {
         val renderer = list.rowRendererForTest
 
         list.cellRenderer.getListCellRendererComponent(list, withIcon, 0, false, false)
-        assertNotNull(renderer.tileForTest.image)
+        assertNotNull(renderer.tileForTest.icon)
         assertNull(renderer.tileForTest.fill)
         val painted = BufferedImage(renderer.tileForTest.width, renderer.tileForTest.height, BufferedImage.TYPE_INT_ARGB)
         renderer.tileForTest.paint(painted.createGraphics())
         assertEquals(Color.RED.rgb, painted.getRGB(painted.width / 2, painted.height / 2))
 
         list.cellRenderer.getListCellRendererComponent(list, withoutIcon, 1, false, false)
-        assertNull(renderer.tileForTest.image)
+        assertNull(renderer.tileForTest.icon)
         assertEquals(dev.acme.adbtoolbox.intellij.ui.common.AdbToolboxTheme.Colors.brandBg, renderer.tileForTest.fill)
     }
 
@@ -111,7 +111,7 @@ class AppsVirtualListTest : BasePlatformTestCase() {
 
         list.cellRenderer.getListCellRendererComponent(list, broken, 0, false, false)
 
-        assertNull(renderer.tileForTest.image)
+        assertNull(renderer.tileForTest.icon)
         assertEquals(dev.acme.adbtoolbox.intellij.ui.common.AdbToolboxTheme.Colors.header, renderer.tileForTest.fill)
     }
 

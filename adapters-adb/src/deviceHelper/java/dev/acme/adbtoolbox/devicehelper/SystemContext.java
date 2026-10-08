@@ -33,6 +33,28 @@ final class SystemContext {
         current.set(null, activityThread);
         Method getSystemContext = activityThreadClass.getDeclaredMethod("getSystemContext");
         instance = (Context) getSystemContext.invoke(activityThread);
+        installInitialApplication(activityThreadClass, activityThread, instance);
         return instance;
+    }
+
+    /**
+     * Inflating XML drawables (adaptive and vector launcher icons, even the framework's default app
+     * icon) reaches {@code ActivityThread.currentApplication().getResources()} on recent platforms,
+     * which throws in a process that never created an {@code Application}. Registering one backed by
+     * the system context lets those drawables load. Best-effort: older platforms do not need it.
+     */
+    private static void installInitialApplication(Class<?> activityThreadClass, Object activityThread, Context base) {
+        try {
+            Object application = Class.forName("android.app.Application").getDeclaredConstructor().newInstance();
+            Method attachBaseContext = Class.forName("android.content.ContextWrapper")
+                .getDeclaredMethod("attachBaseContext", Context.class);
+            attachBaseContext.setAccessible(true);
+            attachBaseContext.invoke(application, base);
+            Field initialApplication = activityThreadClass.getDeclaredField("mInitialApplication");
+            initialApplication.setAccessible(true);
+            initialApplication.set(activityThread, application);
+        } catch (Exception unavailable) {
+            // Icons may then fail to render; labels and everything else still work.
+        }
     }
 }

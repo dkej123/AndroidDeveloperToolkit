@@ -23,7 +23,8 @@ running Android's own resource stack. Only the device has that.
 - A small Java helper (`adapters-adb/src/deviceHelper`) is run on the device with
   `CLASSPATH=<jar> app_process / dev.acme.adbtoolbox.devicehelper.AppInfoMain <iconPx> [pkg...]`
   as the shell user. Through `PackageManager` it reports each package's localized label, its
-  debuggable flag and a launcher icon rendered to a 32px PNG, in a line-based, versioned protocol
+  debuggable flag and a launcher icon rendered to a 64px PNG (the launcher activity's icon,
+  else the application's), in a line-based, versioned protocol
   (`AppInfoCommand` in `:domain`) streamed back through the existing `AdbTransport` port (ADR 0005).
 - The helper is compiled against compile-only stubs of the handful of `android.*` classes it uses
   and dexed by D8 (`com.android.tools:r8` from Google Maven) during the normal Gradle build, so the
@@ -44,6 +45,10 @@ running Android's own resource stack. Only the device has that.
 - Apps rows show real, localized labels and icons; one helper run replaces a `dumpsys` call per
   package, so enrichment is also faster.
 - The plugin writes one small file to `/data/local/tmp` on each device it lists apps for.
+- `app_process` creates no `Application`, yet inflating XML drawables (adaptive/vector icons, even
+  the framework default icon) calls `ActivityThread.currentApplication().getResources()` on newer
+  platforms. The helper registers an `Application` backed by the system context; without it every
+  icon fails to render (seen on API 30) while labels still work.
 - The stubs must match the real platform signatures the helper calls; a mismatch fails at runtime
   on the device (caught by the E2E suite's Apps tests), not at compile time.
 

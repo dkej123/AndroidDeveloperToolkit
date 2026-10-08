@@ -13,7 +13,8 @@ import java.nio.file.Files
 import java.security.MessageDigest
 
 private const val HELPER_RESOURCE = "/dev/acme/adbtoolbox/adapters/adb/apps/app-info-helper.jar"
-private const val DEFAULT_ICON_SIZE_PX = 32
+// Big enough for the largest tile (28 pt Current app / app details) at 2x HiDPI; ~1 MB for 200 apps.
+private const val DEFAULT_ICON_SIZE_PX = 64
 
 // Beyond this many names the command line gets long enough to hit old devices' shell limits, and
 // the helper is about as fast listing every installed app as it is listing a subset.

@@ -1,5 +1,6 @@
 package android.content.pm;
 
+import android.content.Intent;
 import android.graphics.drawable.Drawable;
 import java.util.List;
 
@@ -12,4 +13,8 @@ public abstract class PackageManager {
     public abstract CharSequence getApplicationLabel(ApplicationInfo info);
 
     public abstract Drawable getApplicationIcon(ApplicationInfo info);
+
+    public abstract Intent getLaunchIntentForPackage(String packageName);
+
+    public abstract Drawable getActivityIcon(Intent intent) throws Exception;
 }

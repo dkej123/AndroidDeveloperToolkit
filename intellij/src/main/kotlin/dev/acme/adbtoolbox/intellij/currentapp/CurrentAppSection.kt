@@ -1,6 +1,7 @@
 package dev.acme.adbtoolbox.intellij.currentapp
 
 import com.intellij.ui.components.JBLabel
+import com.intellij.ui.scale.JBUIScale
 import com.intellij.util.ui.JBUI
 import dev.acme.adbtoolbox.application.currentapp.CurrentAppAction
 import dev.acme.adbtoolbox.application.currentapp.CurrentAppDisplay
@@ -8,6 +9,7 @@ import dev.acme.adbtoolbox.application.currentapp.CurrentAppViewState
 import dev.acme.adbtoolbox.domain.packages.AppIcon
 import dev.acme.adbtoolbox.intellij.apps.DashedTopBorder
 import dev.acme.adbtoolbox.intellij.ui.common.AdbToolboxTheme
+import dev.acme.adbtoolbox.intellij.ui.common.AppIconImages
 import dev.acme.adbtoolbox.intellij.ui.common.DesignButton
 import dev.acme.adbtoolbox.intellij.ui.common.DesignButtonStyle
 import dev.acme.adbtoolbox.intellij.ui.common.DesignSections
@@ -23,12 +25,9 @@ import java.awt.Font
 import java.awt.Graphics
 import java.awt.Graphics2D
 import java.awt.GridLayout
-import java.awt.Image
 import java.awt.RenderingHints
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
-import java.io.ByteArrayInputStream
-import javax.imageio.ImageIO
 import javax.swing.BorderFactory
 import javax.swing.BoxLayout
 import javax.swing.JButton
@@ -71,12 +70,12 @@ class CurrentAppSection(
 
     private val tile = IconTile()
     private val labelLabel = JBLabel("").apply {
-        font = AdbToolboxTheme.Typography.body.deriveFont(Font.BOLD, JBUI.scale(12f))
+        font = AdbToolboxTheme.Typography.body.deriveFont(Font.BOLD, JBUIScale.scale(12f))
         foreground = AdbToolboxTheme.Colors.text
     }
     private val tagLabel = TagLabel()
     private val packageLabel = JBLabel("").apply {
-        font = AdbToolboxTheme.Typography.mono.deriveFont(JBUI.scale(9.5f))
+        font = AdbToolboxTheme.Typography.mono.deriveFont(JBUIScale.scale(9.5f))
         foreground = AdbToolboxTheme.Colors.textFaint
     }
     private val identityRow = flexRow(
@@ -162,7 +161,7 @@ class CurrentAppSection(
 
     // Home / lock / error / reading collapse to the identity and a note row.
     private val noteLabel = JBLabel("").apply {
-        font = AdbToolboxTheme.Typography.caption.deriveFont(JBUI.scale(10.5f))
+        font = AdbToolboxTheme.Typography.caption.deriveFont(JBUIScale.scale(10.5f))
         foreground = AdbToolboxTheme.Colors.textDim
     }
     private val noteLink = DesignButton("", DesignButtonStyle.LINK)
@@ -175,11 +174,11 @@ class CurrentAppSection(
         noteLink.addActionListener { noteAction() }
     }
     private val errorTitle = JBLabel("Couldn’t read the foreground app").apply {
-        font = AdbToolboxTheme.Typography.body.deriveFont(Font.BOLD, JBUI.scale(11.5f))
+        font = AdbToolboxTheme.Typography.body.deriveFont(Font.BOLD, JBUIScale.scale(11.5f))
         foreground = AdbToolboxTheme.Colors.text
     }
     private val errorReason = JBLabel("").apply {
-        font = AdbToolboxTheme.Typography.mono.deriveFont(JBUI.scale(9.5f))
+        font = AdbToolboxTheme.Typography.mono.deriveFont(JBUIScale.scale(9.5f))
         foreground = AdbToolboxTheme.Colors.textFaint
     }
     private val errorBlock = JPanel().apply {
@@ -195,7 +194,7 @@ class CurrentAppSection(
         layout = BoxLayout(this, BoxLayout.Y_AXIS)
         alignmentX = Component.LEFT_ALIGNMENT
         border = JBUI.Borders.empty(0, AdbToolboxTheme.Spacing.sectionInset)
-        listOf(46, 70).forEach { add(Bar(it)); add(javax.swing.Box.createVerticalStrut(JBUI.scale(6))) }
+        listOf(46, 70).forEach { add(Bar(it)); add(javax.swing.Box.createVerticalStrut(JBUIScale.scale(6))) }
     }
 
     private val section = DesignSections.section(header, skeleton, identityRow, errorBlock, factsPanel, helpLabel, actionRow, noteRow, destructiveZone)
@@ -372,7 +371,7 @@ class CurrentAppSection(
         const val UNINSTALL_TOOLTIP = "Removes the app and all its data. Cannot be undone."
 
         fun factValue() = JBLabel("—").apply {
-            font = AdbToolboxTheme.Typography.mono.deriveFont(JBUI.scale(11f))
+            font = AdbToolboxTheme.Typography.mono.deriveFont(JBUIScale.scale(11f))
             foreground = AdbToolboxTheme.Colors.text
         }
 
@@ -398,19 +397,19 @@ class CurrentAppSection(
     }
 
     /** The 28px app tile: launcher icon, or the Apps-list fallback tile; dashed for home/lock; 55% when killed. */
-    private class IconTile : RoundedSurface(null, null, radius = { JBUI.scale(6) }) {
-        private var image: Image? = null
+    private class IconTile : RoundedSurface(null, null, radius = { JBUIScale.scale(6) }) {
+        private var icon: AppIcon? = null
         private var dashed = false
         private var dimmed = false
 
         init {
-            preferredSize = Dimension(JBUI.scale(28), JBUI.scale(28))
+            preferredSize = Dimension(JBUIScale.scale(28), JBUIScale.scale(28))
             minimumSize = preferredSize
             maximumSize = preferredSize
         }
 
         fun set(icon: AppIcon?, debuggable: Boolean, dashed: Boolean, dimmed: Boolean) {
-            image = icon?.let { runCatching { ImageIO.read(ByteArrayInputStream(it.png)) }.getOrNull() }
+            this.icon = icon?.takeIf { AppIconImages.decode(it) != null }
             this.dashed = dashed
             this.dimmed = dimmed
             fill = if (dashed) null else if (debuggable) AdbToolboxTheme.Colors.brandBg else AdbToolboxTheme.Colors.header
@@ -423,17 +422,14 @@ class CurrentAppSection(
             try {
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
                 if (dimmed) g2.composite = java.awt.AlphaComposite.getInstance(java.awt.AlphaComposite.SRC_OVER, 0.55f)
-                val current = image
+                val current = icon
                 when {
                     dashed -> {
                         g2.color = AdbToolboxTheme.Colors.borderStrong
-                        g2.stroke = BasicStroke(JBUI.scale(1.5f), BasicStroke.CAP_BUTT, BasicStroke.JOIN_ROUND, 1f, floatArrayOf(JBUI.scale(3f), JBUI.scale(2f)), 0f)
-                        g2.drawRoundRect(1, 1, width - 3, height - 3, JBUI.scale(12), JBUI.scale(12))
+                        g2.stroke = BasicStroke(JBUIScale.scale(1.5f), BasicStroke.CAP_BUTT, BasicStroke.JOIN_ROUND, 1f, floatArrayOf(JBUIScale.scale(3f), JBUIScale.scale(2f)), 0f)
+                        g2.drawRoundRect(1, 1, width - 3, height - 3, JBUIScale.scale(12), JBUIScale.scale(12))
                     }
-                    current != null -> {
-                        g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC)
-                        g2.drawImage(current, 0, 0, width, height, null)
-                    }
+                    current != null -> AppIconImages.paint(g2, current, 0, 0, width, height)
                     else -> super.paintComponent(g2)
                 }
             } finally {
@@ -445,7 +441,7 @@ class CurrentAppSection(
     /** The Apps-list "debug" tag, or the connection-chip-style "system" tag. */
     private class TagLabel : JBLabel("") {
         init {
-            font = AdbToolboxTheme.Typography.groupLabel.deriveFont(Font.BOLD, JBUI.scale(9f))
+            font = AdbToolboxTheme.Typography.groupLabel.deriveFont(Font.BOLD, JBUIScale.scale(9f))
             border = JBUI.Borders.empty(1, 4)
             isVisible = false
         }
@@ -470,10 +466,10 @@ class CurrentAppSection(
                     val debug = text == "debug"
                     if (debug) {
                         g2.color = AdbToolboxTheme.Colors.brandBg
-                        g2.fillRoundRect(0, 0, width - 1, height - 1, JBUI.scale(6), JBUI.scale(6))
+                        g2.fillRoundRect(0, 0, width - 1, height - 1, JBUIScale.scale(6), JBUIScale.scale(6))
                     }
                     g2.color = if (debug) AdbToolboxTheme.Colors.brandBorder else AdbToolboxTheme.Colors.border
-                    g2.drawRoundRect(0, 0, width - 1, height - 1, JBUI.scale(6), JBUI.scale(6))
+                    g2.drawRoundRect(0, 0, width - 1, height - 1, JBUIScale.scale(6), JBUIScale.scale(6))
                 } finally {
                     g2.dispose()
                 }
@@ -484,8 +480,8 @@ class CurrentAppSection(
 
     private class Bar(private val percent: Int) : JComponent() {
         init {
-            preferredSize = Dimension(JBUI.scale(percent * 3), JBUI.scale(10))
-            maximumSize = Dimension(Int.MAX_VALUE, JBUI.scale(10))
+            preferredSize = Dimension(JBUIScale.scale(percent * 3), JBUIScale.scale(10))
+            maximumSize = Dimension(Int.MAX_VALUE, JBUIScale.scale(10))
             alignmentX = Component.LEFT_ALIGNMENT
         }
 
@@ -494,7 +490,7 @@ class CurrentAppSection(
             try {
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
                 g2.color = AdbToolboxTheme.Colors.header
-                g2.fillRoundRect(0, 0, width * percent / 100, height, JBUI.scale(6), JBUI.scale(6))
+                g2.fillRoundRect(0, 0, width * percent / 100, height, JBUIScale.scale(6), JBUIScale.scale(6))
             } finally {
                 g2.dispose()
             }

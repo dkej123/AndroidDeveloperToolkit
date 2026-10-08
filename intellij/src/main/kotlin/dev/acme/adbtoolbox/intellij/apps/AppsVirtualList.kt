@@ -2,11 +2,13 @@ package dev.acme.adbtoolbox.intellij.apps
 
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBList
+import com.intellij.ui.scale.JBUIScale
 import com.intellij.util.ui.JBUI
 import dev.acme.adbtoolbox.application.apps.AppsRow
 import dev.acme.adbtoolbox.domain.packages.AppIcon
 import dev.acme.adbtoolbox.intellij.icons.AdbToolboxIcons
 import dev.acme.adbtoolbox.intellij.ui.common.AdbToolboxTheme
+import dev.acme.adbtoolbox.intellij.ui.common.AppIconImages
 import dev.acme.adbtoolbox.intellij.ui.common.FlexRowLayout
 import dev.acme.adbtoolbox.intellij.ui.common.RoundedSurface
 import java.awt.BorderLayout
@@ -14,14 +16,9 @@ import java.awt.Component
 import java.awt.Dimension
 import java.awt.Font
 import java.awt.Graphics
-import java.awt.Graphics2D
 import java.awt.GridLayout
-import java.awt.Image
-import java.awt.RenderingHints
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
-import java.io.ByteArrayInputStream
-import javax.imageio.ImageIO
 import javax.swing.JComponent
 import javax.swing.JList
 import javax.swing.JPanel
@@ -106,15 +103,15 @@ class AppsVirtualList(
  * system rather than inventing a new one.
  */
 /** Width, from the row's right edge, that a click treats as a click on the pin. */
-private val PIN_HIT_WIDTH: () -> Int = { JBUI.scale(28) }
+private val PIN_HIT_WIDTH: () -> Int = { JBUIScale.scale(28) }
 
 /** Width, from the row's left edge, that a click treats as a click on the app icon. */
-private val ICON_HIT_WIDTH: () -> Int = { JBUI.scale(30) }
+private val ICON_HIT_WIDTH: () -> Int = { JBUIScale.scale(30) }
 
 internal class AppsRowRenderer : ListCellRenderer<AppsRow> {
 
     private val sectionHeader = JBLabel().apply {
-        font = AdbToolboxTheme.Typography.body.deriveFont(Font.BOLD, JBUI.scale(9.5f))
+        font = AdbToolboxTheme.Typography.body.deriveFont(Font.BOLD, JBUIScale.scale(9.5f))
         foreground = AdbToolboxTheme.Colors.textFaint
         border = JBUI.Borders.empty(6, 8, 2, 8)
     }
@@ -125,11 +122,9 @@ internal class AppsRowRenderer : ListCellRenderer<AppsRow> {
 
     // `iconStyle`: 16px square tile, radius 4 — replaced by the app's own launcher icon when known.
     private val tile = AppIconTile().apply {
-        preferredSize = Dimension(JBUI.scale(16), JBUI.scale(16))
+        preferredSize = Dimension(JBUIScale.scale(16), JBUIScale.scale(16))
         toolTipText = "App details"
     }
-
-    private val iconCache = AppIconImageCache()
 
     private val titleLabel = JBLabel()
     private val packageLabel = JBLabel()
@@ -137,10 +132,10 @@ internal class AppsRowRenderer : ListCellRenderer<AppsRow> {
     // `tagStyle`: 9px/700 teal text on `brandBg`, 1px `brandBorder`, radius 3, padding 1px 4px.
     private val debugTagLabel = JBLabel("debug").apply {
         foreground = AdbToolboxTheme.Colors.brand
-        font = AdbToolboxTheme.Typography.body.deriveFont(Font.BOLD, JBUI.scale(9f))
+        font = AdbToolboxTheme.Typography.body.deriveFont(Font.BOLD, JBUIScale.scale(9f))
         border = JBUI.Borders.empty(1, 4)
     }
-    private val debugTag = RoundedSurface(AdbToolboxTheme.Colors.brandBg, AdbToolboxTheme.Colors.brandBorder, radius = { JBUI.scale(3) }).apply {
+    private val debugTag = RoundedSurface(AdbToolboxTheme.Colors.brandBg, AdbToolboxTheme.Colors.brandBorder, radius = { JBUIScale.scale(3) }).apply {
         layout = BorderLayout()
         add(debugTagLabel, BorderLayout.CENTER)
     }
@@ -153,7 +148,7 @@ internal class AppsRowRenderer : ListCellRenderer<AppsRow> {
 
     // `rowStyle`: 34px, radius 5, `padding: 0 8px`, gap 7, selected = `accentBg` + 1px `accentBorder`.
     private val root = RoundedSurface(null, null).apply {
-        layout = FlexRowLayout(JBUI.scale(7))
+        layout = FlexRowLayout(JBUIScale.scale(7))
         border = JBUI.Borders.empty(0, AdbToolboxTheme.Spacing.s4)
         add(tile)
         add(textStack, FlexRowLayout.FILL)
@@ -189,7 +184,7 @@ internal class AppsRowRenderer : ListCellRenderer<AppsRow> {
         titleLabel.foreground = AdbToolboxTheme.Colors.text
         titleLabel.font = AdbToolboxTheme.Typography.body.deriveFont(
             if (value.isSelected) Font.BOLD else Font.PLAIN,
-            JBUI.scale(11.5f),
+            JBUIScale.scale(11.5f),
         )
 
         packageLabel.text = value.packageName
@@ -197,14 +192,14 @@ internal class AppsRowRenderer : ListCellRenderer<AppsRow> {
         packageLabel.font = AdbToolboxTheme.Typography.monoMeta
 
         val debuggable = value.isDebuggable == true
-        tile.image = value.icon?.let(iconCache::image)
+        tile.icon = value.icon?.takeIf { AppIconImages.decode(it) != null }
         tile.fill = when {
-            tile.image != null -> null
+            tile.icon != null -> null
             debuggable -> AdbToolboxTheme.Colors.brandBg
             else -> AdbToolboxTheme.Colors.header
         }
         tile.outline = when {
-            tile.image != null -> null
+            tile.icon != null -> null
             debuggable -> AdbToolboxTheme.Colors.brandBorder
             else -> AdbToolboxTheme.Colors.border
         }
@@ -234,37 +229,12 @@ internal class AppsRowRenderer : ListCellRenderer<AppsRow> {
     }
 }
 
-/** The row's 16px tile: paints [image] scaled into its bounds when set, the rounded tile otherwise. */
+/** The row's 16px tile: paints [icon] scaled into its bounds when set, the rounded tile otherwise. */
 internal class AppIconTile : RoundedSurface(null, null, radius = { AdbToolboxTheme.Radii.field }) {
-    var image: Image? = null
+    var icon: AppIcon? = null
 
     override fun paintComponent(g: Graphics) {
-        val current = image ?: return super.paintComponent(g)
-        val g2 = g.create() as Graphics2D
-        try {
-            g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC)
-            g2.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY)
-            g2.drawImage(current, 0, 0, width, height, null)
-        } finally {
-            g2.dispose()
-        }
-    }
-}
-
-private const val MAX_CACHED_ICONS = 512
-
-/**
- * Decodes each [AppIcon]'s PNG once. Rows are re-rendered on every repaint, and the list is rebuilt
- * whenever the package list republishes, so decoding per paint would redo the same work constantly.
- * An undecodable icon is remembered as `null` so the row falls back to the plain tile.
- */
-private class AppIconImageCache {
-    private val images = object : LinkedHashMap<AppIcon, Image?>(64, 0.75f, true) {
-        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<AppIcon, Image?>): Boolean = size > MAX_CACHED_ICONS
-    }
-
-    fun image(icon: AppIcon): Image? {
-        if (icon in images) return images[icon]
-        return runCatching { ImageIO.read(ByteArrayInputStream(icon.png)) }.getOrNull().also { images[icon] = it }
+        val current = icon
+        if (current == null || !AppIconImages.paint(g, current, 0, 0, width, height)) super.paintComponent(g)
     }
 }

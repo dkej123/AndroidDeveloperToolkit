@@ -5,6 +5,7 @@ import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.components.JBTabbedPane
 import com.intellij.ui.components.JBTextArea
+import com.intellij.ui.scale.JBUIScale
 import com.intellij.ui.table.JBTable
 import com.intellij.util.ui.JBUI
 import dev.acme.adbtoolbox.application.appdetails.AppDetailsIntent
@@ -20,6 +21,7 @@ import dev.acme.adbtoolbox.domain.appdata.SqlRows
 import dev.acme.adbtoolbox.domain.appdata.SqlValue
 import dev.acme.adbtoolbox.domain.deeplinks.DeepLinkSource
 import dev.acme.adbtoolbox.intellij.ui.common.AdbToolboxTheme
+import dev.acme.adbtoolbox.intellij.ui.common.AppIconImages
 import dev.acme.adbtoolbox.intellij.ui.common.DesignButton
 import dev.acme.adbtoolbox.intellij.ui.common.DesignButtonStyle
 import dev.acme.adbtoolbox.intellij.ui.common.DesignSections
@@ -32,11 +34,9 @@ import java.awt.Component
 import java.awt.Dimension
 import java.awt.GridBagConstraints
 import java.awt.GridBagLayout
-import java.awt.Image
 import javax.swing.BorderFactory
 import javax.swing.BoxLayout
 import javax.swing.DefaultCellEditor
-import javax.swing.ImageIcon
 import javax.swing.JComponent
 import javax.swing.JPanel
 import javax.swing.JTable
@@ -208,7 +208,7 @@ class AppDetailsPanel(
         name = "appDetailsPrefsTable"
         setSelectionMode(ListSelectionModel.SINGLE_SELECTION)
         columnModel.getColumn(1).cellEditor = DefaultCellEditor(ComboBox(PrefType.entries.toTypedArray()))
-        columnModel.getColumn(1).maxWidth = JBUI.scale(90)
+        columnModel.getColumn(1).maxWidth = JBUIScale.scale(90)
         emptyText.text = "No entries"
     }
     private val prefsAdd = DesignButton("Add", DesignButtonStyle.SECONDARY).apply {
@@ -293,7 +293,7 @@ class AppDetailsPanel(
             pager.apply { border = inset() },
             sqlRow.apply { border = inset() },
             queryStatus,
-            JBScrollPane(queryTable).apply { preferredSize = Dimension(0, JBUI.scale(110)) },
+            JBScrollPane(queryTable).apply { preferredSize = Dimension(0, JBUIScale.scale(110)) },
             buttonRow(null, null, null, databaseRevert, databaseSave),
         )
         add(south, BorderLayout.SOUTH)
@@ -361,11 +361,7 @@ class AppDetailsPanel(
         if (state.packageName == null) autoOpenedFor = null
         titleLabel.text = state.label ?: state.packageName.orEmpty()
         packageLabel.text = listOfNotNull(state.packageName, state.details?.versionName?.let { "v$it" }).joinToString(" · ")
-        iconLabel.icon = state.icon?.let { icon ->
-            runCatching { javax.imageio.ImageIO.read(icon.png.inputStream()) }.getOrNull()
-                ?.getScaledInstance(JBUI.scale(28), JBUI.scale(28), Image.SCALE_SMOOTH)
-                ?.let(::ImageIcon)
-        }
+        iconLabel.icon = state.icon?.let { AppIconImages.icon(it, 28) }
         noticeLabel.text = state.notice.orEmpty()
         noticeLabel.isVisible = state.notice != null
         renderInfo(state)
@@ -597,7 +593,7 @@ class AppDetailsPanel(
         val caption = JBLabel(label).apply {
             font = AdbToolboxTheme.Typography.caption
             foreground = AdbToolboxTheme.Colors.textDim
-            preferredSize = Dimension(JBUI.scale(58), preferredSize.height)
+            preferredSize = Dimension(JBUIScale.scale(58), preferredSize.height)
         }
         return flexRow(AdbToolboxTheme.Spacing.s3, caption, combo, fill = combo).apply { border = JBUI.Borders.empty(2, AdbToolboxTheme.Spacing.sectionInset) }
     }

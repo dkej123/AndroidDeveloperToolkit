@@ -53,7 +53,7 @@ class AppInfoHelperTest {
         (transport.textRequests[1] as AdbDeviceRequest).operation shouldBe
             AdbOperation.Host(listOf("push", "/host/helper.jar", REMOTE))
         transport.streamRequests.single().shellLine() shouldBe
-            "CLASSPATH=$REMOTE app_process / dev.acme.adbtoolbox.devicehelper.AppInfoMain 32 'com.acme.shop' 'com.gone'"
+            "CLASSPATH=$REMOTE app_process / dev.acme.adbtoolbox.devicehelper.AppInfoMain 64 'com.acme.shop' 'com.gone'"
     }
 
     @Test
