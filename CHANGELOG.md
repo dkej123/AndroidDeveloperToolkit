@@ -4,7 +4,7 @@ All notable changes to ADB Toolbox. Each release needs a `## [<version>] - <YYYY
 the Marketplace change notes and the GitHub release notes are generated from it
 (`release/README.md`).
 
-## [Unreleased]
+## [1.2.0] - 2026-10-09
 
 ### Added
 - **AI agents (MCP)**: `screenshot annotate=true` draws numbered boxes on elements — UI-tree elements
