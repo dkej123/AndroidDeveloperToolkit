@@ -1,5 +1,8 @@
 # Android Developer Toolkit — Agent Rules
 
+> **⏸ Work in progress:** read [`tasks/IN_PROGRESS.md`](tasks/IN_PROGRESS.md) first — it says where to resume
+> (unreleased 1.2.0, incomplete E2E). Remove this line when that file is done.
+
 These rules apply to every session in this repository.
 
 ## Process

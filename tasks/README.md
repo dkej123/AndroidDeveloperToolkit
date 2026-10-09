@@ -1,5 +1,8 @@
 # ADB Toolbox implementation backlog
 
+> **⏸ Work in progress:** read [`tasks/IN_PROGRESS.md`](IN_PROGRESS.md) first — it says where to resume
+> (unreleased 1.2.0, incomplete E2E). Remove this line when that file is done.
+
 Each numbered file is one independently reviewable task and must produce one logical commit. Read
 `AGENTS.md`, this master plan, the entire selected task, its dependencies, and applicable ADRs/skills
 before implementation. Do not start a dependent task early or bundle the next task into the same commit.

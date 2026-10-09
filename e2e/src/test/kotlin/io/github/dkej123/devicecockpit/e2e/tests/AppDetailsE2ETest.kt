@@ -99,7 +99,8 @@ class AppDetailsE2ETest : E2eTest() {
     private fun appsList(): JListFixture =
         studio.toolWindow().find(JListFixture::class.java, byXpath("//div[@class='AppsVirtualList']"), Duration.ofSeconds(10))
 
-    private fun named(name: String) = studio.component("//div[@name='$name']")
+    // Scaled: on a software-emulated device the App details tabs load in well over 15 s.
+    private fun named(name: String) = studio.component("//div[@name='$name']", E2eConfig.deviceTimeout(20))
 
     private fun selectTab(title: String) {
         named("appDetailsTabs").runJs(
