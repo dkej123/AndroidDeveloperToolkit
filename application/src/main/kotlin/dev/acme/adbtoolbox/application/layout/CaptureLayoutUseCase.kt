@@ -20,6 +20,9 @@ import kotlinx.coroutines.delay
 /** A screenshot and the hierarchy of the same screen (ADR 0014). */
 class LayoutSnapshot(val png: ByteArray, val hierarchy: UiHierarchy)
 
+/** A screenshot with the density to read it in dp — what is left when the UI tree cannot be read. */
+class ScreenImage(val png: ByteArray, val densityDpi: Int)
+
 /** Outcome of a layout capture. */
 sealed interface LayoutCapture<out T> {
     data class Captured<T>(val value: T) : LayoutCapture<T>
@@ -38,10 +41,7 @@ sealed interface LayoutCapture<out T> {
 class CaptureLayoutUseCase(private val adbTransport: AdbTransport) {
 
     suspend fun hierarchy(serial: DeviceSerial): LayoutCapture<UiHierarchy> {
-        val density = when (val parsed = parseDensityText(adbTransport.executeText(densityRequest(serial)).stdout)) {
-            is DensityParseResult.Parsed -> parsed.reading.overrideDpi ?: parsed.reading.physicalDpi
-            else -> return LayoutCapture.Failed("Could not read the display density.")
-        }
+        val density = density(serial) ?: return LayoutCapture.Failed("Could not read the display density.")
         ATTEMPT_DELAYS.forEach { wait ->
             delay(wait)
             when (val read = UiAutomatorDumpCommand.parse(adbTransport.executeText(UiAutomatorDumpCommand.request(serial)))) {
@@ -55,6 +55,13 @@ class CaptureLayoutUseCase(private val adbTransport: AdbTransport) {
             "uiautomator returned nothing: the screen kept animating. Wait and retry, or turn animations off " +
                 "(MCP: set_device_settings animations=false).",
         )
+    }
+
+    /** The screenshot and density only, for when the UI tree cannot be read (task 066). */
+    suspend fun screen(serial: DeviceSerial): LayoutCapture<ScreenImage> {
+        val density = density(serial) ?: return LayoutCapture.Failed("Could not read the display density.")
+        val png = screenshot(serial) ?: return LayoutCapture.Failed("Could not take the screenshot.")
+        return LayoutCapture.Captured(ScreenImage(png, density))
     }
 
     suspend fun snapshot(serial: DeviceSerial): LayoutCapture<LayoutSnapshot> = coroutineScope {
@@ -76,7 +83,11 @@ class CaptureLayoutUseCase(private val adbTransport: AdbTransport) {
         return bytes.takeIf { succeeded && it.isNotEmpty() }
     }
 
-    private fun densityRequest(serial: DeviceSerial) = AdbDeviceRequest(serial, DensityCommands.read())
+    private suspend fun density(serial: DeviceSerial): Int? =
+        when (val parsed = parseDensityText(adbTransport.executeText(AdbDeviceRequest(serial, DensityCommands.read())).stdout)) {
+            is DensityParseResult.Parsed -> parsed.reading.overrideDpi ?: parsed.reading.physicalDpi
+            else -> null
+        }
 
     private companion object {
         /** Wait before each attempt: none, then 500 ms, then 1 s. */

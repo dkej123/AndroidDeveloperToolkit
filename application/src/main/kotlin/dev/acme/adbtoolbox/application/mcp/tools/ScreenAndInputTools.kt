@@ -12,10 +12,12 @@ import dev.acme.adbtoolbox.application.mcp.optionalString
 import dev.acme.adbtoolbox.application.mcp.requireString
 import dev.acme.adbtoolbox.domain.adb.DeviceSerial
 import dev.acme.adbtoolbox.domain.capture.MarkBox
+import dev.acme.adbtoolbox.domain.capture.PngSize
 import dev.acme.adbtoolbox.domain.capture.ScreenMark
 import dev.acme.adbtoolbox.domain.input.InputCommands
 import dev.acme.adbtoolbox.domain.input.SystemKey
 import dev.acme.adbtoolbox.domain.layout.AccessibilityAudit
+import dev.acme.adbtoolbox.domain.layout.PixelRect
 import dev.acme.adbtoolbox.domain.layout.UiHierarchy
 import dev.acme.adbtoolbox.domain.layout.UiNode
 import dev.acme.adbtoolbox.domain.layout.UiTreeText
@@ -61,21 +63,28 @@ fun screenAndInputTools(env: McpToolEnvironment): List<McpTool> = listOf(
         inputSchema = schema(SERIAL, bool("annotate", "Draw numbered boxes on elements.")),
     ) { args, _ ->
         val serial = env.device(args)
-        when (val snapshot = env.layout.snapshot(serial)) {
-            is LayoutCapture.Failed -> McpToolResult.error(snapshot.reason)
-            is LayoutCapture.Captured -> {
-                val h = snapshot.value.hierarchy
-                env.remember(serial, h)
-                val width = h.dp(h.root.bounds.width).roundToInt()
-                val height = h.dp(h.root.bounds.height).roundToInt()
-                val png = env.imageScaler.scale(snapshot.value.png, width, height) ?: snapshot.value.png
-                if (args.optionalBoolean("annotate") == true) {
-                    env.annotated(serial, png, h)
-                } else {
-                    McpToolResult(listOf(McpContent.Image(Base64.encode(png)), McpContent.Text(UiTreeText.screenSummary(h))))
+        // Without a UI tree (a screen that never stops animating) the picture still comes, in dp (task 066).
+        val (raw, h, note) = when (val snapshot = env.layout.snapshot(serial)) {
+            is LayoutCapture.Captured -> Triple(snapshot.value.png, snapshot.value.hierarchy, null)
+            is LayoutCapture.Failed -> when (val screen = env.layout.screen(serial)) {
+                is LayoutCapture.Failed -> return@SimpleTool McpToolResult.error(snapshot.reason)
+                is LayoutCapture.Captured -> {
+                    val (w, hgt) = PngSize.of(screen.value.png) ?: return@SimpleTool McpToolResult.error(snapshot.reason)
+                    val root = UiNode(id = 0, bounds = PixelRect(0, 0, w, hgt))
+                    Triple(screen.value.png, UiHierarchy(root, screen.value.densityDpi), "UI tree unavailable: ${snapshot.reason}")
                 }
             }
         }
+        env.remember(serial, h)
+        val width = h.dp(h.root.bounds.width).roundToInt()
+        val height = h.dp(h.root.bounds.height).roundToInt()
+        val png = env.imageScaler.scale(raw, width, height) ?: raw
+        val result = if (args.optionalBoolean("annotate") == true) {
+            env.annotated(serial, png, h)
+        } else {
+            McpToolResult(listOf(McpContent.Image(Base64.encode(png)), McpContent.Text(UiTreeText.screenSummary(h))))
+        }
+        if (note == null) result else result.withNote(note)
     },
     SimpleTool(
         "get_ui",
@@ -254,6 +263,10 @@ private val SETTLE = 500.milliseconds
 
 /** Pixel-found shapes kept per annotated screenshot. */
 private const val MAX_MARKS = 60
+
+/** The result with [note] appended to its text. */
+private fun McpToolResult.withNote(note: String): McpToolResult =
+    copy(content = content.map { if (it is McpContent.Text) McpContent.Text(it.text + "\n" + note) else it })
 
 /** [done], plus the screen's interactive elements when the agent asked for `return_ui` (task 066). */
 private suspend fun McpToolEnvironment.reply(serial: DeviceSerial, args: JsonObject, done: String): McpToolResult {

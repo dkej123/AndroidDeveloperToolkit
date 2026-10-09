@@ -89,4 +89,12 @@ class CaptureLayoutUseCaseTest {
 
         CaptureLayoutUseCase(fake).snapshot(serial).shouldBeInstanceOf<LayoutCapture.Failed>().reason shouldBe "Could not take the screenshot."
     }
+
+    @Test
+    fun `the screen alone carries the screenshot and the density, without the tree`() = runTest {
+        val screen = CaptureLayoutUseCase(transport(mutableListOf())).screen(serial).shouldBeInstanceOf<LayoutCapture.Captured<*>>().value as ScreenImage
+
+        screen.png.toList() shouldBe listOf<Byte>(1, 2, 3)
+        screen.densityDpi shouldBe 440
+    }
 }

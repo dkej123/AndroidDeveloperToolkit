@@ -22,6 +22,8 @@ one-click way to teach agents how to use the server.
    shapes found in the pixels where the tree has no interactive element (games, canvas, Flutter,
    some WebViews). The text part lists the marks with their frames. `tap` and `swipe` take
    `mark` for those boxes. Drawing and detection are an `:adapters-jvm` port (`ScreenMarker`).
+   When uiautomator gives no tree at all, `screenshot` still returns the picture (size from the PNG
+   header, density from `wm density`) and `annotate` marks only what the pixels show.
 3. **UI after actions.** `tap`, `swipe`, `type_text` and `press_key` take `return_ui`: after the
    action they wait for the screen to settle and append the interactive elements, as
    `get_ui interactive_only=true` would; a failed capture does not fail the action.
@@ -52,6 +54,8 @@ one-click way to teach agents how to use the server.
   `tap mark=N`.
 - An agent can tap and read the resulting screen in one call.
 - Settings installs the skill for the three agents and reports its state.
+- E2E (`McpE2ETest`): Full control in Settings, then over HTTP an annotated screenshot and a tap with
+  `return_ui` on the emulator; the skill tip shows and stays hidden after ✕.
 
 ## Validation
 

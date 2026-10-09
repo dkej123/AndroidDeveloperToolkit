@@ -64,6 +64,11 @@ private fun args(vararg pairs: Pair<String, Any>) = JsonObject(
     },
 )
 
+/** The first bytes of a PNG: signature and IHDR with [width]×[height] — all the tools read of it. */
+private fun pngHeader(width: Int, height: Int): ByteArray =
+    byteArrayOf(-119, 80, 78, 71, 13, 10, 26, 10, 0, 0, 0, 13, 73, 72, 68, 82) +
+        java.nio.ByteBuffer.allocate(8).putInt(width).putInt(height).array()
+
 private fun McpToolResult.text() = content.filterIsInstance<McpContent.Text>().joinToString("\n") { it.text }
 
 class McpToolsTest {
@@ -105,7 +110,7 @@ class McpToolsTest {
                 else -> ok()
             }
         },
-        binaryScript = { AdbBinaryScript(listOf(byteArrayOf(1, 2, 3)), AdbOutcome.Completed(0)) },
+        binaryScript = { AdbBinaryScript(listOf(pngHeader(1080, 2400)), AdbOutcome.Completed(0)) },
     )
 
     private val localePort = object : DeviceLocalePort {
@@ -298,5 +303,21 @@ class McpToolsTest {
     fun `an action still reports success when the UI after it cannot be read`() = runTest {
         failDumps = true
         call("press_key", "key" to "back", "return_ui" to true).text() shouldStartWith "Pressed back.\n\nUI not captured: uiautomator returned nothing"
+    }
+
+    @Test
+    fun `without a UI tree the screenshot still comes, and annotate marks only what the pixels show`() = runTest {
+        failDumps = true
+        detected = listOf(MarkBox(0, 0, 10, 10))
+
+        val result = call("screenshot", "annotate" to true)
+
+        result.isError shouldBe false
+        result.text() shouldStartWith "Screen 393x873 dp, 440 dpi"
+        result.text() shouldContain "UI tree unavailable: uiautomator returned nothing"
+        drawn.map { it.label } shouldBe listOf("m1")
+        call("tap", "mark" to 1).text() shouldBe "Tapped mark m1 at 5,5 dp."
+        commands.last() shouldBe "input tap 14 14"
+        call("screenshot").content.filterIsInstance<McpContent.Image>().size shouldBe 1
     }
 }
