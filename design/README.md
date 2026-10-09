@@ -191,9 +191,9 @@ gap 8, padding 12, `adb-pulse` 1.4s ease-in-out infinite).
 **Purpose:** act on the app that is on the device screen right now, without searching for it in Apps.
 First section of the Device view, above Mirroring. Same section shell as every other section.
 
-**Header:** title "Current app" · right meta (mono 9.5px `textFaint`, clickable, cursor pointer,
-tooltip "Refresh now — also checks every 3 s while this view is visible"):
-"updated 2 s ago" / "updated just now" / "reading…" / "not running" / "adb error" (`red`).
+**Header:** title "Current app" · right: a 22px refresh icon button (tooltip "Refresh now — also checks every 3 s
+while this view is visible"). No "updated N s ago" meta — it changed with every poll and told the user nothing
+(user decision 2026-10-09, task 067).
 While a change is held (see Freshness) the meta is replaced by a link (11px→10.5px/600 accent):
 "Maps came to the front · Update" (narrow: "Maps in front · Update"),
 tooltip "Held while the pointer is over this section. Applies when you move away, or click to update now."
@@ -222,7 +222,9 @@ Killed: Activity "—", Process "not running" (`textFaint`).
 - System UI — "System UI draws the status bar, shade and lock screen. Actions are off so the device stays usable."
 
 **Action row** (actionRow, wraps): primary **Restart** (tooltip "Force-stop, then launch the main activity  ⌥⇧⌘R") ·
-secondary **Kill** (tooltip "am force-stop — leaves data intact") · secondary **Reset permissions**
+secondary **Kill** (tooltip "am force-stop — leaves data intact") · secondary **Reset permissions** with a 22px caret
+(task 067: menu "All granted permissions" + one item per granted permission, short name, full name as tooltip,
+system/policy-fixed ones disabled; toast "CAMERA reset for com.acme.shop")
 (tooltip "Revokes runtime permissions and clears “Don’t ask again” — the app is stopped, data stays") · flex spacer · link **Details**
 (tooltip "Open App details for com.acme.shop — Info, Shared prefs, Databases").
 Killed: primary becomes **Launch** (tooltip "Launch the main activity  ⌥⇧⌘R"), Kill is disabled (tooltip "Not running"),

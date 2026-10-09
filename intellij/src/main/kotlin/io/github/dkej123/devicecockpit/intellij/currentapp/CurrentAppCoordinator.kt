@@ -44,6 +44,7 @@ class CurrentAppCoordinator(
         onAction = { action, pkg -> act(action, pkg) },
         onDetails = onDetails,
         onRefresh = viewModel::refreshNow,
+        onResetPermission = viewModel::resetPermission,
         onApplyPending = viewModel::applyPending,
         onWake = onWake,
         onLaunchLast = { pkg -> viewModel.perform(CurrentAppAction.Launch, pkg) },

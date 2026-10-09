@@ -57,10 +57,11 @@ class CurrentAppUseCase(private val transport: AdbTransport) {
         return ProcessInfo(pid, ProcessInfoCommand.parseElapsed(transport.executeText(ProcessInfoCommand.elapsedRequest(serial, pid))))
     }
 
-    suspend fun resetPermissions(serial: DeviceSerial, packageName: String, userId: Int = 0): PermissionResetResult {
+    /** Revokes every granted runtime permission, or only [permission] when given (task 067). */
+    suspend fun resetPermissions(serial: DeviceSerial, packageName: String, userId: Int = 0, permission: String? = null): PermissionResetResult {
         val details = PackageDetailsCommand.parse(transport.executeText(PackageDetailsCommand.request(serial, packageName)), packageName)
             ?: return PermissionResetResult.Failed("Couldn't read the permissions of $packageName")
-        val plan = PermissionReset.plan(serial, packageName, details, userId)
+        val plan = PermissionReset.plan(serial, packageName, details, userId, only = permission)
         plan.steps.forEach { step ->
             val revoked = transport.executeText(step.revoke)
             if (revoked.outcome !is AdbOutcome.Completed || revoked.stderr.contains("Exception")) {

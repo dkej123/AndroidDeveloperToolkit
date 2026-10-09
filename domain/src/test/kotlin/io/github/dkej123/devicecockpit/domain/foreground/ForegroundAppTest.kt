@@ -131,6 +131,21 @@ class PackageDetailsCommandTest {
     }
 
     @Test
+    fun `a plan for one permission revokes only that one`() {
+        val details = PackageDetails(
+            null, null, null, null, debuggable = false, system = false,
+            runtimePermissions = listOf(
+                RuntimePermission("android.permission.CAMERA", granted = true, flags = emptySet()),
+                RuntimePermission("android.permission.POST_NOTIFICATIONS", granted = true, flags = emptySet()),
+            ),
+        )
+
+        PermissionReset.plan(serial, "com.acme.shop", details, only = "android.permission.POST_NOTIFICATIONS").revoked shouldContainExactly
+            listOf("android.permission.POST_NOTIFICATIONS")
+        PermissionReset.plan(serial, "com.acme.shop", details, only = "android.permission.RECORD_AUDIO").revoked shouldContainExactly emptyList()
+    }
+
+    @Test
     fun `reads the debuggable flag`() {
         val dump = """
             |Packages:

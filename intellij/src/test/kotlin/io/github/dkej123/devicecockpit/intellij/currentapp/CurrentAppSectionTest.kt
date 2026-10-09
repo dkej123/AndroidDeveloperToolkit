@@ -8,22 +8,24 @@ import io.github.dkej123.devicecockpit.application.currentapp.CurrentAppViewStat
 import io.github.dkej123.devicecockpit.domain.foreground.ForegroundState
 import io.github.dkej123.devicecockpit.domain.foreground.PackageDetails
 import io.github.dkej123.devicecockpit.domain.foreground.ProcessInfo
+import io.github.dkej123.devicecockpit.domain.foreground.RuntimePermission
 import kotlin.time.Duration.Companion.seconds
 
 class CurrentAppSectionTest : BasePlatformTestCase() {
     private val actions = mutableListOf<Pair<CurrentAppAction, String>>()
     private val details = mutableListOf<String>()
-    private var nowMillis = 10_000L
+    private val resets = mutableListOf<Pair<String, String>>()
+    private var refreshes = 0
 
     private fun section() = CurrentAppSection(
         identity = { pkg -> if (pkg == "com.acme.shop") AppIdentity("Acme Shop", null) else null },
         onAction = { action, pkg -> actions += action to pkg },
         onDetails = { details += it },
-        onRefresh = {},
+        onRefresh = { refreshes++ },
+        onResetPermission = { pkg, permission -> resets += pkg to permission },
         onApplyPending = {},
         onWake = {},
         onLaunchLast = {},
-        now = { nowMillis },
     )
 
     private fun app(
@@ -31,10 +33,11 @@ class CurrentAppSectionTest : BasePlatformTestCase() {
         system: Boolean = false,
         debuggable: Boolean = true,
         systemUi: Boolean = false,
+        permissions: List<RuntimePermission> = emptyList(),
     ) = CurrentAppDisplay.App(
         snapshot = CurrentAppSnapshot(
             foreground = ForegroundState.App("com.acme.shop", ".checkout.CheckoutActivity"),
-            details = PackageDetails("4.12.0-dev", 41200, 26, 36, debuggable = debuggable, system = system, runtimePermissions = emptyList()),
+            details = PackageDetails("4.12.0-dev", 41200, 26, 36, debuggable = debuggable, system = system, runtimePermissions = permissions),
             process = if (killed) null else ProcessInfo(8155, 192.seconds),
         ),
         app = ForegroundState.App("com.acme.shop", ".checkout.CheckoutActivity"),
@@ -50,7 +53,9 @@ class CurrentAppSectionTest : BasePlatformTestCase() {
         assertEquals("debug", s.tagForTest)
         assertEquals(".checkout.CheckoutActivity", s.activityForTest)
         assertEquals("8155 · 3m 12s", s.processForTest)
-        assertEquals("updated 2 s ago", s.metaTextForTest)
+        assertEquals("", s.metaTextForTest)
+        s.refreshButtonForTest.doClick()
+        assertEquals(1, refreshes)
         assertEquals("Restart", s.primaryButtonForTest.text)
         assertTrue(s.killButtonForTest.isEnabled)
         assertTrue(s.uninstallButtonForTest.isEnabled)
@@ -66,7 +71,6 @@ class CurrentAppSectionTest : BasePlatformTestCase() {
         val s = section()
         s.update(CurrentAppViewState(display = app(killed = true), deviceOnline = true))
 
-        assertEquals("not running", s.metaTextForTest)
         assertEquals("—", s.activityForTest)
         assertEquals("not running", s.processForTest)
         assertEquals("Launch", s.primaryButtonForTest.text)
@@ -115,7 +119,30 @@ class CurrentAppSectionTest : BasePlatformTestCase() {
     fun `test an adb error offers Retry`() {
         val s = section()
         s.update(CurrentAppViewState(display = CurrentAppDisplay.Error("dumpsys activity activities — timed out"), deviceOnline = true))
-        assertEquals("adb error", s.metaTextForTest)
         assertEquals("Retry", s.noteLinkForTest.text)
+    }
+
+    fun `test the reset menu offers all permissions or one granted permission`() {
+        val s = section()
+        s.update(
+            CurrentAppViewState(
+                display = app(
+                    permissions = listOf(
+                        RuntimePermission("android.permission.CAMERA", granted = true, flags = emptySet()),
+                        RuntimePermission("android.permission.ACCESS_FINE_LOCATION", granted = true, flags = setOf("POLICY_FIXED")),
+                        RuntimePermission("android.permission.RECORD_AUDIO", granted = false, flags = emptySet()),
+                    ),
+                ),
+                deviceOnline = true,
+            ),
+        )
+
+        val items = s.resetMenuItemsForTest()
+        assertEquals(listOf("All granted permissions", "CAMERA", "ACCESS_FINE_LOCATION"), items.map { it.text })
+        assertFalse(items[2].isEnabled)
+        items[1].doClick()
+        items[0].doClick()
+        assertEquals(listOf("com.acme.shop" to "android.permission.CAMERA"), resets)
+        assertEquals(listOf(CurrentAppAction.ResetPermissions to "com.acme.shop"), actions)
     }
 }

@@ -12,10 +12,12 @@ import io.github.dkej123.devicecockpit.application.mcp.optionalString
 import io.github.dkej123.devicecockpit.application.mcp.requireString
 import io.github.dkej123.devicecockpit.domain.adb.AdbDeviceRequest
 import io.github.dkej123.devicecockpit.domain.adb.AdbOperation
+import io.github.dkej123.devicecockpit.domain.adb.AdbOutcome
 import io.github.dkej123.devicecockpit.domain.adb.AdbShellCommand
 import io.github.dkej123.devicecockpit.domain.adb.DeviceSerial
 import io.github.dkej123.devicecockpit.domain.adb.ShellToken
 import io.github.dkej123.devicecockpit.domain.adb.ShellValue
+import io.github.dkej123.devicecockpit.domain.appdata.PermissionCommands
 import io.github.dkej123.devicecockpit.domain.appdata.SqlResult
 import io.github.dkej123.devicecockpit.domain.apps.AppLifecycleResult
 import io.github.dkej123.devicecockpit.domain.apps.AppRestartResult
@@ -38,6 +40,7 @@ import io.github.dkej123.devicecockpit.domain.display.toggles.ScreenRotationComm
 import io.github.dkej123.devicecockpit.domain.display.toggles.ShowLayoutBoundsCommand
 import io.github.dkej123.devicecockpit.domain.display.toggles.WifiCommand
 import io.github.dkej123.devicecockpit.domain.foreground.ForegroundState
+import io.github.dkej123.devicecockpit.domain.foreground.PackageDetailsCommand
 import io.github.dkej123.devicecockpit.domain.locale.LocaleTag
 import io.github.dkej123.devicecockpit.domain.location.GeoPoint
 import kotlinx.serialization.json.JsonObject
@@ -171,7 +174,12 @@ fun deviceAppDataTools(env: McpToolEnvironment): List<McpTool> = listOf(
             "clear_data and uninstall ask the user in the IDE first.",
         readOnly = false,
         destructive = true,
-        inputSchema = schema(SERIAL, str("action", "What to do.", required = true, oneOf = listOf("restart", "force_stop", "reset_permissions", "clear_data", "uninstall")), str("package", "Package. Default: the app in front.")),
+        inputSchema = schema(
+            SERIAL,
+            str("action", "What to do.", required = true, oneOf = listOf("restart", "force_stop", "reset_permissions", "clear_data", "uninstall")),
+            str("package", "Package. Default: the app in front."),
+            str("permission", "reset_permissions only: just this runtime permission, e.g. android.permission.CAMERA."),
+        ),
     ) { args, context ->
         val serial = env.device(args)
         val pkg = env.packageOrForeground(serial, args)
@@ -185,8 +193,11 @@ fun deviceAppDataTools(env: McpToolEnvironment): List<McpTool> = listOf(
                 is AppLifecycleResult.Failure -> McpToolResult.error(r.reason)
                 AppLifecycleResult.RejectedDuplicate -> McpToolResult.error("$pkg is busy.")
             }
-            "reset_permissions" -> when (val r = env.currentApp.resetPermissions(serial, pkg)) {
-                is io.github.dkej123.devicecockpit.application.currentapp.PermissionResetResult.Done -> McpToolResult.text("Permissions reset for $pkg — ${r.revoked} revoked.")
+            "reset_permissions" -> when (val r = env.currentApp.resetPermissions(serial, pkg, permission = args.optionalString("permission"))) {
+                is io.github.dkej123.devicecockpit.application.currentapp.PermissionResetResult.Done -> McpToolResult.text(
+                    args.optionalString("permission")?.let { if (r.revoked > 0) "Reset $it of $pkg." else "$it is not granted to $pkg; nothing to reset." }
+                        ?: "Permissions reset for $pkg — ${r.revoked} revoked.",
+                )
                 is io.github.dkej123.devicecockpit.application.currentapp.PermissionResetResult.Failed -> McpToolResult.error(r.reason)
             }
             "clear_data", "uninstall" -> {
@@ -210,6 +221,60 @@ fun deviceAppDataTools(env: McpToolEnvironment): List<McpTool> = listOf(
             }
             else -> throw McpArgumentException("unknown action $action")
         }
+    },
+    SimpleTool(
+        "list_permissions",
+        "Runtime permissions of an app: granted or not, and which the system or a policy fixes. Default: the app in front.",
+        readOnly = true,
+        inputSchema = schema(SERIAL, str("package", "Package. Default: the app in front.")),
+    ) { args, _ ->
+        val serial = env.device(args)
+        val pkg = env.packageOrForeground(serial, args)
+        val details = PackageDetailsCommand.parse(env.transport.executeText(PackageDetailsCommand.request(serial, pkg)), pkg)
+            ?: throw McpToolFailure("Couldn't read the permissions of $pkg.")
+        val lines = details.runtimePermissions.map { p ->
+            p.name + (if (p.granted) " granted" else " denied") + if (p.fixed) " (fixed by system or policy)" else ""
+        }
+        McpToolResult.text("$pkg runtime permissions:\n" + lines.ifEmpty { listOf("none") }.joinToString("\n"))
+    },
+    SimpleTool(
+        "set_permission",
+        "Grant, revoke or reset (revoke and clear \"don't ask again\") one runtime permission of an app. " +
+            "Revoking stops the app. Default: the app in front; manage_app reset_permissions resets all.",
+        readOnly = false,
+        inputSchema = schema(
+            SERIAL,
+            str("permission", "e.g. android.permission.CAMERA.", required = true),
+            str("action", "What to do.", required = true, oneOf = listOf("grant", "revoke", "reset")),
+            str("package", "Package. Default: the app in front."),
+        ),
+    ) { args, _ ->
+        val serial = env.device(args)
+        val pkg = env.packageOrForeground(serial, args)
+        val permission = args.requireString("permission")
+        val action = args.requireString("action")
+        val requests = try {
+            when (action) {
+                "grant" -> listOf(PermissionCommands.grant(serial, pkg, permission, 0))
+                "revoke" -> listOf(PermissionCommands.revoke(serial, pkg, permission, 0))
+                "reset" -> PermissionCommands.reset(serial, pkg, permission, 0)
+                else -> throw McpArgumentException("action must be grant, revoke or reset")
+            }
+        } catch (invalid: IllegalArgumentException) {
+            throw McpArgumentException(invalid.message.orEmpty())
+        }
+        val first = env.transport.executeText(requests.first())
+        if (first.outcome !is AdbOutcome.Completed || first.stderr.contains("Exception")) {
+            throw McpToolFailure(first.stderr.trim().ifEmpty { "pm $action $permission failed for $pkg." })
+        }
+        requests.drop(1).forEach { env.transport.executeText(it) }
+        McpToolResult.text(
+            when (action) {
+                "grant" -> "Granted $permission to $pkg."
+                "revoke" -> "Revoked $permission of $pkg."
+                else -> "Reset $permission of $pkg."
+            },
+        )
     },
     SimpleTool(
         "logcat",

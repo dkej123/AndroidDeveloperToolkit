@@ -1,12 +1,16 @@
 package io.github.dkej123.devicecockpit.intellij.currentapp
 
 import io.github.dkej123.devicecockpit.intellij.ui.common.ShortcutHints
+import com.intellij.icons.AllIcons
+import com.intellij.openapi.ui.JBMenuItem
+import com.intellij.openapi.ui.JBPopupMenu
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.scale.JBUIScale
 import com.intellij.util.ui.JBUI
 import io.github.dkej123.devicecockpit.application.currentapp.CurrentAppAction
 import io.github.dkej123.devicecockpit.application.currentapp.CurrentAppDisplay
 import io.github.dkej123.devicecockpit.application.currentapp.CurrentAppViewState
+import io.github.dkej123.devicecockpit.domain.foreground.RuntimePermission
 import io.github.dkej123.devicecockpit.domain.packages.AppIcon
 import io.github.dkej123.devicecockpit.intellij.apps.DashedTopBorder
 import io.github.dkej123.devicecockpit.intellij.ui.common.AdbToolboxTheme
@@ -20,22 +24,19 @@ import io.github.dkej123.devicecockpit.intellij.ui.common.flexSpacer
 import java.awt.BasicStroke
 import java.awt.BorderLayout
 import java.awt.Component
-import java.awt.Cursor
 import java.awt.Dimension
 import java.awt.Font
 import java.awt.Graphics
 import java.awt.Graphics2D
 import java.awt.GridLayout
 import java.awt.RenderingHints
-import java.awt.event.MouseAdapter
-import java.awt.event.MouseEvent
 import javax.swing.BorderFactory
 import javax.swing.BoxLayout
 import javax.swing.JButton
 import javax.swing.JComponent
+import javax.swing.JMenuItem
 import javax.swing.JPanel
 import kotlin.time.Duration
-import kotlin.time.Duration.Companion.milliseconds
 
 /** What the section shows of an app: its label and launcher icon when the Apps list resolved them. */
 data class AppIdentity(val label: String, val icon: AppIcon?)
@@ -49,26 +50,21 @@ class CurrentAppSection(
     private val onAction: (CurrentAppAction, String) -> Unit,
     private val onDetails: (String) -> Unit,
     private val onRefresh: () -> Unit,
+    private val onResetPermission: (String, String) -> Unit,
     private val onApplyPending: () -> Unit,
     private val onWake: () -> Unit,
     private val onLaunchLast: (String) -> Unit,
-    private val now: () -> Long = System::currentTimeMillis,
 ) : JPanel(BorderLayout()) {
 
-    private val metaLabel = DesignSections.metaLabel(size = 9.5f).apply {
-        cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
-        toolTipText = "Refresh now — also checks every 3 s while this view is visible"
-        addMouseListener(object : MouseAdapter() {
-            override fun mouseClicked(e: MouseEvent) = onRefresh()
-        })
-    }
+    // No "updated N s ago" meta: it flickered with every 3 s poll and told the user nothing (user decision, 2026-10-09).
+    private val refreshButton = iconButton(AllIcons.Actions.Refresh, "Refresh now — also checks every 3 s while this view is visible") { onRefresh() }
     private val pendingLink = DesignButton("", DesignButtonStyle.LINK).apply {
         isVisible = false
         toolTipText = "Held while the pointer is over this section. Applies when you move away, or click to update now."
         addActionListener { onApplyPending() }
     }
     private val titleLabel = DesignSections.titleLabel("Current app")
-    private val header = DesignSections.header(titleLabel, flexRow(0, metaLabel, pendingLink))
+    private val header = DesignSections.header(titleLabel, flexRow(0, pendingLink, refreshButton))
 
     private val tile = IconTile()
     private val labelLabel = JBLabel("").apply {
@@ -122,12 +118,25 @@ class CurrentAppSection(
         toolTipText = "Revokes runtime permissions and clears “Don’t ask again” — the app is stopped, data stays"
         addActionListener { target?.let { onAction(CurrentAppAction.ResetPermissions, it) } }
     }
+    /** Runtime permissions of the app shown, for the reset menu. */
+    private var permissions: List<RuntimePermission> = emptyList()
+
+    /** Reset permissions' caret: all granted permissions, or one of them (task 067). */
+    private val resetMoreButton = iconButton(AllIcons.General.ChevronDown, "Reset one permission…") {
+        val menu = JBPopupMenu()
+        resetMenuItems().forEach(menu::add)
+        menu.show(it, 0, it.height)
+    }.apply { getAccessibleContext().accessibleName = "Choose permissions to reset" }
+
     private val detailsLink = DesignButton("Details", DesignButtonStyle.LINK).apply {
         addActionListener { target?.let(onDetails) }
     }
     private val actionRow = run {
         val spacer = flexSpacer()
-        flexRow(AdbToolboxTheme.Spacing.s3, primaryButton, killButton, resetPermissionsButton, spacer, detailsLink, fill = spacer)
+        flexRow(
+            AdbToolboxTheme.Spacing.s3, primaryButton, killButton, flexRow(0, resetPermissionsButton, resetMoreButton), spacer, detailsLink,
+            fill = spacer,
+        )
     }.apply { border = JBUI.Borders.empty(0, AdbToolboxTheme.Spacing.sectionInset) }
 
     private val clearDataButton = DesignButton("Clear data", DesignButtonStyle.DANGER).apply {
@@ -248,32 +257,44 @@ class CurrentAppSection(
     private fun updateMeta(state: CurrentAppViewState) {
         val pending = state.pendingPackage
         pendingLink.isVisible = pending != null
-        metaLabel.isVisible = pending == null
         if (pending != null) {
             val name = identity(pending)?.label ?: pending
             pendingLink.text = if (width in 1..339) "$name in front · Update" else "$name came to the front · Update"
-            return
-        }
-        val display = state.display
-        metaLabel.foreground = AdbToolboxTheme.Colors.textFaint
-        metaLabel.text = when {
-            display is CurrentAppDisplay.Error -> "adb error".also { metaLabel.foreground = AdbToolboxTheme.Colors.red }
-            state.refreshing || display == CurrentAppDisplay.Reading -> "reading…"
-            display is CurrentAppDisplay.App && display.killed -> "not running"
-            else -> updated(state.updatedAtMillis)
         }
     }
 
-    private fun updated(at: Long?): String {
-        if (at == null) return "—"
-        val seconds = (now() - at).milliseconds.inWholeSeconds
-        return if (seconds < 2) "updated just now" else "updated $seconds s ago"
+    private fun resetMenuItems(): List<JMenuItem> {
+        val pkg = target ?: return emptyList()
+        val granted = permissions.filter { it.granted }
+        val all = JBMenuItem("All granted permissions").apply {
+            toolTipText = "Revokes every runtime permission and clears “Don’t ask again”"
+            addActionListener { onAction(CurrentAppAction.ResetPermissions, pkg) }
+        }
+        return listOf(all) + granted.map { permission ->
+            JBMenuItem(permission.name.substringAfterLast('.')).apply {
+                toolTipText = if (permission.fixed) "${permission.name} — fixed by the system or a policy, can’t be revoked" else permission.name
+                isEnabled = !permission.fixed
+                addActionListener { onResetPermission(pkg, permission.name) }
+            }
+        }
+    }
+
+    private fun iconButton(icon: javax.swing.Icon, tooltip: String, action: (JButton) -> Unit): JButton = JButton(icon).apply {
+        preferredSize = Dimension(AdbToolboxTheme.Sizes.iconButton, AdbToolboxTheme.Sizes.iconButton)
+        margin = java.awt.Insets(0, 0, 0, 0)
+        toolTipText = tooltip
+        getAccessibleContext().accessibleName = tooltip
+        isContentAreaFilled = false
+        isBorderPainted = false
+        isFocusPainted = false
+        addActionListener { action(this) }
     }
 
     private fun showApp(display: CurrentAppDisplay.App, busy: CurrentAppAction?) {
         val pkg = display.app.packageName
         target = pkg
         val details = display.snapshot.details
+        permissions = details?.runtimePermissions.orEmpty()
         val identity = identity(pkg)
         identityRow.isVisible = true
         factsPanel.isVisible = true
@@ -333,6 +354,7 @@ class CurrentAppSection(
         primaryButton.isEnabled = idle && !actionsOff
         killButton.isEnabled = idle && !actionsOff && !display.killed
         resetPermissionsButton.isEnabled = idle && !actionsOff
+        resetMoreButton.isEnabled = resetPermissionsButton.isEnabled
         clearDataButton.isEnabled = idle && !actionsOff
         uninstallButton.isEnabled = idle && !actionsOff && details?.system != true
         val systemReason = "Disabled for System UI — it draws the status bar, shade and lock screen"
@@ -361,7 +383,9 @@ class CurrentAppSection(
         noteAction = action
     }
 
-    internal val metaTextForTest: String get() = if (pendingLink.isVisible) pendingLink.text else metaLabel.text
+    internal val metaTextForTest: String get() = if (pendingLink.isVisible) pendingLink.text else ""
+    internal val refreshButtonForTest: JButton get() = refreshButton
+    internal fun resetMenuItemsForTest(): List<JMenuItem> = resetMenuItems()
     internal val primaryButtonForTest: JButton get() = primaryButton
     internal val killButtonForTest: JButton get() = killButton
     internal val uninstallButtonForTest: JButton get() = uninstallButton

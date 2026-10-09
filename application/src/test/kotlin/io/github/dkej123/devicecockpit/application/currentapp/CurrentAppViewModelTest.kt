@@ -51,7 +51,7 @@ private class Phone(var front: String = "com.acme.shop", var running: Boolean = 
                 val component = if (front == "home") "com.launcher/.Home" else "$front/.Main"
                 ok("  topResumedActivity=ActivityRecord{1 u0 $component t1}\n--adbtoolbox-window--\n")
             }
-            line.startsWith("dumpsys package") -> ok("Packages:\n  Package [$front] (1):\n    versionCode=1 minSdk=26 targetSdk=36\n    versionName=1.0\n")
+            line.startsWith("dumpsys package") -> ok("Packages:\n  Package [$front] (1):\n    versionCode=1 minSdk=26 targetSdk=36\n    versionName=1.0\n    runtime permissions:\n      android.permission.CAMERA: granted=true\n")
             line.startsWith("pidof") -> if (running) ok("4242") else AdbTextResult(AdbOutcome.Completed(1), "", "")
             line.startsWith("ps -o") -> ok("00:05")
             line.startsWith("am force-stop") -> { running = false; front = "home"; ok() }
@@ -161,5 +161,15 @@ class CurrentAppViewModelTest {
         vm.refreshNow()
         scope.runCurrent()
         vm.state.value.display shouldBe CurrentAppDisplay.Home("com.launcher", lastApp = "com.acme.shop")
+    }
+
+    @Test
+    fun `one permission can be reset on its own`() {
+        scope.runCurrent()
+        vm.resetPermission("com.acme.shop", "android.permission.CAMERA")
+        scope.advanceUntilIdle()
+
+        phone.commands.filter { it.startsWith("pm revoke") } shouldBe listOf("pm revoke --user 0 'com.acme.shop' 'android.permission.CAMERA'")
+        events.single() shouldBe CurrentAppEvent.Done("CAMERA reset for com.acme.shop")
     }
 }

@@ -93,7 +93,10 @@ class McpToolsTest {
                 line.startsWith("uiautomator dump") -> ok(if (failDumps) "" else SETTINGS_DUMP)
                 line.startsWith("cmd package resolve-activity") -> ok("com.launcher/.Home")
                 line.startsWith("dumpsys activity activities") -> ok("  topResumedActivity=ActivityRecord{1 u0 com.acme.shop/.Main t1}\n--adbtoolbox-window--\n")
-                line.startsWith("dumpsys package") -> ok("")
+                line.startsWith("dumpsys package") -> ok(
+                    "Packages:\n  Package [com.acme.shop] (1):\n    versionCode=1\n    runtime permissions:\n" +
+                        "      android.permission.CAMERA: granted=true\n      android.permission.RECORD_AUDIO: granted=true\n",
+                )
                 line.startsWith("pidof") -> ok("4242\n")
                 line.startsWith("ps -o") -> ok("00:10")
                 line.startsWith("logcat -d") -> ok(
@@ -172,11 +175,13 @@ class McpToolsTest {
     fun `the catalog has every group and only reading tools are read-only`() {
         tools.keys shouldBe setOf(
             "screenshot", "get_ui", "accessibility_audit", "tap", "swipe", "type_text", "press_key",
-            "list_devices", "get_device_state", "set_device_settings", "list_apps", "open_app", "manage_app", "logcat",
+            "list_devices", "get_device_state", "set_device_settings", "list_apps", "open_app", "manage_app",
+            "list_permissions", "set_permission", "logcat",
             "read_preferences", "query_database",
         )
         tools.values.filter { it.readOnly }.map { it.name }.toSet() shouldBe setOf(
-            "screenshot", "get_ui", "accessibility_audit", "list_devices", "get_device_state", "list_apps", "logcat", "read_preferences", "query_database",
+            "screenshot", "get_ui", "accessibility_audit", "list_devices", "get_device_state", "list_apps", "list_permissions", "logcat",
+            "read_preferences", "query_database",
         )
         tools.getValue("manage_app").destructive shouldBe true
     }
@@ -319,5 +324,30 @@ class McpToolsTest {
         call("tap", "mark" to 1).text() shouldBe "Tapped mark m1 at 5,5 dp."
         commands.last() shouldBe "input tap 14 14"
         call("screenshot").content.filterIsInstance<McpContent.Image>().size shouldBe 1
+    }
+
+    @Test
+    fun `reset_permissions can target one permission`() = runTest {
+        call("manage_app", "action" to "reset_permissions", "permission" to "android.permission.CAMERA").text() shouldBe
+            "Reset android.permission.CAMERA of com.acme.shop."
+        commands.filter { it.startsWith("pm revoke") } shouldBe listOf("pm revoke --user 0 'com.acme.shop' 'android.permission.CAMERA'")
+    }
+
+    @Test
+    fun `permissions are listed read-only and set one by one`() = runTest {
+        tools.getValue("list_permissions").readOnly shouldBe true
+        call("list_permissions").text() shouldBe
+            "com.acme.shop runtime permissions:\nandroid.permission.CAMERA granted\nandroid.permission.RECORD_AUDIO granted"
+
+        call("set_permission", "permission" to "android.permission.CAMERA", "action" to "revoke").text() shouldBe
+            "Revoked android.permission.CAMERA of com.acme.shop."
+        commands.last() shouldContain "pm revoke"
+        commands.last() shouldContain "android.permission.CAMERA"
+        call("set_permission", "permission" to "android.permission.CAMERA", "action" to "grant").text() shouldBe
+            "Granted android.permission.CAMERA to com.acme.shop."
+        commands.last() shouldContain "pm grant"
+        call("set_permission", "permission" to "android.permission.CAMERA", "action" to "reset").isError shouldBe false
+        commands.last() shouldContain "clear-permission-flags"
+        call("set_permission", "permission" to "not a permission; rm -rf", "action" to "grant").isError shouldBe true
     }
 }

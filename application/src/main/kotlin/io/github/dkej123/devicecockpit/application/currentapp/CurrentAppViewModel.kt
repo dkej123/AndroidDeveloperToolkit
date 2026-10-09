@@ -260,12 +260,17 @@ class CurrentAppViewModel(
         }
     }
 
-    fun perform(action: CurrentAppAction, packageName: String) {
+    fun perform(action: CurrentAppAction, packageName: String) = perform(action, packageName, permission = null)
+
+    /** Resets one runtime permission of [packageName] (task 067); Reset permissions without a choice resets all. */
+    fun resetPermission(packageName: String, permission: String) = perform(CurrentAppAction.ResetPermissions, packageName, permission)
+
+    private fun perform(action: CurrentAppAction, packageName: String, permission: String?) {
         val serial = eligibleSerial() ?: return
         if (_state.value.busy != null) return
         _state.update { it.copy(busy = action) }
         scope.launch(dispatchers.io) {
-            val event = run(action, serial, packageName)
+            val event = run(action, serial, packageName, permission)
             _state.update { it.copy(busy = null) }
             onEvent(event)
             delay(afterActionDelay)
@@ -273,7 +278,7 @@ class CurrentAppViewModel(
         }
     }
 
-    private suspend fun run(action: CurrentAppAction, serial: DeviceSerial, pkg: String): CurrentAppEvent = when (action) {
+    private suspend fun run(action: CurrentAppAction, serial: DeviceSerial, pkg: String, permission: String?): CurrentAppEvent = when (action) {
         CurrentAppAction.Restart -> when (val r = lifecycle.restart(serial, pkg)) {
             AppRestartResult.Success -> CurrentAppEvent.Done("Restarted $pkg").also { killedPackage = null }
             is AppRestartResult.ForceStopFailed -> CurrentAppEvent.Failed("Couldn’t restart $pkg — ${r.reason}", pkg)
@@ -290,9 +295,13 @@ class CurrentAppViewModel(
             is AppLifecycleResult.Failure -> CurrentAppEvent.Failed("Couldn’t force-stop $pkg — ${r.reason}", pkg)
             AppLifecycleResult.RejectedDuplicate -> CurrentAppEvent.Failed("$pkg is busy", pkg)
         }
-        CurrentAppAction.ResetPermissions -> when (val r = currentApp.resetPermissions(serial, pkg)) {
+        CurrentAppAction.ResetPermissions -> when (val r = currentApp.resetPermissions(serial, pkg, permission = permission)) {
             is PermissionResetResult.Done -> CurrentAppEvent.Done(
-                "Permissions reset for $pkg — " + if (r.revoked == 0) "nothing to revoke" else "${r.revoked} revoked",
+                when {
+                    permission != null && r.revoked > 0 -> "${permission.substringAfterLast('.')} reset for $pkg"
+                    permission != null -> "${permission.substringAfterLast('.')} was not granted to $pkg"
+                    else -> "Permissions reset for $pkg — " + if (r.revoked == 0) "nothing to revoke" else "${r.revoked} revoked"
+                },
             ).also { if (r.revoked > 0) killed(pkg) }
             is PermissionResetResult.Failed -> CurrentAppEvent.Failed(r.reason, pkg)
         }

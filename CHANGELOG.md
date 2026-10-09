@@ -11,6 +11,10 @@ the Marketplace change notes and the GitHub release notes are generated from it
   by ref, and shapes the tree does not describe (games, canvas, Flutter) as `m1`, `m2`… for
   `tap`/`swipe mark=` — also when the UI tree cannot be read at all; `tap`, `swipe`, `type_text`
   and `press_key` take `return_ui` to return the next screen in the same call.
+- **Reset one permission**: the caret next to Current app › Reset permissions resets all granted
+  permissions or just the one you pick.
+- **AI agents (MCP)**: `list_permissions` and `set_permission` (grant, revoke or reset one runtime
+  permission); `manage_app reset_permissions` takes `permission`.
 - **Agent skill**: install a generated `SKILL.md` for Claude Code, Codex CLI or Gemini CLI from
   Settings › AI agents, or from a tip in the tool window that can be closed for good.
 
@@ -18,6 +22,7 @@ the Marketplace change notes and the GitHub release notes are generated from it
 - **Renamed to Device Cockpit for Android** (formerly ADB Toolbox): the plugin does far more than
   run adb. Same plugin, settings and MCP server name (`adb-toolbox`); the tool window keeps its place.
 - UI capture retries longer while the screen animates and suggests turning animations off.
+- Current app: the flickering "updated N s ago" label is gone; a refresh button updates on demand.
 
 ## [1.1.0] - 2026-10-08
 

@@ -218,8 +218,8 @@ class VisualRegressionTest : BasePlatformTestCase() {
         Scenario("device-current-app-dark-dock", 380, 360, dark = true, selected = ViewId.Device, view = {
             io.github.dkej123.devicecockpit.intellij.currentapp.CurrentAppSection(
                 identity = { io.github.dkej123.devicecockpit.intellij.currentapp.AppIdentity("Acme Shop", null) },
-                onAction = { _, _ -> }, onDetails = {}, onRefresh = {}, onApplyPending = {}, onWake = {}, onLaunchLast = {},
-                now = { 2_000L },
+                onAction = { _, _ -> }, onDetails = {}, onRefresh = {}, onResetPermission = { _, _ -> },
+                onApplyPending = {}, onWake = {}, onLaunchLast = {},
             ).apply {
                 val app = io.github.dkej123.devicecockpit.domain.foreground.ForegroundState.App("com.acme.shop", ".checkout.CheckoutActivity")
                 update(

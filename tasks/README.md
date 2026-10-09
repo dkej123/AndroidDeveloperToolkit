@@ -173,6 +173,7 @@ concurrent edits to `plugin.xml`.
 | 064 | [Layout Inspector, audit, toggles, locale/GPS, MCP settings — UI](064-inspector-and-new-features-ui.md) | Oh My Android port (ADR 0014/0015) |
 | 065 | [MCP tools](065-mcp-tools.md) | Oh My Android port (ADR 0014/0015) |
 | 066 | [MCP: steadier capture, marked screenshots, UI after actions, agent skill](066-mcp-robustness-marks-skill.md) | ADR 0015 addendum |
+| 067 | [Reset one permission or all; MCP permission control; quieter Current app header](067-permissions-one-or-all.md) | user requests 2026-10-09 |
 
 ## Product coverage map
 

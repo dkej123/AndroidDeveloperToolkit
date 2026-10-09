@@ -82,8 +82,9 @@ data class PermissionResetPlan(val steps: List<PermissionResetStep>, val skipped
  * is harmless). Never `pm reset-permissions`, which resets every app on the device.
  */
 object PermissionReset {
-    fun plan(serial: DeviceSerial, packageName: String, details: PackageDetails, userId: Int = 0): PermissionResetPlan {
-        val granted = details.runtimePermissions.filter { it.granted }
+    /** Every granted runtime permission, or only [only] when given. */
+    fun plan(serial: DeviceSerial, packageName: String, details: PackageDetails, userId: Int = 0, only: String? = null): PermissionResetPlan {
+        val granted = details.runtimePermissions.filter { it.granted && (only == null || it.name == only) }
         val (fixed, revocable) = granted.partition { it.fixed }
         val steps = revocable.map { permission ->
             PermissionResetStep(

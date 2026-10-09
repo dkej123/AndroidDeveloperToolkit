@@ -94,4 +94,13 @@ class CurrentAppUseCaseTest {
             "pm revoke --user 0 'com.acme.shop' 'android.permission.POST_NOTIFICATIONS'",
         )
     }
+
+    @Test
+    fun `reset of one permission revokes only that one`() = runTest {
+        val device = Device()
+
+        CurrentAppUseCase(device.transport()).resetPermissions(serial, "com.acme.shop", permission = "android.permission.CAMERA") shouldBe
+            PermissionResetResult.Done(revoked = 1, skippedFixed = 0)
+        device.commands.filter { it.startsWith("pm revoke") } shouldBe listOf("pm revoke --user 0 'com.acme.shop' 'android.permission.CAMERA'")
+    }
 }
