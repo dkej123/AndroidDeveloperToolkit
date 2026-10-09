@@ -1,0 +1,175 @@
+package io.github.dkej123.devicecockpit.adapters.adb.binary
+
+import io.github.dkej123.devicecockpit.domain.adb.AdbDeviceRequest
+import io.github.dkej123.devicecockpit.domain.adb.AdbOperation
+import io.github.dkej123.devicecockpit.domain.adb.AdbOutcome
+import io.github.dkej123.devicecockpit.domain.adb.AdbRequest
+import io.github.dkej123.devicecockpit.domain.adb.AdbServerRequest
+import io.github.dkej123.devicecockpit.domain.adb.AdbStreamEvent
+import io.github.dkej123.devicecockpit.domain.adb.AdbTextResult
+import io.github.dkej123.devicecockpit.domain.adb.AdbTransport
+import io.github.dkej123.devicecockpit.domain.discovery.DiscoveryError
+import io.github.dkej123.devicecockpit.domain.discovery.DiscoveryOutcome
+import io.github.dkej123.devicecockpit.domain.discovery.ToolId
+import io.github.dkej123.devicecockpit.domain.discovery.ToolLocator
+import io.github.dkej123.devicecockpit.domain.process.ByteSink
+import io.github.dkej123.devicecockpit.domain.process.ProcessCommand
+import io.github.dkej123.devicecockpit.domain.process.ProcessEvent
+import io.github.dkej123.devicecockpit.domain.process.ProcessExecutor
+import io.github.dkej123.devicecockpit.domain.process.ProcessOutcome
+import io.github.dkej123.devicecockpit.domain.process.ProcessOutputKind
+import io.github.dkej123.devicecockpit.domain.process.ProcessRequest
+import io.github.dkej123.devicecockpit.domain.process.executeBuffered
+import io.github.dkej123.devicecockpit.domain.process.executeToSink
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
+
+/**
+ * The `:adapters-adb` [AdbTransport] backed by the binary `adb` executable (ADR 0005): resolves the
+ * executable via [toolLocator] (task 004) and invokes it exclusively through [processExecutor]
+ * (task 002) — never a raw `ProcessBuilder`. Every device-scoped request adds exactly one
+ * `-s <serial>` argument right after the executable; a server-scoped [AdbServerRequest] carries no
+ * serial at all.
+ *
+ * Mirrors [io.github.dkej123.devicecockpit.adapters.adb.ddmlib.DdmlibAdbTransport]'s request-shape contract so
+ * the two adapters agree on which [AdbRequest]/[AdbOperation] combinations each entry point
+ * supports, which the fallback selector (ADR 0005) relies on: [executeText]/[executeStream] only
+ * support [AdbOperation.Shell] (plus [AdbServerRequest]), while one-shot [executeText] also
+ * supports device-scoped [AdbOperation.Host] argv such as `uninstall`; [executeBinary] only
+ * supports [AdbOperation.Exec]. An unsupported combination is reported as
+ * [AdbOutcome.Unsupported] before any process is started — never a partial or ambiguous attempt —
+ * so it is always safe to retry that class of failure on a different transport. Never
+ * selects/falls back to another transport itself — that choice is made once, at the `:intellij`
+ * composition root (task 007), or generically by
+ * [io.github.dkej123.devicecockpit.adapters.adb.selector.FallbackAdbTransport].
+ */
+class BinaryAdbTransport(
+    private val toolLocator: ToolLocator,
+    private val processExecutor: ProcessExecutor,
+) : AdbTransport {
+
+    override suspend fun executeText(request: AdbRequest): AdbTextResult =
+        when (val resolution = resolveTextCommand(request)) {
+            is CommandResolution.Unsupported -> AdbTextResult(AdbOutcome.Unsupported(resolution.reason), "", "")
+            is CommandResolution.Failure -> AdbTextResult(AdbOutcome.TransportFailure(resolution.reason), "", "")
+            is CommandResolution.Ready -> {
+                val result = processExecutor.executeBuffered(
+                    ProcessRequest(
+                        command = resolution.command,
+                        outputKind = ProcessOutputKind.Text,
+                        timeout = request.timeout,
+                    ),
+                )
+                AdbTextResult(result.outcome.toAdbOutcome(), result.stdout, result.stderr)
+            }
+        }
+
+    override fun executeStream(request: AdbRequest): Flow<AdbStreamEvent> = flow {
+        when (val resolution = resolveStreamCommand(request)) {
+            is CommandResolution.Unsupported ->
+                emit(AdbStreamEvent.Completed(AdbOutcome.Unsupported(resolution.reason)))
+
+            is CommandResolution.Failure ->
+                emit(AdbStreamEvent.Completed(AdbOutcome.TransportFailure(resolution.reason)))
+
+            is CommandResolution.Ready -> {
+                var outcome: AdbOutcome =
+                    AdbOutcome.TransportFailure("binary adb stream completed without a terminal event")
+                processExecutor.execute(
+                    ProcessRequest(
+                        command = resolution.command,
+                        outputKind = ProcessOutputKind.Text,
+                        timeout = request.timeout,
+                    ),
+                ).collect { event ->
+                    when (event) {
+                        is ProcessEvent.StdoutText -> emit(AdbStreamEvent.Line(event.line))
+                        is ProcessEvent.StderrText -> emit(AdbStreamEvent.StderrLine(event.line))
+                        is ProcessEvent.StdoutBytes, is ProcessEvent.StderrBytes ->
+                            error("received binary process output for a text adb stream: $event")
+
+                        is ProcessEvent.Completed -> outcome = event.outcome.toAdbOutcome()
+                    }
+                }
+                emit(AdbStreamEvent.Completed(outcome))
+            }
+        }
+    }
+
+    override suspend fun executeBinary(request: AdbRequest, sink: ByteSink): AdbOutcome =
+        when (val resolution = resolveExecCommand(request)) {
+            is CommandResolution.Unsupported -> AdbOutcome.Unsupported(resolution.reason)
+            is CommandResolution.Failure -> AdbOutcome.TransportFailure(resolution.reason)
+            is CommandResolution.Ready -> processExecutor.executeToSink(
+                ProcessRequest(
+                    command = resolution.command,
+                    outputKind = ProcessOutputKind.Binary,
+                    timeout = request.timeout,
+                ),
+                sink,
+            ).toAdbOutcome()
+        }
+
+    private suspend fun resolveTextCommand(request: AdbRequest): CommandResolution = when (request) {
+        is AdbServerRequest -> resolveCommand(request.arguments)
+        is AdbDeviceRequest -> when (val operation = request.operation) {
+            is AdbOperation.Shell ->
+                resolveCommand(listOf("-s", request.serial.toString(), "shell", operation.command.render()))
+
+            is AdbOperation.Host ->
+                resolveCommand(listOf("-s", request.serial.toString()) + operation.arguments)
+
+            is AdbOperation.Exec ->
+                CommandResolution.Unsupported("binary adb text execution does not support exec operations")
+        }
+    }
+
+    private suspend fun resolveStreamCommand(request: AdbRequest): CommandResolution = when (request) {
+        is AdbServerRequest -> resolveCommand(request.arguments)
+        is AdbDeviceRequest -> when (val operation = request.operation) {
+            is AdbOperation.Shell ->
+                resolveCommand(listOf("-s", request.serial.toString(), "shell", operation.command.render()))
+
+            is AdbOperation.Host, is AdbOperation.Exec -> {
+                CommandResolution.Unsupported("binary adb streaming only supports shell operations")
+            }
+        }
+    }
+
+    private suspend fun resolveExecCommand(request: AdbRequest): CommandResolution {
+        if (request !is AdbDeviceRequest) {
+            return CommandResolution.Unsupported("binary adb binary execution requires a device-scoped request")
+        }
+        val operation = request.operation
+        if (operation !is AdbOperation.Exec) {
+            return CommandResolution.Unsupported("binary adb binary execution only supports exec operations")
+        }
+        return resolveCommand(listOf("-s", request.serial.toString(), "exec-out") + operation.arguments)
+    }
+
+    private suspend fun resolveCommand(arguments: List<String>): CommandResolution =
+        when (val outcome = toolLocator.locate(ToolId.Adb)) {
+            is DiscoveryOutcome.Found ->
+                CommandResolution.Ready(ProcessCommand(executable = outcome.tool.path.value, arguments = arguments))
+
+            is DiscoveryOutcome.Failed -> CommandResolution.Failure(outcome.error.describe())
+        }
+
+    private fun DiscoveryError.describe(): String = when (this) {
+        is DiscoveryError.ToolNotFound -> "adb executable not found (tried: ${attemptedSources.joinToString()})"
+        is DiscoveryError.ExecutableInvalid -> "adb executable at '$path' is not valid: $reason"
+        is DiscoveryError.VersionQueryFailed -> "adb executable at '$path' failed its version check: $reason"
+    }
+
+    private fun ProcessOutcome.toAdbOutcome(): AdbOutcome = when (this) {
+        is ProcessOutcome.Completed -> AdbOutcome.Completed(exitCode)
+        ProcessOutcome.TimedOut -> AdbOutcome.TimedOut
+        is ProcessOutcome.StartFailure -> AdbOutcome.TransportFailure(reason)
+    }
+
+    private sealed interface CommandResolution {
+        data class Ready(val command: ProcessCommand) : CommandResolution
+        data class Unsupported(val reason: String) : CommandResolution
+        data class Failure(val reason: String) : CommandResolution
+    }
+}

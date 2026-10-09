@@ -2,6 +2,6 @@
     <!-- Loaded only when org.jetbrains.android is loaded. The marker tells the plugin so through
          public API on every supported platform (InstalledPlugins.androidLoaded). -->
     <extensions defaultExtensionNs="com.intellij">
-        <applicationService serviceImplementation="dev.acme.adbtoolbox.intellij.host.AndroidPluginMarker"/>
+        <applicationService serviceImplementation="io.github.dkej123.devicecockpit.intellij.host.AndroidPluginMarker"/>
     </extensions>
 </idea-plugin>

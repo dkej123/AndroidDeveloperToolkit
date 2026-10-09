@@ -1,0 +1,101 @@
+package io.github.dkej123.devicecockpit.intellij.devicebar
+
+import com.intellij.openapi.Disposable
+import io.github.dkej123.devicecockpit.application.devicebar.DeviceBarIntent
+import io.github.dkej123.devicecockpit.application.devicebar.DeviceBarViewModel
+import io.github.dkej123.devicecockpit.application.devicebar.DeviceBarViewState
+import io.github.dkej123.devicecockpit.domain.dispatch.DispatcherProvider
+import io.github.dkej123.devicecockpit.intellij.host.AdbToolboxHostPanel
+import java.awt.BorderLayout
+import java.awt.Rectangle
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.withContext
+
+/**
+ * Connects task 011's [DeviceBarViewModel] to task 010's [AdbToolboxHostPanel]:
+ * [DeviceContextBarPanel] is mounted into [AdbToolboxHostPanel.deviceContextSlot], and
+ * [DevicePickerListPanel] is shown as one bounded overlay in [AdbToolboxHostPanel.overlays] only
+ * while the picker is open.
+ *
+ * Follows [io.github.dkej123.devicecockpit.intellij.feedback.FeedbackOverlayCoordinator]'s established shape:
+ * [scope] is owned by the caller (never created here), state is collected and marshaled onto
+ * [dispatchers]' `main` context before touching Swing, and [render] is `internal`/non-suspend so it
+ * is directly unit-testable against constructed [DeviceBarViewState] values without depending on a
+ * real coroutine round trip through this headless test sandbox.
+ */
+class DeviceContextBarCoordinator(
+    host: AdbToolboxHostPanel,
+    private val viewModel: DeviceBarViewModel,
+    private val scope: CoroutineScope,
+    private val dispatchers: DispatcherProvider,
+) : Disposable {
+
+    val barPanel = DeviceContextBarPanel(
+        onToggle = {
+            val isOpen = viewModel.state.value.picker.isOpen
+            viewModel.handle(if (isOpen) DeviceBarIntent.ClosePicker else DeviceBarIntent.OpenPicker)
+        },
+        onRefresh = { viewModel.handle(DeviceBarIntent.Refresh) },
+    )
+
+    private val pickerPanel = DevicePickerListPanel(
+        onSelect = { serial -> viewModel.handle(DeviceBarIntent.SelectDevice(serial)) },
+        onHighlightChange = { index -> viewModel.handle(DeviceBarIntent.HighlightAt(index)) },
+        onConfirm = { viewModel.handle(DeviceBarIntent.ConfirmHighlighted) },
+        onDismiss = { viewModel.handle(DeviceBarIntent.ClosePicker) },
+        onPairOverWifi = { viewModel.handle(DeviceBarIntent.RequestPairOverWifi) },
+    )
+
+    /** Test-only visibility hook: the picker popup, nested behind [overlays] rather than a direct child. */
+    internal val pickerPanelForTest: DevicePickerListPanel get() = pickerPanel
+
+    private val overlays = host.overlays
+
+    /** Tracks the picker's previous open/closed state so [render] moves keyboard focus into (or back
+     * out of) the popup exactly once per open — never re-stealing focus from the list on every
+     * highlight-driven re-render while it stays open. */
+    private var pickerWasOpen = false
+
+    init {
+        host.deviceContextSlot.add(barPanel, BorderLayout.CENTER)
+
+        viewModel.state
+            .onEach { state -> withContext(dispatchers.main) { render(state) } }
+            .launchIn(scope)
+    }
+
+    /** Production code always reaches this already marshaled onto [dispatchers]' `main` context. */
+    internal fun render(state: DeviceBarViewState) {
+        barPanel.update(state.bar)
+        pickerPanel.update(state.picker)
+        if (state.picker.isOpen) {
+            overlays.show(pickerPanel, ::pickerBounds)
+            if (!pickerWasOpen) pickerPanel.focusList()
+        } else {
+            overlays.dismiss(pickerPanel)
+            if (pickerWasOpen) barPanel.focusSelector()
+        }
+        pickerWasOpen = state.picker.isOpen
+    }
+
+    /**
+     * `design/README.md` §1's device picker popup placement: "absolutely positioned
+     * `top: 62, left: 8, right: 8`", height driven by the popup's own preferred (row-count-based)
+     * height rather than a fixed value the design does not specify.
+     */
+    private fun pickerBounds(width: Int, height: Int): Rectangle {
+        val insetWidth = (width - 16).coerceAtLeast(0)
+        val top = 62
+        val availableHeight = (height - top).coerceAtLeast(0)
+        val preferredHeight = pickerPanel.preferredSize.height.coerceAtMost(availableHeight)
+        return Rectangle(8, top, insetWidth, preferredHeight)
+    }
+
+    override fun dispose() {
+        scope.cancel()
+        overlays.dismiss(pickerPanel)
+    }
+}

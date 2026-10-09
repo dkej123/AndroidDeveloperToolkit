@@ -1,0 +1,187 @@
+package io.github.dkej123.devicecockpit.adapters.adb.selector
+
+import io.github.dkej123.devicecockpit.domain.adb.AdbBinaryScript
+import io.github.dkej123.devicecockpit.domain.adb.AdbDeviceRequest
+import io.github.dkej123.devicecockpit.domain.adb.AdbOperation
+import io.github.dkej123.devicecockpit.domain.adb.AdbOutcome
+import io.github.dkej123.devicecockpit.domain.adb.AdbShellCommand
+import io.github.dkej123.devicecockpit.domain.adb.AdbStreamEvent
+import io.github.dkej123.devicecockpit.domain.adb.AdbTextResult
+import io.github.dkej123.devicecockpit.domain.adb.DeviceSerial
+import io.github.dkej123.devicecockpit.domain.adb.FakeAdbTransport
+import io.github.dkej123.devicecockpit.domain.adb.ShellToken
+import io.github.dkej123.devicecockpit.domain.process.ByteSink
+import io.kotest.matchers.collections.shouldContainExactly
+import io.kotest.matchers.shouldBe
+import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.runBlocking
+import org.junit.jupiter.api.Test
+
+// NOTE: statement body `{ runBlocking { ... } }`, not an expression body — see BinaryAdbTransportTest.
+class FallbackAdbTransportTest {
+
+    private val serial = DeviceSerial.of("R58N90ABCDE")
+    private val shellRequest = AdbDeviceRequest(
+        serial = serial,
+        operation = AdbOperation.Shell(AdbShellCommand.of(ShellToken.Literal("pm clear com.example"))),
+    )
+
+    // --- executeText -----------------------------------------------------------------------
+
+    @Test
+    fun `primary success is returned untouched and fallback is never invoked`() {
+        runBlocking {
+            val primaryResult = AdbTextResult(AdbOutcome.Completed(0), stdout = "ok", stderr = "")
+            val primary = FakeAdbTransport(textScript = { primaryResult })
+            val fallback = FakeAdbTransport(textScript = { error("fallback must not be invoked") })
+
+            val result = FallbackAdbTransport(primary, fallback).executeText(shellRequest)
+
+            result shouldBe primaryResult
+            fallback.textRequests shouldBe emptyList()
+        }
+    }
+
+    @Test
+    fun `primary Unsupported before any execution attempt safely falls back to the secondary transport`() {
+        runBlocking {
+            val fallbackResult = AdbTextResult(AdbOutcome.Completed(0), stdout = "from fallback", stderr = "")
+            val primary = FakeAdbTransport(
+                textScript = { AdbTextResult(AdbOutcome.Unsupported("no ddmlib equivalent"), "", "") },
+            )
+            val fallback = FakeAdbTransport(textScript = { fallbackResult })
+
+            val result = FallbackAdbTransport(primary, fallback).executeText(shellRequest)
+
+            result shouldBe fallbackResult
+            fallback.textRequests shouldContainExactly listOf(shellRequest)
+        }
+    }
+
+    @Test
+    fun `unsupported device host operation falls back with the exact request`() {
+        runBlocking {
+            val hostRequest = AdbDeviceRequest(
+                serial = serial,
+                operation = AdbOperation.Host(listOf("uninstall", "com.acme.shop")),
+            )
+            val primary = FakeAdbTransport(
+                textScript = { AdbTextResult(AdbOutcome.Unsupported("host operations unavailable"), "", "") },
+            )
+            val fallbackResult = AdbTextResult(AdbOutcome.Completed(0), stdout = "Success", stderr = "")
+            val fallback = FakeAdbTransport(textScript = { fallbackResult })
+
+            val result = FallbackAdbTransport(primary, fallback).executeText(hostRequest)
+
+            result shouldBe fallbackResult
+            primary.textRequests shouldContainExactly listOf(hostRequest)
+            fallback.textRequests shouldContainExactly listOf(hostRequest)
+        }
+    }
+
+    @Test
+    fun `ambiguous mutation TransportFailure is surfaced honestly and never retried on the fallback`() {
+        runBlocking {
+            val ambiguous = AdbTextResult(AdbOutcome.TransportFailure("connection reset mid-command"), "", "")
+            val primary = FakeAdbTransport(textScript = { ambiguous })
+            val fallback = FakeAdbTransport(textScript = { error("fallback must never run an ambiguous mutation") })
+
+            val result = FallbackAdbTransport(primary, fallback).executeText(shellRequest)
+
+            result shouldBe ambiguous
+            fallback.textRequests shouldBe emptyList()
+        }
+    }
+
+    @Test
+    fun `an elapsed timeout is also ambiguous and is never retried on the fallback`() {
+        runBlocking {
+            val timedOut = AdbTextResult(AdbOutcome.TimedOut, "", "")
+            val primary = FakeAdbTransport(textScript = { timedOut })
+            val fallback = FakeAdbTransport(textScript = { error("fallback must never run after a timeout") })
+
+            val result = FallbackAdbTransport(primary, fallback).executeText(shellRequest)
+
+            result shouldBe timedOut
+            fallback.textRequests shouldBe emptyList()
+        }
+    }
+
+    // --- executeStream -----------------------------------------------------------------------
+
+    @Test
+    fun `stream Unsupported as the sole event safely falls back and relays the fallback's stream`() {
+        runBlocking {
+            val primary = FakeAdbTransport(
+                streamScript = { listOf(AdbStreamEvent.Completed(AdbOutcome.Unsupported("no ddmlib equivalent"))) },
+            )
+            val fallbackEvents = listOf(
+                AdbStreamEvent.Line("line one"),
+                AdbStreamEvent.Completed(AdbOutcome.Completed(0)),
+            )
+            val fallback = FakeAdbTransport(streamScript = { fallbackEvents })
+
+            val events = FallbackAdbTransport(primary, fallback).executeStream(shellRequest).toList()
+
+            events shouldContainExactly fallbackEvents
+            fallback.streamRequests shouldContainExactly listOf(shellRequest)
+        }
+    }
+
+    @Test
+    fun `stream lines followed by an ambiguous failure are relayed untouched with no fallback`() {
+        runBlocking {
+            val primaryEvents = listOf(
+                AdbStreamEvent.Line("line one"),
+                AdbStreamEvent.Completed(AdbOutcome.TransportFailure("connection reset mid-stream")),
+            )
+            val primary = FakeAdbTransport(streamScript = { primaryEvents })
+            val fallback = FakeAdbTransport(streamScript = { error("fallback must never run after partial output") })
+
+            val events = FallbackAdbTransport(primary, fallback).executeStream(shellRequest).toList()
+
+            events shouldContainExactly primaryEvents
+            fallback.streamRequests shouldBe emptyList()
+        }
+    }
+
+    // --- executeBinary -----------------------------------------------------------------------
+
+    @Test
+    fun `binary Unsupported safely falls back and the sink receives only the fallback's bytes`() {
+        runBlocking {
+            val primary = FakeAdbTransport(
+                binaryScript = { AdbBinaryScript(emptyList(), AdbOutcome.Unsupported("no ddmlib exec-out")) },
+            )
+            val fallbackBytes = byteArrayOf(1, 2, 3)
+            val fallback = FakeAdbTransport(
+                binaryScript = { AdbBinaryScript(listOf(fallbackBytes), AdbOutcome.Completed(0)) },
+            )
+            val received = mutableListOf<Byte>()
+            val sink = ByteSink { chunk -> received += chunk.toList() }
+
+            val outcome = FallbackAdbTransport(primary, fallback).executeBinary(shellRequest, sink)
+
+            outcome shouldBe AdbOutcome.Completed(0)
+            received shouldContainExactly fallbackBytes.toList()
+        }
+    }
+
+    @Test
+    fun `binary ambiguous failure is surfaced honestly and never retried on the fallback`() {
+        runBlocking {
+            val ambiguous = AdbOutcome.TransportFailure("connection reset mid-transfer")
+            val primary = FakeAdbTransport(
+                binaryScript = { AdbBinaryScript(emptyList(), ambiguous) },
+            )
+            val fallback = FakeAdbTransport(
+                binaryScript = { error("fallback must never run an ambiguous mutation") },
+            )
+
+            val outcome = FallbackAdbTransport(primary, fallback).executeBinary(shellRequest, ByteSink { })
+
+            outcome shouldBe ambiguous
+            fallback.binaryRequests shouldBe emptyList()
+        }
+    }
+}

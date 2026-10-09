@@ -34,7 +34,7 @@ val dexDeviceHelper = tasks.register<JavaExec>("dexDeviceHelper") {
     description = "Dexes the on-device app-info helper into a resource jar."
     val classes = deviceHelper.output.classesDirs
     val stubClasses = deviceHelperStubs.output.classesDirs
-    val output = deviceHelperResources.map { it.file("dev/acme/adbtoolbox/adapters/adb/apps/app-info-helper.jar") }
+    val output = deviceHelperResources.map { it.file("io/github/dkej123/devicecockpit/adapters/adb/apps/app-info-helper.jar") }
     inputs.files(classes)
     inputs.files(stubClasses)
     outputs.file(output)

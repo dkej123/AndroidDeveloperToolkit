@@ -54,9 +54,9 @@ if [[ ! -s "$deep_link_apk" ]]; then
     fixture_tmp="$(mktemp -d)"
     mkdir -p "$fixture_tmp/classes" "$fixture_tmp/dex"
     "$JAVA_HOME/bin/javac" -source 8 -target 8 -classpath "$ANDROID_SDK_ROOT/platforms/android-35/android.jar" \
-        -d "$fixture_tmp/classes" "$fixture_src/src/dev/acme/adbtoolbox/e2efixture/MainActivity.java"
+        -d "$fixture_tmp/classes" "$fixture_src/src/io/github/dkej123/devicecockpit/e2efixture/MainActivity.java"
     "$ANDROID_SDK_ROOT/build-tools/35.0.0/d8" --lib "$ANDROID_SDK_ROOT/platforms/android-35/android.jar" \
-        --output "$fixture_tmp/dex" "$fixture_tmp/classes/dev/acme/adbtoolbox/e2efixture/MainActivity.class"
+        --output "$fixture_tmp/dex" "$fixture_tmp/classes/io/github/dkej123/devicecockpit/e2efixture/MainActivity.class"
     "$ANDROID_SDK_ROOT/build-tools/35.0.0/aapt" package -f -M "$fixture_src/AndroidManifest.xml" \
         -I "$ANDROID_SDK_ROOT/platforms/android-35/android.jar" -F "$fixture_tmp/unsigned.apk"
     "$JAVA_HOME/bin/jar" uf "$fixture_tmp/unsigned.apk" -C "$fixture_tmp/dex" classes.dex

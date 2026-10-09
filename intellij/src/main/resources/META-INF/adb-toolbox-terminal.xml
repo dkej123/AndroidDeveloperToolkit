@@ -3,6 +3,6 @@
          tells the plugin so (InstalledPlugins.terminalLoaded); TerminalLauncherAdapter calls the
          Terminal plugin's API directly rather than contributing an extension point. -->
     <extensions defaultExtensionNs="com.intellij">
-        <applicationService serviceImplementation="dev.acme.adbtoolbox.intellij.host.TerminalPluginMarker"/>
+        <applicationService serviceImplementation="io.github.dkej123.devicecockpit.intellij.host.TerminalPluginMarker"/>
     </extensions>
 </idea-plugin>

@@ -42,14 +42,14 @@ Formerly <i>ADB Toolbox</i>.</p>
          which need no XML entry here. -->
     <extensions defaultExtensionNs="com.intellij">
         <!-- ADR 0015: the project's MCP tools are registered at startup when access is not Off. -->
-        <postStartupActivity implementation="dev.acme.adbtoolbox.intellij.mcp.McpStartupActivity"/>
+        <postStartupActivity implementation="io.github.dkej123.devicecockpit.intellij.mcp.McpStartupActivity"/>
         <!-- Design §9: the Layout Inspector is a file-less editor tab. -->
-        <fileEditorProvider implementation="dev.acme.adbtoolbox.intellij.inspector.LayoutInspectorEditorProvider"/>
+        <fileEditorProvider implementation="io.github.dkej123.devicecockpit.intellij.inspector.LayoutInspectorEditorProvider"/>
         <toolWindow id="ADB Toolbox" anchor="right" secondary="false"
                     icon="/icons/expui/toolwindow/adbToolbox.svg"
-                    factoryClass="dev.acme.adbtoolbox.intellij.toolwindow.AdbToolboxToolWindowFactory"/>
+                    factoryClass="io.github.dkej123.devicecockpit.intellij.toolwindow.AdbToolboxToolWindowFactory"/>
         <projectConfigurable parentId="tools"
-                             instance="dev.acme.adbtoolbox.intellij.settings.AdbToolboxSettingsConfigurable"
+                             instance="io.github.dkej123.devicecockpit.intellij.settings.AdbToolboxSettingsConfigurable"
                              id="dev.acme.adbtoolbox.settings"
                              displayName="Device Cockpit"/>
         <notificationGroup id="ADB Toolbox Diagnostics" displayType="BALLOON"/>
@@ -64,22 +64,22 @@ Formerly <i>ADB Toolbox</i>.</p>
              recording, and the log folder. Also offered in the tool window's gear menu. -->
         <group id="AdbToolbox.Diagnostics" text="Device Cockpit Diagnostics" popup="true">
             <action id="AdbToolbox.CollectDiagnostics"
-                    class="dev.acme.adbtoolbox.intellij.diagnostics.CollectDiagnosticsAction"
+                    class="io.github.dkej123.devicecockpit.intellij.diagnostics.CollectDiagnosticsAction"
                     text="Collect Diagnostics…"
                     description="Save Device Cockpit logs, environment, adb state and IDE freeze dumps to one ZIP"/>
             <action id="AdbToolbox.RecordPerformance"
-                    class="dev.acme.adbtoolbox.intellij.diagnostics.RecordPerformanceAction"
+                    class="io.github.dkej123.devicecockpit.intellij.diagnostics.RecordPerformanceAction"
                     text="Record Performance (60 s)"
                     description="Sample all threads for 60 seconds and save a hotspot report"/>
             <action id="AdbToolbox.OpenDiagnosticsLogFolder"
-                    class="dev.acme.adbtoolbox.intellij.diagnostics.OpenDiagnosticsLogFolderAction"
+                    class="io.github.dkej123.devicecockpit.intellij.diagnostics.OpenDiagnosticsLogFolderAction"
                     text="Open Diagnostics Log Folder"
                     description="Reveal the Device Cockpit diagnostics log folder"/>
             <add-to-group group-id="HelpMenu" anchor="last"/>
         </group>
 
         <action id="dev.acme.adbtoolbox.ToggleMirroring"
-                class="dev.acme.adbtoolbox.intellij.mirroring.MirroringToggleAction"
+                class="io.github.dkej123.devicecockpit.intellij.mirroring.MirroringToggleAction"
                 text="Toggle Device Mirroring"
                 description="Start or stop mirroring the selected device">
             <keyboard-shortcut keymap="$default" first-keystroke="shift control M"/>
@@ -91,7 +91,7 @@ Formerly <i>ADB Toolbox</i>.</p>
              entry point the Apps-view Restart button uses; design/README.md's Restart tooltip and
              design/IMPLEMENTATION.md's example plugin.xml both name shift+cmd+R / this action id. -->
         <action id="AdbToolbox.RestartApp"
-                class="dev.acme.adbtoolbox.intellij.apps.RestartAppAction"
+                class="io.github.dkej123.devicecockpit.intellij.apps.RestartAppAction"
                 text="Restart App"
                 description="Force-stop, then launch the selected app's main activity">
             <keyboard-shortcut keymap="$default" first-keystroke="shift control R"/>
@@ -102,7 +102,7 @@ Formerly <i>ADB Toolbox</i>.</p>
         <!-- Design §3a: restart (or launch, when shown as killed) the app in front — one modifier apart
              from the Apps view's shift+cmd+R so the two targets are never ambiguous. -->
         <action id="AdbToolbox.RestartForegroundApp"
-                class="dev.acme.adbtoolbox.intellij.currentapp.RestartForegroundAppAction"
+                class="io.github.dkej123.devicecockpit.intellij.currentapp.RestartForegroundAppAction"
                 text="Restart Foreground App"
                 description="Force-stop, then launch the app on the device screen (launches it when it was killed)">
             <keyboard-shortcut keymap="$default" first-keystroke="shift control alt R"/>
@@ -111,7 +111,7 @@ Formerly <i>ADB Toolbox</i>.</p>
         </action>
 
         <action id="AdbToolbox.InspectLayout"
-                class="dev.acme.adbtoolbox.intellij.inspector.InspectLayoutAction"
+                class="io.github.dkej123.devicecockpit.intellij.inspector.InspectLayoutAction"
                 text="Inspect Layout"
                 icon="/icons/expui/actions/layoutInspector.svg"
                 description="Capture the selected device's screen and UI hierarchy into the Layout Inspector">
@@ -123,7 +123,7 @@ Formerly <i>ADB Toolbox</i>.</p>
         <!-- Task 037's global focus-Logcat shortcut — forwards to the same NavigationViewModel.handle
              entry point the rail uses; design/README.md's Interactions section names shift+cmd+L. -->
         <action id="AdbToolbox.FocusLogcat"
-                class="dev.acme.adbtoolbox.intellij.logcat.FocusLogcatAction"
+                class="io.github.dkej123.devicecockpit.intellij.logcat.FocusLogcatAction"
                 text="Focus Logcat"
                 description="Switch to the Logcat view">
             <keyboard-shortcut keymap="$default" first-keystroke="shift control L"/>
@@ -135,7 +135,7 @@ Formerly <i>ADB Toolbox</i>.</p>
              refresh button already advertised "⌘⇧D" in its tooltip with no keymap entry behind it;
              design/README.md's Interactions section names shift+cmd+D. -->
         <action id="AdbToolbox.RefreshDevices"
-                class="dev.acme.adbtoolbox.intellij.devicebar.RefreshDevicesAction"
+                class="io.github.dkej123.devicecockpit.intellij.devicebar.RefreshDevicesAction"
                 text="Refresh Devices"
                 description="Refresh the connected device list">
             <keyboard-shortcut keymap="$default" first-keystroke="shift control D"/>
