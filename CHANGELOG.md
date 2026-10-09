@@ -4,6 +4,19 @@ All notable changes to ADB Toolbox. Each release needs a `## [<version>] - <YYYY
 the Marketplace change notes and the GitHub release notes are generated from it
 (`release/README.md`).
 
+## [Unreleased]
+
+### Added
+- **AI agents (MCP)**: `screenshot annotate=true` draws numbered boxes on elements — UI-tree elements
+  by ref, and shapes the tree does not describe (games, canvas, Flutter) as `m1`, `m2`… for
+  `tap`/`swipe mark=`; `tap`, `swipe`, `type_text` and `press_key` take `return_ui` to return the
+  next screen in the same call.
+- **Agent skill**: install a generated `SKILL.md` for Claude Code, Codex CLI or Gemini CLI from
+  Settings › AI agents, or from a tip in the tool window that can be closed for good.
+
+### Changed
+- UI capture retries longer while the screen animates and suggests turning animations off.
+
 ## [1.1.0] - 2026-10-08
 
 ### Added

@@ -65,6 +65,8 @@ class McpSettingsPanel(
     private val token: () -> String,
     private val regenerate: () -> String,
     tools: List<McpTool>,
+    private val skills: AgentSkillInstaller = AgentSkillInstaller.forUser(),
+    private val runIo: (() -> Unit) -> Unit = { com.intellij.openapi.application.ApplicationManager.getApplication().executeOnPooledThread(it) },
 ) : JPanel() {
     private val off = JBRadioButton("Off")
     private val readOnly = JBRadioButton("Read only")
@@ -110,6 +112,10 @@ class McpSettingsPanel(
         override fun isCellEditable(row: Int, column: Int) = false
     }
     private val ticker = Timer(1000) { refresh() }
+    private val skillRows: Map<SkillAgent, Pair<JBLabel, JButton>> = SkillAgent.entries.associateWith { agent ->
+        JBLabel() to JButton("Install").apply { addActionListener { installSkill(agent) } }
+    }
+    private val skillResult = JBLabel().apply { foreground = AdbToolboxTheme.Colors.textDim }
 
     init {
         layout = BoxLayout(this, BoxLayout.Y_AXIS)
@@ -151,6 +157,27 @@ class McpSettingsPanel(
         add(snippetTabs)
         add(comment("Copy inserts the real token. Check the agent’s docs if its config format has changed."))
         add(gap())
+        add(JBLabel("Agent skill").apply { alignmentX = Component.LEFT_ALIGNMENT; font = font.deriveFont(java.awt.Font.BOLD) })
+        add(comment("Teaches the agent when and how to use these tools (get_ui before tap, return_ui, annotated screenshots). Agents load it only when needed."))
+        skillRows.forEach { (agent, row) ->
+            add(JPanel(FlowLayout(FlowLayout.LEADING, JBUIScale.scale(8), 0)).apply {
+                alignmentX = Component.LEFT_ALIGNMENT
+                add(JBLabel(agent.title).apply { preferredSize = Dimension(JBUIScale.scale(100), preferredSize.height) })
+                add(row.first)
+                add(row.second)
+                maximumSize = Dimension(Int.MAX_VALUE, preferredSize.height)
+            })
+        }
+        add(JPanel(FlowLayout(FlowLayout.LEADING, JBUIScale.scale(8), 0)).apply {
+            alignmentX = Component.LEFT_ALIGNMENT
+            add(JButton("Copy SKILL.md").apply {
+                toolTipText = "For other agents that read Agent Skills"
+                addActionListener { copy(skills.content()) }
+            })
+            add(skillResult)
+            maximumSize = Dimension(Int.MAX_VALUE, preferredSize.height)
+        })
+        add(gap())
         add(JBLabel("Exposed tools").apply { alignmentX = Component.LEFT_ALIGNMENT; font = font.deriveFont(java.awt.Font.BOLD) })
         tools.forEach { tool ->
             toolsModel.addRow(
@@ -173,6 +200,7 @@ class McpSettingsPanel(
         addHierarchyListener {
             if (isShowing) {
                 refresh()
+                refreshSkills()
                 ticker.start()
             } else {
                 ticker.stop()
@@ -228,6 +256,33 @@ class McpSettingsPanel(
             val (area, target) = snippetAreas[index]
             area.text = snippet.text.replace(token(), maskToken(token()))
             target.text = snippet.target.replace(token(), maskToken(token()))
+        }
+    }
+
+    private fun refreshSkills() = runIo {
+        val states = SkillAgent.entries.associateWith { skills.state(it) to skills.file(it) }
+        javax.swing.SwingUtilities.invokeLater {
+            states.forEach { (agent, pair) ->
+                val (state, file) = pair
+                val (label, button) = skillRows.getValue(agent)
+                label.text = when (state) {
+                    SkillState.NotInstalled -> "Not installed"
+                    SkillState.Current -> "Installed"
+                    SkillState.Outdated -> "Outdated"
+                }
+                label.foreground = if (state == SkillState.Current) AdbToolboxTheme.Colors.textDim else AdbToolboxTheme.Colors.amber
+                label.toolTipText = file.toString()
+                button.text = if (state == SkillState.NotInstalled) "Install" else "Update"
+                button.isEnabled = state != SkillState.Current
+            }
+        }
+    }
+
+    private fun installSkill(agent: SkillAgent) = runIo {
+        val result = runCatching { skills.install(agent) }
+        javax.swing.SwingUtilities.invokeLater {
+            skillResult.text = result.fold({ "Installed to $it" }, { "Couldn’t install for ${agent.title}: ${it.message}" })
+            refreshSkills()
         }
     }
 

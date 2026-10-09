@@ -24,6 +24,8 @@ class AdbToolboxAppSettings : PersistentStateComponent<AdbToolboxAppSettings.Sta
         var mcpAccess: String = McpAccess.Off.name
         /** 0 until the server first starts; then the port it got, reused so setup snippets stay valid. */
         var mcpPort: Int = 0
+        /** The tool window's "install the agent skill" tip was closed; it never comes back (task 066). */
+        var skillTipDismissed: Boolean = false
     }
 
     private var state = State()
@@ -50,6 +52,12 @@ class AdbToolboxAppSettings : PersistentStateComponent<AdbToolboxAppSettings.Sta
         get() = state.mcpPort
         set(value) {
             state.mcpPort = value
+        }
+
+    var skillTipDismissed: Boolean
+        get() = state.skillTipDismissed
+        set(value) {
+            state.skillTipDismissed = value
         }
 
     /** The bearer token agents send; created on first use. */

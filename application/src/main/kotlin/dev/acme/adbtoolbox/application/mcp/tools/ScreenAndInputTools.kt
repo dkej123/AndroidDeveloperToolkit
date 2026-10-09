@@ -11,6 +11,8 @@ import dev.acme.adbtoolbox.application.mcp.optionalDouble
 import dev.acme.adbtoolbox.application.mcp.optionalString
 import dev.acme.adbtoolbox.application.mcp.requireString
 import dev.acme.adbtoolbox.domain.adb.DeviceSerial
+import dev.acme.adbtoolbox.domain.capture.MarkBox
+import dev.acme.adbtoolbox.domain.capture.ScreenMark
 import dev.acme.adbtoolbox.domain.input.InputCommands
 import dev.acme.adbtoolbox.domain.input.SystemKey
 import dev.acme.adbtoolbox.domain.layout.AccessibilityAudit
@@ -20,6 +22,8 @@ import dev.acme.adbtoolbox.domain.layout.UiTreeText
 import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
 import kotlin.math.roundToInt
+import kotlin.time.Duration.Companion.milliseconds
+import kotlinx.coroutines.delay
 import kotlinx.serialization.json.JsonObject
 
 /** A tool defined by its metadata and a block. */
@@ -51,9 +55,10 @@ fun screenAndInputTools(env: McpToolEnvironment): List<McpTool> = listOf(
     SimpleTool(
         "screenshot",
         "Screenshot of the device screen, scaled so 1 px = 1 dp — the coordinates get_ui and tap use. " +
-            "Prefer get_ui to read text or find elements; use this to check visuals.",
+            "Prefer get_ui to read text or find elements; use this to check visuals. annotate=true draws numbered boxes: " +
+            "tree elements with their get_ui ref, and m1, m2… for shapes the UI tree does not describe (games, canvas, Flutter) — tap mark=N.",
         readOnly = true,
-        inputSchema = schema(SERIAL),
+        inputSchema = schema(SERIAL, bool("annotate", "Draw numbered boxes on elements.")),
     ) { args, _ ->
         val serial = env.device(args)
         when (val snapshot = env.layout.snapshot(serial)) {
@@ -64,7 +69,11 @@ fun screenAndInputTools(env: McpToolEnvironment): List<McpTool> = listOf(
                 val width = h.dp(h.root.bounds.width).roundToInt()
                 val height = h.dp(h.root.bounds.height).roundToInt()
                 val png = env.imageScaler.scale(snapshot.value.png, width, height) ?: snapshot.value.png
-                McpToolResult(listOf(McpContent.Image(Base64.encode(png)), McpContent.Text(UiTreeText.screenSummary(h))))
+                if (args.optionalBoolean("annotate") == true) {
+                    env.annotated(serial, png, h)
+                } else {
+                    McpToolResult(listOf(McpContent.Image(Base64.encode(png)), McpContent.Text(UiTreeText.screenSummary(h))))
+                }
             }
         }
     },
@@ -101,9 +110,13 @@ fun screenAndInputTools(env: McpToolEnvironment): List<McpTool> = listOf(
     },
     SimpleTool(
         "tap",
-        "Tap an element by ref (from get_ui), by visible text, or at x,y in dp. Give one of the three. long=true long-presses.",
+        "Tap an element by ref (from get_ui), by visible text, by mark (from screenshot annotate=true), or at x,y in dp. " +
+            "Give one. long=true long-presses.",
         readOnly = false,
-        inputSchema = schema(SERIAL, int("ref", "Element ref from get_ui."), str("text", "Visible text or description."), num("x", "dp"), num("y", "dp"), bool("long", "Long-press.")),
+        inputSchema = schema(
+            SERIAL, int("ref", "Element ref from get_ui."), str("text", "Visible text or description."), int("mark", "Mark mN from an annotated screenshot."),
+            num("x", "dp"), num("y", "dp"), bool("long", "Long-press."), RETURN_UI,
+        ),
     ) { args, _ ->
         val serial = env.device(args)
         val target = env.point(serial, args, allowText = true)
@@ -112,7 +125,7 @@ fun screenAndInputTools(env: McpToolEnvironment): List<McpTool> = listOf(
         val y = h.px(target.y).roundToInt()
         val request = if (args.optionalBoolean("long") == true) InputCommands.longPress(serial, x, y) else InputCommands.tap(serial, x, y)
         env.transport.executeText(request)
-        McpToolResult.text("Tapped ${target.label} at ${target.x.roundToInt()},${target.y.roundToInt()} dp.")
+        env.reply(serial, args, "Tapped ${target.label} at ${target.x.roundToInt()},${target.y.roundToInt()} dp.")
     },
     SimpleTool(
         "swipe",
@@ -123,8 +136,10 @@ fun screenAndInputTools(env: McpToolEnvironment): List<McpTool> = listOf(
             SERIAL,
             str("direction", "Finger direction.", oneOf = listOf("up", "down", "left", "right")),
             int("ref", "Element to swipe over."),
+            int("mark", "Mark to swipe over."),
             num("x", "Start x, dp"), num("y", "Start y, dp"), num("x2", "End x, dp"), num("y2", "End y, dp"),
             int("duration_ms", "Default 300."),
+            RETURN_UI,
         ),
     ) { args, _ ->
         val serial = env.device(args)
@@ -155,32 +170,32 @@ fun screenAndInputTools(env: McpToolEnvironment): List<McpTool> = listOf(
         }
         fun px(v: Double) = h.px(v).roundToInt()
         env.transport.executeText(InputCommands.swipe(serial, px(from.first), px(from.second), px(to.first), px(to.second), duration))
-        McpToolResult.text("Swiped from ${from.first.roundToInt()},${from.second.roundToInt()} to ${to.first.roundToInt()},${to.second.roundToInt()} dp.")
+        env.reply(serial, args, "Swiped from ${from.first.roundToInt()},${from.second.roundToInt()} to ${to.first.roundToInt()},${to.second.roundToInt()} dp.")
     },
     SimpleTool(
         "type_text",
         "Type into the focused field (tap it first). Printable ASCII on one line only, an adb limit.",
         readOnly = false,
-        inputSchema = schema(SERIAL, str("text", "Text to type.", required = true), bool("submit", "Press Enter after typing.")),
+        inputSchema = schema(SERIAL, str("text", "Text to type.", required = true), bool("submit", "Press Enter after typing."), RETURN_UI),
     ) { args, _ ->
         val serial = env.device(args)
         val text = args.requireString("text")
         if (!InputCommands.canType(text)) throw McpArgumentException("adb can type printable ASCII only, on one line. Use submit for Enter.")
         env.transport.executeText(InputCommands.text(serial, text))
         if (args.optionalBoolean("submit") == true) env.transport.executeText(InputCommands.key(serial, SystemKey.Enter))
-        McpToolResult.text("Typed ${text.length} characters.")
+        env.reply(serial, args, "Typed ${text.length} characters.")
     },
     SimpleTool(
         "press_key",
         "Press a system key. escape also hides the keyboard; delete is backspace.",
         readOnly = false,
-        inputSchema = schema(SERIAL, str("key", "Key.", required = true, oneOf = SystemKey.entries.map { it.id }), int("times", "Repeat count, 1–50. Default 1.")),
+        inputSchema = schema(SERIAL, str("key", "Key.", required = true, oneOf = SystemKey.entries.map { it.id }), int("times", "Repeat count, 1–50. Default 1."), RETURN_UI),
     ) { args, _ ->
         val serial = env.device(args)
         val key = SystemKey.of(args.requireString("key")) ?: throw McpArgumentException("unknown key")
         val times = (args.optionalDouble("times") ?: 1.0).toInt().coerceIn(1, 50)
         repeat(times) { env.transport.executeText(InputCommands.key(serial, key)) }
-        McpToolResult.text("Pressed ${key.id}${if (times > 1) " $times times" else ""}.")
+        env.reply(serial, args, "Pressed ${key.id}${if (times > 1) " $times times" else ""}.")
     },
 )
 
@@ -194,8 +209,14 @@ internal data class GestureTarget(
     val hierarchy: UiHierarchy,
 )
 
-/** Resolves `ref`, `text` or `x`/`y` to a point in dp; with none (and no text allowed), the screen centre. */
+/** Resolves `mark`, `ref`, `text` or `x`/`y` to a point in dp; with none (and no text allowed), the screen centre. */
 internal suspend fun McpToolEnvironment.point(serial: DeviceSerial, args: JsonObject, allowText: Boolean): GestureTarget {
+    args.optionalDouble("mark")?.toInt()?.let { number ->
+        val box = mark(serial, number)
+            ?: throw McpArgumentException("mark $number is not on the last annotated screenshot; take screenshot annotate=true again.")
+        val h = lastHierarchy(serial) ?: hierarchy(serial)
+        return GestureTarget(box.centerX, box.centerY, box.width.toDouble(), box.height.toDouble(), "mark m$number", h)
+    }
     args.optionalDouble("ref")?.let { ref ->
         val h = lastHierarchy(serial) ?: hierarchy(serial)
         val node = h.node(ref.toInt()) ?: throw McpArgumentException("ref ${ref.toInt()} is not on the last get_ui; call get_ui again.")
@@ -224,4 +245,54 @@ internal suspend fun McpToolEnvironment.point(serial: DeviceSerial, args: JsonOb
 private fun target(node: UiNode, h: UiHierarchy, label: String): GestureTarget {
     val b = node.bounds
     return GestureTarget(h.dp(b.centerX), h.dp(b.centerY), h.dp(b.width), h.dp(b.height), label, h)
+}
+
+private val RETURN_UI = bool("return_ui", "After acting, wait for the screen to settle and return its interactive elements (saves a get_ui call).")
+
+/** How long the screen gets to react before `return_ui` reads it. */
+private val SETTLE = 500.milliseconds
+
+/** Pixel-found shapes kept per annotated screenshot. */
+private const val MAX_MARKS = 60
+
+/** [done], plus the screen's interactive elements when the agent asked for `return_ui` (task 066). */
+private suspend fun McpToolEnvironment.reply(serial: DeviceSerial, args: JsonObject, done: String): McpToolResult {
+    if (args.optionalBoolean("return_ui") != true) return McpToolResult.text(done)
+    delay(SETTLE)
+    val ui = try {
+        val h = hierarchy(serial)
+        UiTreeText.screenSummary(h) + "\n" + UiTreeText.tree(h, interactiveOnly = true)
+    } catch (failure: McpToolFailure) {
+        "UI not captured: ${failure.message}"
+    }
+    return McpToolResult.text("$done\n\n$ui")
+}
+
+/**
+ * The screenshot with numbered boxes (task 066): interactive tree elements labelled with their ref,
+ * and shapes found in the pixels that no such element covers (at least half) as m1, m2….
+ */
+@OptIn(ExperimentalEncodingApi::class)
+private fun McpToolEnvironment.annotated(serial: DeviceSerial, png: ByteArray, h: UiHierarchy): McpToolResult {
+    val tree = UiTreeText.interactive(h).map { node ->
+        val b = node.bounds
+        ScreenMark(
+            node.id.toString(),
+            MarkBox(h.dp(b.left).roundToInt(), h.dp(b.top).roundToInt(), h.dp(b.width).roundToInt(), h.dp(b.height).roundToInt()),
+            fromTree = true,
+        )
+    }
+    val found = marker.detect(png)
+        .filter { shape -> tree.none { it.box.overlap(shape) * 2 >= shape.area } }
+        .take(MAX_MARKS)
+    rememberMarks(serial, found.withIndex().associate { (i, box) -> i + 1 to box })
+    val marks = tree + found.mapIndexed { i, box -> ScreenMark("m${i + 1}", box, fromTree = false) }
+    val image = marker.draw(png, marks) ?: png
+    val listing = if (found.isEmpty()) {
+        "No shapes outside the UI tree."
+    } else {
+        "Shapes outside the UI tree (tap mark=N):\n" + found.mapIndexed { i, b -> "m${i + 1} @${b.left},${b.top} ${b.width}x${b.height}" }.joinToString("\n")
+    }
+    val text = UiTreeText.screenSummary(h) + "\nNumbered boxes are get_ui refs (tap ref=N).\n" + listing
+    return McpToolResult(listOf(McpContent.Image(Base64.encode(image)), McpContent.Text(text)))
 }

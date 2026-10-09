@@ -965,6 +965,7 @@ class AdbToolboxProjectService(private val project: Project) : Disposable {
                 selected = selectedDeviceViewModel.state,
                 layout = dev.acme.adbtoolbox.application.layout.CaptureLayoutUseCase(adbTransport),
                 imageScaler = dev.acme.adbtoolbox.adapters.jvm.mcp.AwtImageScaler(),
+                marker = dev.acme.adbtoolbox.adapters.jvm.mcp.AwtScreenMarker(),
                 lifecycle = appLifecycleUseCase,
                 clearData = clearDataUseCase,
                 uninstall = uninstallUseCase,

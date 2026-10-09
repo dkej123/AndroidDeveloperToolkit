@@ -28,6 +28,9 @@ import dev.acme.adbtoolbox.domain.appdata.SqlRows
 import dev.acme.adbtoolbox.domain.appdata.SqlValue
 import dev.acme.adbtoolbox.domain.appdata.SqliteEngine
 import dev.acme.adbtoolbox.domain.appdata.SqliteSession
+import dev.acme.adbtoolbox.domain.capture.MarkBox
+import dev.acme.adbtoolbox.domain.capture.ScreenMark
+import dev.acme.adbtoolbox.domain.capture.ScreenMarker
 import dev.acme.adbtoolbox.domain.device.Device
 import dev.acme.adbtoolbox.domain.device.DeviceConnectionState
 import dev.acme.adbtoolbox.domain.device.FakeDeviceRepository
@@ -42,6 +45,7 @@ import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.string.shouldStartWith
 import io.kotest.matchers.types.shouldBeInstanceOf
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.test.currentTime
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
@@ -67,6 +71,7 @@ class McpToolsTest {
     private var confirmAnswer = true
     private val confirmations = mutableListOf<String>()
     private var locale = "en-US"
+    private var failDumps = false
 
     private val transport = FakeAdbTransport(
         textScript = { request ->
@@ -80,7 +85,7 @@ class McpToolsTest {
             fun ok(out: String = "") = AdbTextResult(AdbOutcome.Completed(0), out, "")
             when {
                 line == "wm density" -> ok("Physical density: 440\n")
-                line.startsWith("uiautomator dump") -> ok(SETTINGS_DUMP)
+                line.startsWith("uiautomator dump") -> ok(if (failDumps) "" else SETTINGS_DUMP)
                 line.startsWith("cmd package resolve-activity") -> ok("com.launcher/.Home")
                 line.startsWith("dumpsys activity activities") -> ok("  topResumedActivity=ActivityRecord{1 u0 com.acme.shop/.Main t1}\n--adbtoolbox-window--\n")
                 line.startsWith("dumpsys package") -> ok("")
@@ -125,6 +130,15 @@ class McpToolsTest {
         override suspend fun pull(serial: DeviceSerial, access: AppDataAccess, packageName: String, fileName: String) = DatabaseCopy.Pulled("/tmp/$fileName")
         override suspend fun push(serial: DeviceSerial, access: AppDataAccess, packageName: String, fileName: String, localPath: String): String? = null
     }
+    private var detected = listOf<MarkBox>()
+    private val drawn = mutableListOf<ScreenMark>()
+    private val marker = object : ScreenMarker {
+        override fun detect(png: ByteArray) = detected
+        override fun draw(png: ByteArray, marks: List<ScreenMark>): ByteArray {
+            drawn += marks
+            return byteArrayOf(9)
+        }
+    }
     private val devices = FakeDeviceRepository(listOf(Device(serial, DeviceConnectionState.Online, model = "Pixel_9")))
     private val selected = MutableStateFlow<SelectedDeviceState>(SelectedDeviceState.Online(devices.devices.value.single()))
 
@@ -134,6 +148,7 @@ class McpToolsTest {
         selected = selected,
         layout = CaptureLayoutUseCase(transport),
         imageScaler = { png, w, h -> byteArrayOf(w.toByte(), h.toByte()) },
+        marker = marker,
         lifecycle = AppLifecycleUseCase(transport),
         clearData = ClearDataUseCase(transport),
         uninstall = UninstallUseCase(transport),
@@ -249,5 +264,39 @@ class McpToolsTest {
         selected.value = SelectedDeviceState.None
         call("get_ui").text() shouldContain "No device is selected"
         call("list_apps", "serial" to "emulator-5554").text().lines() shouldNotContain "nothing"
+    }
+
+    @Test
+    fun `an annotated screenshot labels tree elements by ref and uncovered shapes as marks`() = runTest {
+        val first = call("get_ui", "interactive_only" to true).text().lines()[1]
+        val (ref, x, y, w, h) = Regex("""^\[(\d+)].* @(\d+),(\d+) (\d+)x(\d+)""").find(first)!!.destructured
+        detected = listOf(MarkBox(x.toInt(), y.toInt(), w.toInt(), h.toInt()), MarkBox(0, 0, 10, 10))
+
+        val result = call("screenshot", "annotate" to true)
+
+        java.util.Base64.getDecoder().decode(result.content.filterIsInstance<McpContent.Image>().single().base64).toList() shouldBe listOf<Byte>(9)
+        drawn.first { it.fromTree }.label shouldBe ref
+        drawn.filterNot { it.fromTree }.map { it.label to it.box } shouldBe listOf("m1" to MarkBox(0, 0, 10, 10))
+        result.text() shouldContain "m1 @0,0 10x10"
+
+        call("tap", "mark" to 1).text() shouldBe "Tapped mark m1 at 5,5 dp."
+        commands.last() shouldBe "input tap 14 14"
+        call("tap", "mark" to 7).text() shouldBe "Invalid arguments: mark 7 is not on the last annotated screenshot; take screenshot annotate=true again."
+    }
+
+    @Test
+    fun `return_ui appends the interactive elements after the screen settles`() = runTest {
+        val start = currentTime
+        val text = call("tap", "x" to 100, "y" to 200, "return_ui" to true).text()
+
+        text shouldStartWith "Tapped point at 100,200 dp.\n\nScreen 393x753 dp, 440 dpi\n["
+        currentTime - start shouldBe 500
+        call("press_key", "key" to "back").text() shouldBe "Pressed back."
+    }
+
+    @Test
+    fun `an action still reports success when the UI after it cannot be read`() = runTest {
+        failDumps = true
+        call("press_key", "key" to "back", "return_ui" to true).text() shouldStartWith "Pressed back.\n\nUI not captured: uiautomator returned nothing"
     }
 }

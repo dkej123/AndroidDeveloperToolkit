@@ -172,6 +172,7 @@ concurrent edits to `plugin.xml`.
 | 063 | [MCP server core](063-mcp-server-core.md) | Oh My Android port (ADR 0014/0015) |
 | 064 | [Layout Inspector, audit, toggles, locale/GPS, MCP settings — UI](064-inspector-and-new-features-ui.md) | Oh My Android port (ADR 0014/0015) |
 | 065 | [MCP tools](065-mcp-tools.md) | Oh My Android port (ADR 0014/0015) |
+| 066 | [MCP: steadier capture, marked screenshots, UI after actions, agent skill](066-mcp-robustness-marks-skill.md) | ADR 0015 addendum |
 
 ## Product coverage map
 

@@ -44,18 +44,21 @@ class CaptureLayoutUseCaseTest {
     }
 
     @Test
-    fun `retries once after 600 ms when uiautomator printed nothing`() = runTest {
-        val dumps = mutableListOf("", DUMP)
+    fun `retries with backoff while uiautomator prints nothing`() = runTest {
+        val dumps = mutableListOf("", "", DUMP)
         val useCase = CaptureLayoutUseCase(transport(dumps))
 
         useCase.hierarchy(serial).shouldBeInstanceOf<LayoutCapture.Captured<*>>()
-        currentTime shouldBe 600
+        currentTime shouldBe 1_500
     }
 
     @Test
-    fun `two empty dumps tell the user to wait for animations`() = runTest {
-        CaptureLayoutUseCase(transport(mutableListOf("", ""))).hierarchy(serial) shouldBe
-            LayoutCapture.Failed("uiautomator returned nothing. Wait for animations to finish and retry.")
+    fun `three empty dumps suggest turning animations off`() = runTest {
+        CaptureLayoutUseCase(transport(mutableListOf("", "", ""))).hierarchy(serial) shouldBe
+            LayoutCapture.Failed(
+                "uiautomator returned nothing: the screen kept animating. Wait and retry, or turn animations off " +
+                    "(MCP: set_device_settings animations=false).",
+            )
     }
 
     @Test

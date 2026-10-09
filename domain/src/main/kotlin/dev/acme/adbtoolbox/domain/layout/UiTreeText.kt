@@ -34,6 +34,11 @@ object UiTreeText {
         return lines.joinToString("\n")
     }
 
+    /** Visible nodes you can tap, type into or scroll, in tree order — what `get_ui interactive_only` lists. */
+    fun interactive(hierarchy: UiHierarchy): List<UiNode> = hierarchy.root.descendantsAndSelf()
+        .filter { isVisible(it, hierarchy) && isInteractive(it) }
+        .toList()
+
     /** Visible nodes whose text, description or resource id contains [query], ignoring case. */
     fun matches(query: String, hierarchy: UiHierarchy): List<UiNode> = hierarchy.root.descendantsAndSelf()
         .filter { node -> isVisible(node, hierarchy) && listOf(node.text, node.contentDescription, node.resourceId).any { it.contains(query, ignoreCase = true) } }

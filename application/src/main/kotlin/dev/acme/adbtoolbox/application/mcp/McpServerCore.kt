@@ -108,7 +108,8 @@ class McpServerCore(
             put(
                 "instructions",
                 "Drives the Android device selected in ADB Toolbox (Android Studio / IntelliJ). Positions are in dp. " +
-                    "Call get_ui before tapping; pass serial to target another device.",
+                    "Call get_ui before tapping; pass return_ui=true to actions to get the next screen in the same call; " +
+                    "use screenshot annotate=true and tap mark=N where the UI tree does not show an element; pass serial to target another device.",
             )
         }
         return result(id, result) to session.id

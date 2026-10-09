@@ -16,6 +16,10 @@ private val catalogEnvironment: McpToolEnvironment by lazy {
         selected = kotlinx.coroutines.flow.MutableStateFlow(dev.acme.adbtoolbox.domain.device.SelectedDeviceState.None),
         layout = dev.acme.adbtoolbox.application.layout.CaptureLayoutUseCase(transport),
         imageScaler = { _, _, _ -> null },
+        marker = object : dev.acme.adbtoolbox.domain.capture.ScreenMarker {
+            override fun detect(png: ByteArray) = emptyList<dev.acme.adbtoolbox.domain.capture.MarkBox>()
+            override fun draw(png: ByteArray, marks: List<dev.acme.adbtoolbox.domain.capture.ScreenMark>): ByteArray? = null
+        },
         lifecycle = dev.acme.adbtoolbox.application.apps.AppLifecycleUseCase(transport),
         clearData = dev.acme.adbtoolbox.application.apps.ClearDataUseCase(transport),
         uninstall = dev.acme.adbtoolbox.application.apps.UninstallUseCase(transport),

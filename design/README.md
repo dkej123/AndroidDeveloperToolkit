@@ -599,6 +599,16 @@ Standard `Configurable` page, groups with titled separators, labels 100px:
   - Policy comment: "Uninstall and Clear data always open the same confirmation as in the tool window, naming the agent —
     also in Full control. Cancel, or no answer in 60 s, returns “declined by user”. Shared prefs and databases are readable
     only for debuggable apps (run-as)."
+  - **Agent skill** (task 066, after Set up an agent): bold label, comment "Teaches the agent when and how to use these
+    tools (get_ui before tap, return_ui, annotated screenshots). Agents load it only when needed."; one row per agent
+    (Claude Code / Codex CLI / Gemini CLI, 100px label): state "Not installed" / "Outdated" (amber) / "Installed"
+    (`textDim`, tooltip = file path) + **Install** / **Update** (disabled when installed and current); then
+    **Copy SKILL.md** (tooltip "For other agents that read Agent Skills") and the last result in `textDim`.
+- **Skill tip** (tool window, task 066): above the device bar, same treatment as the unauthorized banner (`amberBg`,
+  amber 10.5px, padding 6px 10px): "Tip: install the ADB Toolbox skill so coding agents know how to use the device
+  tools well — fewer calls, fewer tokens." with accent bold links **Install for Claude Code** · **Other agents…**
+  (opens Settings) and a ✕ (tooltip "Hide this tip — it won’t come back"). Shown only while the MCP server is on,
+  no skill is installed and the tip was never closed. After Install the text reports the folder (or the error) until ✕.
 - **Agent confirmation** (tool window): the existing Uninstall / Clear data modal, unchanged title/body, plus a teal 10.5px line
   "Requested by Claude Code over MCP. Cancel tells the agent you declined." The tool window is shown if hidden.
   Results: toast "Uninstalled com.acme.shop · requested by Claude Code" / "Declined Claude Code’s request to uninstall com.acme.shop".

@@ -30,7 +30,8 @@ sealed interface LayoutCapture<out T> {
 /**
  * Captures the screen's UI hierarchy (`uiautomator dump`) with the effective density, and optionally
  * a screenshot taken alongside, for the Layout Inspector, the accessibility audit and the MCP tools
- * (task 057). uiautomator refuses while the screen animates, so an empty dump is retried once.
+ * (task 057). uiautomator refuses while the screen animates, so an empty dump is retried with backoff
+ * (task 066).
  *
  * Ported from Oh My Android, MIT — `Sources/Core/Android/LayoutSnapshot.swift` (`UIAutomatorSnapshotReader`).
  */
@@ -41,15 +42,19 @@ class CaptureLayoutUseCase(private val adbTransport: AdbTransport) {
             is DensityParseResult.Parsed -> parsed.reading.overrideDpi ?: parsed.reading.physicalDpi
             else -> return LayoutCapture.Failed("Could not read the display density.")
         }
-        repeat(DUMP_ATTEMPTS) { attempt ->
+        ATTEMPT_DELAYS.forEach { wait ->
+            delay(wait)
             when (val read = UiAutomatorDumpCommand.parse(adbTransport.executeText(UiAutomatorDumpCommand.request(serial)))) {
                 is UiDumpRead.Dumped -> return LayoutCapture.Captured(UiHierarchy(read.root, density))
                 is UiDumpRead.Malformed -> return LayoutCapture.Failed("Could not read the view hierarchy: ${read.reason}.")
                 is UiDumpRead.TransportFailed -> return LayoutCapture.Failed("Could not reach the device.")
-                UiDumpRead.Empty -> if (attempt < DUMP_ATTEMPTS - 1) delay(RETRY_DELAY)
+                UiDumpRead.Empty -> Unit
             }
         }
-        return LayoutCapture.Failed("uiautomator returned nothing. Wait for animations to finish and retry.")
+        return LayoutCapture.Failed(
+            "uiautomator returned nothing: the screen kept animating. Wait and retry, or turn animations off " +
+                "(MCP: set_device_settings animations=false).",
+        )
     }
 
     suspend fun snapshot(serial: DeviceSerial): LayoutCapture<LayoutSnapshot> = coroutineScope {
@@ -74,7 +79,7 @@ class CaptureLayoutUseCase(private val adbTransport: AdbTransport) {
     private fun densityRequest(serial: DeviceSerial) = AdbDeviceRequest(serial, DensityCommands.read())
 
     private companion object {
-        const val DUMP_ATTEMPTS = 2
-        val RETRY_DELAY = 600.milliseconds
+        /** Wait before each attempt: none, then 500 ms, then 1 s. */
+        val ATTEMPT_DELAYS = listOf(0.milliseconds, 500.milliseconds, 1000.milliseconds)
     }
 }

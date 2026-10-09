@@ -394,12 +394,27 @@ class AdbToolboxToolWindowPanel(
         onOpenMcpSettings = openSettings,
     )
 
+    private val skillInstaller = dev.acme.adbtoolbox.intellij.mcp.AgentSkillInstaller.forUser()
+    private val skillTip = dev.acme.adbtoolbox.intellij.mcp.SkillTipBanner(
+        installer = skillInstaller,
+        onDismiss = { dev.acme.adbtoolbox.intellij.mcp.AdbToolboxAppSettings.getInstance().skillTipDismissed = true },
+        onOpenSettings = openSettings,
+        runIo = { work -> feedbackScope.launch(dispatchers.io) { work() } },
+    )
+
     init {
-        // The MCP chip (design §8) follows the IDE-wide server status.
+        host.deviceContextSlot.add(skillTip, BorderLayout.NORTH)
+        // The MCP chip (design §8) follows the IDE-wide server status; the skill tip (task 066) too.
         runCatching { dev.acme.adbtoolbox.intellij.mcp.McpServerService.getInstance().status }.getOrNull()
             ?.onEach { status ->
                 val session = status.sessions.firstOrNull()
+                val tip = dev.acme.adbtoolbox.intellij.mcp.showSkillTip(
+                    status.access,
+                    dismissed = dev.acme.adbtoolbox.intellij.mcp.AdbToolboxAppSettings.getInstance().skillTipDismissed,
+                    installed = withContext(dispatchers.io) { skillInstaller.anyInstalled() },
+                )
                 withContext(dispatchers.main) {
+                    skillTip.render(tip)
                     feedbackCoordinator.statusPanel.updateMcp(
                         agent = session?.clientName?.takeIf { status.running },
                         access = if (status.access == dev.acme.adbtoolbox.application.mcp.McpAccess.FullControl) "Full control" else "Read only",

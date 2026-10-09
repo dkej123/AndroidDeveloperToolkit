@@ -14,6 +14,8 @@ import dev.acme.adbtoolbox.application.mcp.optionalString
 import dev.acme.adbtoolbox.domain.adb.AdbTransport
 import dev.acme.adbtoolbox.domain.adb.DeviceSerial
 import dev.acme.adbtoolbox.domain.capture.ImageScaler
+import dev.acme.adbtoolbox.domain.capture.MarkBox
+import dev.acme.adbtoolbox.domain.capture.ScreenMarker
 import dev.acme.adbtoolbox.domain.device.DeviceConnectionState
 import dev.acme.adbtoolbox.domain.device.DeviceRepository
 import dev.acme.adbtoolbox.domain.device.SelectedDeviceState
@@ -41,6 +43,7 @@ class McpToolEnvironment(
     val selected: StateFlow<SelectedDeviceState>,
     val layout: CaptureLayoutUseCase,
     val imageScaler: ImageScaler,
+    val marker: ScreenMarker,
     val lifecycle: AppLifecycleUseCase,
     val clearData: ClearDataUseCase,
     val uninstall: UninstallUseCase,
@@ -77,6 +80,15 @@ class McpToolEnvironment(
     }
 
     fun lastHierarchy(serial: DeviceSerial): UiHierarchy? = lastHierarchy[serial]
+
+    /** Pixel-found shapes of the last annotated screenshot per device, by mark number (dp). */
+    private val lastMarks = mutableMapOf<DeviceSerial, Map<Int, MarkBox>>()
+
+    fun rememberMarks(serial: DeviceSerial, marks: Map<Int, MarkBox>) {
+        lastMarks[serial] = marks
+    }
+
+    fun mark(serial: DeviceSerial, number: Int): MarkBox? = lastMarks[serial]?.get(number)
 
     /** The `package` argument, else the app in front. */
     suspend fun packageOrForeground(serial: DeviceSerial, arguments: JsonObject): String =

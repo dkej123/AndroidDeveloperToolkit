@@ -42,6 +42,15 @@ is supported by all target agents (`claude mcp add --transport http …`).
   no second ADB path. Output is compact text designed for models (UI tree with refs and dp,
   screenshots scaled to 1 px = 1 dp), following Oh My Android's tool set.
 
+- **Addendum 2026-10-09 (task 066, after comparing Google's Android CLI 1.0):** the server does not
+  call or bundle Android CLI (separate install, telemetry on by default, undocumented output, a second
+  ADB path). It takes three of its ideas instead: layout capture retries with backoff while the screen
+  animates; `screenshot annotate=true` draws numbered boxes — tree elements by ref, shapes found in the
+  pixels (an `:adapters-jvm` `ScreenMarker`) as `mN` for `tap`/`swipe mark=` — like
+  `android screen capture --annotate`; actions take `return_ui` to return the next screen in one call.
+  A generated Agent Skill (`SKILL.md`) is installed from Settings or the tool window's tip into the
+  user-level skill folders of Claude Code, Codex CLI and Gemini CLI.
+
 ## Consequences
 
 - The token keeps other local processes and web pages out; it is stored in the IDE's password safe.
