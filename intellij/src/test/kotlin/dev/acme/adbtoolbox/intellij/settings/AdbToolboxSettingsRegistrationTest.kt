@@ -10,7 +10,7 @@ class AdbToolboxSettingsRegistrationTest : BasePlatformTestCase() {
         assertTrue(
             "Missing project-scoped ADB Toolbox Configurable registration",
             Regex(
-                """<projectConfigurable[^>]*parentId="tools"[^>]*instance="dev\.acme\.adbtoolbox\.intellij\.settings\.AdbToolboxSettingsConfigurable"[^>]*id="dev\.acme\.adbtoolbox\.settings"[^>]*displayName="ADB Toolbox"""",
+                """<projectConfigurable[^>]*parentId="tools"[^>]*instance="dev\.acme\.adbtoolbox\.intellij\.settings\.AdbToolboxSettingsConfigurable"[^>]*id="dev\.acme\.adbtoolbox\.settings"[^>]*displayName="Device Cockpit"""",
                 RegexOption.DOT_MATCHES_ALL,
             ).containsMatchIn(pluginXml),
         )

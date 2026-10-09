@@ -94,7 +94,7 @@ class SkillTipBanner(
     internal fun clickInstallForTest() = install.doClick()
 
     private companion object {
-        const val TIP = "Tip: install the ADB Toolbox skill so coding agents know how to use the device tools well — " +
+        const val TIP = "Tip: install the Device Cockpit skill so coding agents know how to use the device tools well — " +
             "fewer calls, fewer tokens."
     }
 }

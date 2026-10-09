@@ -1,6 +1,6 @@
 # Release scripts
 
-Build, test, screenshot and publish ADB Toolbox to JetBrains Marketplace. Runbook for agents:
+Build, test, screenshot and publish Device Cockpit to JetBrains Marketplace. Runbook for agents:
 `.claude/skills/release-plugin/SKILL.md`; listing text and first-upload steps: `docs/marketplace.md`.
 
 | Script | What it does |

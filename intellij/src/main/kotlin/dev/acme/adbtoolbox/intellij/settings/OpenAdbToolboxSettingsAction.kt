@@ -8,7 +8,7 @@ import com.intellij.openapi.project.Project
 class OpenAdbToolboxSettingsAction internal constructor(
     private val project: Project,
     private val openSettings: (Project) -> Unit,
-) : DumbAwareAction("Settings", "Open ADB Toolbox settings", AllIcons.General.GearPlain) {
+) : DumbAwareAction("Settings", "Open Device Cockpit settings", AllIcons.General.GearPlain) {
 
     constructor(project: Project) : this(project, AdbToolboxSettingsOpener::open)
 

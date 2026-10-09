@@ -24,7 +24,7 @@ fun int(name: String, description: String, required: Boolean = false) = Param(na
 
 fun bool(name: String, description: String) = Param(name, "boolean", description)
 
-val SERIAL = str("serial", "Device serial from list_devices. Default: the device selected in ADB Toolbox.")
+val SERIAL = str("serial", "Device serial from list_devices. Default: the device selected in Device Cockpit.")
 
 fun schema(vararg params: Param): JsonObject = buildJsonObject {
     put("type", "object")

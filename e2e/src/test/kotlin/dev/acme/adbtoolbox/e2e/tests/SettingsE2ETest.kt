@@ -133,7 +133,7 @@ class SettingsE2ETest : E2eTest() {
         studio.robot.runJs(
             Studio.PROJECT + """
             com.intellij.openapi.application.ApplicationManager.getApplication().invokeLater(function() {
-                com.intellij.openapi.options.ShowSettingsUtil.getInstance().showSettingsDialog(project, "ADB Toolbox");
+                com.intellij.openapi.options.ShowSettingsUtil.getInstance().showSettingsDialog(project, "Device Cockpit");
             });
             """.trimIndent(),
             false,

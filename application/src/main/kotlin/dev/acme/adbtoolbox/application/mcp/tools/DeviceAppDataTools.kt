@@ -61,7 +61,7 @@ private val SWITCHES: Map<String, DeviceSettingToggleCommand> = linkedMapOf(
  * Ported from Oh My Android, MIT — `Sources/MCP/Tools/DeviceTools.swift`, `AppTools.swift`, `DataTools.swift`.
  */
 fun deviceAppDataTools(env: McpToolEnvironment): List<McpTool> = listOf(
-    SimpleTool("list_devices", "Connected emulators and phones with their state; the one selected in ADB Toolbox is marked.", readOnly = true, inputSchema = schema()) { _, _ ->
+    SimpleTool("list_devices", "Connected emulators and phones with their state; the one selected in Device Cockpit is marked.", readOnly = true, inputSchema = schema()) { _, _ ->
         val selected = runCatching { env.device(JsonObject(emptyMap())) }.getOrNull()
         val lines = env.devices.devices.value.map { d ->
             "${d.serial}  ${d.displayName}  ${d.state.label()}${if (d.serial == selected) "  (selected)" else ""}"

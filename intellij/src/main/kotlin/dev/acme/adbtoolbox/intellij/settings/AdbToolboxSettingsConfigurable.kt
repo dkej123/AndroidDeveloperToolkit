@@ -81,7 +81,7 @@ class AdbToolboxSettingsConfigurable internal constructor(
     private var form: SettingsForm? = null
     private var persisted: SettingsState? = null
 
-    override fun getDisplayName(): String = "ADB Toolbox"
+    override fun getDisplayName(): String = "Device Cockpit"
 
     override fun createComponent(): JComponent = form?.panel ?: SettingsForm(project).also {
         form = it
@@ -265,7 +265,7 @@ private class ProjectSettingsEditorBackend(
     override fun read(): SettingsState = persistence.readSettingsNow()
 
     override fun apply(candidate: SettingsState): SettingsApplyResult =
-        runModal("Applying ADB Toolbox Settings") { settings.apply(candidate) }
+        runModal("Applying Device Cockpit Settings") { settings.apply(candidate) }
 
     override fun dispose() = Unit
 

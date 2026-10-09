@@ -1,9 +1,9 @@
 ---
 name: marketplace-listing
-description: Update the ADB Toolbox page on JetBrains Marketplace (plugins.jetbrains.com/plugin/34857) — screenshots, description, links (source, issues, docs, license) — through its API, without the web UI. Use when asked to fill, refresh or fix the store page, upload/replace store screenshots, change the Marketplace description or links, or after new screenshots were generated. Does not upload plugin versions (that is the release-plugin skill).
+description: Update the Device Cockpit page on JetBrains Marketplace (plugins.jetbrains.com/plugin/34857) — screenshots, description, links (source, issues, docs, license) — through its API, without the web UI. Use when asked to fill, refresh or fix the store page, upload/replace store screenshots, change the Marketplace description or links, or after new screenshots were generated. Does not upload plugin versions (that is the release-plugin skill).
 ---
 
-# Marketplace listing — ADB Toolbox
+# Marketplace listing — Device Cockpit
 
 Page: https://plugins.jetbrains.com/plugin/34857-adb-toolbox (numeric ID `34857`, `MARKETPLACE_PLUGIN_ID`
 in `release/lib.sh`; plugin ID `com.github.dkwasniak.adbtoolbox`).

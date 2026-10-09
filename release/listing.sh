@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Updates the JetBrains Marketplace page of ADB Toolbox: links, description and screenshots.
+# Updates the JetBrains Marketplace page of Device Cockpit: links, description and screenshots.
 #
 #   release/listing.sh [--version <version>] [--no-screenshots] [--no-description] [--no-urls]
 #

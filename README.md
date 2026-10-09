@@ -1,7 +1,9 @@
-# ADB Toolbox
+# Device Cockpit for Android
+
+_Formerly ADB Toolbox._
 
 Control your Android device from Android Studio or IntelliJ IDEA without opening a terminal.
-ADB Toolbox puts the adb commands you run every day into one tool window: mirroring, screenshots,
+Device Cockpit puts the adb commands you run every day into one tool window: mirroring, screenshots,
 app data, developer toggles, proxy and logcat.
 
 ![Device view](marketplace/screenshots/1.0.0/01-device-dark.png)
@@ -38,7 +40,7 @@ Also: several devices at once, pairing over Wi-Fi, and light and dark themes tha
 ## Installation
 
 In Android Studio or IntelliJ IDEA open **Settings → Plugins → Marketplace**, search for
-**ADB Toolbox** and click **Install** — or install it from the
+**Device Cockpit** and click **Install** — or install it from the
 [JetBrains Marketplace page](https://plugins.jetbrains.com/plugin/34857-adb-toolbox).
 
 Or download the ZIP from [Releases](https://github.com/dkej123/AndroidDeveloperToolkit/releases)
@@ -52,27 +54,27 @@ and use **Settings → Plugins → ⚙ → Install Plugin from Disk…**.
   package manager). Without it the mirroring controls are greyed out; everything else works.
 - A device with USB debugging enabled, or an emulator.
 
-ADB Toolbox finds adb and scrcpy on its own: in the IDE's Android SDK, the default SDK location,
+Device Cockpit finds adb and scrcpy on its own: in the IDE's Android SDK, the default SDK location,
 `ANDROID_HOME` and your `PATH`. If yours live somewhere else, set the paths in
-**Settings → Tools → ADB Toolbox**.
+**Settings → Tools → Device Cockpit**.
 
 ## Getting started
 
 1. Connect a device or start an emulator.
-2. Open the **ADB Toolbox** tool window on the right edge of the IDE.
+2. Open the **Device Cockpit** tool window on the right edge of the IDE.
 3. Pick the device in the selector at the top. To connect over Wi-Fi, open the selector and choose
    **Pair device over Wi-Fi…**.
 
 ## Settings
 
-**Settings → Tools → ADB Toolbox**: adb and scrcpy paths, where screenshots and recordings are
+**Settings → Tools → Device Cockpit**: adb and scrcpy paths, where screenshots and recordings are
 saved, the logcat buffer size, and custom TalkBack commands for devices where the default does not
 work.
 
 ## Problems and feedback
 
 Please [open an issue](https://github.com/dkej123/AndroidDeveloperToolkit/issues). It helps a lot to
-attach a diagnostics bundle: **Help → ADB Toolbox Diagnostics → Collect Diagnostics…** writes a ZIP
+attach a diagnostics bundle: **Help → Device Cockpit Diagnostics → Collect Diagnostics…** writes a ZIP
 with the plugin log and the adb state (details in [docs/diagnostics.md](docs/diagnostics.md)).
 
 ## Contributing
@@ -82,3 +84,7 @@ Building and testing the plugin is described in [docs/development.md](docs/devel
 ## License
 
 [MIT](LICENSE)
+
+---
+
+Android is a trademark of Google LLC.

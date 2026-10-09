@@ -19,7 +19,7 @@ enum class SkillAgent(val title: String, private val homeVariable: String?, priv
 
 enum class SkillState { NotInstalled, Current, Outdated }
 
-/** Writes the ADB Toolbox skill ([content]) where each [SkillAgent] looks for user skills. */
+/** Writes the Device Cockpit skill ([content]) where each [SkillAgent] looks for user skills. */
 class AgentSkillInstaller(
     private val home: Path = Paths.get(System.getProperty("user.home")),
     private val env: (String) -> String? = System::getenv,

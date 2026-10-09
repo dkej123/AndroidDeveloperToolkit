@@ -66,7 +66,7 @@ object DiagnosticsCollector {
     fun timestamp(): String = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss"))
 
     private fun readme(): String = """
-        ADB Toolbox diagnostics bundle
+        Device Cockpit diagnostics bundle
         environment.txt   plugin, IDE, OS, JDK, PATH/SDK variables
         adb.txt           live adb version/devices, tool discovery, ddmlib bridge, plugin device state
         threads.txt       thread dump taken while collecting

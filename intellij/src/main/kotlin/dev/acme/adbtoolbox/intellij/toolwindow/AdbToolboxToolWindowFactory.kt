@@ -91,6 +91,8 @@ class AdbToolboxToolWindowFactory : ToolWindowFactory, DumbAware {
         content.setDisposer(panel)
         toolWindow.contentManager.addContent(content)
         toolWindow.setTitleActions(listOf(OpenAdbToolboxSettingsAction(project)))
+        // The id stays "ADB Toolbox" so saved window layouts survive the rename to Device Cockpit.
+        toolWindow.stripeTitle = "Device Cockpit"
         project.messageBus.connect(toolWindow.disposable).subscribe(
             ToolWindowManagerListener.TOPIC,
             ToolWindowReturnListener(toolWindow.id) { composition.viewEnterRefresher.refreshCurrent() },

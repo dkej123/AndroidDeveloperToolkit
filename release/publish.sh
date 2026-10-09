@@ -56,7 +56,7 @@ curl -fs "https://plugins.jetbrains.com/plugins/list?pluginId=$plugin_id" | grep
 # --- publish --------------------------------------------------------------------------------------
 if (( local_upload )); then
     [[ -n "${JETBRAINS_MARKETPLACE_TOKEN:-}" ]] || rdie "set JETBRAINS_MARKETPLACE_TOKEN (Marketplace profile -> My Tokens)"
-    confirm "Upload ADB Toolbox $version to the $channel channel from this machine?" || rdie "cancelled"
+    confirm "Upload Device Cockpit $version to the $channel channel from this machine?" || rdie "cancelled"
     ensure_java21
     channel_arg=()
     [[ "$channel" == beta ]] && channel_arg=(-PmarketplaceChannel=beta)
@@ -69,8 +69,8 @@ fi
 command -v gh >/dev/null || rdie "gh CLI required to follow the publish workflow"
 gh secret list | grep -q '^JETBRAINS_MARKETPLACE_TOKEN' \
     || rdie "repository secret JETBRAINS_MARKETPLACE_TOKEN is missing: gh secret set JETBRAINS_MARKETPLACE_TOKEN"
-confirm "Push tag $tag? This publishes ADB Toolbox $version to the $channel channel." || rdie "cancelled"
-git tag -a "$tag" -m "ADB Toolbox $version"
+confirm "Push tag $tag? This publishes Device Cockpit $version to the $channel channel." || rdie "cancelled"
+git tag -a "$tag" -m "Device Cockpit $version"
 git push origin "$tag"
 rlog "pushed $tag; following the Publish Plugin workflow"
 sleep 10

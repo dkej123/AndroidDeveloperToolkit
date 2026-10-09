@@ -57,7 +57,7 @@ fun agentSnippets(url: String, token: String): List<AgentSnippet> = listOf(
 fun maskToken(token: String): String = if (token.length <= 8) "••••" else token.take(4) + "••••" + token.takeLast(4)
 
 /**
- * Settings › Tools › ADB Toolbox › AI agents (MCP) (design §11): access level, server status, port
+ * Settings › Tools › Device Cockpit › AI agents (MCP) (design §11): access level, server status, port
  * and token, setup snippets per agent and the exposed tools.
  */
 class McpSettingsPanel(

@@ -47,8 +47,8 @@ import kotlinx.coroutines.withContext
 
 /** The file type of inspector tabs: not registered for any extension, only our light files use it. */
 object LayoutCaptureFileType : FileType {
-    override fun getName() = "ADB Toolbox Layout Capture"
-    override fun getDescription() = "ADB Toolbox layout capture"
+    override fun getName() = "Device Cockpit Layout Capture"
+    override fun getDescription() = "Device Cockpit layout capture"
     override fun getDefaultExtension() = ""
     override fun getIcon(): Icon = AdbToolboxIcons.Actions.layoutInspector
     override fun isBinary() = true

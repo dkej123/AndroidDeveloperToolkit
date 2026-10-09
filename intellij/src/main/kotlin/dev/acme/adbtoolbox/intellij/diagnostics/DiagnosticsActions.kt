@@ -26,7 +26,7 @@ object DiagnosticsActions {
     private const val RECORDING_SECONDS = 60L
 
     fun collect(project: Project?) {
-        ProgressManager.getInstance().run(object : Task.Backgroundable(project, "Collecting ADB Toolbox diagnostics", true) {
+        ProgressManager.getInstance().run(object : Task.Backgroundable(project, "Collecting Device Cockpit diagnostics", true) {
             override fun run(indicator: ProgressIndicator) {
                 indicator.isIndeterminate = true
                 val zip = DiagnosticsCollector.collect(project)
@@ -43,7 +43,7 @@ object DiagnosticsActions {
     }
 
     fun recordPerformance(project: Project?) {
-        ProgressManager.getInstance().run(object : Task.Backgroundable(project, "Recording ADB Toolbox performance (${RECORDING_SECONDS} s)", true) {
+        ProgressManager.getInstance().run(object : Task.Backgroundable(project, "Recording Device Cockpit performance (${RECORDING_SECONDS} s)", true) {
             override fun run(indicator: ProgressIndicator) {
                 val service = DiagnosticsService.getInstance()
                 service.log.log(DiagLevel.INFO, DiagCategory.PERF, "performance recording started", mapOf("seconds" to RECORDING_SECONDS))

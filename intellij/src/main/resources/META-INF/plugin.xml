@@ -2,12 +2,14 @@
     <!-- Marketplace identity (user decision 2026-10-01). Version and change notes come from
          gradle.properties and CHANGELOG.md (intellij/build.gradle.kts). -->
     <id>com.github.dkwasniak.adbtoolbox</id>
-    <name>ADB Toolbox</name>
+    <name>Device Cockpit for Android</name>
     <vendor email="damian.kwasniak@gmail.com">dkwasniak</vendor>
 
     <description><![CDATA[
-<p>Control your Android device from Android Studio or IntelliJ IDEA without opening a terminal.
-ADB Toolbox puts the adb commands you run every day into one tool window.</p>
+<p>ADB device control for Android&trade; developers and their AI agents: mirroring, screenshots,
+layout inspection, app data, developer toggles, proxy and logcat in one tool window of Android Studio
+or IntelliJ IDEA &ndash; plus a local MCP server for Claude Code, Codex CLI, Cursor and Gemini CLI.
+Formerly <i>ADB Toolbox</i>.</p>
 <ul>
   <li><b>Device</b> &ndash; the app in front with restart, kill and reset permissions; screenshots
       (also full-page, of scrolling screens), screen recording and scrcpy mirroring; device facts;
@@ -29,6 +31,7 @@ ADB Toolbox puts the adb commands you run every day into one tool window.</p>
       bug reports.</li>
 </ul>
 <p>Requires adb (Android SDK platform-tools); mirroring requires scrcpy.</p>
+<p><small>Android is a trademark of Google LLC.</small></p>
     ]]></description>
 
     <depends>com.intellij.modules.platform</depends>
@@ -48,7 +51,7 @@ ADB Toolbox puts the adb commands you run every day into one tool window.</p>
         <projectConfigurable parentId="tools"
                              instance="dev.acme.adbtoolbox.intellij.settings.AdbToolboxSettingsConfigurable"
                              id="dev.acme.adbtoolbox.settings"
-                             displayName="ADB Toolbox"/>
+                             displayName="Device Cockpit"/>
         <notificationGroup id="ADB Toolbox Diagnostics" displayType="BALLOON"/>
     </extensions>
 
@@ -59,11 +62,11 @@ ADB Toolbox puts the adb commands you run every day into one tool window.</p>
     <actions>
         <!-- Diagnostics: a one-click bundle to attach to bug reports, a sampling performance
              recording, and the log folder. Also offered in the tool window's gear menu. -->
-        <group id="AdbToolbox.Diagnostics" text="ADB Toolbox Diagnostics" popup="true">
+        <group id="AdbToolbox.Diagnostics" text="Device Cockpit Diagnostics" popup="true">
             <action id="AdbToolbox.CollectDiagnostics"
                     class="dev.acme.adbtoolbox.intellij.diagnostics.CollectDiagnosticsAction"
                     text="Collect Diagnostics…"
-                    description="Save ADB Toolbox logs, environment, adb state and IDE freeze dumps to one ZIP"/>
+                    description="Save Device Cockpit logs, environment, adb state and IDE freeze dumps to one ZIP"/>
             <action id="AdbToolbox.RecordPerformance"
                     class="dev.acme.adbtoolbox.intellij.diagnostics.RecordPerformanceAction"
                     text="Record Performance (60 s)"
@@ -71,7 +74,7 @@ ADB Toolbox puts the adb commands you run every day into one tool window.</p>
             <action id="AdbToolbox.OpenDiagnosticsLogFolder"
                     class="dev.acme.adbtoolbox.intellij.diagnostics.OpenDiagnosticsLogFolderAction"
                     text="Open Diagnostics Log Folder"
-                    description="Reveal the ADB Toolbox diagnostics log folder"/>
+                    description="Reveal the Device Cockpit diagnostics log folder"/>
             <add-to-group group-id="HelpMenu" anchor="last"/>
         </group>
 

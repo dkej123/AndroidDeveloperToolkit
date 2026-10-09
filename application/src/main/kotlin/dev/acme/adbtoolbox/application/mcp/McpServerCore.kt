@@ -102,12 +102,12 @@ class McpServerCore(
             putJsonObject("capabilities") { putJsonObject("tools") { put("listChanged", false) } }
             putJsonObject("serverInfo") {
                 put("name", "adb-toolbox")
-                put("title", "ADB Toolbox")
+                put("title", "Device Cockpit")
                 put("version", serverVersion)
             }
             put(
                 "instructions",
-                "Drives the Android device selected in ADB Toolbox (Android Studio / IntelliJ). Positions are in dp. " +
+                "Drives the Android device selected in Device Cockpit (Android Studio / IntelliJ). Positions are in dp. " +
                     "Call get_ui before tapping; pass return_ui=true to actions to get the next screen in the same call; " +
                     "use screenshot annotate=true and tap mark=N where the UI tree does not show an element; pass serial to target another device.",
             )
@@ -136,7 +136,7 @@ class McpServerCore(
         val name = (params["name"] as? JsonPrimitive)?.contentOrNull ?: return error(id, INVALID_PARAMS, "Missing tool name")
         val tool = tools.firstOrNull { it.name == name } ?: return error(id, INVALID_PARAMS, "Unknown tool: $name")
         if (tool !in visibleTools()) {
-            val reason = if (access() == McpAccess.Off) "ADB Toolbox: access is Off" else "ADB Toolbox: $name needs Full control"
+            val reason = if (access() == McpAccess.Off) "Device Cockpit: access is Off" else "Device Cockpit: $name needs Full control"
             return result(id, McpToolResult.error(reason).toJson())
         }
         val arguments = params["arguments"] as? JsonObject ?: JsonObject(emptyMap())

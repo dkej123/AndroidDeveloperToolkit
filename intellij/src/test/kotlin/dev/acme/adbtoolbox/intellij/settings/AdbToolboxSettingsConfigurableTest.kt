@@ -93,7 +93,7 @@ class AdbToolboxSettingsConfigurableTest : BasePlatformTestCase() {
         assertEquals("/tools/scrcpy", field(component, "scrcpyPathField").text)
         assertEquals("/captures", field(component, "captureDirectoryField").text)
         assertEquals("8192", field(component, "logcatBufferSizeKbField").text)
-        assertEquals("ADB Toolbox", configurable.displayName)
+        assertEquals("Device Cockpit", configurable.displayName)
         configurable.disposeUIResources()
     }
 

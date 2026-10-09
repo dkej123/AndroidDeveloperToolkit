@@ -60,7 +60,7 @@ class McpToolEnvironment(
     fun device(arguments: JsonObject): DeviceSerial {
         val requested = arguments.optionalString("serial")?.let(DeviceSerial::of)
         val serial = requested ?: selected.value.selectedSerialOrNull
-            ?: throw McpToolFailure("No device is selected in ADB Toolbox. Call list_devices, then pass serial.")
+            ?: throw McpToolFailure("No device is selected in Device Cockpit. Call list_devices, then pass serial.")
         val device = devices.devices.value.firstOrNull { it.serial == serial }
             ?: throw McpToolFailure("Device $serial is not connected. Call list_devices.")
         if (device.state != DeviceConnectionState.Online) throw McpToolFailure("Device $serial is ${device.state.label()}, not online.")
