@@ -48,7 +48,7 @@ class AppInfoHelperBundle(val version: String, val localPath: () -> String?) {
 
 /**
  * Pushes the helper jar (ADR 0010) to each device once per session — skipped when a previous session
- * already left the same version there. Shared by every helper entry point ([AppInfoHelper],
+ * already left the same version there — and deletes the versions older builds pushed. Shared by every helper entry point ([AppInfoHelper],
  * [DevOptionsHelper]) so they never push the same file concurrently.
  */
 class DeviceHelperDeployment(
@@ -69,6 +69,8 @@ class DeviceHelperDeployment(
             if (outcome !is AdbOutcome.Completed || (outcome.exitCode != null && outcome.exitCode != 0)) {
                 return@withLock null
             }
+            // Best-effort: a failed cleanup only leaves a few KB behind.
+            transport.executeText(AppInfoCommand.staleCleanupRequest(serial, remotePath))
         }
         deployed += serial
         remotePath

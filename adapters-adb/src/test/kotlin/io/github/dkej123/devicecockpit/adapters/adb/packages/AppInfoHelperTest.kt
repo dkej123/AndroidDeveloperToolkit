@@ -57,6 +57,22 @@ class AppInfoHelperTest {
     }
 
     @Test
+    fun `pushing a new helper version deletes the versions earlier builds left behind`() = runTest {
+        val transport = FakeAdbTransport(
+            textScript = { request -> if (request.isPresenceCheck()) ok("") else ok() },
+            streamScript = { HELPER_OUTPUT },
+        )
+
+        AppInfoHelper(transport, BUNDLE).query(SERIAL, listOf("com.acme.shop")) {}
+
+        transport.textRequests.map { it.shellLine() } shouldBe listOf(
+            "test -f '$REMOTE' && echo present",
+            null,
+            "find '/data/local/tmp' -maxdepth 1 -name 'adb-toolbox-app-info-*.jar' ! -name 'adb-toolbox-app-info-v1.jar' -delete",
+        )
+    }
+
+    @Test
     fun `an already present helper is not pushed, and a device is only checked once`() = runTest {
         val transport = FakeAdbTransport(textScript = { ok("present\n") }, streamScript = { HELPER_OUTPUT })
         val helper = AppInfoHelper(transport, BUNDLE)

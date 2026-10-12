@@ -27,6 +27,10 @@ the Marketplace change notes and the GitHub release notes are generated from it
   chips, flags and Grant/Revoke/reset on each row, install-time ones folded away, a filter and
   **Reset all**.
 
+### Fixed
+- App names and icons were missing on Samsung phones with Android 16 (the on-device helper crashed);
+  old helper copies are now removed from the device when a new one is installed.
+
 ## [1.1.0] - 2026-10-08
 
 ### Added

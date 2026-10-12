@@ -36,6 +36,7 @@ sealed interface AppInfoLine {
 private const val HEADER = "ADBTOOLBOX-APPINFO 1"
 private const val MAIN_CLASS = "io.github.dkej123.devicecockpit.devicehelper.AppInfoMain"
 private const val PRESENT = "present"
+private const val REMOTE_PREFIX = "adb-toolbox-app-info-"
 private val PLAIN_TOKEN = Regex("[A-Za-z0-9._-]+")
 private val CONTROL_RUNS = Regex("""[\p{Cntrl}\s]+""")
 
@@ -54,7 +55,7 @@ object AppInfoCommand {
     /** The helper's push target. [helperVersion] is a content hash, so a new build never reuses a stale jar. */
     fun remotePath(helperVersion: String): String {
         require(PLAIN_TOKEN.matches(helperVersion)) { "helper version must be a plain token: '$helperVersion'" }
-        return "/data/local/tmp/adb-toolbox-app-info-$helperVersion.jar"
+        return "/data/local/tmp/$REMOTE_PREFIX$helperVersion.jar"
     }
 
     fun presenceRequest(serial: DeviceSerial, remotePath: String): AdbDeviceRequest = AdbDeviceRequest(
@@ -73,6 +74,25 @@ object AppInfoCommand {
 
     fun isPresent(result: AdbTextResult): Boolean =
         result.outcome is AdbOutcome.Completed && result.stdout.trim() == PRESENT
+
+    /** Deletes the helper jars earlier builds pushed, keeping [remotePath] (each build pushes its own version). */
+    fun staleCleanupRequest(serial: DeviceSerial, remotePath: String): AdbDeviceRequest = AdbDeviceRequest(
+        serial = serial,
+        operation = AdbOperation.Shell(
+            AdbShellCommand.of(
+                ShellToken.Literal("find"),
+                ShellToken.Value(ShellValue.of(remotePath.substringBeforeLast('/'))),
+                ShellToken.Literal("-maxdepth"),
+                ShellToken.Literal("1"),
+                ShellToken.Literal("-name"),
+                ShellToken.Value(ShellValue.of("$REMOTE_PREFIX*.jar")),
+                ShellToken.Literal("!"),
+                ShellToken.Literal("-name"),
+                ShellToken.Value(ShellValue.of(remotePath.substringAfterLast('/'))),
+                ShellToken.Literal("-delete"),
+            ),
+        ),
+    )
 
     fun pushRequest(serial: DeviceSerial, localPath: String, remotePath: String): AdbDeviceRequest =
         AdbDeviceRequest(serial = serial, operation = AdbOperation.Host(listOf("push", localPath, remotePath)))

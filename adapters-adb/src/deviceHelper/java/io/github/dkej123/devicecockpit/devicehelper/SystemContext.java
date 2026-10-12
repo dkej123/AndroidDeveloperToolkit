@@ -31,10 +31,33 @@ final class SystemContext {
         Field current = activityThreadClass.getDeclaredField("sCurrentActivityThread");
         current.setAccessible(true);
         current.set(null, activityThread);
+        fillConfigurationController(activityThreadClass, activityThread);
         Method getSystemContext = activityThreadClass.getDeclaredMethod("getSystemContext");
         instance = (Context) getSystemContext.invoke(activityThread);
         installInitialApplication(activityThreadClass, activityThread, instance);
         return instance;
+    }
+
+    /**
+     * Samsung's Android 16 builds (CompatSandbox) read {@code ActivityThread.getConfiguration()} while
+     * creating the system context, and that dereferences {@code mConfigurationController}, which only
+     * {@code ActivityThread.attach()} sets; the helper process then dies with a NullPointerException.
+     * Setting one up front, as scrcpy does, keeps it alive. Best-effort: the class does not exist
+     * before Android 12 and stock builds never need it.
+     */
+    private static void fillConfigurationController(Class<?> activityThreadClass, Object activityThread) {
+        try {
+            Class<?> controllerClass = Class.forName("android.app.ConfigurationController");
+            Class<?> internalClass = Class.forName("android.app.ActivityThreadInternal");
+            Constructor<?> controllerConstructor = controllerClass.getDeclaredConstructor(internalClass);
+            controllerConstructor.setAccessible(true);
+            Object controller = controllerConstructor.newInstance(activityThread);
+            Field field = activityThreadClass.getDeclaredField("mConfigurationController");
+            field.setAccessible(true);
+            field.set(activityThread, controller);
+        } catch (Throwable unavailable) {
+            // Older platform or a different layout: getSystemContext() does not need it there.
+        }
     }
 
     /**
