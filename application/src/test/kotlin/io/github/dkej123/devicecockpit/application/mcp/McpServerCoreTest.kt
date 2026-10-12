@@ -50,6 +50,7 @@ class McpServerCoreTest {
         val result = Json.parseToJsonElement(reply.body!!).jsonObject["result"]!!.jsonObject
         result["protocolVersion"]!!.jsonPrimitive.content shouldBe "2025-06-18"
         result["serverInfo"]!!.jsonObject["version"]!!.jsonPrimitive.content shouldBe "1.2.3"
+        result["serverInfo"]!!.jsonObject["name"]!!.jsonPrimitive.content shouldBe "device-cockpit"
         core.sessions().single().clientName shouldBe "Claude Code"
     }
 

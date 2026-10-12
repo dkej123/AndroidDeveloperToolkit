@@ -15,15 +15,29 @@ class AgentSkillInstallerTest {
     fun `installs per agent and reports not installed, current and outdated`() {
         assertEquals(SkillState.NotInstalled, installer.state(SkillAgent.ClaudeCode))
 
-        assertEquals(home.resolve(".claude/skills/adb-toolbox/SKILL.md"), installer.install(SkillAgent.ClaudeCode))
-        assertEquals("v1", Files.readString(home.resolve(".claude/skills/adb-toolbox/SKILL.md")))
+        assertEquals(home.resolve(".claude/skills/device-cockpit/SKILL.md"), installer.install(SkillAgent.ClaudeCode))
+        assertEquals("v1", Files.readString(home.resolve(".claude/skills/device-cockpit/SKILL.md")))
         assertEquals(SkillState.Current, installer.state(SkillAgent.ClaudeCode))
         assertEquals(true, installer.anyInstalled())
 
         content = "v2"
         assertEquals(SkillState.Outdated, installer.state(SkillAgent.ClaudeCode))
         assertEquals(SkillState.NotInstalled, installer.state(SkillAgent.Gemini))
-        assertEquals(home.resolve(".gemini/skills/adb-toolbox/SKILL.md"), installer.install(SkillAgent.Gemini))
+        assertEquals(home.resolve(".gemini/skills/device-cockpit/SKILL.md"), installer.install(SkillAgent.Gemini))
+    }
+
+    @Test
+    fun `installing removes the skill earlier versions installed as adb-toolbox, and only ours`() {
+        val old = Files.createDirectories(home.resolve(".claude/skills/adb-toolbox")).resolve("SKILL.md")
+        Files.writeString(old, "---\nname: adb-toolbox\ndescription: old\n---\n")
+        val foreign = Files.createDirectories(home.resolve(".codex/skills/adb-toolbox")).resolve("SKILL.md")
+        Files.writeString(foreign, "---\nname: someone-elses\n---\n")
+
+        installer.install(SkillAgent.ClaudeCode)
+        installer.install(SkillAgent.Codex)
+
+        assertEquals(false, Files.exists(old.parent))
+        assertEquals(true, Files.exists(foreign))
     }
 
     @Test
@@ -31,8 +45,8 @@ class AgentSkillInstallerTest {
         env["CLAUDE_CONFIG_DIR"] = home.resolve("cc").toString()
         env["CODEX_HOME"] = home.resolve("cx").toString()
 
-        assertEquals(home.resolve("cc/skills/adb-toolbox/SKILL.md"), installer.file(SkillAgent.ClaudeCode))
-        assertEquals(home.resolve("cx/skills/adb-toolbox/SKILL.md"), installer.file(SkillAgent.Codex))
+        assertEquals(home.resolve("cc/skills/device-cockpit/SKILL.md"), installer.file(SkillAgent.ClaudeCode))
+        assertEquals(home.resolve("cx/skills/device-cockpit/SKILL.md"), installer.file(SkillAgent.Codex))
         assertEquals(false, installer.anyInstalled())
     }
 

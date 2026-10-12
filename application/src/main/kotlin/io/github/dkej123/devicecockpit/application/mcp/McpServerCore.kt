@@ -101,7 +101,7 @@ class McpServerCore(
             put("protocolVersion", version)
             putJsonObject("capabilities") { putJsonObject("tools") { put("listChanged", false) } }
             putJsonObject("serverInfo") {
-                put("name", "adb-toolbox")
+                put("name", MCP_SERVER_NAME)
                 put("title", "Device Cockpit")
                 put("version", serverVersion)
             }

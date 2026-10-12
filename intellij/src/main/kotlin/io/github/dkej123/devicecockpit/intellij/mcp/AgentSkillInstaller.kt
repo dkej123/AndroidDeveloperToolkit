@@ -1,6 +1,7 @@
 package io.github.dkej123.devicecockpit.intellij.mcp
 
 import io.github.dkej123.devicecockpit.application.mcp.AGENT_SKILL_NAME
+import io.github.dkej123.devicecockpit.application.mcp.LEGACY_AGENT_SKILL_NAME
 import io.github.dkej123.devicecockpit.application.mcp.McpAccess
 import java.nio.file.Files
 import java.nio.file.Path
@@ -36,12 +37,27 @@ class AgentSkillInstaller(
 
     fun anyInstalled(): Boolean = SkillAgent.entries.any { state(it) != SkillState.NotInstalled }
 
-    /** Installs or updates the skill for [agent]; the file it wrote. Throws on an I/O failure. */
+    /**
+     * Installs or updates the skill for [agent]; the file it wrote. Throws on an I/O failure. Also
+     * removes the copy versions before the rename installed as [LEGACY_AGENT_SKILL_NAME], so agents
+     * do not load two skills for one server — but only when its `name` says it is ours.
+     */
     fun install(agent: SkillAgent): Path {
         val file = file(agent)
         Files.createDirectories(file.parent)
         Files.writeString(file, content())
+        removeLegacy(agent)
         return file
+    }
+
+    private fun removeLegacy(agent: SkillAgent) {
+        val legacy = agent.skillsDir(home, env).resolve(LEGACY_AGENT_SKILL_NAME).resolve("SKILL.md")
+        val ours = runCatching { Files.readAllLines(legacy).getOrNull(1) == "name: $LEGACY_AGENT_SKILL_NAME" }.getOrDefault(false)
+        if (!ours) return
+        runCatching {
+            Files.delete(legacy)
+            Files.deleteIfExists(legacy.parent)
+        }
     }
 
     companion object {

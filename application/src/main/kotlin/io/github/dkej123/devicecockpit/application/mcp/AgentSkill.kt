@@ -1,7 +1,13 @@
 package io.github.dkej123.devicecockpit.application.mcp
 
 /** Folder and `name` of the skill agents install (task 066). */
-const val AGENT_SKILL_NAME = "adb-toolbox"
+const val AGENT_SKILL_NAME = "device-cockpit"
+
+/** The skill's folder and `name` before the rename to Device Cockpit; installing removes it. */
+const val LEGACY_AGENT_SKILL_NAME = "adb-toolbox"
+
+/** The name the server reports and the setup snippets register it under. */
+const val MCP_SERVER_NAME = "device-cockpit"
 
 /**
  * `SKILL.md` in the Agent Skills format (Claude Code, Codex CLI, Gemini CLI) that tells an agent when
@@ -13,14 +19,15 @@ fun agentSkill(tools: List<McpTool>): String = buildString {
     appendLine("name: $AGENT_SKILL_NAME")
     appendLine(
         "description: See and drive the Android device or emulator selected in Device Cockpit (Android Studio / IntelliJ) " +
-            "through its MCP server adb-toolbox: screenshots, UI tree, tap/type/swipe, device settings, apps, logcat, " +
+            "through its MCP server device-cockpit: screenshots, UI tree, tap/type/swipe, device settings, apps, logcat, " +
             "SharedPreferences and databases. Use to test, debug or verify an Android app on a device or walk through a user flow.",
     )
     appendLine("---")
     appendLine()
     appendLine("# Device Cockpit device control")
     appendLine()
-    appendLine("The `adb-toolbox` MCP server of Device Cockpit (formerly ADB Toolbox) runs inside the IDE. If its tools are missing, ask the user to turn it on in")
+    appendLine("The `device-cockpit` MCP server of Device Cockpit runs inside the IDE (setups made before the rename call it `adb-toolbox`).")
+    appendLine("If its tools are missing, ask the user to turn it on in")
     appendLine("Settings › Tools › Device Cockpit › AI agents and to add the server (the page has a snippet per agent).")
     appendLine()
     appendLine("## Workflow")

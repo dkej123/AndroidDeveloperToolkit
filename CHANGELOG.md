@@ -27,6 +27,12 @@ the Marketplace change notes and the GitHub release notes are generated from it
   chips, flags and Grant/Revoke/reset on each row, install-time ones folded away, a filter and
   **Reset all**.
 
+### Changed
+- **AI agents (MCP)**: the server and the agent skill are now called `device-cockpit` (setup
+  snippets, `serverInfo`, `SKILL.md`; the Codex token variable is `DEVICE_COCKPIT_TOKEN`).
+  Installing the skill removes the old `adb-toolbox` copy. Servers registered as `adb-toolbox`
+  keep working — the name is only the key in the agent's config.
+
 ### Fixed
 - App names and icons were missing on Samsung phones with Android 16 (the on-device helper crashed);
   old helper copies are now removed from the device when a new one is installed.

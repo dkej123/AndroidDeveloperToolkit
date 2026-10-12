@@ -21,7 +21,7 @@ class SkillTipBannerTest {
         }
         SwingUtilities.invokeAndWait { }
 
-        assertEquals("skill", Files.readString(home.resolve(".claude/skills/adb-toolbox/SKILL.md")))
+        assertEquals("skill", Files.readString(home.resolve(".claude/skills/device-cockpit/SKILL.md")))
         assertTrue(banner.messageForTest.startsWith("Skill installed for Claude Code in "), banner.messageForTest)
         SwingUtilities.invokeAndWait { banner.render(false) }
         assertEquals(true, banner.isVisible)

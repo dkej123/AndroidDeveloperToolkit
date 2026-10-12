@@ -12,10 +12,10 @@ class AgentSkillTest {
 
     @Test
     fun `frontmatter follows the Agent Skills format within the strictest agent's limits`() {
-        skill shouldStartWith "---\nname: adb-toolbox\ndescription: "
+        skill shouldStartWith "---\nname: device-cockpit\ndescription: "
         val description = skill.lines()[2].removePrefix("description: ")
         description.length shouldBeLessThanOrEqual 500
-        description shouldContain "adb-toolbox"
+        description shouldContain "device-cockpit"
         skill.lines()[3] shouldBe "---"
     }
 

@@ -79,7 +79,7 @@ class McpServerServiceTest : BasePlatformTestCase() {
         val snippets = agentSnippets("http://127.0.0.1:47123/mcp", "atk_secret")
         assertEquals(listOf("Claude Code", "Codex CLI", "Cursor", "Gemini CLI", "Other"), snippets.map { it.agent })
         assertEquals(
-            "claude mcp add --transport http --scope user adb-toolbox http://127.0.0.1:47123/mcp --header \"Authorization: Bearer atk_secret\"",
+            "claude mcp add --transport http --scope user device-cockpit http://127.0.0.1:47123/mcp --header \"Authorization: Bearer atk_secret\"",
             snippets.first().text,
         )
         assertTrue(snippets.first { it.agent == "Gemini CLI" }.text.contains("\"httpUrl\": \"http://127.0.0.1:47123/mcp\""))

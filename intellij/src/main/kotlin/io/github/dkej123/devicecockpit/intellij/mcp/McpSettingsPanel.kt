@@ -3,6 +3,7 @@ package io.github.dkej123.devicecockpit.intellij.mcp
 import com.intellij.openapi.ide.CopyPasteManager
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBRadioButton
+import io.github.dkej123.devicecockpit.application.mcp.MCP_SERVER_NAME
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.components.JBTabbedPane
 import com.intellij.ui.scale.JBUIScale
@@ -34,22 +35,22 @@ fun agentSnippets(url: String, token: String): List<AgentSnippet> = listOf(
     AgentSnippet(
         "Claude Code",
         "Run in a terminal (user scope)",
-        "claude mcp add --transport http --scope user adb-toolbox $url --header \"Authorization: Bearer $token\"",
+        "claude mcp add --transport http --scope user $MCP_SERVER_NAME $url --header \"Authorization: Bearer $token\"",
     ),
     AgentSnippet(
         "Codex CLI",
-        "~/.codex/config.toml — and export ADB_TOOLBOX_TOKEN=$token",
-        "[mcp_servers.adb-toolbox]\nurl = \"$url\"\nbearer_token_env_var = \"ADB_TOOLBOX_TOKEN\"",
+        "~/.codex/config.toml — and export DEVICE_COCKPIT_TOKEN=$token",
+        "[mcp_servers.$MCP_SERVER_NAME]\nurl = \"$url\"\nbearer_token_env_var = \"DEVICE_COCKPIT_TOKEN\"",
     ),
     AgentSnippet(
         "Cursor",
         "~/.cursor/mcp.json",
-        "{\n  \"mcpServers\": {\n    \"adb-toolbox\": {\n      \"url\": \"$url\",\n      \"headers\": { \"Authorization\": \"Bearer $token\" }\n    }\n  }\n}",
+        "{\n  \"mcpServers\": {\n    \"$MCP_SERVER_NAME\": {\n      \"url\": \"$url\",\n      \"headers\": { \"Authorization\": \"Bearer $token\" }\n    }\n  }\n}",
     ),
     AgentSnippet(
         "Gemini CLI",
         "~/.gemini/settings.json",
-        "{\n  \"mcpServers\": {\n    \"adb-toolbox\": {\n      \"httpUrl\": \"$url\",\n      \"headers\": { \"Authorization\": \"Bearer $token\" }\n    }\n  }\n}",
+        "{\n  \"mcpServers\": {\n    \"$MCP_SERVER_NAME\": {\n      \"httpUrl\": \"$url\",\n      \"headers\": { \"Authorization\": \"Bearer $token\" }\n    }\n  }\n}",
     ),
     AgentSnippet("Other", "Any MCP client with Streamable HTTP", "URL: $url\nHeader: Authorization: Bearer $token"),
 )
