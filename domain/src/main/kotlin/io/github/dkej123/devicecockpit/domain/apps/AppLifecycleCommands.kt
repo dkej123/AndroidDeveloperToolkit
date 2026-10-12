@@ -28,6 +28,23 @@ object AppLifecycleCommands {
         ShellToken.Value(ShellValue.of(packageName)),
     )
 
+    /** Sends the app in front to the background, as the user pressing Home does. */
+    fun home(): AdbShellCommand = AdbShellCommand.of(
+        ShellToken.Literal("input"),
+        ShellToken.Literal("keyevent"),
+        ShellToken.Literal("KEYCODE_HOME"),
+    )
+
+    /**
+     * Kills [packageName]'s process only if it is in the background — what the system does to a cached
+     * app under memory pressure — keeping its tasks and saved instance state, unlike [forceStop].
+     */
+    fun killBackground(packageName: String): AdbShellCommand = AdbShellCommand.of(
+        ShellToken.Literal("am"),
+        ShellToken.Literal("kill"),
+        ShellToken.Value(ShellValue.of(packageName)),
+    )
+
     fun launch(packageName: String): AdbShellCommand = AdbShellCommand.of(
         ShellToken.Literal("monkey"),
         ShellToken.Literal("-p"),

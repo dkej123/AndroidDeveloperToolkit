@@ -55,6 +55,8 @@ private class Phone(var front: String = "com.acme.shop", var running: Boolean = 
             line.startsWith("pidof") -> if (running) ok("4242") else AdbTextResult(AdbOutcome.Completed(1), "", "")
             line.startsWith("ps -o") -> ok("00:05")
             line.startsWith("am force-stop") -> { running = false; front = "home"; ok() }
+            line.startsWith("input keyevent KEYCODE_HOME") -> { front = "home"; ok() }
+            line.startsWith("am kill") -> { running = false; ok() }
             line.startsWith("monkey") -> { running = true; front = line.substringAfter("-p '").substringBefore("'"); ok("Events injected: 1") }
             line.startsWith("pm uninstall") || line.startsWith("uninstall") -> { front = "home"; ok("Success") }
             else -> ok("Success")
@@ -164,6 +166,21 @@ class CurrentAppViewModelTest {
         vm.perform(CurrentAppAction.Launch, "com.acme.shop")
         scope.advanceUntilIdle()
         (vm.state.value.display as CurrentAppDisplay.App).killed shouldBe false
+    }
+
+    @Test
+    fun `process death kills the app in the background and brings it back`() {
+        scope.runCurrent()
+        vm.perform(CurrentAppAction.ProcessDeath, "com.acme.shop")
+        scope.advanceUntilIdle()
+
+        phone.commands.filter { it.startsWith("input") || it.startsWith("am kill") || it.startsWith("monkey") } shouldBe listOf(
+            "input keyevent KEYCODE_HOME",
+            "am kill 'com.acme.shop'",
+            "monkey -p 'com.acme.shop' -c android.intent.category.LAUNCHER 1",
+        )
+        events.single() shouldBe CurrentAppEvent.Done("com.acme.shop was killed in the background and reopened from its saved state")
+        shownPackage() shouldBe "com.acme.shop"
     }
 
     @Test

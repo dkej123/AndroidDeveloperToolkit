@@ -23,6 +23,27 @@ sealed interface AppLifecycleResult {
  * unambiguous case ([LaunchFailedAfterForceStop]) rather than being folded into a generic
  * [AppLifecycleResult.Failure] that could be misread as "nothing happened".
  */
+/**
+ * Outcome of a simulated process death: the app was sent home, killed by `am kill` like the system
+ * kills a cached process, and brought back so Android recreates its activities from saved state.
+ */
+sealed interface AppProcessDeathResult {
+    data object Success : AppProcessDeathResult
+
+    /** Nothing to kill: the app has no process. */
+    data object NotRunning : AppProcessDeathResult
+
+    /** `am kill` only kills background processes; this one survived (a foreground service, or it is still in front). */
+    data object StillAlive : AppProcessDeathResult
+
+    data class Failure(val reason: String) : AppProcessDeathResult
+
+    /** The process died but the app did not come back. */
+    data class RelaunchFailed(val reason: String) : AppProcessDeathResult
+
+    data object RejectedDuplicate : AppProcessDeathResult
+}
+
 sealed interface AppRestartResult {
     data object Success : AppRestartResult
     data class ForceStopFailed(val reason: String) : AppRestartResult

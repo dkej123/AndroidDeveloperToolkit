@@ -8,13 +8,21 @@ import io.github.dkej123.devicecockpit.domain.adb.AdbTransport
 import io.github.dkej123.devicecockpit.domain.adb.DeviceSerial
 import io.github.dkej123.devicecockpit.domain.apps.AppLifecycleCommands
 import io.github.dkej123.devicecockpit.domain.apps.AppLifecycleResult
+import io.github.dkej123.devicecockpit.domain.apps.AppProcessDeathResult
+import io.github.dkej123.devicecockpit.domain.foreground.ProcessInfoCommand
+import kotlinx.coroutines.delay
 import io.github.dkej123.devicecockpit.domain.apps.AppRestartResult
 import java.util.Collections
 import kotlin.time.Duration
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
 /** Bounded request/response default (ADR 0005); force-stop/launch are one-shot calls, not streams. */
 val DEFAULT_APP_LIFECYCLE_TIMEOUT: Duration = 10.seconds
+
+// How long simulateProcessDeath waits for `am kill` to take the process down.
+private const val KILL_CHECKS = 5
+private val KILL_CHECK_INTERVAL = 300.milliseconds
 
 /** A `monkey` launch failure's stdout/stderr marker for "no launchable activity" (case-insensitive). */
 private const val NO_LAUNCHER_MARKER = "no activities found"
@@ -71,6 +79,46 @@ class AppLifecycleUseCase(
                 AppRestartResult.Success
             }
         }
+
+    /**
+     * Simulates the system killing [packageName] while it is in the background (process death): sends
+     * it home, waits [saveStateDelay] for `onSaveInstanceState`/`onStop` to run, kills it with
+     * `am kill`, waits until the process is gone, then launches it again — Android brings back its
+     * task and recreates the activity from saved state, which is what this tests. Unlike [restart],
+     * nothing is cleared. Verified on a Galaxy S23 (Android 16): `wm_restart_activity` for the same
+     * ActivityRecord in a new process.
+     */
+    suspend fun simulateProcessDeath(
+        serial: DeviceSerial,
+        packageName: String,
+        saveStateDelay: Duration = 1.seconds,
+    ): AppProcessDeathResult = withGuard(serial, packageName, AppProcessDeathResult.RejectedDuplicate) {
+        if (pid(serial, packageName) == null) return@withGuard AppProcessDeathResult.NotRunning
+        commandFailure(shell(serial, AppLifecycleCommands.home()))?.let { return@withGuard AppProcessDeathResult.Failure(it) }
+        delay(saveStateDelay)
+        commandFailure(shell(serial, AppLifecycleCommands.killBackground(packageName)))?.let { return@withGuard AppProcessDeathResult.Failure(it) }
+        var gone = false
+        for (check in 0 until KILL_CHECKS) {
+            if (check > 0) delay(KILL_CHECK_INTERVAL)
+            if (pid(serial, packageName) == null) {
+                gone = true
+                break
+            }
+        }
+        if (!gone) return@withGuard AppProcessDeathResult.StillAlive
+        when (val launched = launchResult(runLaunch(serial, packageName), packageName)) {
+            is AppLifecycleResult.Failure -> AppProcessDeathResult.RelaunchFailed(launched.reason)
+            else -> AppProcessDeathResult.Success
+        }
+    }
+
+    private suspend fun shell(serial: DeviceSerial, command: io.github.dkej123.devicecockpit.domain.adb.AdbShellCommand): AdbTextResult =
+        transport.executeText(AdbDeviceRequest(serial, AdbOperation.Shell(command), timeout = timeout))
+
+    private suspend fun pid(serial: DeviceSerial, packageName: String): Int? =
+        ProcessInfoCommand.parsePid(transport.executeText(ProcessInfoCommand.pidRequest(serial, packageName)))
+
+    private fun commandFailure(result: AdbTextResult): String? = failureReason(forceStopResult(result))
 
     private suspend fun <T> withGuard(serial: DeviceSerial, packageName: String, rejected: T, block: suspend () -> T): T {
         val key = key(serial, packageName)

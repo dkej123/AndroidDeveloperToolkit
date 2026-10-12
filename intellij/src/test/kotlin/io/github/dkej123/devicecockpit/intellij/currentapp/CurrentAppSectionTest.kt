@@ -67,6 +67,18 @@ class CurrentAppSectionTest : BasePlatformTestCase() {
         assertEquals(listOf("com.acme.shop"), details)
     }
 
+    fun `test process death is offered for a running app only`() {
+        val s = section()
+        s.update(CurrentAppViewState(display = app(), deviceOnline = true))
+
+        assertTrue(s.processDeathButtonForTest.isEnabled)
+        s.processDeathButtonForTest.doClick()
+        assertEquals(listOf(CurrentAppAction.ProcessDeath to "com.acme.shop"), actions)
+
+        s.update(CurrentAppViewState(display = app(killed = true), deviceOnline = true))
+        assertFalse(s.processDeathButtonForTest.isEnabled)
+    }
+
     fun `test the process time keeps counting between polls`() {
         val clock = kotlin.time.TestTimeSource()
         val s = section()

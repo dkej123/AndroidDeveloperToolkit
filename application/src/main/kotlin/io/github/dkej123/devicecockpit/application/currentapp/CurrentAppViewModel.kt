@@ -5,6 +5,7 @@ import io.github.dkej123.devicecockpit.application.apps.ClearDataUseCase
 import io.github.dkej123.devicecockpit.application.apps.UninstallUseCase
 import io.github.dkej123.devicecockpit.domain.adb.DeviceSerial
 import io.github.dkej123.devicecockpit.domain.apps.AppLifecycleResult
+import io.github.dkej123.devicecockpit.domain.apps.AppProcessDeathResult
 import io.github.dkej123.devicecockpit.domain.apps.AppRestartResult
 import io.github.dkej123.devicecockpit.domain.apps.ClearDataResult
 import io.github.dkej123.devicecockpit.domain.apps.UninstallResult
@@ -32,7 +33,7 @@ import kotlinx.coroutines.sync.withLock
 /** An action of the Current app section (design §3a). */
 private const val POINTER_IDLE_MS = 2_000L
 
-enum class CurrentAppAction { Restart, Launch, Kill, ResetPermissions, ClearData, Uninstall }
+enum class CurrentAppAction { Restart, Launch, Kill, ProcessDeath, ResetPermissions, ClearData, Uninstall }
 
 /** What is shown (design §3a states). */
 sealed interface CurrentAppDisplay {
@@ -307,6 +308,17 @@ class CurrentAppViewModel(
             AppLifecycleResult.Success -> CurrentAppEvent.Done("Force-stopped $pkg").also { killed(pkg) }
             is AppLifecycleResult.Failure -> CurrentAppEvent.Failed("Couldn’t force-stop $pkg — ${r.reason}", pkg)
             AppLifecycleResult.RejectedDuplicate -> CurrentAppEvent.Failed("$pkg is busy", pkg)
+        }
+        CurrentAppAction.ProcessDeath -> when (val r = lifecycle.simulateProcessDeath(serial, pkg)) {
+            AppProcessDeathResult.Success -> CurrentAppEvent.Done("$pkg was killed in the background and reopened from its saved state")
+            AppProcessDeathResult.NotRunning -> CurrentAppEvent.Failed("$pkg is not running — nothing to kill", pkg)
+            AppProcessDeathResult.StillAlive -> CurrentAppEvent.Failed(
+                "Android kept $pkg alive in the background (a foreground service?) — process death needs it cached",
+                pkg,
+            )
+            is AppProcessDeathResult.Failure -> CurrentAppEvent.Failed("Couldn’t simulate process death for $pkg — ${r.reason}", pkg)
+            is AppProcessDeathResult.RelaunchFailed -> CurrentAppEvent.Failed("$pkg was killed but didn’t reopen — ${r.reason}", pkg).also { killed(pkg) }
+            AppProcessDeathResult.RejectedDuplicate -> CurrentAppEvent.Failed("$pkg is busy", pkg)
         }
         CurrentAppAction.ResetPermissions -> when (val r = currentApp.resetPermissions(serial, pkg, permission = permission)) {
             is PermissionResetResult.Done -> CurrentAppEvent.Done(

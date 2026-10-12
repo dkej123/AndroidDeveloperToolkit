@@ -11,6 +11,7 @@ import io.github.dkej123.devicecockpit.domain.adb.DeviceSerial
 import io.github.dkej123.devicecockpit.domain.adb.FakeAdbTransport
 import io.github.dkej123.devicecockpit.domain.apps.AppLifecycleCommands
 import io.github.dkej123.devicecockpit.domain.apps.AppLifecycleResult
+import io.github.dkej123.devicecockpit.domain.apps.AppProcessDeathResult
 import io.github.dkej123.devicecockpit.domain.apps.AppRestartResult
 import io.github.dkej123.devicecockpit.domain.process.ByteSink
 import io.kotest.matchers.shouldBe
@@ -262,6 +263,62 @@ class AppLifecycleUseCaseTest {
 
         useCase.forceStop(SERIAL, PACKAGE) shouldBe AppLifecycleResult.Success
         useCase.forceStop(SERIAL, PACKAGE) shouldBe AppLifecycleResult.Success
+    }
+
+    // ---- Process death (backgrounded, killed by the system, brought back from its saved state) ----
+
+    private fun AdbRequest.line(): String = ((this as AdbDeviceRequest).operation as AdbOperation.Shell).command.render()
+
+    private fun processDeathDevice(pids: MutableList<String>, launchExit: Int = 0) = FakeAdbTransport(
+        textScript = { request ->
+            val line = request.line()
+            when {
+                line.startsWith("pidof") -> (pids.removeFirstOrNull() ?: "").let { pid ->
+                    AdbTextResult(AdbOutcome.Completed(if (pid.isEmpty()) 1 else 0), if (pid.isEmpty()) "" else "$pid\n", "")
+                }
+                line.startsWith("monkey") -> AdbTextResult(AdbOutcome.Completed(launchExit), "", "")
+                else -> AdbTextResult(AdbOutcome.Completed(0), "", "")
+            }
+        },
+    )
+
+    @Test
+    fun `process death sends the app home, kills it in the background and brings it back`() = runTest {
+        val transport = processDeathDevice(mutableListOf("8155", "", ""))
+
+        AppLifecycleUseCase(transport).simulateProcessDeath(SERIAL, PACKAGE) shouldBe AppProcessDeathResult.Success
+
+        transport.textRequests.map { it.line() } shouldBe listOf(
+            "pidof -s '$PACKAGE'",
+            "input keyevent KEYCODE_HOME",
+            "am kill '$PACKAGE'",
+            "pidof -s '$PACKAGE'",
+            "monkey -p '$PACKAGE' -c android.intent.category.LAUNCHER 1",
+        )
+    }
+
+    @Test
+    fun `process death of an app that is not running does nothing`() = runTest {
+        val transport = processDeathDevice(mutableListOf(""))
+
+        AppLifecycleUseCase(transport).simulateProcessDeath(SERIAL, PACKAGE) shouldBe AppProcessDeathResult.NotRunning
+        transport.textRequests.size shouldBe 1
+    }
+
+    @Test
+    fun `a process the system will not kill is reported and the app is not relaunched`() = runTest {
+        val transport = processDeathDevice(MutableList(20) { "8155" })
+
+        AppLifecycleUseCase(transport).simulateProcessDeath(SERIAL, PACKAGE) shouldBe AppProcessDeathResult.StillAlive
+        transport.textRequests.none { it.line().startsWith("monkey") } shouldBe true
+    }
+
+    @Test
+    fun `a failed relaunch after the kill is reported`() = runTest {
+        val transport = processDeathDevice(mutableListOf("8155", ""), launchExit = 1)
+
+        AppLifecycleUseCase(transport).simulateProcessDeath(SERIAL, PACKAGE)
+            .shouldBeInstanceOf<AppProcessDeathResult.RelaunchFailed>()
     }
 }
 

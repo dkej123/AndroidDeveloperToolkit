@@ -7,6 +7,10 @@ the Marketplace change notes and the GitHub release notes are generated from it
 ## [1.2.0] - 2026-10-09
 
 ### Added
+- **Process death**: Current app › Process death sends the app home, lets Android kill it in the
+  background (`am kill`) and reopens it, so its activities are recreated from saved state — the
+  `SavedStateHandle` / `onSaveInstanceState` path "Don't keep activities" does not exercise. Also
+  `manage_app process_death` for AI agents.
 - **AI agents (MCP)**: `screenshot annotate=true` draws numbered boxes on elements — UI-tree elements
   by ref, and shapes the tree does not describe (games, canvas, Flutter) as `m1`, `m2`… for
   `tap`/`swipe mark=` — also when the UI tree cannot be read at all; `tap`, `swipe`, `type_text`

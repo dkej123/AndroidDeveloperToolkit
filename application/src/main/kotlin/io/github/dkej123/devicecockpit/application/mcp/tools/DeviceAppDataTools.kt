@@ -20,6 +20,7 @@ import io.github.dkej123.devicecockpit.domain.adb.ShellValue
 import io.github.dkej123.devicecockpit.domain.appdata.PermissionCommands
 import io.github.dkej123.devicecockpit.domain.appdata.SqlResult
 import io.github.dkej123.devicecockpit.domain.apps.AppLifecycleResult
+import io.github.dkej123.devicecockpit.domain.apps.AppProcessDeathResult
 import io.github.dkej123.devicecockpit.domain.apps.AppRestartResult
 import io.github.dkej123.devicecockpit.domain.apps.ClearDataResult
 import io.github.dkej123.devicecockpit.domain.apps.UninstallResult
@@ -170,13 +171,14 @@ fun deviceAppDataTools(env: McpToolEnvironment): List<McpTool> = listOf(
     },
     SimpleTool(
         "manage_app",
-        "restart, force_stop, reset_permissions, clear_data or uninstall an app. Default: the app in front. " +
+        "restart, force_stop, process_death, reset_permissions, clear_data or uninstall an app. Default: the app in front. " +
+            "process_death sends it home, kills it in the background and reopens it, to test restoring from saved state. " +
             "clear_data and uninstall ask the user in the IDE first.",
         readOnly = false,
         destructive = true,
         inputSchema = schema(
             SERIAL,
-            str("action", "What to do.", required = true, oneOf = listOf("restart", "force_stop", "reset_permissions", "clear_data", "uninstall")),
+            str("action", "What to do.", required = true, oneOf = listOf("restart", "force_stop", "process_death", "reset_permissions", "clear_data", "uninstall")),
             str("package", "Package. Default: the app in front."),
             str("permission", "reset_permissions only: just this runtime permission, e.g. android.permission.CAMERA."),
         ),
@@ -192,6 +194,16 @@ fun deviceAppDataTools(env: McpToolEnvironment): List<McpTool> = listOf(
                 AppLifecycleResult.Success -> McpToolResult.text("Force-stopped $pkg.")
                 is AppLifecycleResult.Failure -> McpToolResult.error(r.reason)
                 AppLifecycleResult.RejectedDuplicate -> McpToolResult.error("$pkg is busy.")
+            }
+            "process_death" -> when (val r = env.lifecycle.simulateProcessDeath(serial, pkg)) {
+                AppProcessDeathResult.Success -> McpToolResult.text(
+                    "$pkg was killed in the background and reopened; its activities were recreated from saved state.",
+                )
+                AppProcessDeathResult.NotRunning -> McpToolResult.error("$pkg is not running; nothing to kill.")
+                AppProcessDeathResult.StillAlive -> McpToolResult.error("Android kept $pkg alive in the background (a foreground service?).")
+                is AppProcessDeathResult.Failure -> McpToolResult.error(r.reason)
+                is AppProcessDeathResult.RelaunchFailed -> McpToolResult.error("$pkg was killed but did not reopen: ${r.reason}")
+                AppProcessDeathResult.RejectedDuplicate -> McpToolResult.error("$pkg is busy.")
             }
             "reset_permissions" -> when (val r = env.currentApp.resetPermissions(serial, pkg, permission = args.optionalString("permission"))) {
                 is io.github.dkej123.devicecockpit.application.currentapp.PermissionResetResult.Done -> McpToolResult.text(

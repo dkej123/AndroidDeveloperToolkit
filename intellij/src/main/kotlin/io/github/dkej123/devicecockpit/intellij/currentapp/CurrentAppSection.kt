@@ -116,6 +116,10 @@ class CurrentAppSection(
     private val killButton = DesignButton("Kill", DesignButtonStyle.SECONDARY).apply {
         addActionListener { target?.let { onAction(CurrentAppAction.Kill, it) } }
     }
+    private val processDeathButton = DesignButton("Process death", DesignButtonStyle.SECONDARY).apply {
+        toolTipText = "Home → am kill → reopen: Android kills the app in the background and recreates it from saved state"
+        addActionListener { target?.let { onAction(CurrentAppAction.ProcessDeath, it) } }
+    }
     private val resetPermissionsButton = DesignButton("Reset permissions", DesignButtonStyle.SECONDARY).apply {
         toolTipText = "Revokes runtime permissions and clears “Don’t ask again” — the app is stopped, data stays"
         addActionListener { target?.let { onAction(CurrentAppAction.ResetPermissions, it) } }
@@ -136,7 +140,7 @@ class CurrentAppSection(
     private val actionRow = run {
         val spacer = flexSpacer()
         flexRow(
-            AdbToolboxTheme.Spacing.s3, primaryButton, killButton, flexRow(0, resetPermissionsButton, resetMoreButton), spacer, detailsLink,
+            AdbToolboxTheme.Spacing.s3, primaryButton, killButton, processDeathButton, flexRow(0, resetPermissionsButton, resetMoreButton), spacer, detailsLink,
             fill = spacer,
         )
     }.apply { border = JBUI.Borders.empty(0, AdbToolboxTheme.Spacing.sectionInset) }
@@ -274,7 +278,7 @@ class CurrentAppSection(
             }
         }
         if (!state.deviceOnline) {
-            listOf(primaryButton, killButton, resetPermissionsButton, clearDataButton, uninstallButton).forEach { it.isEnabled = false }
+            listOf(primaryButton, killButton, processDeathButton, resetPermissionsButton, clearDataButton, uninstallButton).forEach { it.isEnabled = false }
         }
         revalidate()
         repaint()
@@ -367,6 +371,7 @@ class CurrentAppSection(
         )
         killButton.text = if (busy == CurrentAppAction.Kill) "Killing…" else "Kill"
         killButton.toolTipText = if (display.killed) "Not running" else "am force-stop — leaves data intact"
+        processDeathButton.text = if (busy == CurrentAppAction.ProcessDeath) "Killing in background…" else "Process death"
         resetPermissionsButton.text = if (busy == CurrentAppAction.ResetPermissions) "Resetting…" else "Reset permissions"
         detailsLink.toolTipText = "Open App details for $pkg — Info, Shared prefs, Databases"
 
@@ -374,12 +379,13 @@ class CurrentAppSection(
         val actionsOff = display.systemUi
         primaryButton.isEnabled = idle && !actionsOff
         killButton.isEnabled = idle && !actionsOff && !display.killed
+        processDeathButton.isEnabled = idle && !actionsOff && !display.killed && display.snapshot.process != null
         resetPermissionsButton.isEnabled = idle && !actionsOff
         resetMoreButton.isEnabled = resetPermissionsButton.isEnabled
         clearDataButton.isEnabled = idle && !actionsOff
         uninstallButton.isEnabled = idle && !actionsOff && details?.system != true
         val systemReason = "Disabled for System UI — it draws the status bar, shade and lock screen"
-        if (actionsOff) listOf(primaryButton, killButton, resetPermissionsButton, clearDataButton, uninstallButton).forEach { it.toolTipText = systemReason }
+        if (actionsOff) listOf(primaryButton, killButton, processDeathButton, resetPermissionsButton, clearDataButton, uninstallButton).forEach { it.toolTipText = systemReason }
         uninstallButton.toolTipText = when {
             actionsOff -> systemReason
             details?.system == true -> "Preinstalled system app — adb can’t uninstall it"
@@ -409,6 +415,7 @@ class CurrentAppSection(
     internal fun resetMenuItemsForTest(): List<JMenuItem> = resetMenuItems()
     internal val primaryButtonForTest: JButton get() = primaryButton
     internal val killButtonForTest: JButton get() = killButton
+    internal val processDeathButtonForTest: JButton get() = processDeathButton
     internal val uninstallButtonForTest: JButton get() = uninstallButton
     internal val clearDataButtonForTest: JButton get() = clearDataButton
     internal val detailsLinkForTest: JButton get() = detailsLink

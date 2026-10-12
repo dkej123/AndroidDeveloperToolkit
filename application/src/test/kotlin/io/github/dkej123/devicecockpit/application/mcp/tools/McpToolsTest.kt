@@ -77,6 +77,7 @@ class McpToolsTest {
     private val confirmations = mutableListOf<String>()
     private var locale = "en-US"
     private var failDumps = false
+    private var processAlive = true
 
     private val transport = FakeAdbTransport(
         textScript = { request ->
@@ -97,7 +98,9 @@ class McpToolsTest {
                     "Packages:\n  Package [com.acme.shop] (1):\n    versionCode=1\n    runtime permissions:\n" +
                         "      android.permission.CAMERA: granted=true\n      android.permission.RECORD_AUDIO: granted=true\n",
                 )
-                line.startsWith("pidof") -> ok("4242\n")
+                line.startsWith("pidof") -> if (processAlive) ok("4242\n") else AdbTextResult(AdbOutcome.Completed(1), "", "")
+                line.startsWith("am kill") -> { processAlive = false; ok() }
+                line.startsWith("monkey") -> { processAlive = true; ok("Events injected: 1") }
                 line.startsWith("ps -o") -> ok("00:10")
                 line.startsWith("logcat -d") -> ok(
                     "--------- beginning of main\n10-07 12:00:00.000  4242  4242 I Shop: started\n10-07 12:00:01.000  4242  4242 E Shop: payment failed\n",
@@ -324,6 +327,17 @@ class McpToolsTest {
         call("tap", "mark" to 1).text() shouldBe "Tapped mark m1 at 5,5 dp."
         commands.last() shouldBe "input tap 14 14"
         call("screenshot").content.filterIsInstance<McpContent.Image>().size shouldBe 1
+    }
+
+    @Test
+    fun `process_death kills the app in the background and reopens it`() = runTest {
+        call("manage_app", "action" to "process_death").text() shouldBe
+            "com.acme.shop was killed in the background and reopened; its activities were recreated from saved state."
+        commands.filter { it.startsWith("input keyevent") || it.startsWith("am kill") || it.startsWith("monkey") } shouldBe listOf(
+            "input keyevent KEYCODE_HOME",
+            "am kill 'com.acme.shop'",
+            "monkey -p 'com.acme.shop' -c android.intent.category.LAUNCHER 1",
+        )
     }
 
     @Test
