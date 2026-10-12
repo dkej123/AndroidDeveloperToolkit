@@ -178,11 +178,13 @@ class CurrentAppSectionTest : BasePlatformTestCase() {
             ),
         )
 
-        val items = s.resetMenuItemsForTest()
-        assertEquals(listOf("All granted permissions", "CAMERA", "ACCESS_FINE_LOCATION"), items.map { it.text })
-        assertFalse(items[2].isEnabled)
-        items[1].doClick()
-        items[0].doClick()
+        val items = s.resetChoicesForTest()
+        assertEquals(listOf("All granted permissions (2)", "Camera", "Access fine location"), items.map { it.label })
+        assertEquals(listOf(false, true, false), items.map { it.separatorAbove })
+        assertEquals("android.permission.CAMERA", items[1].description)
+        assertFalse(items[2].enabled)
+        items[1].run()
+        items[0].run()
         assertEquals(listOf("com.acme.shop" to "android.permission.CAMERA"), resets)
         assertEquals(listOf(CurrentAppAction.ResetPermissions to "com.acme.shop"), actions)
     }

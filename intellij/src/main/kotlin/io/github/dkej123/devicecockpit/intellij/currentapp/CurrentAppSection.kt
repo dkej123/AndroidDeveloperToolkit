@@ -3,8 +3,6 @@ package io.github.dkej123.devicecockpit.intellij.currentapp
 import io.github.dkej123.devicecockpit.intellij.ui.common.DesignIconButton
 import io.github.dkej123.devicecockpit.intellij.ui.common.ShortcutHints
 import com.intellij.icons.AllIcons
-import com.intellij.openapi.ui.JBMenuItem
-import com.intellij.openapi.ui.JBPopupMenu
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.scale.JBUIScale
 import com.intellij.util.ui.JBUI
@@ -36,7 +34,6 @@ import javax.swing.BorderFactory
 import javax.swing.BoxLayout
 import javax.swing.JButton
 import javax.swing.JComponent
-import javax.swing.JMenuItem
 import javax.swing.JPanel
 import kotlin.time.Duration
 
@@ -128,11 +125,7 @@ class CurrentAppSection(
     private var permissions: List<RuntimePermission> = emptyList()
 
     /** Reset permissions' caret: all granted permissions, or one of them (task 067). */
-    private val resetMoreButton = iconButton(AllIcons.General.ChevronDown, "Reset one permission…") {
-        val menu = JBPopupMenu()
-        resetMenuItems().forEach(menu::add)
-        menu.show(it, 0, it.height)
-    }.apply { getAccessibleContext().accessibleName = "Choose permissions to reset" }
+    private val resetMoreButton = iconButton(AllIcons.General.ChevronDown, "Reset one permission…") { showResetPopup(it) }.apply { getAccessibleContext().accessibleName = "Choose permissions to reset" }
 
     private val detailsLink = DesignButton("Details", DesignButtonStyle.LINK).apply {
         addActionListener { target?.let(onDetails) }
@@ -298,20 +291,52 @@ class CurrentAppSection(
         }
     }
 
-    private fun resetMenuItems(): List<JMenuItem> {
+    /** One entry of the Reset permissions popup. */
+    internal class ResetChoice(
+        val label: String,
+        val description: String,
+        val enabled: Boolean,
+        val separatorAbove: Boolean,
+        val run: () -> Unit,
+    )
+
+    private fun resetChoices(): List<ResetChoice> {
         val pkg = target ?: return emptyList()
         val granted = permissions.filter { it.granted }
-        val all = JBMenuItem("All granted permissions").apply {
-            toolTipText = "Revokes every runtime permission and clears “Don’t ask again”"
-            addActionListener { onAction(CurrentAppAction.ResetPermissions, pkg) }
+        val all = ResetChoice(
+            label = "All granted permissions (${granted.size})",
+            description = "Revokes every runtime permission and clears “Don’t ask again”",
+            enabled = true,
+            separatorAbove = false,
+        ) { onAction(CurrentAppAction.ResetPermissions, pkg) }
+        return listOf(all) + granted.mapIndexed { index, permission ->
+            ResetChoice(
+                label = readablePermission(permission.name),
+                description = if (permission.fixed) "${permission.name} — fixed by the system or a policy, can’t be revoked" else permission.name,
+                enabled = !permission.fixed,
+                separatorAbove = index == 0,
+            ) { onResetPermission(pkg, permission.name) }
         }
-        return listOf(all) + granted.map { permission ->
-            JBMenuItem(permission.name.substringAfterLast('.')).apply {
-                toolTipText = if (permission.fixed) "${permission.name} — fixed by the system or a policy, can’t be revoked" else permission.name
-                isEnabled = !permission.fixed
-                addActionListener { onResetPermission(pkg, permission.name) }
-            }
+    }
+
+    /** The IDE's own list popup, so it looks like every other chooser: title, separator, speed search. */
+    private fun showResetPopup(anchor: JComponent) {
+        val choices = resetChoices()
+        if (choices.isEmpty()) return
+        val step = object : com.intellij.openapi.ui.popup.util.BaseListPopupStep<ResetChoice>("Reset permissions", choices) {
+            override fun getTextFor(value: ResetChoice) = value.label
+
+            override fun isSelectable(value: ResetChoice) = value.enabled
+
+            override fun getSeparatorAbove(value: ResetChoice) =
+                if (value.separatorAbove) com.intellij.openapi.ui.popup.ListSeparator("One permission") else null
+
+            override fun isSpeedSearchEnabled() = true
+
+            override fun onChosen(selectedValue: ResetChoice, finalChoice: Boolean): com.intellij.openapi.ui.popup.PopupStep<*>? =
+                doFinalStep { selectedValue.run() }
         }
+        com.intellij.openapi.ui.popup.JBPopupFactory.getInstance().createListPopup(step).showUnderneathOf(anchor)
     }
 
     private fun iconButton(icon: javax.swing.Icon, tooltip: String, action: (JButton) -> Unit): JButton = DesignIconButton(icon, tooltip).apply {
@@ -418,7 +443,7 @@ class CurrentAppSection(
 
     internal val metaTextForTest: String get() = if (pendingLink.isVisible) pendingLink.text else ""
     internal val refreshButtonForTest: JButton get() = refreshButton
-    internal fun resetMenuItemsForTest(): List<JMenuItem> = resetMenuItems()
+    internal fun resetChoicesForTest(): List<ResetChoice> = resetChoices()
     internal val primaryButtonForTest: JButton get() = primaryButton
     internal val killButtonForTest: JButton get() = killButton
     internal val processDeathButtonForTest: JButton get() = processDeathButton
@@ -434,6 +459,10 @@ class CurrentAppSection(
 
     private companion object {
         const val UNINSTALL_TOOLTIP = "Removes the app and all its data. Cannot be undone."
+
+        /** `android.permission.POST_NOTIFICATIONS` → "Post notifications". */
+        fun readablePermission(name: String): String =
+            name.substringAfterLast('.').lowercase().replace('_', ' ').replaceFirstChar(Char::uppercase)
 
         fun factValue() = JBLabel("—").apply {
             font = DeviceCockpitTheme.Typography.mono.deriveFont(JBUIScale.scale(11f))

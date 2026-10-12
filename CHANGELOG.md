@@ -38,6 +38,9 @@ the Marketplace change notes and the GitHub release notes are generated from it
   keep working — the name is only the key in the agent's config.
 
 ### Fixed
+- Current app › Reset permissions' caret opens the IDE's own list popup — a title, "All granted
+  permissions (N)", a separator and readable names ("Post notifications") with speed search —
+  instead of a bare Swing menu.
 - Current app showed the last part of the package name ("Debug") and an empty tile for an app the
   Apps list had not loaded yet, such as one just installed from the IDE; it now reads the app's own
   name and icon from the device.
