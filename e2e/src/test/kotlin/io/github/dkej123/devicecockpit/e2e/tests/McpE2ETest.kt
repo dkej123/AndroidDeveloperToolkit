@@ -56,17 +56,21 @@ class McpE2ETest : E2eTest() {
     }
 
     @Test
-    fun `the skill tip shows while the server runs and never comes back once closed`() {
+    fun `the agents tip shows from the first run, follows the server and never comes back once closed`() {
         assumeFalse(skillInstalledAnywhere(), "an agent skill is already installed for this user; the tip is hidden by design")
-        enableFullControl()
 
-        awaitUntil(Duration.ofSeconds(15), Duration.ofMillis(300), "the skill tip") {
-            studio.visibleTexts().any { it.startsWith("Tip: install the Device Cockpit skill") }
+        // Before setup the tip offers to turn the server on (another test may have turned it on already).
+        awaitUntil(Duration.ofSeconds(15), Duration.ofMillis(300), "the agents tip") {
+            studio.visibleTexts().any { it.startsWith("Let coding agents drive this device") || it.startsWith("Connect Claude Code to the MCP server") }
+        }
+        enableFullControl()
+        awaitUntil(Duration.ofSeconds(15), Duration.ofMillis(300), "the tip offering to connect Claude Code") {
+            studio.visibleTexts().any { it.startsWith("Connect Claude Code to the MCP server") }
         }
         studio.toolWindow().find(ComponentFixture::class.java, byXpath("//div[@accessiblename='Hide tip']")).click()
 
         awaitUntil(Duration.ofSeconds(10), Duration.ofMillis(300), "the tip to go away") {
-            studio.visibleTexts().none { it.startsWith("Tip: install the Device Cockpit skill") }
+            studio.visibleTexts().none { it.startsWith("Connect Claude Code to the MCP server") || it.startsWith("Let coding agents drive this device") }
         }
         plugin("s.getSkillTipDismissed() + ''") shouldBe "true"
     }
