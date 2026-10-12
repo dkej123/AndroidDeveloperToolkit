@@ -22,6 +22,10 @@ data class AppPermission(
     val runtime: Boolean get() = kind == PermissionKind.RUNTIME
     val mutable: Boolean get() = kind == PermissionKind.RUNTIME &&
         PermissionFlag.POLICY_FIXED !in flags && PermissionFlag.SYSTEM_FIXED !in flags
+
+    /** A changeable runtime permission the user granted or decided on, which a reset takes back. */
+    val resettable: Boolean get() = mutable &&
+        (granted == true || PermissionFlag.USER_SET in flags || PermissionFlag.USER_FIXED in flags)
 }
 
 /** What `dumpsys package <pkg>` says about one app. Fields the dump does not contain are `null`. */

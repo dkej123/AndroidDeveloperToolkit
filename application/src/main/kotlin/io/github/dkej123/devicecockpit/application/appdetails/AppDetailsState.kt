@@ -77,6 +77,8 @@ sealed interface AppDetailsIntent {
     data class GrantPermission(val name: String) : AppDetailsIntent
     data class RevokePermission(val name: String) : AppDetailsIntent
     data class ResetPermission(val name: String) : AppDetailsIntent
+    /** Resets every changeable runtime permission the user granted or decided ([resettable]). */
+    data object ResetAllPermissions : AppDetailsIntent
 
     data class OpenPrefs(val fileName: String) : AppDetailsIntent
     /** Replaces the entry keyed [originalKey] (or adds one when `null`) — [valueInput] is parsed as [type]. */

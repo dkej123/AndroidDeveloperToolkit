@@ -110,8 +110,8 @@ class MarketplaceScreenshotsE2ETest : E2eTest() {
         }
         scene(5, "app-permissions", DARK) {
             openDetails("Permissions")
-            awaitUntil(E2eConfig.deviceTimeout(30), Duration.ofMillis(500), "the permissions table") {
-                named("appDetailsPermissionsTable").callJs<Boolean>("component.getRowCount() > 0", true)
+            awaitUntil(E2eConfig.deviceTimeout(30), Duration.ofMillis(500), "the permissions list") {
+                studio.robot.findAll(com.intellij.remoterobot.fixtures.ComponentFixture::class.java, byXpath("//div[contains(@name,'appDetailsPermission:')]")).isNotEmpty()
             }
         }
         scene(6, "app-shared-prefs", DARK) {

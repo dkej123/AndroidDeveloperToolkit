@@ -364,6 +364,15 @@ After Language & region. Header meta mono 9.5px: "Warsaw · 52.2297, 21.0122" / 
   Key/Type/Value table, Add / Remove / Revert / Save to device) and **Databases** (database and
   table pickers, paged editable rows, SQL field with results, Revert / Save to device). Saving
   force-stops the app first (ADR 0011).
+- **App details › Permissions** (2026-10-12, replaces the table): filter field + secondary **Reset
+  all** (every runtime permission the user granted or decided; fixed ones stay), then group label
+  "RUNTIME · n" and one row per permission — short name ("Access fine location", `body`) with a
+  state chip (Granted/Granted once `green`, Denied `red`, Fixed/Not granted neutral `hover` fill,
+  radius 5), the full name below in `monoMeta` `textFaint`, flag tags (`user-set`, `user-fixed`,
+  `one-time`, `policy`, `system`) under it, and on the right Grant or Revoke plus a 22px reset
+  button, only for changeable ones. Install-time permissions fold into one clickable group label
+  "INSTALL-TIME · n granted · read-only"; a filter shows matches from both groups. Goldens
+  `app-permissions-dark-dock`, `app-permissions-light-narrow`.
 
 Confirmations (the only two modals in the plugin) — 300px max, `panel`, radius 8, padding 14,
 popup shadow; title 12.5px/700, body 11px `textDim`; actions right-aligned, gap 6:

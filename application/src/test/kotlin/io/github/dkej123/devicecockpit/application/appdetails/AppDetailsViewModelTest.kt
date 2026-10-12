@@ -251,4 +251,37 @@ class AppDetailsViewModelTest {
         )
         h.state().details?.permissions?.single()?.state shouldBe io.github.dkej123.devicecockpit.domain.appdata.PermissionState.GRANTED
     }
+
+    @Test
+    fun `reset all resets every changeable runtime decision and skips fixed or untouched ones`() {
+        val h = Harness()
+        h.device.packageDump = """
+            Packages:
+              Package [$PKG] (1):
+                requested permissions:
+                  android.permission.CAMERA
+                  android.permission.RECORD_AUDIO
+                  android.permission.READ_CONTACTS
+                  android.permission.POST_NOTIFICATIONS
+                User 0: installed=true
+                  runtime permissions:
+                    android.permission.CAMERA: granted=true, flags=[ USER_SET ]
+                    android.permission.RECORD_AUDIO: granted=false, flags=[ USER_FIXED ]
+                    android.permission.READ_CONTACTS: granted=true, flags=[ SYSTEM_FIXED ]
+                    android.permission.POST_NOTIFICATIONS: granted=false, flags=[ ]
+        """.trimIndent()
+        h.open()
+        h.device.log.clear()
+
+        h.viewModel.handle(AppDetailsIntent.ResetAllPermissions)
+        h.scope.advanceUntilIdle()
+
+        h.device.log.filter { it.startsWith("pm ") } shouldBe listOf(
+            "pm revoke --user '0' '$PKG' 'android.permission.CAMERA'",
+            "pm clear-permission-flags --user '0' '$PKG' 'android.permission.CAMERA' 'user-set' 'user-fixed'",
+            "pm revoke --user '0' '$PKG' 'android.permission.RECORD_AUDIO'",
+            "pm clear-permission-flags --user '0' '$PKG' 'android.permission.RECORD_AUDIO' 'user-set' 'user-fixed'",
+        )
+        h.device.log.last() shouldBe "dumpsys package '$PKG'"
+    }
 }

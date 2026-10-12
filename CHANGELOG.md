@@ -23,6 +23,9 @@ the Marketplace change notes and the GitHub release notes are generated from it
   run adb. Same plugin, settings and MCP server name (`adb-toolbox`); the tool window keeps its place.
 - UI capture retries longer while the screen animates and suggests turning animations off.
 - Current app: the flickering "updated N s ago" label is gone; a refresh button updates on demand.
+- App details › Permissions is a grouped list instead of a table: runtime permissions with state
+  chips, flags and Grant/Revoke/reset on each row, install-time ones folded away, a filter and
+  **Reset all**.
 
 ## [1.1.0] - 2026-10-08
 

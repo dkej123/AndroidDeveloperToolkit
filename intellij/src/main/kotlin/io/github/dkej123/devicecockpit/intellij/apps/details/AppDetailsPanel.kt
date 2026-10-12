@@ -15,7 +15,6 @@ import io.github.dkej123.devicecockpit.application.appdetails.FileAccessState
 import io.github.dkej123.devicecockpit.application.appdetails.PrefsEditorState
 import io.github.dkej123.devicecockpit.domain.appdata.PrefEntry
 import io.github.dkej123.devicecockpit.domain.appdata.PrefType
-import io.github.dkej123.devicecockpit.domain.appdata.PermissionState
 import io.github.dkej123.devicecockpit.domain.appdata.SqlResult
 import io.github.dkej123.devicecockpit.domain.appdata.SqlRows
 import io.github.dkej123.devicecockpit.domain.appdata.SqlValue
@@ -174,27 +173,12 @@ class AppDetailsPanel(
 
     // ---- Permissions tab ----
 
-    private val managedPermissionsModel = RowsModel(listOf("Permission", "Type", "State", "Flags"))
-    private val managedPermissionsTable = readOnlyTable(managedPermissionsModel).apply {
-        name = "appDetailsPermissionsTable"
-        setSelectionMode(ListSelectionModel.SINGLE_SELECTION)
-        selectionModel.addListSelectionListener { event -> if (!event.valueIsAdjusting) updatePermissionActions(lastState) }
-    }
-    private val grantPermission = DesignButton("Grant", DesignButtonStyle.SECONDARY).apply {
-        addActionListener { selectedPermission()?.let { onIntent(AppDetailsIntent.GrantPermission(it)) } }
-    }
-    private val revokePermission = DesignButton("Revoke", DesignButtonStyle.SECONDARY).apply {
-        addActionListener { selectedPermission()?.let { onIntent(AppDetailsIntent.RevokePermission(it)) } }
-    }
-    private val resetPermission = DesignButton("Reset decision", DesignButtonStyle.SECONDARY).apply {
-        addActionListener { selectedPermission()?.let { onIntent(AppDetailsIntent.ResetPermission(it)) } }
-    }
+    private val permissionsList = PermissionsList { onIntent(it) }
     private val permissionsStatus = statusText()
     private val permissionsTab = JPanel(BorderLayout()).apply {
         background = AdbToolboxTheme.Colors.bg
         add(permissionsStatus, BorderLayout.NORTH)
-        add(JBScrollPane(managedPermissionsTable), BorderLayout.CENTER)
-        add(buttonRow(grantPermission, revokePermission, null, resetPermission), BorderLayout.SOUTH)
+        add(permissionsList, BorderLayout.CENTER)
     }
 
     // ---- Shared prefs tab ----
@@ -330,7 +314,7 @@ class AppDetailsPanel(
     internal val analyzeDeepLinksForTest: DesignButton get() = analyzeDeepLinks
     internal val deepLinksRowCountForTest: Int get() = deepLinksModel.rowCount
     internal fun deepLinksValueForTest(row: Int, column: Int): String = deepLinksModel.getValueAt(row, column).toString()
-    internal val permissionsRowCountForTest: Int get() = managedPermissionsModel.rowCount
+    internal val permissionsRowCountForTest: Int get() = permissionsList.visibleRowsForTest.size
     internal fun accessMessageForTest(): String = (prefsTab.getClientProperty(ACCESS_MESSAGE) as WrappingText).text
     internal val infoTextForTest: String
         get() = infoGrid.components.filterIsInstance<JBLabel>().joinToString("\n") { it.text }
@@ -417,27 +401,12 @@ class AppDetailsPanel(
     }
 
     private fun renderPermissions(state: AppDetailsState) {
-        managedPermissionsModel.setRows(state.details?.permissions.orEmpty().map { permission ->
-            listOf(permission.name, permission.kind.name.lowercase(), permission.state.name.lowercase().replace('_', ' '), permission.flags.joinToString { it.name })
-        })
-        val selected = selectedPermission()?.let { name -> state.details?.permissions?.firstOrNull { it.name == name } }
-        updatePermissionActions(state)
+        permissionsList.render(state.details?.permissions.orEmpty(), state.permissionBusy)
         permissionsStatus.text = when {
             state.permissionBusy != null -> "Applying ${state.permissionBusy}…"
-            else -> "Android user ${state.androidUserId} · fixed install/signature/policy permissions are read-only"
+            else -> "Android user ${state.androidUserId} · install-time and fixed permissions are read-only"
         }
     }
-
-    private fun updatePermissionActions(state: AppDetailsState?) {
-        val selected = selectedPermission()?.let { name -> state?.details?.permissions?.firstOrNull { it.name == name } }
-        val mutable = selected?.mutable == true && state?.permissionBusy == null
-        grantPermission.isEnabled = mutable && selected?.state !in setOf(PermissionState.GRANTED, PermissionState.GRANTED_ONE_TIME)
-        revokePermission.isEnabled = mutable && selected?.state in setOf(PermissionState.GRANTED, PermissionState.GRANTED_ONE_TIME)
-        resetPermission.isEnabled = mutable
-    }
-
-    private fun selectedPermission(): String? = managedPermissionsTable.selectedRow.takeIf { it >= 0 }
-        ?.let { managedPermissionsModel.getValueAt(it, 0) as? String }
 
     private fun renderInfo(state: AppDetailsState) {
         val d = state.details

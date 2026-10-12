@@ -101,6 +101,7 @@ class AppDetailsViewModel(
             is AppDetailsIntent.GrantPermission -> changePermission(intent.name, PermissionChange.GRANT)
             is AppDetailsIntent.RevokePermission -> changePermission(intent.name, PermissionChange.REVOKE)
             is AppDetailsIntent.ResetPermission -> changePermission(intent.name, PermissionChange.RESET)
+            AppDetailsIntent.ResetAllPermissions -> resetAllPermissions()
             is AppDetailsIntent.OpenPrefs -> enqueue { openPrefs(intent.fileName) }
             is AppDetailsIntent.PutPref -> putPref(intent)
             is AppDetailsIntent.RemovePref -> updatePrefs { entries -> entries.filterNot { it.key == intent.key } }
@@ -182,16 +183,37 @@ class AppDetailsViewModel(
         val packageName = snapshot.packageName ?: return
         val permission = snapshot.details?.permissions?.firstOrNull { it.name == name } ?: return
         if (permission.kind != PermissionKind.RUNTIME || !permission.mutable) return
+        applyPermissionRequests(name) {
+            when (change) {
+                PermissionChange.GRANT -> listOf(PermissionCommands.grant(serial, packageName, name, snapshot.androidUserId))
+                PermissionChange.REVOKE -> listOf(PermissionCommands.revoke(serial, packageName, name, snapshot.androidUserId))
+                PermissionChange.RESET -> PermissionCommands.reset(serial, packageName, name, snapshot.androidUserId)
+            }
+        }
+    }
+
+    private fun resetAllPermissions() {
+        val snapshot = _state.value
+        val serial = snapshot.serial ?: return
+        val packageName = snapshot.packageName ?: return
+        val names = snapshot.details?.permissions.orEmpty().filter { it.resettable }.map { it.name }
+        if (names.isEmpty()) return
+        applyPermissionRequests("all permissions") {
+            names.flatMap { PermissionCommands.reset(serial, packageName, it, snapshot.androidUserId) }
+        }
+    }
+
+    /** Runs [requests] in order, stopping at the first failure, then trusts only a fresh `dumpsys`. */
+    private fun applyPermissionRequests(busy: String, requests: () -> List<AdbDeviceRequest>) {
+        val snapshot = _state.value
+        val serial = snapshot.serial ?: return
+        val packageName = snapshot.packageName ?: return
         val myGeneration = generation
         scope.launch(dispatchers.io) {
             work.withLock {
                 if (myGeneration != generation) return@withLock
-                _state.update { it.copy(permissionBusy = name, notice = null) }
-                val requests = when (change) {
-                    PermissionChange.GRANT -> listOf(PermissionCommands.grant(serial, packageName, name, snapshot.androidUserId))
-                    PermissionChange.REVOKE -> listOf(PermissionCommands.revoke(serial, packageName, name, snapshot.androidUserId))
-                    PermissionChange.RESET -> PermissionCommands.reset(serial, packageName, name, snapshot.androidUserId)
-                }
+                _state.update { it.copy(permissionBusy = busy, notice = null) }
+                val requests = requests()
                 var failure: AdbTextResult? = null
                 for (request in requests) {
                     val result = transport.executeText(request)

@@ -7,6 +7,7 @@ import io.github.dkej123.devicecockpit.e2e.infra.E2eConfig
 import io.github.dkej123.devicecockpit.e2e.infra.E2eTest
 import io.github.dkej123.devicecockpit.e2e.infra.View
 import io.github.dkej123.devicecockpit.e2e.infra.awaitUntil
+import io.kotest.matchers.shouldBe
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -59,28 +60,18 @@ class DeepLinksPermissionsE2ETest : E2eTest() {
     @Test
     fun `Grant changes a denied runtime permission and refreshes device state`() {
         selectTab("Permissions")
-        val table = named("appDetailsPermissionsTable")
-        val row = awaitPermissionRow(table)
-        table.runJs("component.setRowSelectionInterval($row, $row)", true)
-        studio.click("Grant")
+        val action = "appDetailsPermissionAction:$CAMERA"
+        awaitUntil(E2eConfig.deviceTimeout(20), Duration.ofMillis(500), "$CAMERA in the permissions list") {
+            studio.robot.findAll(com.intellij.remoterobot.fixtures.ComponentFixture::class.java, byXpath("//div[@name='$action']")).isNotEmpty()
+        }
+        named(action).callJs<String>("component.getText()", true) shouldBe "Grant"
+        studio.clickWhenShowing { named(action) }
 
         awaitUntil(E2eConfig.deviceTimeout(30), Duration.ofMillis(500), "$CAMERA to be granted") {
             Adb.shell("dumpsys package $APP").lineSequence().any { line ->
                 CAMERA in line && "granted=true" in line
             }
         }
-    }
-
-    private fun awaitPermissionRow(table: com.intellij.remoterobot.fixtures.ComponentFixture): Int {
-        var row = -1
-        awaitUntil(E2eConfig.deviceTimeout(20), Duration.ofMillis(500), "$CAMERA in the permissions table") {
-            row = table.callJs(
-                "var m=component.getModel(); var r=-1; for(var i=0;i<m.getRowCount();i++) if(m.getValueAt(i,0)=='$CAMERA') r=i; r",
-                true,
-            )
-            row >= 0
-        }
-        return row
     }
 
     private fun selectTab(title: String) {

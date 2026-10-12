@@ -179,6 +179,8 @@ class VisualRegressionTest : BasePlatformTestCase() {
                 updateUninstall(UninstallViewState(ControlPolicy.Enabled, "com.acme.shop", busy = false))
             }
         }),
+        Scenario("app-permissions-dark-dock", 380, 620, dark = true, selected = ViewId.Apps, view = { permissionsFixture() }),
+        Scenario("app-permissions-light-narrow", 300, 620, dark = false, selected = ViewId.Apps, view = { permissionsFixture() }),
         Scenario("display-light-dock", 380, 620, dark = false, selected = ViewId.Device, view = {
             DisplayPanel({}, {}, {}, {}, {}, {}, {}, {}).apply {
                 update(FontScaleState.Idle(1.15))
@@ -304,6 +306,45 @@ class VisualRegressionTest : BasePlatformTestCase() {
         panel.canvasForTest.hovered = nodes.first { it.text == "Battery" }
         if (audit) panel.auditChipForTest.doClick()
         return panel
+    }
+
+    private fun permissionsFixture(): JComponent {
+        val details = io.github.dkej123.devicecockpit.domain.appdata.AppDetailsParser.parse(
+            "com.acme.shop",
+            """
+            Packages:
+              Package [com.acme.shop] (1):
+                versionCode=47 minSdk=23 targetSdk=34
+                versionName=2.27
+                requested permissions:
+                  android.permission.CAMERA
+                  android.permission.ACCESS_FINE_LOCATION
+                  android.permission.POST_NOTIFICATIONS
+                  android.permission.RECORD_AUDIO
+                  android.permission.READ_CONTACTS
+                install permissions:
+                  android.permission.INTERNET: granted=true
+                  android.permission.ACCESS_NETWORK_STATE: granted=true
+                  android.permission.WAKE_LOCK: granted=true
+                User 0: installed=true
+                  runtime permissions:
+                    android.permission.CAMERA: granted=true, flags=[ USER_SET ]
+                    android.permission.ACCESS_FINE_LOCATION: granted=false, flags=[ USER_SET|USER_FIXED ]
+                    android.permission.POST_NOTIFICATIONS: granted=false, flags=[ ]
+                    android.permission.RECORD_AUDIO: granted=true, flags=[ USER_SET|ONE_TIME ]
+                    android.permission.READ_CONTACTS: granted=true, flags=[ SYSTEM_FIXED ]
+            """.trimIndent(),
+        )
+        return io.github.dkej123.devicecockpit.intellij.apps.details.AppDetailsPanel {}.apply {
+            update(
+                io.github.dkej123.devicecockpit.application.appdetails.AppDetailsState(
+                    packageName = "com.acme.shop",
+                    label = "Acme Shop",
+                    details = details,
+                ),
+            )
+            tabsForTest.selectedIndex = (0 until tabsForTest.tabCount).first { tabsForTest.getTitleAt(it) == "Permissions" }
+        }
     }
 
     private fun render(scenario: Scenario): BufferedImage {
