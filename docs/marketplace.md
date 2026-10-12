@@ -1,10 +1,10 @@
 # JetBrains Marketplace
 
 - **Plugin ID:** `com.github.dkwasniak.adbtoolbox` (permanent; decided 2026-10-01)
-- **Name:** ADB Toolbox · **Vendor:** dkwasniak (`damian.kwasniak@gmail.com`)
+- **Name:** Device Cockpit for Android (formerly ADB Toolbox) · **Vendor:** dkwasniak (`damian.kwasniak@gmail.com`)
 - **Compatibility:** IntelliJ Platform 2024.2+ (build 242+, no upper bound) — Android Studio and
   IntelliJ IDEA; the Android plugin and Terminal are optional dependencies.
-- **Page:** https://plugins.jetbrains.com/plugin/34857-adb-toolbox (numeric ID 34857, vendor
+- **Page:** https://plugins.jetbrains.com/plugin/34857-adb-toolbox (numeric ID 34857 — the slug keeps the former name; vendor
   `damian-kwasniak`).
 - **Status:** 1.0.0 uploaded manually on 2026-10-07, waiting for JetBrains moderation. Later
   versions go through `release/release.sh` / the tag-driven workflow.

@@ -1,4 +1,4 @@
-# Developing ADB Toolbox
+# Developing Device Cockpit for Android
 
 How to build, test and change the plugin. For what it does and how to install it, see the
 [README](../README.md). Architecture is fixed by [`docs/adr/`](adr/README.md); final

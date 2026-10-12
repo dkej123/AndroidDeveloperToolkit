@@ -1,11 +1,11 @@
 ---
 name: release-plugin
-description: Release runbook for ADB Toolbox on JetBrains Marketplace. Use when asked to cut a release, publish, deploy, ship a new version, bump-and-tag, generate Marketplace screenshots, or prepare the store listing. Covers version bump, mandatory CHANGELOG entry, build, full tests (unit + E2E), Marketplace screenshots, release commit, tag-driven publish and CI monitoring.
+description: Release runbook for Device Cockpit for Android on JetBrains Marketplace. Use when asked to cut a release, publish, deploy, ship a new version, bump-and-tag, generate Marketplace screenshots, or prepare the store listing. Covers version bump, mandatory CHANGELOG entry, build, full tests (unit + E2E), Marketplace screenshots, release commit, tag-driven publish and CI monitoring.
 ---
 
-# Release — ADB Toolbox → JetBrains Marketplace
+# Release — Device Cockpit for Android → JetBrains Marketplace
 
-Plugin ID `com.github.dkwasniak.adbtoolbox`, vendor `dkwasniak`. Scripts live in `release/`
+Plugin ID `com.github.dkwasniak.adbtoolbox` (permanent, kept from the former name ADB Toolbox), vendor `dkwasniak`. Scripts live in `release/`
 (`release/README.md`), the listing text in `docs/marketplace.md`.
 
 ## Hard rules
@@ -33,7 +33,7 @@ Plugin ID `com.github.dkwasniak.adbtoolbox`, vendor `dkwasniak`. Scripts live in
    It bumps `pluginVersion`, then runs the steps below and stops on the first failure. Use
    `--no-publish` to stop before the tag when the user has not authorized publishing yet.
    Individual steps:
-   - `release/build.sh` — `adb-toolbox-<version>.zip`, checks id/version/change notes inside.
+   - `release/build.sh` — `adb-toolbox-<version>.zip` (the ZIP keeps the former name), checks id/version/change notes inside.
    - `release/test.sh` — `clean build koverVerify` (adb hidden from unit tests), then the E2E suite
      in a fresh Android Studio + emulator with that ZIP. Logs: `release/.logs/`.
    - `release/screenshots.sh` — `marketplace/screenshots/<version>/01…06-*.png` (Device, Quick

@@ -1,14 +1,14 @@
 # Diagnostics and bug reports
 
-ADB Toolbox writes a diagnostics log while it runs and can package everything needed to debug a
+Device Cockpit writes a diagnostics log while it runs and can package everything needed to debug a
 problem into one ZIP.
 
 ## Collect a bundle
 
-Any of: **Help → ADB Toolbox Diagnostics → Collect Diagnostics…**, the ⋮ menu of the ADB Toolbox
-tool window, or **Settings → Tools → ADB Toolbox → Collect Diagnostics…**.
+Any of: **Help → Device Cockpit Diagnostics → Collect Diagnostics…**, the ⋮ menu of the Device Cockpit
+tool window, or **Settings → Tools → Device Cockpit → Collect Diagnostics…**.
 
-The ZIP is written to `~/Desktop` (or the log folder) as `adb-toolbox-diagnostics-<time>.zip` and
+The ZIP is written to `~/Desktop` (or the log folder) as `device-cockpit-diagnostics-<time>.zip` and
 contains:
 
 | Entry | Content |
@@ -34,7 +34,7 @@ The log also records, without any action:
 
 ## The log
 
-`<IDE log dir>/adb-toolbox/adb-toolbox.log` (**Open Diagnostics Log Folder**), 5 MB × 5 files.
+`<IDE log dir>/adb-toolbox/adb-toolbox.log` (the folder and file keep the plugin's former name) (**Open Diagnostics Log Folder**), 5 MB × 5 files.
 One line per event, e.g.
 
 ```

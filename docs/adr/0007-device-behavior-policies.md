@@ -36,7 +36,7 @@ idle/recording states, but does not say explicitly whether both may be active at
   plugin-drawn shell UI. This matches `design/IMPLEMENTATION.md`'s general instruction to prefer
   established platform patterns over custom screens for anything the design doesn't fully spec
   visually, and keeps raw interactive shell I/O (which is inherently a raw, unfiltered terminal
-  concern) out of the ADB Toolbox tool window's own process-execution and streaming path (ADR
+  concern) out of the Device Cockpit tool window's own process-execution and streaming path (ADR
   0005) entirely — task 016 launches the terminal command, it does not implement a shell session
   itself. If the Terminal plugin is unavailable, this is a fixable error toast ("Open shell
   requires the Terminal plugin"), never a silent no-op.

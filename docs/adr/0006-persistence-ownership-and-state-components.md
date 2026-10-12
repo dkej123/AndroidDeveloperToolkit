@@ -34,7 +34,7 @@ confirms or supersedes.
   (`selectedDeviceSerial`), `AppsState` (`selectedPackage`), `NetworkState` (`proxyHost`,
   `proxyPort`, `recentProxies`), `LogcatState` (`logMinLevel`, `logPackageFilterOn`, `logWrap`),
   `ToolPathsState` (`adbPath`, `scrcpyPath`), `NavigationState` (`lastView`). These carriers are
-  **composed into one root `PersistentStateComponent`** (`AdbToolboxProjectState`, one XML file,
+  **composed into one root `PersistentStateComponent`** (`DeviceCockpitProjectState`, state name `AdbToolboxProjectState`, one XML file,
   one `getState()`/`loadState()` pair, matching `design/IMPLEMENTATION.md`'s suggested class name)
   so the IDE serializes one coherent blob per project — but each feature reads/writes only its own
   slice through its own small port/adapter pair, and no feature reaches into another feature's

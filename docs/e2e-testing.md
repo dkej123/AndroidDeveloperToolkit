@@ -24,7 +24,7 @@ e2e/scripts/run-e2e.sh --setup-only          # start the environment and leave i
 ./gradlew :e2e:e2eTest --tests '*LogcatE2ETest*'   # re-run against a running environment
 ```
 
-Everything is installed **without root** under `$E2E_HOME` (default `~/.cache/adb-toolbox-e2e`).
+Everything is installed **without root** under `$E2E_HOME` (default `~/.cache/adb-toolbox-e2e` — the pre-rename name, kept so existing environments stay valid).
 In a disposable container where only one directory persists, point it there, e.g.
 `export E2E_HOME=/work/.e2e`, so the ~3 GB of downloads survive the next session.
 
@@ -103,7 +103,7 @@ the full Swing hierarchy at that moment, and the last 300 plugin-log lines. The 
 ## How the tests are built
 
 ```
-e2e/src/test/kotlin/dev/acme/adbtoolbox/e2e/
+e2e/src/test/kotlin/io/github/dkej123/devicecockpit/e2e/
   infra/E2eConfig.kt   environment (from lib.sh variables), timeout scaling
   infra/Studio.kt      UI driver: find by accessible name, rail navigation, dialogs, texts, clipboard
   infra/Adb.kt         ground truth on the device (independent of the plugin)

@@ -1,6 +1,6 @@
 # Architecture Decision Records
 
-Binding decisions for the ADB Toolbox IntelliJ/Android Studio plugin. Every implementation task
+Binding decisions for the Device Cockpit for Android (formerly ADB Toolbox) IntelliJ/Android Studio plugin. Every implementation task
 must comply with these ADRs; a task that conflicts with one must flag the conflict rather than
 silently deviate (see `AGENTS.md`).
 

@@ -1,6 +1,6 @@
 # Third-party notices
 
-ADB Toolbox includes code ported from the following projects.
+Device Cockpit for Android includes code ported from the following projects.
 
 ## Oh My Android
 

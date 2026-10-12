@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to ADB Toolbox. Each release needs a `## [<version>] - <YYYY-MM-DD>` section:
+All notable changes to Device Cockpit for Android (formerly ADB Toolbox). Each release needs a `## [<version>] - <YYYY-MM-DD>` section:
 the Marketplace change notes and the GitHub release notes are generated from it
 (`release/README.md`).
 

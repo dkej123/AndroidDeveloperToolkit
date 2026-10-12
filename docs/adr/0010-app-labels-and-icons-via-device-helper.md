@@ -21,7 +21,7 @@ running Android's own resource stack. Only the device has that.
 ## Decision
 
 - A small Java helper (`adapters-adb/src/deviceHelper`) is run on the device with
-  `CLASSPATH=<jar> app_process / dev.acme.adbtoolbox.devicehelper.AppInfoMain <iconPx> [pkg...]`
+  `CLASSPATH=<jar> app_process / io.github.dkej123.devicecockpit.devicehelper.AppInfoMain <iconPx> [pkg...]`
   as the shell user. Through `PackageManager` it reports each package's localized label, its
   debuggable flag and a launcher icon rendered to a 64px PNG (the launcher activity's icon,
   else the application's), in a line-based, versioned protocol

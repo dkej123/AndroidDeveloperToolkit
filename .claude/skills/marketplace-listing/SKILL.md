@@ -5,7 +5,7 @@ description: Update the Device Cockpit page on JetBrains Marketplace (plugins.je
 
 # Marketplace listing — Device Cockpit
 
-Page: https://plugins.jetbrains.com/plugin/34857-adb-toolbox (numeric ID `34857`, `MARKETPLACE_PLUGIN_ID`
+Page: https://plugins.jetbrains.com/plugin/34857-adb-toolbox (the slug keeps the former name; numeric ID `34857`, `MARKETPLACE_PLUGIN_ID`
 in `release/lib.sh`; plugin ID `com.github.dkwasniak.adbtoolbox`).
 
 ## How

@@ -1,8 +1,8 @@
-# Handoff: ADB Toolbox — Android Studio / IntelliJ plugin
+# Handoff: Device Cockpit (formerly ADB Toolbox) — Android Studio / IntelliJ plugin
 
 ## Overview
 
-ADB Toolbox is a single IntelliJ Platform **tool window** (docked right, ~380px) that puts the
+Device Cockpit is a single IntelliJ Platform **tool window** (docked right, ~380px) that puts the
 adb operations an Android developer repeats dozens of times a day one click away: pick a device,
 mirror it with scrcpy, restart / clear / uninstall an app, change font scale and display density,
 set a global HTTP proxy, capture screen, and read Logcat.
@@ -499,7 +499,7 @@ touched the bar's edges):
   "scrcpy" (teal, `brandBg`) or "REC 00:42" (red, `redBg`);
 - MCP chip (only while an agent is connected; §11): same chip, teal, mono 9px/700 "MCP · Claude Code" ("MCP" below 340 px);
   the dot is static while idle and pulses (0.9s) while a tool call runs. Tooltip "Claude Code connected over MCP · Full control —
-  click for AI agent settings"; click opens Settings › Tools › ADB Toolbox scrolled to AI agents.
+  click for AI agent settings"; click opens Settings › Tools › Device Cockpit scrolled to AI agents.
   The status message shows the last call: "Claude Code · tap(540, 1210) on Pixel 9";
 - last command message, 9.5px `textDim`, ellipsised;
 - right side: override chip "3 overrides · reset all" (9px/700 amber, 1px amber border, radius 3,
@@ -585,7 +585,7 @@ Right panel replaces Attributes:
 - Rules: unlabeled button = clickable Button/ImageButton with no text and no content-desc; image = ImageView without
   content-desc; target = clickable or focusable with width or height < 48 dp.
 
-### 11. Settings — Tools › ADB Toolbox
+### 11. Settings — Tools › Device Cockpit
 
 Standard `Configurable` page, groups with titled separators, labels 100px:
 - **Paths** — adb, scrcpy (path field + browse; detected version in mono green).
@@ -604,7 +604,7 @@ Standard `Configurable` page, groups with titled separators, labels 100px:
     tooltip "Disconnects every agent; they need the new token"). Dimmed while Off.
   - **Set up an agent** — tabs Claude Code / Codex CLI / Cursor / Gemini CLI / Other, mono snippet with its target
     file and **Copy** (copies with the real token). Claude Code:
-    `claude mcp add --transport http adb-toolbox http://127.0.0.1:47123/mcp --header "Authorization: Bearer …"`.
+    `claude mcp add --transport http device-cockpit http://127.0.0.1:47123/mcp --header "Authorization: Bearer …"`.
     Comment "Copy inserts the real token. Check the agent’s docs if its config format has changed."
   - **Exposed tools** table grouped See / Act / Device / Apps / Data: mono name, description, red "asks first" tag on
     destructive tools, level Read / Full. In Read only, Full tools render at 45% with tooltip
@@ -618,7 +618,7 @@ Standard `Configurable` page, groups with titled separators, labels 100px:
     (`textDim`, tooltip = file path) + **Install** / **Update** (disabled when installed and current); then
     **Copy SKILL.md** (tooltip "For other agents that read Agent Skills") and the last result in `textDim`.
 - **Skill tip** (tool window, task 066): above the device bar, same treatment as the unauthorized banner (`amberBg`,
-  amber 10.5px, padding 6px 10px): "Tip: install the ADB Toolbox skill so coding agents know how to use the device
+  amber 10.5px, padding 6px 10px): "Tip: install the Device Cockpit skill so coding agents know how to use the device
   tools well — fewer calls, fewer tokens." with accent bold links **Install for Claude Code** · **Other agents…**
   (opens Settings) and a ✕ (tooltip "Hide this tip — it won’t come back"). Shown only while the MCP server is on,
   no skill is installed and the tip was never closed. After Install the text reports the folder (or the error) until ✕.
@@ -762,9 +762,9 @@ separate selected files, no @2x files. Dark variants use the `_dark.svg` suffix.
 
 - `pluginIcon.svg` / `pluginIcon_dark.svg` — 40×40 Marketplace logo, also bundled as
   `META-INF/pluginIcon(_dark).svg`. No text, shapes clear of the edges.
-- `expui/toolwindow/adbToolbox.svg` (16) + `adbToolbox@20x20.svg` (the New UI stripe picks the
+- `expui/toolwindow/deviceCockpit.svg` (16) + `deviceCockpit@20x20.svg` (the New UI stripe picks the
   20px sibling automatically) — the logo silhouette in one color, tiles and slider cut out, the
-  two "off" tiles at 45%. Registered as `icon="/icons/expui/toolwindow/adbToolbox.svg"`.
+  two "off" tiles at 45%. Registered as `icon="/icons/expui/toolwindow/deviceCockpit.svg"`.
 - `expui/views/` — rail glyphs: device, apps, network, logcat. The selected rail item recolors
   its glyph to `accent`; rail badges are painted at runtime, never baked into the SVG.
 - `expui/actions/` — 16×16 action icons: mirror, screenshot, record, stopRecording, restartApp,
