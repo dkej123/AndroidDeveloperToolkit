@@ -20,14 +20,12 @@ the Marketplace change notes and the GitHub release notes are generated from it
 
 ### Changed
 - **Renamed to Device Cockpit for Android** (formerly ADB Toolbox): the plugin does far more than
-  run adb. Same plugin, settings and MCP server name (`adb-toolbox`); the tool window keeps its place.
+  run adb. Same plugin and settings; the tool window keeps its place.
 - UI capture retries longer while the screen animates and suggests turning animations off.
 - Current app: the flickering "updated N s ago" label is gone; a refresh button updates on demand.
 - App details › Permissions is a grouped list instead of a table: runtime permissions with state
   chips, flags and Grant/Revoke/reset on each row, install-time ones folded away, a filter and
   **Reset all**.
-
-### Changed
 - **AI agents (MCP)**: the server and the agent skill are now called `device-cockpit` (setup
   snippets, `serverInfo`, `SKILL.md`; the Codex token variable is `DEVICE_COCKPIT_TOKEN`).
   Installing the skill removes the old `adb-toolbox` copy. Servers registered as `adb-toolbox`
