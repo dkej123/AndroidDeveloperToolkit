@@ -232,10 +232,15 @@ class CurrentAppSection(
         processValue.text = if (process == null) "not running" else "${process.pid} · ${process.runningNow()?.let(::formatElapsed) ?: "?"}"
     }
 
+    // Runs only while the section is in a window, so a section never shown leaves no timer behind.
+    private fun updateProcessTicker() {
+        val process = shownProcess
+        if (isDisplayable && process?.measuredAt != null && process.runningFor != null) processTicker.start() else processTicker.stop()
+    }
+
     override fun addNotify() {
         super.addNotify()
-        val process = shownProcess
-        if (process?.measuredAt != null && process.runningFor != null) processTicker.start()
+        updateProcessTicker()
     }
 
     override fun removeNotify() {
@@ -318,7 +323,8 @@ class CurrentAppSection(
         target = pkg
         val details = display.snapshot.details
         permissions = details?.runtimePermissions.orEmpty()
-        val identity = identity(pkg)
+        // Read from the device for this app; the Apps list only knows the apps it has loaded.
+        val identity = display.snapshot.info?.let { AppIdentity(it.label ?: pkg, it.icon) } ?: identity(pkg)
         identityRow.isVisible = true
         factsPanel.isVisible = true
         actionRow.isVisible = true
@@ -346,7 +352,7 @@ class CurrentAppSection(
         val process = display.snapshot.process
         shownProcess = process
         showProcessTime()
-        if (process?.measuredAt != null && process.runningFor != null) processTicker.start() else processTicker.stop()
+        updateProcessTicker()
         processValue.foreground = if (process == null) DeviceCockpitTheme.Colors.textFaint else DeviceCockpitTheme.Colors.text
         targetValue.text = details?.targetSdk?.toString() ?: "—"
         targetValue.toolTipText = details?.let { "targetSdkVersion ${it.targetSdk} · minSdk ${it.minSdk}" }

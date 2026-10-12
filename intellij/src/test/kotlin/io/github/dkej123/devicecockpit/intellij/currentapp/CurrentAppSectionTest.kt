@@ -67,6 +67,23 @@ class CurrentAppSectionTest : BasePlatformTestCase() {
         assertEquals(listOf("com.acme.shop"), details)
     }
 
+    fun `test an app the Apps list does not know yet shows the name read from the device`() {
+        val s = section()
+        val fresh = app().let {
+            it.copy(
+                app = ForegroundState.App("pl.acme.hr.debug", ".MainActivity"),
+                snapshot = it.snapshot.copy(
+                    foreground = ForegroundState.App("pl.acme.hr.debug", ".MainActivity"),
+                    info = io.github.dkej123.devicecockpit.domain.packages.AppInfo("pl.acme.hr.debug", "HR Pill", isDebuggable = true, icon = null),
+                ),
+            )
+        }
+
+        s.update(CurrentAppViewState(display = fresh, deviceOnline = true))
+
+        assertEquals("HR Pill", s.labelForTest)
+    }
+
     fun `test process death is offered for a running app only`() {
         val s = section()
         s.update(CurrentAppViewState(display = app(), deviceOnline = true))

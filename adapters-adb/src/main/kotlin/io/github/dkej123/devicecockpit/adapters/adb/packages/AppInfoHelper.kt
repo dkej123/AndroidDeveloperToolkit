@@ -6,6 +6,7 @@ import io.github.dkej123.devicecockpit.domain.adb.AdbTransport
 import io.github.dkej123.devicecockpit.domain.adb.DeviceSerial
 import io.github.dkej123.devicecockpit.domain.packages.AppInfo
 import io.github.dkej123.devicecockpit.domain.packages.AppInfoCommand
+import io.github.dkej123.devicecockpit.domain.packages.AppInfoLookup
 import io.github.dkej123.devicecockpit.domain.packages.AppInfoLine
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -94,7 +95,13 @@ class AppInfoHelper(
     bundle: AppInfoHelperBundle = AppInfoHelperBundle.fromClasspath(),
     private val iconSizePx: Int = DEFAULT_ICON_SIZE_PX,
     private val deployment: DeviceHelperDeployment = DeviceHelperDeployment(transport, bundle),
-) {
+) : AppInfoLookup {
+    override suspend fun lookup(serial: DeviceSerial, packageName: String): AppInfo? {
+        var found: AppInfo? = null
+        query(serial, listOf(packageName)) { if (it.packageName == packageName) found = it }
+        return found
+    }
+
     /**
      * Reports [AppInfo] for [packages] (possibly for more, when the list is long enough that every
      * installed app is requested instead). Returns `false` when the helper could not be deployed or

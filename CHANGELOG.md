@@ -36,6 +36,9 @@ the Marketplace change notes and the GitHub release notes are generated from it
   keep working — the name is only the key in the agent's config.
 
 ### Fixed
+- Current app showed the last part of the package name ("Debug") and an empty tile for an app the
+  Apps list had not loaded yet, such as one just installed from the IDE; it now reads the app's own
+  name and icon from the device.
 - Current app › Process: the running time counts up every second instead of freezing at the
   value read when the app started.
 - App names and icons were missing on Samsung phones with Android 16 (the on-device helper crashed);

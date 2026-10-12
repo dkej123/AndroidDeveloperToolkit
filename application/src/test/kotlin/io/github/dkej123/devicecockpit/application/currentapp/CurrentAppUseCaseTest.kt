@@ -75,6 +75,19 @@ class CurrentAppUseCaseTest {
     }
 
     @Test
+    fun `the app's name and icon come from the device, once per app in front`() = runTest {
+        val looked = mutableListOf<String>()
+        val shop = io.github.dkej123.devicecockpit.domain.packages.AppInfo("com.acme.shop", "Acme Shop", isDebuggable = true, icon = null)
+        val useCase = CurrentAppUseCase(Device().transport(), appInfo = { _, pkg -> looked += pkg; shop })
+
+        val first = useCase.read(serial)
+        useCase.read(serial, previous = first).info shouldBe shop
+
+        first.info shouldBe shop
+        looked shouldBe listOf("com.acme.shop")
+    }
+
+    @Test
     fun `a killed app has no process, the launcher is the home screen`() = runTest {
         val device = Device(pid = "")
         val useCase = CurrentAppUseCase(device.transport())

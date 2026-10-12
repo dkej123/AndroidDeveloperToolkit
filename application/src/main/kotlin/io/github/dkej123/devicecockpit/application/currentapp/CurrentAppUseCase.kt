@@ -11,6 +11,8 @@ import io.github.dkej123.devicecockpit.domain.foreground.PackageDetailsCommand
 import io.github.dkej123.devicecockpit.domain.foreground.PermissionReset
 import io.github.dkej123.devicecockpit.domain.foreground.ProcessInfo
 import io.github.dkej123.devicecockpit.domain.foreground.ProcessInfoCommand
+import io.github.dkej123.devicecockpit.domain.packages.AppInfo
+import io.github.dkej123.devicecockpit.domain.packages.AppInfoLookup
 import kotlin.time.TimeSource
 
 /** What Current app shows for an app in front (design §3a): the cheap part (package, PID) and the details. */
@@ -18,6 +20,8 @@ data class CurrentAppSnapshot(
     val foreground: ForegroundState,
     val details: PackageDetails? = null,
     val process: ProcessInfo? = null,
+    /** Label and icon read from the device, so an app the Apps list has not loaded yet still shows its own. */
+    val info: AppInfo? = null,
 )
 
 sealed interface PermissionResetResult {
@@ -28,12 +32,13 @@ sealed interface PermissionResetResult {
 
 /**
  * Reads the foreground app with its facts and resets its permissions (task 062). Package details
- * are re-read only when the foreground package changes ([previous]); the launcher package is
- * resolved once per device.
+ * and the app's label and icon ([appInfo]) are re-read only when the foreground package changes
+ * ([previous]); the launcher package is resolved once per device.
  */
 class CurrentAppUseCase(
     private val transport: AdbTransport,
     private val timeSource: TimeSource = TimeSource.Monotonic,
+    private val appInfo: AppInfoLookup? = null,
 ) {
     private val launchers = mutableMapOf<DeviceSerial, String?>()
 
@@ -46,12 +51,18 @@ class CurrentAppUseCase(
             else -> null
         } ?: return CurrentAppSnapshot(foreground)
         val previousApp = (previous?.foreground as? ForegroundState.App) ?: (previous?.foreground as? ForegroundState.SystemUi)?.behind
-        val details = if (previousApp?.packageName == app.packageName && previous?.details != null) {
+        val samePackage = previousApp?.packageName == app.packageName
+        val details = if (samePackage && previous?.details != null) {
             previous.details
         } else {
             PackageDetailsCommand.parse(transport.executeText(PackageDetailsCommand.request(serial, app.packageName)), app.packageName)
         }
-        return CurrentAppSnapshot(foreground, details, process(serial, app.packageName, previous?.process))
+        val info = if (samePackage && previous?.info != null) {
+            previous.info
+        } else {
+            runCatching { appInfo?.lookup(serial, app.packageName) }.getOrNull()
+        }
+        return CurrentAppSnapshot(foreground, details, process(serial, app.packageName, previous?.process), info)
     }
 
     /** PID changes on a restart; the elapsed time is re-read only for a new PID ([ProcessInfo.runningNow] adds the time since). */

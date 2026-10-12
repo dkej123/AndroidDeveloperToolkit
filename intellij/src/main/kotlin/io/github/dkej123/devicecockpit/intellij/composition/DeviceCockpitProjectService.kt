@@ -430,6 +430,7 @@ class DeviceCockpitProjectService(private val project: Project) : Disposable {
 
     /** Pushes the on-device helper jar once per device, shared by every helper entry point (ADR 0010/0012/0013). */
     private val deviceHelperDeployment = DeviceHelperDeployment(adbTransport)
+    private val appInfoHelper = AppInfoHelper(adbTransport, deployment = deviceHelperDeployment)
 
     private val captureScreenshotUseCase = CaptureScreenshotUseCase(
         adbTransport = adbTransport,
@@ -575,7 +576,7 @@ class DeviceCockpitProjectService(private val project: Project) : Disposable {
         scope = childScope(),
         dispatchers = dispatcherProvider,
         transport = adbTransport,
-        appInfoHelper = AppInfoHelper(adbTransport, deployment = deviceHelperDeployment),
+        appInfoHelper = appInfoHelper,
     )
 
     /** Task 022's searchable package presentation, composed once per project. */
@@ -733,7 +734,7 @@ class DeviceCockpitProjectService(private val project: Project) : Disposable {
         io.github.dkej123.devicecockpit.application.currentapp.CurrentAppViewModel(
             scope = childScope(),
             dispatchers = dispatcherProvider,
-            currentApp = io.github.dkej123.devicecockpit.application.currentapp.CurrentAppUseCase(adbTransport),
+            currentApp = io.github.dkej123.devicecockpit.application.currentapp.CurrentAppUseCase(adbTransport, appInfo = appInfoHelper),
             lifecycle = appLifecycleUseCase,
             clearData = clearDataUseCase,
             uninstall = uninstallUseCase,
@@ -983,7 +984,7 @@ class DeviceCockpitProjectService(private val project: Project) : Disposable {
                 lifecycle = appLifecycleUseCase,
                 clearData = clearDataUseCase,
                 uninstall = uninstallUseCase,
-                currentApp = io.github.dkej123.devicecockpit.application.currentapp.CurrentAppUseCase(adbTransport),
+                currentApp = io.github.dkej123.devicecockpit.application.currentapp.CurrentAppUseCase(adbTransport, appInfo = appInfoHelper),
                 locale = io.github.dkej123.devicecockpit.application.locale.DeviceLocaleUseCase(
                     io.github.dkej123.devicecockpit.adapters.adb.packages.LocaleHelper(adbTransport, deviceHelperDeployment),
                     io.github.dkej123.devicecockpit.intellij.persistence.PropertiesOriginalLocaleStore(),
