@@ -70,6 +70,25 @@ class AppInfoCommandTest {
     }
 
     @Test
+    fun `packages whose icon must be skipped go before the package list`() {
+        val request = AppInfoCommand.request(
+            SERIAL,
+            REMOTE,
+            iconSizePx = 32,
+            packages = listOf("com.acme.shop"),
+            skipIcons = listOf("com.samsung.crashy"),
+        )
+
+        (request.operation as AdbOperation.Shell).command.render() shouldBe
+            "CLASSPATH=$REMOTE app_process / io.github.dkej123.devicecockpit.devicehelper.AppInfoMain 32 -n 'com.samsung.crashy' 'com.acme.shop'"
+    }
+
+    @Test
+    fun `parses the in-progress marker the helper prints before each package`() {
+        AppInfoCommand.parseLine("T\tcom.acme.shop") shouldBe AppInfoLine.Started("com.acme.shop")
+    }
+
+    @Test
     fun `parses the header and end markers`() {
         AppInfoCommand.parseLine("ADBTOOLBOX-APPINFO 1") shouldBe AppInfoLine.Header
         AppInfoCommand.parseLine("END\r") shouldBe AppInfoLine.End

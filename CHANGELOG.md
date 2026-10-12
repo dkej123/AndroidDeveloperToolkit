@@ -30,6 +30,10 @@ the Marketplace change notes and the GitHub release notes are generated from it
 ### Fixed
 - App names and icons were missing on Samsung phones with Android 16 (the on-device helper crashed);
   old helper copies are now removed from the device when a new one is installed.
+- App names and icons stopped after the first few dozen apps on Samsung phones: rendering an icon
+  through the vendor's icon theming aborted the on-device helper. Icons now load from each APK's
+  own resources (split APKs included); should a phone still kill the helper on one app, the rest
+  are fetched again and only that app goes without its icon. A full list takes about 2 s.
 - Current app no longer waits for "Update" while the mouse pointer just rests over it.
 - Logcat with line wrap no longer keeps the IDE busy at 100% CPU: the list shows the newest 20,000
   lines (search still covers the whole buffer), measures only new lines, and renders nothing while

@@ -131,6 +131,58 @@ class AppInfoHelperTest {
     }
 
     @Test
+    fun `a helper killed while rendering an icon is run again without that icon`() = runTest {
+        // The first run aborts natively (no END) while "com.crashy" is in flight.
+        val transport = FakeAdbTransport(
+            textScript = { ok("present") },
+            streamScript = { request ->
+                if (request.shellLine()!!.contains("-n 'com.crashy'")) {
+                    lines("ADBTOOLBOX-APPINFO 1", "T\tcom.crashy", "P\tcom.crashy\t-\tU2hvcA==\t-", "END")
+                } else {
+                    lines("ADBTOOLBOX-APPINFO 1", "T\tcom.acme.shop", "P\tcom.acme.shop\td\tU2hvcA==\t-", "T\tcom.crashy")
+                }
+            },
+        )
+        val reported = mutableListOf<AppInfo>()
+
+        AppInfoHelper(transport, BUNDLE).query(SERIAL, listOf("com.acme.shop", "com.crashy")) { reported += it } shouldBe true
+
+        reported.map { it.packageName } shouldBe listOf("com.acme.shop", "com.crashy")
+        transport.streamRequests.map { it.shellLine() } shouldBe listOf(
+            "CLASSPATH=$REMOTE app_process / io.github.dkej123.devicecockpit.devicehelper.AppInfoMain 64 'com.acme.shop' 'com.crashy'",
+            "CLASSPATH=$REMOTE app_process / io.github.dkej123.devicecockpit.devicehelper.AppInfoMain 64 -n 'com.crashy' 'com.crashy'",
+        )
+    }
+
+    @Test
+    fun `a rerun of the full list reports each app once`() = runTest {
+        val transport = FakeAdbTransport(
+            textScript = { ok("present") },
+            streamScript = { request ->
+                val tail = if (request.shellLine()!!.contains("-n")) listOf("P\tcom.crashy\t-\tU2hvcA==\t-", "END") else emptyList()
+                lines(*(listOf("ADBTOOLBOX-APPINFO 1", "P\tcom.acme.shop\td\tU2hvcA==\t-", "T\tcom.crashy") + tail).toTypedArray())
+            },
+        )
+        val reported = mutableListOf<String>()
+
+        AppInfoHelper(transport, BUNDLE).query(SERIAL, (1..100).map { "com.acme.app$it" }) { reported += it.packageName }
+
+        reported shouldBe listOf("com.acme.shop", "com.crashy")
+    }
+
+    @Test
+    fun `a helper that keeps dying without a new suspect is not run again`() = runTest {
+        val transport = FakeAdbTransport(
+            textScript = { ok("present") },
+            streamScript = { lines("ADBTOOLBOX-APPINFO 1", "P\tcom.acme.shop\td\tU2hvcA==\t-") },
+        )
+
+        AppInfoHelper(transport, BUNDLE).query(SERIAL, listOf("com.acme.shop", "com.other")) {} shouldBe true
+
+        transport.streamRequests shouldHaveSize 1
+    }
+
+    @Test
     fun `the bundled helper is a dex jar with a content-hash version`() {
         val bundle = AppInfoHelperBundle.fromClasspath()
 

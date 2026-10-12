@@ -49,6 +49,19 @@ running Android's own resource stack. Only the device has that.
   the framework default icon) calls `ActivityThread.currentApplication().getResources()` on newer
   platforms. The helper registers an `Application` backed by the system context; without it every
   icon fails to render (seen on API 30) while labels still work.
+- Icons are loaded from the package's own APK (base plus splits) through a fresh `Resources`, as
+  the aya desktop tool does, not through `PackageManager.getApplicationIcon`/`getActivityIcon`;
+  only the launcher activity's icon *id* is resolved through `PackageManager`. Vendor builds route
+  the `PackageManager` path through their icon theming, which in `app_process` (no fonts loaded,
+  no real application) can abort natively — Samsung's Android 16 died in hwui's
+  `Typeface::resolveDefault` after ~30 apps, losing every later row; loading the system fonts by
+  reflection is not possible there (the font map comes back empty). Apps without an icon get the
+  framework's `sym_def_app_icon`.
+- A native abort cannot be caught on the device, so the protocol makes it survivable: the helper
+  prints `T<TAB>package` before describing each package, and when a run ends without `END` the
+  host reruns it (at most 4 runs) for what is still missing, passing the packages that were in
+  flight after `-n` so they are reported without an icon.
+- The helper describes packages on 4 threads; a full run of ~500 apps takes ~1.7 s on a Galaxy S23.
 - The stubs must match the real platform signatures the helper calls; a mismatch fails at runtime
   on the device (caught by the E2E suite's Apps tests), not at compile time.
 

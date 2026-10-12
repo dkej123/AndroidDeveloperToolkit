@@ -26,6 +26,9 @@ sealed interface AppInfoLine {
 
     data object End : AppInfoLine
 
+    /** The helper is about to describe [packageName]; no record after it means that package killed the helper. */
+    data class Started(val packageName: String) : AppInfoLine
+
     data class Found(val info: AppInfo) : AppInfoLine
 
     data class Missing(val packageName: String) : AppInfoLine
@@ -48,6 +51,8 @@ private val CONTROL_RUNS = Regex("""[\p{Cntrl}\s]+""")
  *
  * The helper prints [HEADER], then one tab-separated record per package — `P`, package, `d`/`-`,
  * base64 label, base64 PNG or `-`; or `M`, package for one that is not installed — then `END`.
+ * Before each package it prints `T`, package, so a run that dies natively names the package in
+ * flight. Packages listed after `-n` are reported without an icon.
  */
 @OptIn(ExperimentalEncodingApi::class)
 object AppInfoCommand {
@@ -98,14 +103,16 @@ object AppInfoCommand {
         AdbDeviceRequest(serial = serial, operation = AdbOperation.Host(listOf("push", localPath, remotePath)))
 
     /**
-     * Runs the helper for [packages], or for every installed application when [packages] is empty.
-     * [remotePath] comes from [remotePath], so it is safe as the literal `CLASSPATH=` assignment.
+     * Runs the helper for [packages], or for every installed application when [packages] is empty,
+     * reporting [skipIcons] without an icon. [remotePath] comes from [remotePath], so it is safe as
+     * the literal `CLASSPATH=` assignment.
      */
     fun request(
         serial: DeviceSerial,
         remotePath: String,
         iconSizePx: Int,
         packages: List<String>,
+        skipIcons: Collection<String> = emptyList(),
     ): AdbDeviceRequest {
         val tokens = buildList {
             add(ShellToken.Literal("CLASSPATH=$remotePath"))
@@ -113,6 +120,10 @@ object AppInfoCommand {
             add(ShellToken.Literal("/"))
             add(ShellToken.Literal(MAIN_CLASS))
             add(ShellToken.Literal(iconSizePx.toString()))
+            skipIcons.forEach {
+                add(ShellToken.Literal("-n"))
+                add(ShellToken.Value(ShellValue.of(it)))
+            }
             packages.forEach { add(ShellToken.Value(ShellValue.of(it))) }
         }
         return AdbDeviceRequest(serial = serial, operation = AdbOperation.Shell(AdbShellCommand(tokens)), timeout = 120.seconds)
@@ -125,6 +136,7 @@ object AppInfoCommand {
         val fields = line.split('\t')
         return when {
             fields.size == 2 && fields[0] == "M" && fields[1].isNotBlank() -> AppInfoLine.Missing(fields[1])
+            fields.size == 2 && fields[0] == "T" && fields[1].isNotBlank() -> AppInfoLine.Started(fields[1])
             fields.size == 5 && fields[0] == "P" && fields[1].isNotBlank() -> parseFound(line, fields)
             else -> AppInfoLine.Malformed(line, "not an app-info record")
         }

@@ -20,6 +20,9 @@ private const val DEFAULT_ICON_SIZE_PX = 64
 // the helper is about as fast listing every installed app as it is listing a subset.
 private const val MAX_PACKAGE_ARGUMENTS = 40
 
+// One clean run plus a few reruns that each skip the icon the previous run died on.
+private const val MAX_RUNS = 4
+
 /**
  * The dexed helper jar built from `src/deviceHelper` (ADR 0007). [version] names the pushed file,
  * so a rebuilt helper is pushed again instead of reusing a stale copy. [localPath] returns a host
@@ -97,21 +100,66 @@ class AppInfoHelper(
      * installed app is requested instead). Returns `false` when the helper could not be deployed or
      * did not start; the caller then keeps its own fallback. A run that starts but is cut short
      * still returns `true` — whatever was reported stays valid.
+     *
+     * Rendering some vendor icons can abort the helper natively, which no catch on the device
+     * survives. The helper names each package before describing it, so a run that dies is repeated
+     * for what is still missing, with the package it died on reported without an icon — at most
+     * [MAX_RUNS] times, and only while each death names a new package.
      */
     suspend fun query(serial: DeviceSerial, packages: List<String>, onInfo: suspend (AppInfo) -> Unit): Boolean {
         val remotePath = deployment.ensureDeployed(serial) ?: return false
 
-        val arguments = if (packages.size > MAX_PACKAGE_ARGUMENTS) emptyList() else packages
+        val everyApp = packages.size > MAX_PACKAGE_ARGUMENTS
+        val reported = mutableSetOf<String>()
+        val skipIcons = linkedSetOf<String>()
+        repeat(MAX_RUNS) { run ->
+            val pending = packages.filterNot(reported::contains)
+            if (!everyApp && pending.isEmpty()) return true
+            val result = runOnce(serial, remotePath, if (everyApp) emptyList() else pending, skipIcons) { info ->
+                if (reported.add(info.packageName)) onInfo(info)
+            }
+            if (!result.started) {
+                if (run == 0) {
+                    deployment.forget(serial)
+                    return false
+                }
+                return true
+            }
+            if (result.finished) return true
+            val suspects = result.inFlight - skipIcons
+            if (suspects.isEmpty()) return true
+            skipIcons += suspects
+        }
+        return true
+    }
+
+    private class RunResult(val started: Boolean, val finished: Boolean, val inFlight: Set<String>)
+
+    private suspend fun runOnce(
+        serial: DeviceSerial,
+        remotePath: String,
+        arguments: List<String>,
+        skipIcons: Set<String>,
+        onInfo: suspend (AppInfo) -> Unit,
+    ): RunResult {
         var started = false
-        transport.executeStream(AppInfoCommand.request(serial, remotePath, iconSizePx, arguments)).collect { event ->
+        var finished = false
+        // Started but not yet reported: the helper describes a few packages at once.
+        val inFlight = mutableSetOf<String>()
+        transport.executeStream(AppInfoCommand.request(serial, remotePath, iconSizePx, arguments, skipIcons)).collect { event ->
             if (event !is AdbStreamEvent.Line) return@collect
             when (val line = AppInfoCommand.parseLine(event.text)) {
                 AppInfoLine.Header -> started = true
-                is AppInfoLine.Found -> if (started) onInfo(line.info)
-                else -> Unit
+                AppInfoLine.End -> finished = started
+                is AppInfoLine.Started -> if (started) inFlight += line.packageName
+                is AppInfoLine.Missing -> inFlight -= line.packageName
+                is AppInfoLine.Found -> if (started) {
+                    inFlight -= line.info.packageName
+                    onInfo(line.info)
+                }
+                is AppInfoLine.Malformed -> Unit
             }
         }
-        if (!started) deployment.forget(serial)
-        return started
+        return RunResult(started, finished, inFlight)
     }
 }
