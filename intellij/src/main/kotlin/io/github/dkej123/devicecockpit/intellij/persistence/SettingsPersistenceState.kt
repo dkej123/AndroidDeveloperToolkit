@@ -28,6 +28,6 @@ class SettingsPersistenceState {
          * — duplicated here (rather than referenced) so this plain bean stays a self-contained,
          * dependency-free `XmlSerializer` target, matching [DeviceSelectionState]/
          * [NavigationPersistenceState]'s existing style. */
-        const val DEFAULT_LOGCAT_BUFFER_SIZE_KB: Int = 16 * 1024
+        const val DEFAULT_LOGCAT_BUFFER_SIZE_KB: Int = 1024
     }
 }

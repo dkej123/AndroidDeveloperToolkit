@@ -34,6 +34,8 @@ the Marketplace change notes and the GitHub release notes are generated from it
 - Logcat with line wrap no longer keeps the IDE busy at 100% CPU: the list shows the newest 20,000
   lines (search still covers the whole buffer), measures only new lines, and renders nothing while
   Logcat is not on screen — it catches up when you open it.
+- Settings › Logcat buffer size now takes effect (it was ignored and the buffer was always 16 MB),
+  also while Logcat runs; the default is 1 MB.
 
 ## [1.1.0] - 2026-10-08
 

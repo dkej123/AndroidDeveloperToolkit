@@ -14,8 +14,27 @@ import org.junit.jupiter.api.Test
 class LogcatBufferTest {
 
     @Test
-    fun `default buffer capacity is the specified sixteen mebibytes`() {
-        LogcatBuffer().capacityBytes shouldBe 16 * 1024 * 1024
+    fun `default buffer capacity is one mebibyte`() {
+        LogcatBuffer().capacityBytes shouldBe 1024 * 1024
+    }
+
+    @Test
+    fun `shrinking evicts the oldest entries, growing keeps them, and the entry ceiling follows`() = runTest {
+        val first = malformed("first")
+        val second = malformed("second")
+        val third = malformed("third")
+        val buffer = LogcatBuffer(capacityBytes = 4096)
+        listOf(first, second, third).forEach { buffer.append(it) }
+
+        buffer.resize(second.estimatedSizeBytes() + third.estimatedSizeBytes())
+
+        buffer.capacityBytes shouldBe second.estimatedSizeBytes() + third.estimatedSizeBytes()
+        buffer.entryCeilingBytes shouldBe buffer.capacityBytes
+        buffer.snapshot().entries.map { it.entry }.shouldContainExactly(second, third)
+
+        buffer.resize(64 * 1024 * 1024)
+        buffer.entryCeilingBytes shouldBe DEFAULT_LOGCAT_ENTRY_CEILING_BYTES
+        buffer.snapshot().entries.map { it.entry }.shouldContainExactly(second, third)
     }
 
     @Test

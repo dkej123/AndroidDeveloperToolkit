@@ -19,7 +19,7 @@ data class SettingsState(
 ) {
     companion object {
         /** `design/designs/ADB Toolbox IA.dc.html`'s Logcat footer default: "buffer 16 MB". */
-        const val DEFAULT_LOGCAT_BUFFER_SIZE_KB: Int = 16 * 1024
+        const val DEFAULT_LOGCAT_BUFFER_SIZE_KB: Int = 1024
         const val MIN_LOGCAT_BUFFER_SIZE_KB: Int = 64
         const val MAX_LOGCAT_BUFFER_SIZE_KB: Int = 64 * 1024
 

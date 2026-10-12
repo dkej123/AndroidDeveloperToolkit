@@ -38,8 +38,11 @@ object LogcatRowStyle {
     fun isChipActive(chipLevel: LogSeverity, minSeverity: LogSeverity?): Boolean =
         minSeverity == chipLevel || (chipLevel == LogSeverity.VERBOSE && minSeverity == null)
 
-    /** Footer's "buffer 16 MB" (`design/README.md` §7), rounded to whole megabytes. */
+    /** Footer's "buffer 16 MB" (`design/README.md` §7) in whole megabytes; below 1 MB (the default
+     * buffer's size) in whole kilobytes, so a filling buffer does not read "0 MB". */
     fun formatBufferSize(totalBytes: Int): String {
+        val kilobytes = (totalBytes / 1024.0).roundToInt()
+        if (kilobytes < 1000) return "buffer $kilobytes KB"
         val megabytes = (totalBytes / (1024.0 * 1024.0)).roundToInt()
         return "buffer $megabytes MB"
     }

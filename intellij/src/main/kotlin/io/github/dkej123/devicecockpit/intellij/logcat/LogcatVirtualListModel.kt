@@ -97,9 +97,9 @@ class LogcatVirtualListModel(
 
     companion object {
         /**
-         * The newest rows the list keeps (the 16 MB buffer behind it holds ~150k). Every layout walks
-         * all rows, so 100k pinned the EDT with wrapping on (2026-10-12); search and filters still
-         * run over the whole buffer.
+         * The newest rows the list keeps; a larger Settings buffer (up to 64 MB, ~600k lines) is still
+         * searched and filtered in full. Every layout walks all rows, so 100k pinned the EDT with
+         * wrapping on (2026-10-12).
          */
         const val DEFAULT_MAX_RENDER_ROWS = 20_000
     }

@@ -52,6 +52,23 @@ class AdbToolboxProjectServiceTest : BasePlatformTestCase() {
         assertNotNull(service.settingsViewModel)
     }
 
+    fun `test the Logcat buffer takes its size from Settings and follows a change`() {
+        val service = project.service<AdbToolboxProjectService>()
+        val buffer = service.logcatSessionManager.buffer
+        val original = runBlocking(service.dispatcherProvider.io) { service.settingsUseCase.load() }
+        assertEquals(original.logcatBufferSizeKb * 1024, buffer.capacityBytes)
+        try {
+            runBlocking(service.dispatcherProvider.io) {
+                service.settingsUseCase.apply(original.copy(logcatBufferSizeKb = 2048))
+            }
+            val deadline = System.currentTimeMillis() + 5_000
+            while (buffer.capacityBytes != 2048 * 1024 && System.currentTimeMillis() < deadline) Thread.sleep(20)
+            assertEquals(2048 * 1024, buffer.capacityBytes)
+        } finally {
+            runBlocking(service.dispatcherProvider.io) { service.settingsUseCase.apply(original) }
+        }
+    }
+
     fun `test the project service is a singleton per project`() {
         val first = project.service<AdbToolboxProjectService>()
         val second = project.service<AdbToolboxProjectService>()

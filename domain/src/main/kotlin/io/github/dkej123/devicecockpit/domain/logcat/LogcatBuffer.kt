@@ -3,7 +3,8 @@ package io.github.dkej123.devicecockpit.domain.logcat
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
-const val DEFAULT_LOGCAT_BUFFER_BYTES: Int = 16 * 1024 * 1024
+/** Mirrors the Settings default ([io.github.dkej123.devicecockpit.domain.settings.SettingsState.DEFAULT_LOGCAT_BUFFER_SIZE_KB]). */
+const val DEFAULT_LOGCAT_BUFFER_BYTES: Int = 1024 * 1024
 const val DEFAULT_LOGCAT_ENTRY_CEILING_BYTES: Int = 256 * 1024
 
 data class LogcatBufferCursor(val generation: Long, val sequence: Long)
@@ -39,9 +40,14 @@ sealed interface LogcatAppendResult {
 
 /** Task 034's KMP-ready, concurrency-safe bounded Logcat history. */
 class LogcatBuffer(
-    val capacityBytes: Int = DEFAULT_LOGCAT_BUFFER_BYTES,
-    val entryCeilingBytes: Int = minOf(DEFAULT_LOGCAT_ENTRY_CEILING_BYTES, capacityBytes),
+    capacityBytes: Int = DEFAULT_LOGCAT_BUFFER_BYTES,
+    entryCeilingBytes: Int = minOf(DEFAULT_LOGCAT_ENTRY_CEILING_BYTES, capacityBytes),
 ) {
+    var capacityBytes: Int = capacityBytes
+        private set
+    var entryCeilingBytes: Int = entryCeilingBytes
+        private set
+
     private val mutex = Mutex()
     private val entries = ArrayDeque<SequencedLogcatEntry>()
     private var totalBytes = 0
@@ -67,6 +73,16 @@ class LogcatBuffer(
             totalBytes -= entries.removeFirst().sizeBytes
         }
         LogcatAppendResult.Added(sequenced, cursorLocked(), entries.size, totalBytes)
+    }
+
+    /** Settings › Logcat buffer size changed: a smaller buffer drops its oldest entries now. */
+    suspend fun resize(capacityBytes: Int) = mutex.withLock {
+        require(capacityBytes > 0)
+        this.capacityBytes = capacityBytes
+        entryCeilingBytes = minOf(DEFAULT_LOGCAT_ENTRY_CEILING_BYTES, capacityBytes)
+        while (totalBytes > capacityBytes) {
+            totalBytes -= entries.removeFirst().sizeBytes
+        }
     }
 
     suspend fun snapshot(): LogcatBufferSnapshot = mutex.withLock { snapshotLocked() }

@@ -63,7 +63,9 @@ class LogcatRowStyleTest : BasePlatformTestCase() {
     }
 
     fun `test buffer size formats to whole megabytes`() {
-        assertEquals("buffer 0 MB", LogcatRowStyle.formatBufferSize(0))
+        assertEquals("buffer 0 KB", LogcatRowStyle.formatBufferSize(0))
+        assertEquals("buffer 512 KB", LogcatRowStyle.formatBufferSize(512 * 1024))
+        assertEquals("buffer 1 MB", LogcatRowStyle.formatBufferSize(1024 * 1024 - 100))
         assertEquals("buffer 16 MB", LogcatRowStyle.formatBufferSize(16 * 1024 * 1024))
         assertEquals("buffer 2 MB", LogcatRowStyle.formatBufferSize((1.6 * 1024 * 1024).toInt()))
     }

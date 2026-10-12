@@ -155,6 +155,7 @@ import io.github.dkej123.devicecockpit.intellij.persistence.MirroringOptionsPers
 import io.github.dkej123.devicecockpit.intellij.persistence.NavigationPersistenceAdapter
 import io.github.dkej123.devicecockpit.intellij.persistence.NetworkPersistenceAdapter
 import io.github.dkej123.devicecockpit.intellij.persistence.SettingsPersistenceAdapter
+import io.github.dkej123.devicecockpit.domain.logcat.LogcatBuffer
 import io.github.dkej123.devicecockpit.intellij.terminal.TerminalLauncherAdapter
 import io.github.dkej123.devicecockpit.intellij.wifi.WifiPairingInputPresenter
 import kotlin.time.Duration.Companion.seconds
@@ -162,6 +163,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.emptyFlow
@@ -201,8 +203,9 @@ class AdbToolboxProjectService(private val project: Project) : Disposable {
     val processExecutor: ProcessExecutor =
         LoggingProcessExecutor(JvmProcessExecutor(), diagnosticsLog, SystemMonotonicClock, diagnostics.commandStats)
 
-    val settingsRepository: SettingsRepository =
-        SettingsPersistenceAdapter(project.service<AdbToolboxProjectState>())
+    private val settingsAdapter = SettingsPersistenceAdapter(project.service<AdbToolboxProjectState>())
+
+    val settingsRepository: SettingsRepository = settingsAdapter
 
     private val executableFileProbe = JvmExecutableFileProbe()
 
@@ -239,8 +242,13 @@ class AdbToolboxProjectService(private val project: Project) : Disposable {
         }
         if (SettingsDependency.ScrcpyPath in changed) scrcpyAvailabilityViewModel.refresh()
         // Capture reads the repository for each new target, so it has no cache to invalidate.
-        // The Logcat runtime is composed by its own feature task and consumes the persisted size.
+        if (SettingsDependency.LogcatBufferSize in changed) {
+            val bytes = settingsAdapter.readSettingsNow().logcatBufferSizeKb * 1024
+            settingsScope.launch(dispatcherProvider.default) { logcatSessionManager.buffer.resize(bytes) }
+        }
     }
+
+    private val settingsScope = childScope()
 
     internal val settingsUseCase = SettingsUseCase(
         repository = settingsRepository,
@@ -883,6 +891,7 @@ class AdbToolboxProjectService(private val project: Project) : Disposable {
         dispatchers = dispatcherProvider,
         selectedDeviceState = selectedDeviceViewModel.state,
         transport = adbTransport,
+        buffer = LogcatBuffer(capacityBytes = settingsAdapter.readSettingsNow().logcatBufferSizeKb * 1024),
     )
 
     /** Task 035's package-pid resolver/tracker, driven by [selectedPackageViewModel] — the same
