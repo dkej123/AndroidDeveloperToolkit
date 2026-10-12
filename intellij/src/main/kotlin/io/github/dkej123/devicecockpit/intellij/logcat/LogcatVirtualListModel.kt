@@ -96,7 +96,12 @@ class LogcatVirtualListModel(
     }
 
     companion object {
-        const val DEFAULT_MAX_RENDER_ROWS = 100_000
+        /**
+         * The newest rows the list keeps (the 16 MB buffer behind it holds ~150k). Every layout walks
+         * all rows, so 100k pinned the EDT with wrapping on (2026-10-12); search and filters still
+         * run over the whole buffer.
+         */
+        const val DEFAULT_MAX_RENDER_ROWS = 20_000
     }
 }
 

@@ -70,11 +70,21 @@ class LogcatCoordinator(
     private val badgeRegistration = aggregator.registerBadgeContributor(badgeContributor)
     private var wasPaused = false
 
+    /**
+     * Whether Logcat is on screen. While it is not, updates are skipped and nothing renders (user
+     * decision 2026-10-12); coming back shows the buffer as it is then ([onShown]).
+     */
+    internal var showing: () -> Boolean = { panel.isShowing }
+    private var missedWhileHidden = false
+
     init {
         // Collected on the main context itself, so each render reads the state as it is on the EDT:
         // a value captured off the EDT could be older than what the user has typed since, and
         // rendering it would roll the search field back.
         scope.launch(dispatchers.main) { controller.state.collect { state -> render(state) } }
+        panel.addHierarchyListener { event ->
+            if (event.changeFlags and java.awt.event.HierarchyEvent.SHOWING_CHANGED.toLong() != 0L && panel.isShowing) onShown()
+        }
         controller.filterUpdates
             .onEach { update -> withContext(dispatchers.main) { onFilterUpdate(update) } }
             .launchIn(scope)
@@ -104,18 +114,35 @@ class LogcatCoordinator(
         aggregator.refresh()
     }
 
-    private fun onFilterUpdate(update: LogcatFilterUpdate) {
+    internal fun onFilterUpdate(update: LogcatFilterUpdate) {
         if (controller.state.value.pauseState is LogcatPauseState.Paused) return
+        if (!showing()) {
+            missedWhileHidden = true
+            return
+        }
         applyFilterUpdate(update, controller.state.value.query)
+    }
+
+    /** Back on screen after updates were skipped: show the buffer as it is now, like resuming. */
+    internal fun onShown() {
+        if (!missedWhileHidden || controller.state.value.pauseState is LogcatPauseState.Paused) return
+        missedWhileHidden = false
+        val state = controller.state.value
+        applyFilterUpdate(LogcatFilterUpdate.Reset(controller.snapshot()), state.query)
+        if (state.follow) panel.scrollToBottom()
     }
 
     /** Production code always reaches this already marshaled onto [dispatchers]' `main` context. */
     internal fun applyFilterUpdate(update: LogcatFilterUpdate, query: String) {
         val batch = when (update) {
-            is LogcatFilterUpdate.Reset -> LogcatRenderBatchFactory.fromSnapshot(
-                LogcatBufferSnapshot(update.entries, totalBytes = 0, cursor = LogcatBufferCursor(0, 0)),
-                matchSpansFor(update.entries, query),
-            )
+            is LogcatFilterUpdate.Reset -> {
+                // Only what the list keeps; building rows and spans for the rest would be thrown away.
+                val shown = update.entries.takeLast(LogcatVirtualListModel.DEFAULT_MAX_RENDER_ROWS)
+                LogcatRenderBatchFactory.fromSnapshot(
+                    LogcatBufferSnapshot(shown, totalBytes = 0, cursor = LogcatBufferCursor(0, 0)),
+                    matchSpansFor(shown, query),
+                )
+            }
 
             is LogcatFilterUpdate.Delta -> LogcatRenderBatchFactory.fromDelta(
                 LogcatBufferDelta(

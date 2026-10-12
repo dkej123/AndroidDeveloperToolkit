@@ -229,6 +229,20 @@ class LogcatCoordinatorTest : BasePlatformTestCase() {
         coordinator.dispose()
     }
 
+    fun `test a reset larger than the list shows only the newest rows the list keeps`() {
+        val f = fixture()
+        val coordinator = coordinator(f)
+        val limit = LogcatVirtualListModel.DEFAULT_MAX_RENDER_ROWS
+        assertEquals(20_000, limit)
+        val entries = (1L..limit + 500L).map { sequencedRecord(it, "line $it") }
+
+        coordinator.applyFilterUpdate(LogcatFilterUpdate.Reset(entries), query = "")
+
+        assertEquals(limit, coordinator.virtualList.virtualModel.size)
+        assertEquals(501L, coordinator.virtualList.virtualModel.getElementAt(0).sequence)
+        coordinator.dispose()
+    }
+
     fun `test a delta filter update appends rows without a full reset`() {
         val f = fixture()
         val coordinator = coordinator(f)
@@ -237,6 +251,26 @@ class LogcatCoordinatorTest : BasePlatformTestCase() {
         coordinator.applyFilterUpdate(LogcatFilterUpdate.Delta(listOf(sequencedRecord(2, "second")), null), query = "")
 
         assertEquals(2, coordinator.virtualList.virtualModel.size)
+        coordinator.dispose()
+    }
+
+    fun `test a hidden Logcat skips updates and shows the current buffer when shown again`() {
+        val f = fixture()
+        val coordinator = coordinator(f)
+        coordinator.applyFilterUpdate(LogcatFilterUpdate.Reset(listOf(sequencedRecord(1, "first"))), query = "")
+        var showing = false
+        coordinator.showing = { showing }
+
+        coordinator.onFilterUpdate(LogcatFilterUpdate.Delta(listOf(sequencedRecord(2, "second")), null))
+        assertEquals(1, coordinator.virtualList.virtualModel.size)
+
+        showing = true
+        coordinator.onShown()
+        // The controller's buffer is what the list shows now (empty in this fixture: no stream ran).
+        assertEquals(f.controller.snapshot().size, coordinator.virtualList.virtualModel.size)
+
+        coordinator.onFilterUpdate(LogcatFilterUpdate.Delta(listOf(sequencedRecord(3, "third")), null))
+        assertEquals(f.controller.snapshot().size + 1, coordinator.virtualList.virtualModel.size)
         coordinator.dispose()
     }
 

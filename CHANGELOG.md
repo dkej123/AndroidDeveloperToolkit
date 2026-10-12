@@ -31,6 +31,9 @@ the Marketplace change notes and the GitHub release notes are generated from it
 - App names and icons were missing on Samsung phones with Android 16 (the on-device helper crashed);
   old helper copies are now removed from the device when a new one is installed.
 - Current app no longer waits for "Update" while the mouse pointer just rests over it.
+- Logcat with line wrap no longer keeps the IDE busy at 100% CPU: the list shows the newest 20,000
+  lines (search still covers the whole buffer), measures only new lines, and renders nothing while
+  Logcat is not on screen — it catches up when you open it.
 
 ## [1.1.0] - 2026-10-08
 

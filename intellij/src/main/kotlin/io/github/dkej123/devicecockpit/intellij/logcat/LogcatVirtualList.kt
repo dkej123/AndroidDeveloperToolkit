@@ -23,6 +23,7 @@ class LogcatVirtualList(
         set(value) {
             if (value == field) return
             field = value
+            if (!value.wrapLines) wrappedHeights.clear()
             applyRowHeight()
             applyRowWidth()
             virtualModel.presentationChanged()
@@ -40,27 +41,34 @@ class LogcatVirtualList(
         override fun updateLayoutState() {
             // JList's constructor installs the UI before this class's fields are initialized.
             @Suppress("SENSELESS_COMPARISON")
-            if (presentation == null || lineCounts == null || !presentation.wrapLines) return super.updateLayoutState()
-            val size = list.model.size
-            val cells = cellsPerLine()
-            val lineHeight = AdbToolboxTheme.Sizes.logLineHeight
+            if (presentation == null || wrappedHeights == null || !presentation.wrapLines) return super.updateLayoutState()
             cellHeight = -1
             cellWidth = (list.width - list.insets.left - list.insets.right).coerceAtLeast(1)
-            cellHeights = IntArray(size) { index -> lineHeight * wrappedLines(list.model.getElementAt(index) as LogcatRenderRow, cells) }
+            cellHeights = wrappedHeights.pixels(
+                virtualModel.size, cellsPerLine(), presentation, AdbToolboxTheme.Sizes.logLineHeight, virtualModel::getElementAt,
+            )
         }
     }
 
-    /** Wrapped line counts per row sequence, valid for [lineCountKey]'s width and columns. */
-    private val lineCounts = HashMap<Long, Int>()
-    private var lineCountKey: Pair<Int, LogcatRenderPresentation>? = null
+    /** Wrapped row heights, kept in step with the model by [WrappedHeightsTracker]. */
+    private val wrappedHeights = WrappedRowHeights()
 
-    private fun wrappedLines(row: LogcatRenderRow, cells: Int): Int {
-        val key = cells to presentation
-        if (key != lineCountKey || lineCounts.size > virtualModel.size * 2 + 1024) {
-            lineCounts.clear()
-            lineCountKey = key
+    private inner class WrappedHeightsTracker : ListDataListener {
+        override fun intervalAdded(e: ListDataEvent) {
+            if (presentation.wrapLines) {
+                wrappedHeights.added(e.index0, e.index1, cellsPerLine(), presentation, AdbToolboxTheme.Sizes.logLineHeight, virtualModel::getElementAt)
+            }
         }
-        return lineCounts.getOrPut(row.sequence) { LogcatRowStyle.wrappedLineCount(row, presentation, cells) }
+
+        override fun intervalRemoved(e: ListDataEvent) {
+            if (presentation.wrapLines) wrappedHeights.removed(e.index0, e.index1)
+        }
+
+        override fun contentsChanged(e: ListDataEvent) {
+            if (presentation.wrapLines && e.index0 >= 0) {
+                wrappedHeights.changed(e.index0, e.index1, cellsPerLine(), presentation, AdbToolboxTheme.Sizes.logLineHeight, virtualModel::getElementAt)
+            }
+        }
     }
 
     /** Monospace cells that fit on one wrapped line at the list's current width. */
@@ -96,6 +104,7 @@ class LogcatVirtualList(
         border = JBUI.Borders.empty(AdbToolboxTheme.Spacing.s2, 0, AdbToolboxTheme.Spacing.s3, 0)
         cellRenderer = RowRenderer { presentation }
         virtualModel.addListDataListener(WidestRowTracker())
+        virtualModel.addListDataListener(WrappedHeightsTracker())
         applyRowHeight()
         applyRowWidth()
     }

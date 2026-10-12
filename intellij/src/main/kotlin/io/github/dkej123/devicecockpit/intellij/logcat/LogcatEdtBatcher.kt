@@ -217,7 +217,7 @@ class LogcatEdtBatcher(
     companion object {
         private const val SLOW_DRAIN_MS = 50L
         private const val THROUGHPUT_REPORT_NANOS = 60_000_000_000L
-        const val DEFAULT_MAX_PENDING_ROWS = 100_000
+        const val DEFAULT_MAX_PENDING_ROWS = LogcatVirtualListModel.DEFAULT_MAX_RENDER_ROWS
         const val DEFAULT_MAX_ROWS_PER_DRAIN = 1_000
     }
 }
