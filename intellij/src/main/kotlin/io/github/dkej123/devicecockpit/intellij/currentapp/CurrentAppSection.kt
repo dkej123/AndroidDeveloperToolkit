@@ -19,6 +19,7 @@ import io.github.dkej123.devicecockpit.intellij.ui.common.DesignButton
 import io.github.dkej123.devicecockpit.intellij.ui.common.DesignButtonStyle
 import io.github.dkej123.devicecockpit.intellij.ui.common.DesignSections
 import io.github.dkej123.devicecockpit.intellij.ui.common.RoundedSurface
+import io.github.dkej123.devicecockpit.intellij.ui.common.WrapRowLayout
 import io.github.dkej123.devicecockpit.intellij.ui.common.flexRow
 import io.github.dkej123.devicecockpit.intellij.ui.common.flexSpacer
 import java.awt.BasicStroke
@@ -130,13 +131,24 @@ class CurrentAppSection(
     private val detailsLink = DesignButton("Details", DesignButtonStyle.LINK).apply {
         addActionListener { target?.let(onDetails) }
     }
-    private val actionRow = run {
-        val spacer = flexSpacer()
-        flexRow(
-            DeviceCockpitTheme.Spacing.s3, primaryButton, killButton, processDeathButton, flexRow(0, resetPermissionsButton, resetMoreButton), spacer, detailsLink,
-            fill = spacer,
-        )
-    }.apply { border = JBUI.Borders.empty(0, DeviceCockpitTheme.Spacing.sectionInset) }
+    // The buttons wrap onto a second row in a narrow tool window; Details stays at the trailing edge.
+    private val actionRow = JPanel(BorderLayout(DeviceCockpitTheme.Spacing.s3, 0)).apply {
+        isOpaque = false
+        alignmentX = Component.LEFT_ALIGNMENT
+        border = JBUI.Borders.empty(0, DeviceCockpitTheme.Spacing.sectionInset)
+        add(JPanel(WrapRowLayout(DeviceCockpitTheme.Spacing.s3, DeviceCockpitTheme.Spacing.s2)).apply {
+            isOpaque = false
+            add(primaryButton)
+            add(killButton)
+            add(processDeathButton)
+            add(flexRow(0, resetPermissionsButton, resetMoreButton))
+        }, BorderLayout.CENTER)
+        add(JPanel(BorderLayout()).apply {
+            isOpaque = false
+            // As tall as a button, so the link lines up with the first row.
+            add(flexRow(0, javax.swing.Box.createRigidArea(Dimension(0, primaryButton.preferredSize.height)), detailsLink), BorderLayout.NORTH)
+        }, BorderLayout.EAST)
+    }
 
     private val clearDataButton = DesignButton("Clear data", DesignButtonStyle.DANGER).apply {
         toolTipText = "Deletes databases, prefs and caches. Cannot be undone."
@@ -447,6 +459,8 @@ class CurrentAppSection(
     internal val primaryButtonForTest: JButton get() = primaryButton
     internal val killButtonForTest: JButton get() = killButton
     internal val processDeathButtonForTest: JButton get() = processDeathButton
+    internal val resetPermissionsButtonForTest: JButton get() = resetPermissionsButton
+    internal val resetMoreButtonForTest: JButton get() = resetMoreButton
     internal val uninstallButtonForTest: JButton get() = uninstallButton
     internal val clearDataButtonForTest: JButton get() = clearDataButton
     internal val detailsLinkForTest: JButton get() = detailsLink

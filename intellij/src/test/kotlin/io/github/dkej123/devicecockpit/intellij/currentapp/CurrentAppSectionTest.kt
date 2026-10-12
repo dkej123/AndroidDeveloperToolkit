@@ -9,6 +9,7 @@ import io.github.dkej123.devicecockpit.domain.foreground.ForegroundState
 import io.github.dkej123.devicecockpit.domain.foreground.PackageDetails
 import io.github.dkej123.devicecockpit.domain.foreground.ProcessInfo
 import io.github.dkej123.devicecockpit.domain.foreground.RuntimePermission
+import javax.swing.SwingUtilities
 import kotlin.time.Duration.Companion.seconds
 
 class CurrentAppSectionTest : BasePlatformTestCase() {
@@ -94,6 +95,33 @@ class CurrentAppSectionTest : BasePlatformTestCase() {
 
         s.update(CurrentAppViewState(display = app(killed = true), deviceOnline = true))
         assertFalse(s.processDeathButtonForTest.isEnabled)
+    }
+
+    fun `test every action stays whole and inside a narrow tool window`() {
+        val s = section()
+        s.update(CurrentAppViewState(display = app(), updatedAtMillis = 8_000, deviceOnline = true))
+
+        s.setSize(380, 2_000)
+        layoutTree(s)
+        s.setSize(380, s.preferredSize.height)
+        layoutTree(s)
+
+        val actions = listOf(s.primaryButtonForTest, s.killButtonForTest, s.processDeathButtonForTest, s.resetPermissionsButtonForTest, s.resetMoreButtonForTest, s.detailsLinkForTest)
+        val bounds = actions.associate { it.text.ifEmpty { "caret" } to SwingUtilities.convertRectangle(it.parent, it.bounds, s) }
+        bounds.forEach { (name, rect) ->
+            assertTrue("$name is cut: $rect", rect.width >= actions.first { (it.text.ifEmpty { "caret" }) == name }.preferredSize.width)
+            assertTrue("$name leaves the section: $rect", rect.x >= 0 && rect.x + rect.width <= s.width && rect.y + rect.height <= s.height)
+        }
+        bounds.values.toList().let { rects ->
+            rects.forEachIndexed { i, a -> rects.drop(i + 1).forEach { b -> assertFalse("$a overlaps $b", a.intersects(b)) } }
+        }
+    }
+
+    private fun layoutTree(component: java.awt.Component) {
+        if (component is java.awt.Container) {
+            component.doLayout()
+            component.components.forEach(::layoutTree)
+        }
     }
 
     fun `test the process time keeps counting between polls`() {

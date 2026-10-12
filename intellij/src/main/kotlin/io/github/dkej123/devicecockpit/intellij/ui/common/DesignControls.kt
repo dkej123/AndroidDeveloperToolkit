@@ -253,6 +253,54 @@ class FlexRowLayout(private val gap: Int) : LayoutManager2 {
 }
 
 /**
+ * Children at their preferred size, left to right [gap] apart, wrapping to a new row [rowGap] below
+ * when the next one does not fit (the prototype's `flex-wrap: wrap`). Unlike FlowLayout there is no
+ * gap at the edges, and the preferred height follows the width the parent gives the row.
+ */
+class WrapRowLayout(private val gap: Int, private val rowGap: Int) : java.awt.LayoutManager {
+    override fun preferredLayoutSize(parent: Container): Dimension = synchronized(parent.treeLock) {
+        val insets = parent.insets
+        val width = (if (parent.width > 0) parent.width else parent.parent?.width ?: 0) - insets.left - insets.right
+        val rows = rows(parent, if (width > 0) width else Int.MAX_VALUE)
+        Dimension(
+            (rows.maxOfOrNull { row -> rowWidth(row) } ?: 0) + insets.left + insets.right,
+            rows.sumOf { row -> row.maxOf { it.preferredSize.height } } + rowGap * (rows.size - 1).coerceAtLeast(0) + insets.top + insets.bottom,
+        )
+    }
+
+    override fun minimumLayoutSize(parent: Container): Dimension = preferredLayoutSize(parent)
+
+    override fun layoutContainer(parent: Container) = synchronized(parent.treeLock) {
+        val insets = parent.insets
+        var y = insets.top
+        rows(parent, parent.width - insets.left - insets.right).forEach { row ->
+            val height = row.maxOf { it.preferredSize.height }
+            var x = insets.left
+            row.forEach { component ->
+                val size = component.preferredSize
+                component.setBounds(x, y + (height - size.height) / 2, size.width, size.height)
+                x += size.width + gap
+            }
+            y += height + rowGap
+        }
+    }
+
+    private fun rows(parent: Container, available: Int): List<List<Component>> {
+        val rows = mutableListOf<MutableList<Component>>()
+        parent.components.filter(Component::isVisible).forEach { component ->
+            val row = rows.lastOrNull()
+            if (row == null || rowWidth(row) + gap + component.preferredSize.width > available) rows += mutableListOf(component) else row += component
+        }
+        return rows
+    }
+
+    private fun rowWidth(row: List<Component>): Int = row.sumOf { it.preferredSize.width } + gap * (row.size - 1)
+
+    override fun addLayoutComponent(name: String?, comp: Component?) = Unit
+    override fun removeLayoutComponent(comp: Component?) = Unit
+}
+
+/**
  * Stacks children top to bottom at full width and preferred height, [gap] apart — but only
  * between children that are visible *and* non-empty, so rows that come and go (status rows,
  * disclosures, empty slots) never leave a double gap behind.
