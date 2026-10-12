@@ -284,9 +284,11 @@ change the selection.
   1 s after any of our own app actions (Restart/Launch/Kill/Clear/Uninstall, Apps actions too), header meta click.
 - Poll every 3 s only while the Device view is visible and the IDE window is focused; stop otherwise.
 - Cheap path first: compare only the foreground package + PID; re-read version / target SDK only when the package changes.
-- No jumping: while the pointer is over the section, keyboard focus is inside it, an action is in progress,
-  or a confirm is open, a detected change is **held** and announced in the header meta link.
-  It applies on mouse-out after 600 ms, on click, or when focus leaves. Manual refresh never holds.
+- No jumping: while the pointer is moving over the section (moved within the last 2 s), keyboard focus
+  is inside it, an action is in progress, or a confirm is open, a detected change is **held** and
+  announced in the header meta link. It applies on mouse-out after 600 ms, on click, when focus
+  leaves, or at the next poll once the pointer has rested for 2 s (the user is busy with the phone).
+  Manual refresh never holds.
   The first query shows the skeleton; later refreshes keep the content and only change the meta to "reading…".
 
 **Widths**

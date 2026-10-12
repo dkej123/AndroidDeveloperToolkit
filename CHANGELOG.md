@@ -30,6 +30,7 @@ the Marketplace change notes and the GitHub release notes are generated from it
 ### Fixed
 - App names and icons were missing on Samsung phones with Android 16 (the on-device helper crashed);
   old helper copies are now removed from the device when a new one is installed.
+- Current app no longer waits for "Update" while the mouse pointer just rests over it.
 
 ## [1.1.0] - 2026-10-08
 

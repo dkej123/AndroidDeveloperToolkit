@@ -120,6 +120,26 @@ class CurrentAppViewModelTest {
     }
 
     @Test
+    fun `a pointer resting over the section stops holding after 2 s, a moving one keeps holding`() {
+        vm.setVisible(true)
+        scope.runCurrent()
+        vm.setPointerInside(true)
+        phone.front = "com.maps"
+
+        scope.testScheduler.advanceTimeBy(2_500)
+        vm.pointerMoved()
+        scope.testScheduler.advanceTimeBy(600)
+        scope.runCurrent()
+        shownPackage() shouldBe "com.acme.shop" // poll at 3 s, pointer moved 0.5 s ago
+        vm.state.value.pendingPackage shouldBe "com.maps"
+
+        scope.testScheduler.advanceTimeBy(3_000)
+        scope.runCurrent()
+        shownPackage() shouldBe "com.maps" // poll at 6 s, pointer still for 3.5 s
+        vm.state.value.pendingPackage shouldBe null
+    }
+
+    @Test
     fun `a manual refresh never holds`() {
         scope.runCurrent()
         vm.setPointerInside(true)

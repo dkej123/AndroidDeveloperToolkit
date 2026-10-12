@@ -30,6 +30,8 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
 /** An action of the Current app section (design §3a). */
+private const val POINTER_IDLE_MS = 2_000L
+
 enum class CurrentAppAction { Restart, Launch, Kill, ResetPermissions, ClearData, Uninstall }
 
 /** What is shown (design §3a states). */
@@ -97,6 +99,7 @@ class CurrentAppViewModel(
     private var visible = false
     private var windowFocused = true
     private var pointerInside = false
+    private var pointerMovedAt = 0L
     private var focusInside = false
     private var confirmOpen = false
 
@@ -131,7 +134,13 @@ class CurrentAppViewModel(
 
     fun setPointerInside(value: Boolean) {
         pointerInside = value
+        pointerMovedAt = now()
         if (!value) releaseHold()
+    }
+
+    /** The pointer moved or clicked inside the section; only a recently active pointer holds a change. */
+    fun pointerMoved() {
+        pointerMovedAt = now()
     }
 
     fun setFocusInside(value: Boolean) {
@@ -152,7 +161,11 @@ class CurrentAppViewModel(
         pendingSnapshot?.let { show(it) }
     }
 
-    private val held: Boolean get() = pointerInside || focusInside || confirmOpen || _state.value.busy != null
+    // A pointer resting over the section (the user is busy with the phone) must not hold changes
+    // forever; only one that moved within POINTER_IDLE_MS may be about to click.
+    private val pointerHolds: Boolean get() = pointerInside && now() - pointerMovedAt < POINTER_IDLE_MS
+
+    private val held: Boolean get() = pointerHolds || focusInside || confirmOpen || _state.value.busy != null
 
     private fun releaseHold() {
         if (!held) applyPending()

@@ -27,7 +27,7 @@ import kotlinx.coroutines.withContext
  * Mounts Current app (design §3a) at the top of the Device view and feeds its freshness inputs:
  * shown/hidden (the section's own showing state covers both the rail and the tool window), IDE
  * focus, pointer and keyboard focus inside the section (a pointer leaving releases a held change
- * after 600 ms; see [holdsFocus] for which focus counts) and an open confirmation.
+ * after 600 ms, one resting still stops holding after 2 s; see [holdsFocus] for which focus counts) and an open confirmation.
  */
 class CurrentAppCoordinator(
     slot: JPanel,
@@ -66,6 +66,8 @@ class CurrentAppCoordinator(
             if (!pointerInside) {
                 pointerInside = true
                 viewModel.setPointerInside(true)
+            } else {
+                viewModel.pointerMoved()
             }
         } else if (pointerInside && !releasePointer.isRunning) {
             releasePointer.restart()
