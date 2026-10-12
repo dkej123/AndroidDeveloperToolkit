@@ -9,7 +9,7 @@ import io.github.dkej123.devicecockpit.application.devicefacts.DeviceSectionMeta
 import io.github.dkej123.devicecockpit.domain.devicefacts.DeviceFactId
 import io.github.dkej123.devicecockpit.domain.devicefacts.DeviceFactState
 import io.github.dkej123.devicecockpit.domain.devicefacts.DeviceFactValue
-import io.github.dkej123.devicecockpit.intellij.ui.common.AdbToolboxTheme
+import io.github.dkej123.devicecockpit.intellij.ui.common.DeviceCockpitTheme
 import io.github.dkej123.devicecockpit.intellij.ui.common.CenteredWrappingText
 import io.github.dkej123.devicecockpit.intellij.ui.common.DesignButton
 import io.github.dkej123.devicecockpit.intellij.ui.common.DesignButtonStyle
@@ -86,20 +86,20 @@ class DeviceFactsPanel(
     // ---- Screen (design §3 "Screen": the former Mirroring and Capture sections) ----
 
     /** `screenBarStyle`: Mirror (split) · Screenshot (split) · Record, 4px apart, 10px inset. */
-    val screenToolbar: JPanel = flexRow(AdbToolboxTheme.Spacing.s2).apply {
-        border = JBUI.Borders.empty(0, AdbToolboxTheme.Spacing.sectionInset)
+    val screenToolbar: JPanel = flexRow(DeviceCockpitTheme.Spacing.s2).apply {
+        border = JBUI.Borders.empty(0, DeviceCockpitTheme.Spacing.sectionInset)
     }
 
     /** Under the toolbar: the inline mirroring options and the scrcpy-missing help (own insets). */
     val mirroringSlot: JBPanel<Nothing> = stackSlot()
 
     /** `screenInspectRowStyle`: the labelled Inspect layout button on its own row. */
-    val inspectSlot: JBPanel<Nothing> = slot(FlexRowLayout(AdbToolboxTheme.Spacing.s3))
+    val inspectSlot: JBPanel<Nothing> = slot(FlexRowLayout(DeviceCockpitTheme.Spacing.s3))
 
     /** Status rows shown only while active: Mirroring · … + Stop, Recording · … + Stop & save. */
     val screenStatusSlot: JBPanel<Nothing> = stackSlot()
 
-    val deviceActionsSlot: JBPanel<Nothing> = slot(FlexRowLayout(AdbToolboxTheme.Spacing.s3))
+    val deviceActionsSlot: JBPanel<Nothing> = slot(FlexRowLayout(DeviceCockpitTheme.Spacing.s3))
 
     /** Last in Screen: the "Inspector open" row (design §9), which carries its own inset. */
     val captureNoteSlot: JPanel = JPanel(BorderLayout()).apply {
@@ -115,8 +115,8 @@ class DeviceFactsPanel(
 
     private val factLabels: Map<DeviceFactId, JBLabel> = DeviceFactId.entries.associateWith {
         JBLabel("Loading…").apply {
-            font = AdbToolboxTheme.Typography.mono
-            foreground = AdbToolboxTheme.Colors.text
+            font = DeviceCockpitTheme.Typography.mono
+            foreground = DeviceCockpitTheme.Colors.text
         }
     }
 
@@ -125,7 +125,7 @@ class DeviceFactsPanel(
     // Header meta "~/Desktop · scrcpy 4.1" from DeviceSectionMetaViewModel (capture dir, resolved scrcpy).
     private val screenMetaLabel = DesignSections.metaLabel("scrcpy", 9.5f)
 
-    private val factsGrid = JBPanel<Nothing>(GridLayout(0, 3, AdbToolboxTheme.Spacing.s4, AdbToolboxTheme.Spacing.s4)).apply {
+    private val factsGrid = JBPanel<Nothing>(GridLayout(0, 3, DeviceCockpitTheme.Spacing.s4, DeviceCockpitTheme.Spacing.s4)).apply {
         isOpaque = false
         alignmentX = Component.LEFT_ALIGNMENT
         border = JBUI.Borders.empty(2, 10, 6, 10)
@@ -136,7 +136,7 @@ class DeviceFactsPanel(
     // viewport width so section meta, facts and help text never extend past the visible area.
     private val contentPanel = ViewportWidthPanel().apply {
         layout = BorderLayout()
-        background = AdbToolboxTheme.Colors.bg
+        background = DeviceCockpitTheme.Colors.bg
         add(JBPanel<Nothing>().apply {
             layout = BoxLayout(this, BoxLayout.Y_AXIS)
             isOpaque = false
@@ -153,15 +153,15 @@ class DeviceFactsPanel(
         ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER,
     ).apply {
         border = BorderFactory.createEmptyBorder()
-        viewport.background = AdbToolboxTheme.Colors.bg
+        viewport.background = DeviceCockpitTheme.Colors.bg
     }
 
     // `emptyBodyStyle`: 11px `textDim`, centered, `max-width: 250px`; narrower columns wrap it to
     // their own content width.
     private val emptyBodyLabel = CenteredWrappingText(
         EMPTY_BODY,
-        AdbToolboxTheme.Typography.body.deriveFont(JBUIScale.scale(11f)),
-        AdbToolboxTheme.Colors.textDim,
+        DeviceCockpitTheme.Typography.body.deriveFont(JBUIScale.scale(11f)),
+        DeviceCockpitTheme.Colors.textDim,
         maxWidth = { JBUIScale.scale(250) },
     )
 
@@ -169,11 +169,11 @@ class DeviceFactsPanel(
     private val skeletonBars = List(6) { index -> SkeletonBar(SKELETON_WIDTHS[index]) }
     private val loadingPanel = JBPanel<Nothing>().apply {
         layout = BoxLayout(this, BoxLayout.Y_AXIS)
-        background = AdbToolboxTheme.Colors.bg
+        background = DeviceCockpitTheme.Colors.bg
         border = JBUI.Borders.empty(12)
         skeletonBars.forEach { bar ->
             add(bar)
-            add(Box.createVerticalStrut(AdbToolboxTheme.Spacing.s4))
+            add(Box.createVerticalStrut(DeviceCockpitTheme.Spacing.s4))
         }
         add(Box.createVerticalGlue())
     }
@@ -182,7 +182,7 @@ class DeviceFactsPanel(
     internal val factColumnCount: Int get() = (factsGrid.layout as GridLayout).columns
 
     init {
-        background = AdbToolboxTheme.Colors.bg
+        background = DeviceCockpitTheme.Colors.bg
         add(contentScroll, CONTENT)
         add(emptyPanel, EMPTY)
         add(loadingPanel, LOADING)
@@ -213,10 +213,10 @@ class DeviceFactsPanel(
     }
 
     internal fun applyResponsiveLayout(width: Int) {
-        val columns = if (width < AdbToolboxTheme.Breakpoints.narrow) 2 else 3
+        val columns = if (width < DeviceCockpitTheme.Breakpoints.narrow) 2 else 3
         val current = factsGrid.layout as GridLayout
         if (current.columns != columns) {
-            factsGrid.layout = GridLayout(0, columns, AdbToolboxTheme.Spacing.s4, AdbToolboxTheme.Spacing.s4)
+            factsGrid.layout = GridLayout(0, columns, DeviceCockpitTheme.Spacing.s4, DeviceCockpitTheme.Spacing.s4)
             factsGrid.revalidate()
         }
     }
@@ -240,8 +240,8 @@ class DeviceFactsPanel(
     private fun deviceSection(): JPanel {
         val title = DesignSections.titleLabel("Device")
         return DesignSections.section(
-            flexRow(AdbToolboxTheme.Spacing.s4, title, copyReportButton).apply {
-                border = JBUI.Borders.empty(0, AdbToolboxTheme.Spacing.sectionInset)
+            flexRow(DeviceCockpitTheme.Spacing.s4, title, copyReportButton).apply {
+                border = JBUI.Borders.empty(0, DeviceCockpitTheme.Spacing.sectionInset)
             },
             factsGrid,
             deviceActionsSlot,
@@ -251,8 +251,8 @@ class DeviceFactsPanel(
     private fun factCell(id: DeviceFactId, value: JBLabel): JPanel = JBPanel<Nothing>(BorderLayout()).apply {
         isOpaque = false
         add(JBLabel(label(id).uppercase()).apply {
-            font = AdbToolboxTheme.Typography.groupLabel
-            foreground = AdbToolboxTheme.Colors.textFaint
+            font = DeviceCockpitTheme.Typography.groupLabel
+            foreground = DeviceCockpitTheme.Colors.textFaint
         }, BorderLayout.NORTH)
         add(value, BorderLayout.CENTER)
     }
@@ -268,26 +268,26 @@ class DeviceFactsPanel(
         // `emptyWrapStyle` gap 6 between every item; the glyph adds `margin-bottom: 2`, the
         // actions `margin-top: 4` and the footer `margin-top: 8`.
         column.add(centered(EmptyDeviceGlyph()))
-        column.add(Box.createVerticalStrut(AdbToolboxTheme.Spacing.s3 + AdbToolboxTheme.Spacing.s1))
+        column.add(Box.createVerticalStrut(DeviceCockpitTheme.Spacing.s3 + DeviceCockpitTheme.Spacing.s1))
         column.add(centered(JBLabel("No device connected").apply {
-            font = AdbToolboxTheme.Typography.sectionTitle
-            foreground = AdbToolboxTheme.Colors.text
+            font = DeviceCockpitTheme.Typography.sectionTitle
+            foreground = DeviceCockpitTheme.Colors.text
         }))
-        column.add(Box.createVerticalStrut(AdbToolboxTheme.Spacing.s3))
+        column.add(Box.createVerticalStrut(DeviceCockpitTheme.Spacing.s3))
         column.add(centered(emptyBodyLabel))
-        column.add(Box.createVerticalStrut(AdbToolboxTheme.Spacing.s3 + AdbToolboxTheme.Spacing.s2))
+        column.add(Box.createVerticalStrut(DeviceCockpitTheme.Spacing.s3 + DeviceCockpitTheme.Spacing.s2))
         column.add(centered(flexRow(
-            AdbToolboxTheme.Spacing.s3,
+            DeviceCockpitTheme.Spacing.s3,
             DesignButton("Refresh", DesignButtonStyle.PRIMARY).apply { addActionListener { onRefresh() } },
             DesignButton("Pair over Wi-Fi…", DesignButtonStyle.SECONDARY).apply { addActionListener { onPairOverWifi() } },
         ).apply { maximumSize = preferredSize }))
-        column.add(Box.createVerticalStrut(AdbToolboxTheme.Spacing.s3 + AdbToolboxTheme.Spacing.s4))
+        column.add(Box.createVerticalStrut(DeviceCockpitTheme.Spacing.s3 + DeviceCockpitTheme.Spacing.s4))
         column.add(centered(JBLabel("adb 35.0.2 · /opt/homebrew/bin/adb").apply {
-            font = AdbToolboxTheme.Typography.monoMeta
-            foreground = AdbToolboxTheme.Colors.textFaint
+            font = DeviceCockpitTheme.Typography.monoMeta
+            foreground = DeviceCockpitTheme.Colors.textFaint
         }))
         return JBPanel<Nothing>(BorderLayout()).apply {
-            background = AdbToolboxTheme.Colors.bg
+            background = DeviceCockpitTheme.Colors.bg
             add(column, BorderLayout.NORTH)
         }
     }
@@ -302,7 +302,7 @@ class DeviceFactsPanel(
 }
 
 /** A full-width slot whose children stack with the 6px row gap; empty while nothing is mounted/visible. */
-private fun stackSlot(): JBPanel<Nothing> = object : JBPanel<Nothing>(VerticalStackLayout { AdbToolboxTheme.Spacing.s3 }) {
+private fun stackSlot(): JBPanel<Nothing> = object : JBPanel<Nothing>(VerticalStackLayout { DeviceCockpitTheme.Spacing.s3 }) {
     override fun getMaximumSize(): Dimension = Dimension(Int.MAX_VALUE, preferredSize.height)
 }.apply {
     isOpaque = false
@@ -328,7 +328,7 @@ private class SkeletonBar(private val widthPercent: Int) : JComponent() {
     override fun paintComponent(graphics: Graphics) {
         val copy = graphics.create() as Graphics2D
         try {
-            copy.color = AdbToolboxTheme.Colors.header
+            copy.color = DeviceCockpitTheme.Colors.header
             copy.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
             copy.fillRoundRect(0, 0, width * widthPercent / 100, height, JBUIScale.scale(6), JBUIScale.scale(6))
         } finally {
@@ -347,11 +347,11 @@ private class EmptyDeviceGlyph : JComponent() {
         val copy = graphics.create() as Graphics2D
         try {
             // `emptyIconStyle`: radius 5, 1.6px `borderStrong` outline.
-            copy.color = AdbToolboxTheme.Colors.borderStrong
+            copy.color = DeviceCockpitTheme.Colors.borderStrong
             copy.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
             val stroke = JBUIScale.scale(1.6f)
             copy.stroke = java.awt.BasicStroke(stroke)
-            val arc = AdbToolboxTheme.Radii.button * 2f
+            val arc = DeviceCockpitTheme.Radii.button * 2f
             copy.draw(java.awt.geom.RoundRectangle2D.Float(stroke / 2, stroke / 2, width - stroke, height - stroke, arc, arc))
         } finally {
             copy.dispose()

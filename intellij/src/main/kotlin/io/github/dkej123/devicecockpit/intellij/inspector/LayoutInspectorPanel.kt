@@ -17,7 +17,7 @@ import io.github.dkej123.devicecockpit.domain.layout.AccessibilityIssueKind
 import io.github.dkej123.devicecockpit.domain.layout.AccessibilityStop
 import io.github.dkej123.devicecockpit.domain.layout.LayoutMeasurement
 import io.github.dkej123.devicecockpit.domain.layout.UiNode
-import io.github.dkej123.devicecockpit.intellij.ui.common.AdbToolboxTheme
+import io.github.dkej123.devicecockpit.intellij.ui.common.DeviceCockpitTheme
 import io.github.dkej123.devicecockpit.intellij.ui.common.DesignButton
 import io.github.dkej123.devicecockpit.intellij.ui.common.DesignButtonStyle
 import io.github.dkej123.devicecockpit.intellij.ui.common.RoundedSurface
@@ -102,8 +102,8 @@ class LayoutInspectorPanel(
     // ---- toolbar ----
     private val recaptureButton = DesignButton("Re-capture", DesignButtonStyle.SECONDARY).apply { addActionListener { onRecapture() } }
     private val metaLabel = JBLabel("").apply {
-        font = AdbToolboxTheme.Typography.mono.deriveFont(JBUIScale.scale(10f))
-        foreground = AdbToolboxTheme.Colors.textDim
+        font = DeviceCockpitTheme.Typography.mono.deriveFont(JBUIScale.scale(10f))
+        foreground = DeviceCockpitTheme.Colors.textDim
         minimumSize = Dimension(0, preferredSize.height)
     }
     private val gridChip = chip("8 dp grid", "G") { canvas.grid = it }
@@ -115,7 +115,7 @@ class LayoutInspectorPanel(
     private val zoomLabel = JButton("Fit").apply {
         isBorderPainted = false
         isContentAreaFilled = false
-        font = AdbToolboxTheme.Typography.mono.deriveFont(JBUIScale.scale(10f))
+        font = DeviceCockpitTheme.Typography.mono.deriveFont(JBUIScale.scale(10f))
         toolTipText = "Fit (F) · 100 % (1)"
         addActionListener { canvas.zoom = null }
     }
@@ -124,27 +124,27 @@ class LayoutInspectorPanel(
         val spacer = flexSpacer()
         flexRow(JBUIScale.scale(6), recaptureButton, metaLabel, spacer, treeChip, gridChip, pickerChip, overlayChip, auditChip, zoomOut, zoomLabel, zoomIn, fill = metaLabel)
     }.apply {
-        background = AdbToolboxTheme.Colors.header
+        background = DeviceCockpitTheme.Colors.header
         isOpaque = true
         border = BorderFactory.createCompoundBorder(
-            BorderFactory.createMatteBorder(0, 0, 1, 0, AdbToolboxTheme.Colors.border),
+            BorderFactory.createMatteBorder(0, 0, 1, 0, DeviceCockpitTheme.Colors.border),
             JBUI.Borders.empty(0, 8),
         )
         preferredSize = Dimension(0, JBUIScale.scale(34))
     }
 
     // ---- overlay bar ----
-    private val overlayName = JBLabel("").apply { font = AdbToolboxTheme.Typography.mono.deriveFont(JBUIScale.scale(10f)) }
+    private val overlayName = JBLabel("").apply { font = DeviceCockpitTheme.Typography.mono.deriveFont(JBUIScale.scale(10f)) }
     private val scaleButtons = OverlayScale.entries.associateWith { s -> JToggleButton(s.label).apply { addActionListener { updateOverlay { it.copy(scale = s) } } } }
     private val opacity = JSlider(0, 100, 50).apply {
         preferredSize = Dimension(JBUIScale.scale(110), preferredSize.height)
         addChangeListener { updateOverlay { it.copy(opacity = value) } }
     }
     private val blend = JToggleButton("Difference").apply { addActionListener { updateOverlay { it.copy(difference = isSelected) } } }
-    private val nudgeLabel = JBLabel("").apply { font = AdbToolboxTheme.Typography.mono.deriveFont(JBUIScale.scale(10f)) }
+    private val nudgeLabel = JBLabel("").apply { font = DeviceCockpitTheme.Typography.mono.deriveFont(JBUIScale.scale(10f)) }
     private val overlayBar = JPanel(FlowLayout(FlowLayout.LEADING, JBUIScale.scale(6), JBUIScale.scale(4))).apply {
-        background = AdbToolboxTheme.Colors.panel
-        border = BorderFactory.createMatteBorder(0, 0, 1, 0, AdbToolboxTheme.Colors.border)
+        background = DeviceCockpitTheme.Colors.panel
+        border = BorderFactory.createMatteBorder(0, 0, 1, 0, DeviceCockpitTheme.Colors.border)
         add(overlayName)
         scaleButtons.values.forEach(::add)
         add(JBLabel("Opacity"))
@@ -162,14 +162,14 @@ class LayoutInspectorPanel(
         border = JBUI.Borders.empty(6, 10)
         isVisible = false
     }
-    private val stateTitle = JBLabel("").apply { font = AdbToolboxTheme.Typography.body.deriveFont(Font.BOLD, JBUIScale.scale(13f)); alignmentX = Component.CENTER_ALIGNMENT }
-    private val stateDetail = JBLabel("").apply { foreground = AdbToolboxTheme.Colors.textDim; alignmentX = Component.CENTER_ALIGNMENT }
-    private val stateMono = JBLabel("").apply { font = AdbToolboxTheme.Typography.mono; foreground = AdbToolboxTheme.Colors.red; alignmentX = Component.CENTER_ALIGNMENT }
+    private val stateTitle = JBLabel("").apply { font = DeviceCockpitTheme.Typography.body.deriveFont(Font.BOLD, JBUIScale.scale(13f)); alignmentX = Component.CENTER_ALIGNMENT }
+    private val stateDetail = JBLabel("").apply { foreground = DeviceCockpitTheme.Colors.textDim; alignmentX = Component.CENTER_ALIGNMENT }
+    private val stateMono = JBLabel("").apply { font = DeviceCockpitTheme.Typography.mono; foreground = DeviceCockpitTheme.Colors.red; alignmentX = Component.CENTER_ALIGNMENT }
     private val retryButton = DesignButton("Retry", DesignButtonStyle.PRIMARY).apply { addActionListener { onRecapture() } }
     private val quickTogglesButton = DesignButton("Open Quick toggles", DesignButtonStyle.SECONDARY).apply { addActionListener { onOpenQuickToggles() } }
     private val statePanel = JPanel().apply {
         layout = BoxLayout(this, BoxLayout.Y_AXIS)
-        background = AdbToolboxTheme.Colors.bg
+        background = DeviceCockpitTheme.Colors.bg
         border = JBUI.Borders.empty(80, 24)
         add(stateTitle)
         add(javax.swing.Box.createVerticalStrut(JBUIScale.scale(6)))
@@ -203,7 +203,7 @@ class LayoutInspectorPanel(
         // 12px per level (design §9), so a deep Settings hierarchy still fits 260px.
         putClientProperty(com.intellij.ui.tree.ui.Control.Painter.KEY, InspectorTreePainter)
         isRootVisible = true
-        background = AdbToolboxTheme.Colors.panel
+        background = DeviceCockpitTheme.Colors.panel
         cellRenderer = NodeRenderer()
         // Selecting from the canvas expands ancestors; scrolling to the whole row would pan sideways.
         scrollsOnExpand = false
@@ -213,11 +213,11 @@ class LayoutInspectorPanel(
         }
     }
     private val treeFooter = JBLabel("").apply {
-        font = AdbToolboxTheme.Typography.mono.deriveFont(JBUIScale.scale(10f))
-        foreground = AdbToolboxTheme.Colors.textFaint
+        font = DeviceCockpitTheme.Typography.mono.deriveFont(JBUIScale.scale(10f))
+        foreground = DeviceCockpitTheme.Colors.textFaint
         border = JBUI.Borders.empty(4, 8)
     }
-    private val treeEmpty = JBLabel("").apply { foreground = AdbToolboxTheme.Colors.textDim; border = JBUI.Borders.empty(8); isVisible = false }
+    private val treeEmpty = JBLabel("").apply { foreground = DeviceCockpitTheme.Colors.textDim; border = JBUI.Borders.empty(8); isVisible = false }
     private val treePanel = JPanel(BorderLayout()).apply {
         add(JPanel(BorderLayout()).apply { border = JBUI.Borders.empty(6); add(treeSearch) }, BorderLayout.NORTH)
         add(JPanel(BorderLayout()).apply {
@@ -248,13 +248,13 @@ class LayoutInspectorPanel(
     }
 
     // ---- status bar ----
-    private val cursorLabel = JBLabel("").apply { font = AdbToolboxTheme.Typography.mono.deriveFont(JBUIScale.scale(10f)) }
-    private val messageLabel = JBLabel("").apply { foreground = AdbToolboxTheme.Colors.textDim; minimumSize = Dimension(0, 0) }
-    private val densityLabel = JBLabel("").apply { font = AdbToolboxTheme.Typography.mono.deriveFont(JBUIScale.scale(10f)); foreground = AdbToolboxTheme.Colors.textFaint }
+    private val cursorLabel = JBLabel("").apply { font = DeviceCockpitTheme.Typography.mono.deriveFont(JBUIScale.scale(10f)) }
+    private val messageLabel = JBLabel("").apply { foreground = DeviceCockpitTheme.Colors.textDim; minimumSize = Dimension(0, 0) }
+    private val densityLabel = JBLabel("").apply { font = DeviceCockpitTheme.Typography.mono.deriveFont(JBUIScale.scale(10f)); foreground = DeviceCockpitTheme.Colors.textFaint }
     private val statusBar = flexRow(JBUIScale.scale(10), cursorLabel, messageLabel, densityLabel, fill = messageLabel).apply {
-        background = AdbToolboxTheme.Colors.header
+        background = DeviceCockpitTheme.Colors.header
         isOpaque = true
-        border = BorderFactory.createCompoundBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, AdbToolboxTheme.Colors.border), JBUI.Borders.empty(0, 8))
+        border = BorderFactory.createCompoundBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, DeviceCockpitTheme.Colors.border), JBUI.Borders.empty(0, 8))
         preferredSize = Dimension(0, JBUIScale.scale(22))
     }
 
@@ -271,7 +271,7 @@ class LayoutInspectorPanel(
     }
 
     init {
-        background = AdbToolboxTheme.Colors.bg
+        background = DeviceCockpitTheme.Colors.bg
         add(JPanel(BorderLayout()).apply {
             add(toolbar, BorderLayout.NORTH)
             add(banner, BorderLayout.SOUTH)
@@ -345,18 +345,18 @@ class LayoutInspectorPanel(
         when {
             error != null && c != null -> banner(
                 "Couldn’t capture the layout — $error. Usually an animation that never settles: turn Animations off in Device → Quick toggles, then retry.",
-                AdbToolboxTheme.Colors.redBg,
+                DeviceCockpitTheme.Colors.redBg,
             )
             state.deviceGone && c != null -> banner(
                 "${c.deviceName} disconnected — this capture stays readable. Re-capture needs an online device.",
-                AdbToolboxTheme.Colors.amberBg,
+                DeviceCockpitTheme.Colors.amberBg,
             )
             canvas.secure && c != null -> banner(
                 "${c.activity?.substringBefore('/') ?: "This app"} marks this screen secure, so the screenshot is black. " +
                     "The hierarchy is still inspectable as wireframes; colors and the overlay need a screenshot.",
-                AdbToolboxTheme.Colors.amberBg,
+                DeviceCockpitTheme.Colors.amberBg,
             )
-            state.capturing -> banner("Capturing ${state.deviceName ?: "the device"}…", AdbToolboxTheme.Colors.brandBg)
+            state.capturing -> banner("Capturing ${state.deviceName ?: "the device"}…", DeviceCockpitTheme.Colors.brandBg)
             else -> banner.isVisible = false
         }
         overlayChip.isEnabled = !canvas.secure
@@ -605,8 +605,8 @@ class LayoutInspectorPanel(
             val g = graphics.create() as java.awt.Graphics2D
             try {
                 g.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING, java.awt.RenderingHints.VALUE_ANTIALIAS_ON)
-                g.color = if (isSelected) AdbToolboxTheme.Colors.accentBg else AdbToolboxTheme.Colors.panel
-                val arc = AdbToolboxTheme.Radii.field * 2
+                g.color = if (isSelected) DeviceCockpitTheme.Colors.accentBg else DeviceCockpitTheme.Colors.panel
+                val arc = DeviceCockpitTheme.Radii.field * 2
                 g.fillRoundRect(0, 0, width, height, arc, arc)
             } finally {
                 g.dispose()
@@ -614,16 +614,16 @@ class LayoutInspectorPanel(
             super.paintComponent(graphics)
         }
     }.apply {
-        font = AdbToolboxTheme.Typography.body.deriveFont(JBUIScale.scale(11f))
-        foreground = AdbToolboxTheme.Colors.text
+        font = DeviceCockpitTheme.Typography.body.deriveFont(JBUIScale.scale(11f))
+        foreground = DeviceCockpitTheme.Colors.text
         isOpaque = false
         isContentAreaFilled = false
         isFocusPainted = false
         fun refresh() {
             border = BorderFactory.createCompoundBorder(
                 io.github.dkej123.devicecockpit.intellij.ui.common.SolidChipBorder(
-                    if (isSelected) AdbToolboxTheme.Colors.accentBorder else AdbToolboxTheme.Colors.border,
-                    radius = { AdbToolboxTheme.Radii.field },
+                    if (isSelected) DeviceCockpitTheme.Colors.accentBorder else DeviceCockpitTheme.Colors.border,
+                    radius = { DeviceCockpitTheme.Radii.field },
                 ),
                 JBUI.Borders.empty(0, 8),
             )
@@ -656,11 +656,11 @@ class LayoutInspectorPanel(
     private inner class NodeRenderer : DefaultTreeCellRenderer() {
         override fun getTreeCellRendererComponent(tree: javax.swing.JTree, value: Any?, sel: Boolean, expanded: Boolean, leaf: Boolean, row: Int, hasFocus: Boolean): Component {
             // Theme colors rather than the LaF's tree defaults, which stay light in a dark editor.
-            backgroundNonSelectionColor = AdbToolboxTheme.Colors.panel
-            backgroundSelectionColor = AdbToolboxTheme.Colors.accentBg
+            backgroundNonSelectionColor = DeviceCockpitTheme.Colors.panel
+            backgroundSelectionColor = DeviceCockpitTheme.Colors.accentBg
             borderSelectionColor = null
-            textNonSelectionColor = AdbToolboxTheme.Colors.text
-            textSelectionColor = AdbToolboxTheme.Colors.text
+            textNonSelectionColor = DeviceCockpitTheme.Colors.text
+            textSelectionColor = DeviceCockpitTheme.Colors.text
             super.getTreeCellRendererComponent(tree, value, sel, expanded, leaf, row, hasFocus)
             val node = (value as? DefaultMutableTreeNode)?.userObject as? UiNode
             icon = null
@@ -697,15 +697,15 @@ class LayoutInspectorPanel(
             if (node == null) {
                 add(io.github.dkej123.devicecockpit.intellij.ui.common.WrappingText(
                     "Click an element on the screenshot or in the tree to see its attributes.",
-                    AdbToolboxTheme.Typography.body,
-                    AdbToolboxTheme.Colors.textDim,
+                    DeviceCockpitTheme.Typography.body,
+                    DeviceCockpitTheme.Colors.textDim,
                 ).apply { alignmentX = LEFT_ALIGNMENT })
                 rowsForTest = emptyMap()
             } else {
                 val h = c.snapshot.hierarchy
                 val b = node.bounds
-                add(JBLabel(node.shortClassName.ifEmpty { "View" }).apply { font = AdbToolboxTheme.Typography.body.deriveFont(Font.BOLD, JBUIScale.scale(12.5f)); alignmentX = LEFT_ALIGNMENT })
-                add(JBLabel(node.className).apply { font = AdbToolboxTheme.Typography.mono.deriveFont(JBUIScale.scale(10f)); foreground = AdbToolboxTheme.Colors.textDim; alignmentX = LEFT_ALIGNMENT })
+                add(JBLabel(node.shortClassName.ifEmpty { "View" }).apply { font = DeviceCockpitTheme.Typography.body.deriveFont(Font.BOLD, JBUIScale.scale(12.5f)); alignmentX = LEFT_ALIGNMENT })
+                add(JBLabel(node.className).apply { font = DeviceCockpitTheme.Typography.mono.deriveFont(JBUIScale.scale(10f)); foreground = DeviceCockpitTheme.Colors.textDim; alignmentX = LEFT_ALIGNMENT })
                 add(javax.swing.Box.createVerticalStrut(JBUIScale.scale(8)))
                 val rows = linkedMapOf(
                     "resource-id" to node.resourceId,
@@ -721,7 +721,7 @@ class LayoutInspectorPanel(
                 rowsForTest = rows
                 rows.forEach { (key, value) -> add(row(key, value)) }
                 add(javax.swing.Box.createVerticalStrut(JBUIScale.scale(8)))
-                add(JBLabel("STATE").apply { font = AdbToolboxTheme.Typography.groupLabel; foreground = AdbToolboxTheme.Colors.textFaint; alignmentX = LEFT_ALIGNMENT })
+                add(JBLabel("STATE").apply { font = DeviceCockpitTheme.Typography.groupLabel; foreground = DeviceCockpitTheme.Colors.textFaint; alignmentX = LEFT_ALIGNMENT })
                 val f = node.flags
                 add(JPanel(io.github.dkej123.devicecockpit.intellij.ui.common.WrappingFlowLayout(FlowLayout.LEADING, JBUIScale.scale(4), JBUIScale.scale(4))).apply {
                     alignmentX = LEFT_ALIGNMENT
@@ -732,10 +732,10 @@ class LayoutInspectorPanel(
                         "scrollable" to f.scrollable, "password" to f.password,
                     ).forEach { (name, on) ->
                         add(JBLabel(if (on) name else "<html><s>$name</s></html>").apply {
-                            font = AdbToolboxTheme.Typography.mono.deriveFont(if (on) Font.BOLD else Font.PLAIN, JBUIScale.scale(10f))
-                            foreground = if (on) AdbToolboxTheme.Colors.text else AdbToolboxTheme.Colors.textFaint
+                            font = DeviceCockpitTheme.Typography.mono.deriveFont(if (on) Font.BOLD else Font.PLAIN, JBUIScale.scale(10f))
+                            foreground = if (on) DeviceCockpitTheme.Colors.text else DeviceCockpitTheme.Colors.textFaint
                             border = BorderFactory.createCompoundBorder(
-                                BorderFactory.createLineBorder(if (on) AdbToolboxTheme.Colors.borderStrong else AdbToolboxTheme.Colors.border),
+                                BorderFactory.createLineBorder(if (on) DeviceCockpitTheme.Colors.borderStrong else DeviceCockpitTheme.Colors.border),
                                 JBUI.Borders.empty(1, 4),
                             )
                         })
@@ -743,8 +743,8 @@ class LayoutInspectorPanel(
                 })
                 add(io.github.dkej123.devicecockpit.intellij.ui.common.WrappingText(
                     "With an element selected, hover another to measure the distance between them. ↑ parent · ↓ first child · ← → siblings.",
-                    AdbToolboxTheme.Typography.caption,
-                    AdbToolboxTheme.Colors.textFaint,
+                    DeviceCockpitTheme.Typography.caption,
+                    DeviceCockpitTheme.Colors.textFaint,
                 ).apply { alignmentX = LEFT_ALIGNMENT })
             }
             revalidate()
@@ -755,9 +755,9 @@ class LayoutInspectorPanel(
             alignmentX = LEFT_ALIGNMENT
             isOpaque = false
             maximumSize = Dimension(Int.MAX_VALUE, JBUIScale.scale(38))
-            add(JBLabel(key.uppercase()).apply { font = AdbToolboxTheme.Typography.groupLabel; foreground = AdbToolboxTheme.Colors.textFaint }, BorderLayout.NORTH)
+            add(JBLabel(key.uppercase()).apply { font = DeviceCockpitTheme.Typography.groupLabel; foreground = DeviceCockpitTheme.Colors.textFaint }, BorderLayout.NORTH)
             add(JBLabel(value.ifEmpty { "—" }).apply {
-                font = AdbToolboxTheme.Typography.mono.deriveFont(JBUIScale.scale(11f))
+                font = DeviceCockpitTheme.Typography.mono.deriveFont(JBUIScale.scale(11f))
                 toolTipText = value.takeIf { it.isNotEmpty() }
                 minimumSize = Dimension(0, preferredSize.height)
             }, BorderLayout.CENTER)
@@ -769,11 +769,11 @@ class LayoutInspectorPanel(
 
     /** Accessibility mode (design §10): summary cards, problems-only filter, Copy report, the stop list. */
     inner class AuditPanel : JPanel(BorderLayout()) {
-        private val meta = JBLabel("").apply { font = AdbToolboxTheme.Typography.mono.deriveFont(JBUIScale.scale(10f)); foreground = AdbToolboxTheme.Colors.textFaint }
+        private val meta = JBLabel("").apply { font = DeviceCockpitTheme.Typography.mono.deriveFont(JBUIScale.scale(10f)); foreground = DeviceCockpitTheme.Colors.textFaint }
         private val cards = JPanel(GridLayout(1, 3, JBUIScale.scale(6), 0)).apply { isOpaque = false }
         private val problemsOnly = JBCheckBox("Problems only").apply {
             isOpaque = false
-            foreground = AdbToolboxTheme.Colors.text
+            foreground = DeviceCockpitTheme.Colors.text
             addActionListener { refill() }
         }
         private val model = DefaultListModel<AccessibilityStop>()
@@ -803,7 +803,7 @@ class LayoutInspectorPanel(
             add(JPanel().apply {
                 isOpaque = false
                 layout = BoxLayout(this, BoxLayout.Y_AXIS)
-                add(flexRow(JBUIScale.scale(8), JBLabel("Accessibility").apply { font = AdbToolboxTheme.Typography.body.deriveFont(Font.BOLD, JBUIScale.scale(12.5f)) }, flexSpacer(), meta).apply { alignmentX = LEFT_ALIGNMENT })
+                add(flexRow(JBUIScale.scale(8), JBLabel("Accessibility").apply { font = DeviceCockpitTheme.Typography.body.deriveFont(Font.BOLD, JBUIScale.scale(12.5f)) }, flexSpacer(), meta).apply { alignmentX = LEFT_ALIGNMENT })
                 add(javax.swing.Box.createVerticalStrut(JBUIScale.scale(8)))
                 add(cards.apply { alignmentX = LEFT_ALIGNMENT })
                 add(javax.swing.Box.createVerticalStrut(JBUIScale.scale(6)))
@@ -811,8 +811,8 @@ class LayoutInspectorPanel(
                 add(javax.swing.Box.createVerticalStrut(JBUIScale.scale(4)))
                 add(io.github.dkej123.devicecockpit.intellij.ui.common.WrappingText(
                     "Order is the estimated TalkBack linear order: focusable and text elements by position.",
-                    AdbToolboxTheme.Typography.caption,
-                    AdbToolboxTheme.Colors.textFaint,
+                    DeviceCockpitTheme.Typography.caption,
+                    DeviceCockpitTheme.Colors.textFaint,
                 ))
                 add(javax.swing.Box.createVerticalStrut(JBUIScale.scale(6)))
             }, BorderLayout.NORTH)
@@ -869,18 +869,18 @@ class LayoutInspectorPanel(
         }
 
         private fun card(title: String, count: Int): JComponent = RoundedSurface(
-            if (count > 0) AdbToolboxTheme.Colors.redBg else AdbToolboxTheme.Colors.panel,
-            if (count > 0) AdbToolboxTheme.Colors.redBorder else AdbToolboxTheme.Colors.border,
+            if (count > 0) DeviceCockpitTheme.Colors.redBg else DeviceCockpitTheme.Colors.panel,
+            if (count > 0) DeviceCockpitTheme.Colors.redBorder else DeviceCockpitTheme.Colors.border,
         ).apply {
             layout = BorderLayout()
             border = JBUI.Borders.empty(6, 8)
             putClientProperty("text", "$title $count")
             add(JBLabel(count.toString()).apply {
-                font = AdbToolboxTheme.Typography.body.deriveFont(Font.BOLD, JBUIScale.scale(16f))
-                foreground = if (count > 0) AdbToolboxTheme.Colors.red else AdbToolboxTheme.Colors.text
+                font = DeviceCockpitTheme.Typography.body.deriveFont(Font.BOLD, JBUIScale.scale(16f))
+                foreground = if (count > 0) DeviceCockpitTheme.Colors.red else DeviceCockpitTheme.Colors.text
             }, BorderLayout.NORTH)
             // Three cards share 260–300px, so titles wrap at the card's width.
-            add(JBLabel("<html><body style='width: ${JBUIScale.scale(60)}px'>${title.replace("<", "&lt;")}</body></html>").apply { font = AdbToolboxTheme.Typography.caption; foreground = AdbToolboxTheme.Colors.textDim }, BorderLayout.CENTER)
+            add(JBLabel("<html><body style='width: ${JBUIScale.scale(60)}px'>${title.replace("<", "&lt;")}</body></html>").apply { font = DeviceCockpitTheme.Typography.caption; foreground = DeviceCockpitTheme.Colors.textDim }, BorderLayout.CENTER)
         }
 
         /**
@@ -891,8 +891,8 @@ class LayoutInspectorPanel(
         private inner class StopRenderer : ListCellRenderer<AccessibilityStop> {
             override fun getListCellRendererComponent(list: javax.swing.JList<out AccessibilityStop>, value: AccessibilityStop, index: Int, selected: Boolean, focus: Boolean): Component {
                 val number = JBLabel(value.order.toString()).apply {
-                    font = AdbToolboxTheme.Typography.body.deriveFont(Font.BOLD)
-                    foreground = if (value.issues.isNotEmpty()) AdbToolboxTheme.Colors.red else AdbToolboxTheme.Colors.accent
+                    font = DeviceCockpitTheme.Typography.body.deriveFont(Font.BOLD)
+                    foreground = if (value.issues.isNotEmpty()) DeviceCockpitTheme.Colors.red else DeviceCockpitTheme.Colors.accent
                     verticalAlignment = javax.swing.SwingConstants.TOP
                     preferredSize = Dimension(JBUIScale.scale(22), preferredSize.height)
                 }
@@ -904,20 +904,20 @@ class LayoutInspectorPanel(
                 val body = JPanel().apply {
                     isOpaque = false
                     layout = BoxLayout(this, BoxLayout.Y_AXIS)
-                    add(wrapping("“${value.spoken}”", AdbToolboxTheme.Typography.body.deriveFont(Font.BOLD), AdbToolboxTheme.Colors.text))
+                    add(wrapping("“${value.spoken}”", DeviceCockpitTheme.Typography.body.deriveFont(Font.BOLD), DeviceCockpitTheme.Colors.text))
                     add(JBLabel(value.node.shortClassName + (value.node.shortResourceId.takeIf { it.isNotEmpty() }?.let { " · $it" } ?: "")).apply {
-                        font = AdbToolboxTheme.Typography.mono.deriveFont(JBUIScale.scale(10f))
-                        foreground = AdbToolboxTheme.Colors.textDim
+                        font = DeviceCockpitTheme.Typography.mono.deriveFont(JBUIScale.scale(10f))
+                        foreground = DeviceCockpitTheme.Colors.textDim
                         alignmentX = LEFT_ALIGNMENT
                     })
                     if (value.issues.isNotEmpty()) {
-                        add(wrapping(value.issues.joinToString("  ·  ", transform = ::problemText), AdbToolboxTheme.Typography.caption.deriveFont(Font.BOLD), AdbToolboxTheme.Colors.red))
+                        add(wrapping(value.issues.joinToString("  ·  ", transform = ::problemText), DeviceCockpitTheme.Typography.caption.deriveFont(Font.BOLD), DeviceCockpitTheme.Colors.red))
                     }
                 }
                 return JPanel(BorderLayout()).apply {
                     border = JBUI.Borders.empty(insets)
                     isOpaque = selected
-                    background = AdbToolboxTheme.Colors.accentBg
+                    background = DeviceCockpitTheme.Colors.accentBg
                     add(number, BorderLayout.WEST)
                     add(body, BorderLayout.CENTER)
                     setSize(list.width, preferredSize.height)

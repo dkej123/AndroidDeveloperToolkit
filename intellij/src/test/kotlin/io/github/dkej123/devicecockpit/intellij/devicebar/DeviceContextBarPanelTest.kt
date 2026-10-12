@@ -198,7 +198,7 @@ class DeviceContextBarPanelTest : BasePlatformTestCase() {
         val panel = DeviceContextBarPanel(onToggle = {}, onRefresh = {})
         panel.update(DeviceBarPresentation.Online(device(), onlineCount = 3))
 
-        panel.applyResponsiveLayout(io.github.dkej123.devicecockpit.intellij.ui.common.AdbToolboxTheme.Breakpoints.narrow - 1)
+        panel.applyResponsiveLayout(io.github.dkej123.devicecockpit.intellij.ui.common.DeviceCockpitTheme.Breakpoints.narrow - 1)
 
         assertEquals("", panel.serialText)
         assertEquals("3", panel.onlineCountText)
@@ -208,7 +208,7 @@ class DeviceContextBarPanelTest : BasePlatformTestCase() {
         val panel = DeviceContextBarPanel(onToggle = {}, onRefresh = {})
         panel.update(DeviceBarPresentation.Online(device(), onlineCount = 3))
 
-        panel.applyResponsiveLayout(io.github.dkej123.devicecockpit.intellij.ui.common.AdbToolboxTheme.Breakpoints.narrow)
+        panel.applyResponsiveLayout(io.github.dkej123.devicecockpit.intellij.ui.common.DeviceCockpitTheme.Breakpoints.narrow)
 
         assertEquals(serial.toString(), panel.serialText)
         assertEquals("3 online", panel.onlineCountText)
@@ -218,8 +218,8 @@ class DeviceContextBarPanelTest : BasePlatformTestCase() {
         val panel = DeviceContextBarPanel(onToggle = {}, onRefresh = {})
         panel.update(DeviceBarPresentation.Online(device(), onlineCount = 5))
 
-        panel.applyResponsiveLayout(io.github.dkej123.devicecockpit.intellij.ui.common.AdbToolboxTheme.Breakpoints.narrow - 1)
-        panel.applyResponsiveLayout(io.github.dkej123.devicecockpit.intellij.ui.common.AdbToolboxTheme.Breakpoints.wide)
+        panel.applyResponsiveLayout(io.github.dkej123.devicecockpit.intellij.ui.common.DeviceCockpitTheme.Breakpoints.narrow - 1)
+        panel.applyResponsiveLayout(io.github.dkej123.devicecockpit.intellij.ui.common.DeviceCockpitTheme.Breakpoints.wide)
 
         assertEquals(serial.toString(), panel.serialText)
         assertEquals("5 online", panel.onlineCountText)
@@ -227,7 +227,7 @@ class DeviceContextBarPanelTest : BasePlatformTestCase() {
 
     fun `test a later update reapplies the current width class`() {
         val panel = DeviceContextBarPanel(onToggle = {}, onRefresh = {})
-        panel.applyResponsiveLayout(io.github.dkej123.devicecockpit.intellij.ui.common.AdbToolboxTheme.Breakpoints.narrow - 1)
+        panel.applyResponsiveLayout(io.github.dkej123.devicecockpit.intellij.ui.common.DeviceCockpitTheme.Breakpoints.narrow - 1)
 
         panel.update(DeviceBarPresentation.Online(device(), onlineCount = 7))
 
@@ -239,7 +239,7 @@ class DeviceContextBarPanelTest : BasePlatformTestCase() {
         val panel = DeviceContextBarPanel(onToggle = {}, onRefresh = {})
         panel.update(DeviceBarPresentation.Unauthorized(device()))
 
-        panel.applyResponsiveLayout(io.github.dkej123.devicecockpit.intellij.ui.common.AdbToolboxTheme.Breakpoints.narrow - 1)
+        panel.applyResponsiveLayout(io.github.dkej123.devicecockpit.intellij.ui.common.DeviceCockpitTheme.Breakpoints.narrow - 1)
 
         assertTrue(panel.selectorText.contains("unauthorized", ignoreCase = true))
         assertTrue(panel.retryComponentForTest.isVisible)

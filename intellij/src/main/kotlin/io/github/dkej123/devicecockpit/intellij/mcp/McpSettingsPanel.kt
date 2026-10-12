@@ -12,7 +12,7 @@ import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.UIUtil
 import io.github.dkej123.devicecockpit.application.mcp.McpAccess
 import io.github.dkej123.devicecockpit.application.mcp.McpTool
-import io.github.dkej123.devicecockpit.intellij.ui.common.AdbToolboxTheme
+import io.github.dkej123.devicecockpit.intellij.ui.common.DeviceCockpitTheme
 import io.github.dkej123.devicecockpit.intellij.ui.common.RoundedSurface
 import java.awt.BorderLayout
 import java.awt.Component
@@ -72,10 +72,10 @@ class McpSettingsPanel(
     private val off = JBRadioButton("Off")
     private val readOnly = JBRadioButton("Read only")
     private val full = JBRadioButton("Full control")
-    private val statusTitle = JBLabel().apply { font = AdbToolboxTheme.Typography.body.deriveFont(java.awt.Font.BOLD) }
-    private val statusDetail = JBLabel().apply { foreground = AdbToolboxTheme.Colors.textDim }
+    private val statusTitle = JBLabel().apply { font = DeviceCockpitTheme.Typography.body.deriveFont(java.awt.Font.BOLD) }
+    private val statusDetail = JBLabel().apply { foreground = DeviceCockpitTheme.Colors.textDim }
     private val copyUrl = JButton("Copy URL").apply { addActionListener { status().port?.let { copy(url(it)) } } }
-    private val statusBox = RoundedSurface(null, AdbToolboxTheme.Colors.border).apply {
+    private val statusBox = RoundedSurface(null, DeviceCockpitTheme.Colors.border).apply {
         layout = BorderLayout(JBUIScale.scale(8), 0)
         border = JBUI.Borders.empty(8, 10)
         add(JPanel().apply {
@@ -88,8 +88,8 @@ class McpSettingsPanel(
         alignmentX = Component.LEFT_ALIGNMENT
         maximumSize = Dimension(Int.MAX_VALUE, JBUIScale.scale(52))
     }
-    private val portLabel = JBLabel().apply { font = AdbToolboxTheme.Typography.mono }
-    private val tokenLabel = JBLabel().apply { font = AdbToolboxTheme.Typography.mono }
+    private val portLabel = JBLabel().apply { font = DeviceCockpitTheme.Typography.mono }
+    private val tokenLabel = JBLabel().apply { font = DeviceCockpitTheme.Typography.mono }
     private val copyToken = JButton("Copy").apply { addActionListener { copy(token()) } }
     private val regenerateToken = JButton("Regenerate").apply {
         toolTipText = "Disconnects every agent; they need the new token"
@@ -116,7 +116,7 @@ class McpSettingsPanel(
     private val skillRows: Map<SkillAgent, Pair<JBLabel, JButton>> = SkillAgent.entries.associateWith { agent ->
         JBLabel() to JButton("Install").apply { addActionListener { installSkill(agent) } }
     }
-    private val skillResult = JBLabel().apply { foreground = AdbToolboxTheme.Colors.textDim }
+    private val skillResult = JBLabel().apply { foreground = DeviceCockpitTheme.Colors.textDim }
 
     init {
         layout = BoxLayout(this, BoxLayout.Y_AXIS)
@@ -138,11 +138,11 @@ class McpSettingsPanel(
         add(JBLabel("Set up an agent").apply { alignmentX = Component.LEFT_ALIGNMENT; font = font.deriveFont(java.awt.Font.BOLD) })
         agentSnippets("", "").forEach { snippet ->
             val area = JTextArea(4, 60).apply {
-                font = AdbToolboxTheme.Typography.mono
+                font = DeviceCockpitTheme.Typography.mono
                 isEditable = false
                 lineWrap = true
             }
-            val target = JBLabel(snippet.target).apply { foreground = AdbToolboxTheme.Colors.textDim }
+            val target = JBLabel(snippet.target).apply { foreground = DeviceCockpitTheme.Colors.textDim }
             snippetAreas += area to target
             snippetTabs.addTab(snippet.agent, JPanel(BorderLayout(0, JBUIScale.scale(4))).apply {
                 border = JBUI.Borders.empty(6)
@@ -233,8 +233,8 @@ class McpSettingsPanel(
     fun refresh() {
         val current = status()
         val running = current.running
-        statusBox.fill = if (running) AdbToolboxTheme.Colors.brandBg else null
-        statusBox.outline = if (running) AdbToolboxTheme.Colors.brandBorder else AdbToolboxTheme.Colors.border
+        statusBox.fill = if (running) DeviceCockpitTheme.Colors.brandBg else null
+        statusBox.outline = if (running) DeviceCockpitTheme.Colors.brandBorder else DeviceCockpitTheme.Colors.border
         statusTitle.text = when {
             current.error != null -> "Couldn’t start: ${current.error}"
             running -> "Listening on ${url(current.port!!)} · ${current.sessions.size} agent${if (current.sessions.size == 1) "" else "s"} connected"
@@ -249,7 +249,7 @@ class McpSettingsPanel(
             else -> "Apply to start it."
         }
         copyUrl.isEnabled = running
-        portLabel.text = current.port?.toString() ?: (AdbToolboxAppSettings.getInstance().mcpPort.takeIf { it > 0 }?.toString() ?: "picked on first start")
+        portLabel.text = current.port?.toString() ?: (DeviceCockpitAppSettings.getInstance().mcpPort.takeIf { it > 0 }?.toString() ?: "picked on first start")
         tokenLabel.text = maskToken(token())
         val dimmed = access == McpAccess.Off
         listOf(copyToken, regenerateToken).forEach { it.isEnabled = !dimmed }
@@ -271,7 +271,7 @@ class McpSettingsPanel(
                     SkillState.Current -> "Installed"
                     SkillState.Outdated -> "Outdated"
                 }
-                label.foreground = if (state == SkillState.Current) AdbToolboxTheme.Colors.textDim else AdbToolboxTheme.Colors.amber
+                label.foreground = if (state == SkillState.Current) DeviceCockpitTheme.Colors.textDim else DeviceCockpitTheme.Colors.amber
                 label.toolTipText = file.toString()
                 button.text = if (state == SkillState.NotInstalled) "Install" else "Update"
                 button.isEnabled = state != SkillState.Current

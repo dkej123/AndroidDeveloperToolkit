@@ -29,7 +29,7 @@ import io.github.dkej123.devicecockpit.domain.display.fontscale.FontScaleState
 import io.github.dkej123.devicecockpit.domain.feedback.FeedbackSeverity
 import io.github.dkej123.devicecockpit.domain.nav.NavigationBadge
 import io.github.dkej123.devicecockpit.domain.nav.ViewId
-import io.github.dkej123.devicecockpit.intellij.host.AdbToolboxHostPanel
+import io.github.dkej123.devicecockpit.intellij.host.DeviceCockpitHostPanel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -98,9 +98,9 @@ class DisplayCoordinatorTest : BasePlatformTestCase() {
         )
     }
 
-    private val slots = mutableMapOf<AdbToolboxHostPanel, javax.swing.JPanel>()
+    private val slots = mutableMapOf<DeviceCockpitHostPanel, javax.swing.JPanel>()
 
-    private fun coordinator(host: AdbToolboxHostPanel, fixture: Fixture): DisplayCoordinator = DisplayCoordinator(
+    private fun coordinator(host: DeviceCockpitHostPanel, fixture: Fixture): DisplayCoordinator = DisplayCoordinator(
         slot = slots.getOrPut(host) { javax.swing.JPanel(java.awt.BorderLayout()) },
         fontScaleViewModel = fixture.fontScaleViewModel,
         densityViewModel = fixture.densityViewModel,
@@ -113,7 +113,7 @@ class DisplayCoordinatorTest : BasePlatformTestCase() {
     )
 
     fun `test construction mounts the display sections into the given slot instead of a view of their own`() {
-        val host = AdbToolboxHostPanel()
+        val host = DeviceCockpitHostPanel()
         val fixture = fixture()
 
         val coord = coordinator(host, fixture)
@@ -124,7 +124,7 @@ class DisplayCoordinatorTest : BasePlatformTestCase() {
     }
 
     fun `test rendering a FontScale Error state posts an error toast`() {
-        val host = AdbToolboxHostPanel()
+        val host = DeviceCockpitHostPanel()
         val fixture = fixture()
         val coord = coordinator(host, fixture)
 
@@ -137,7 +137,7 @@ class DisplayCoordinatorTest : BasePlatformTestCase() {
     }
 
     fun `test rendering a Density Error state posts an error toast`() {
-        val host = AdbToolboxHostPanel()
+        val host = DeviceCockpitHostPanel()
         val fixture = fixture()
         val coord = coordinator(host, fixture)
 
@@ -149,7 +149,7 @@ class DisplayCoordinatorTest : BasePlatformTestCase() {
     }
 
     fun `test a TalkBack error is announced once, not on every re-render`() {
-        val host = AdbToolboxHostPanel()
+        val host = DeviceCockpitHostPanel()
         val fixture = fixture()
         val coord = coordinator(host, fixture)
         val error = QuickTogglesViewState(talkBack = QuickToggleFieldState.Error("No known TalkBack installed", lastKnown = false))
@@ -162,7 +162,7 @@ class DisplayCoordinatorTest : BasePlatformTestCase() {
     }
 
     fun `test a developer-option error is announced only when it answers the user's own change`() {
-        val host = AdbToolboxHostPanel()
+        val host = DeviceCockpitHostPanel()
         val fixture = fixture()
         val coord = coordinator(host, fixture)
         val rootError = QuickToggleFieldState.Error<Boolean>("Needs adb root", null)
@@ -182,7 +182,7 @@ class DisplayCoordinatorTest : BasePlatformTestCase() {
     }
 
     fun `test rendering a non-error FontScale state posts no toast`() {
-        val host = AdbToolboxHostPanel()
+        val host = DeviceCockpitHostPanel()
         val fixture = fixture()
         val coord = coordinator(host, fixture)
 
@@ -193,7 +193,7 @@ class DisplayCoordinatorTest : BasePlatformTestCase() {
     }
 
     fun `test renderDensity refreshes the aggregator so a newly-overridden reading reaches the Display badge`() {
-        val host = AdbToolboxHostPanel()
+        val host = DeviceCockpitHostPanel()
         val fixture = fixture()
         val coord = coordinator(host, fixture)
         assertEquals(NavigationBadge.None, fixture.aggregator.state.value.badges[ViewId.Device] ?: NavigationBadge.None)
@@ -210,7 +210,7 @@ class DisplayCoordinatorTest : BasePlatformTestCase() {
     }
 
     fun `test disposing the coordinator unregisters its contributors and cancels its scope`() {
-        val host = AdbToolboxHostPanel()
+        val host = DeviceCockpitHostPanel()
         val fixture = fixture()
         val coord = coordinator(host, fixture)
         fixture.densityOverrideTracker.record(serialA, DensityReading(420, 480))

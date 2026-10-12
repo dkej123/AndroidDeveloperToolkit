@@ -17,7 +17,7 @@ import javax.swing.JButton
 class DesignIconButton(icon: Icon, tooltip: String) : JButton(icon) {
 
     init {
-        preferredSize = Dimension(AdbToolboxTheme.Sizes.iconButton, AdbToolboxTheme.Sizes.iconButton)
+        preferredSize = Dimension(DeviceCockpitTheme.Sizes.iconButton, DeviceCockpitTheme.Sizes.iconButton)
         margin = Insets(0, 0, 0, 0)
         toolTipText = tooltip
         getAccessibleContext().accessibleName = tooltip
@@ -45,9 +45,9 @@ class DesignIconButton(icon: Icon, tooltip: String) : JButton(icon) {
             val g2 = g.create() as Graphics2D
             try {
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
-                val radius = AdbToolboxTheme.Radii.button.toFloat() * 2
+                val radius = DeviceCockpitTheme.Radii.button.toFloat() * 2
                 val shape = RoundRectangle2D.Float(0f, 0f, width.toFloat(), height.toFloat(), radius, radius)
-                g2.color = AdbToolboxTheme.Colors.hover
+                g2.color = DeviceCockpitTheme.Colors.hover
                 repeat(layers) { g2.fill(shape) }
             } finally {
                 g2.dispose()

@@ -30,7 +30,7 @@ class ToggleSwitch(private val compact: Boolean = false) : JToggleButton() {
         val g2 = graphics.create() as Graphics2D
         try {
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
-            g2.color = if (isSelected) AdbToolboxTheme.Colors.accent else AdbToolboxTheme.Colors.borderStrong
+            g2.color = if (isSelected) DeviceCockpitTheme.Colors.accent else DeviceCockpitTheme.Colors.borderStrong
             g2.fillRoundRect(0, 0, width, height, height, height)
 
             val knobSize = JBUIScale.scale(if (compact) 9 else 10)

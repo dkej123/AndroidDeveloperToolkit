@@ -19,7 +19,7 @@ import io.github.dkej123.devicecockpit.domain.appdata.SqlResult
 import io.github.dkej123.devicecockpit.domain.appdata.SqlRows
 import io.github.dkej123.devicecockpit.domain.appdata.SqlValue
 import io.github.dkej123.devicecockpit.domain.deeplinks.DeepLinkSource
-import io.github.dkej123.devicecockpit.intellij.ui.common.AdbToolboxTheme
+import io.github.dkej123.devicecockpit.intellij.ui.common.DeviceCockpitTheme
 import io.github.dkej123.devicecockpit.intellij.ui.common.AppIconImages
 import io.github.dkej123.devicecockpit.intellij.ui.common.DesignButton
 import io.github.dkej123.devicecockpit.intellij.ui.common.DesignButtonStyle
@@ -87,38 +87,38 @@ class AppDetailsPanel(
     internal val backLinkForTest: javax.swing.JButton get() = backLink
     private val iconLabel = JBLabel()
     private val titleLabel = JBLabel().apply {
-        font = AdbToolboxTheme.Typography.sectionTitle
-        foreground = AdbToolboxTheme.Colors.text
+        font = DeviceCockpitTheme.Typography.sectionTitle
+        foreground = DeviceCockpitTheme.Colors.text
     }
     private val packageLabel = JBLabel().apply {
-        font = AdbToolboxTheme.Typography.monoMeta
-        foreground = AdbToolboxTheme.Colors.textFaint
+        font = DeviceCockpitTheme.Typography.monoMeta
+        foreground = DeviceCockpitTheme.Colors.textFaint
     }
     private val refreshLink = DesignButton("Refresh", DesignButtonStyle.LINK).apply {
         addActionListener { onIntent(AppDetailsIntent.Refresh) }
     }
     private val noticeLabel = JBLabel().apply {
-        font = AdbToolboxTheme.Typography.caption
-        foreground = AdbToolboxTheme.Colors.brand
-        border = JBUI.Borders.empty(0, AdbToolboxTheme.Spacing.sectionInset, AdbToolboxTheme.Spacing.s2, AdbToolboxTheme.Spacing.sectionInset)
+        font = DeviceCockpitTheme.Typography.caption
+        foreground = DeviceCockpitTheme.Colors.brand
+        border = JBUI.Borders.empty(0, DeviceCockpitTheme.Spacing.sectionInset, DeviceCockpitTheme.Spacing.s2, DeviceCockpitTheme.Spacing.sectionInset)
     }
 
     private val header = JPanel().apply {
         layout = BoxLayout(this, BoxLayout.Y_AXIS)
-        background = AdbToolboxTheme.Colors.header
+        background = DeviceCockpitTheme.Colors.header
         border = BorderFactory.createCompoundBorder(
-            BorderFactory.createMatteBorder(0, 0, 1, 0, AdbToolboxTheme.Colors.border),
-            JBUI.Borders.empty(AdbToolboxTheme.Spacing.s3, 0),
+            BorderFactory.createMatteBorder(0, 0, 1, 0, DeviceCockpitTheme.Colors.border),
+            JBUI.Borders.empty(DeviceCockpitTheme.Spacing.s3, 0),
         )
         val spacer = flexSpacer()
-        add(flexRow(AdbToolboxTheme.Spacing.s3, backLink, spacer, refreshLink, fill = spacer).apply { border = inset() })
+        add(flexRow(DeviceCockpitTheme.Spacing.s3, backLink, spacer, refreshLink, fill = spacer).apply { border = inset() })
         val titles = JPanel().apply {
             layout = BoxLayout(this, BoxLayout.Y_AXIS)
             isOpaque = false
             add(titleLabel)
             add(packageLabel)
         }
-        add(flexRow(AdbToolboxTheme.Spacing.s3, iconLabel, titles, fill = titles).apply { border = inset() })
+        add(flexRow(DeviceCockpitTheme.Spacing.s3, iconLabel, titles, fill = titles).apply { border = inset() })
         add(noticeLabel)
     }
 
@@ -126,12 +126,12 @@ class AppDetailsPanel(
 
     private val infoGrid = JPanel(GridBagLayout()).apply {
         isOpaque = false
-        border = JBUI.Borders.empty(AdbToolboxTheme.Spacing.s4, AdbToolboxTheme.Spacing.sectionInset)
+        border = JBUI.Borders.empty(DeviceCockpitTheme.Spacing.s4, DeviceCockpitTheme.Spacing.sectionInset)
     }
     private val permissionsModel = RowsModel(listOf("Permission", "Granted", "Kind"))
     private val permissionsTable = readOnlyTable(permissionsModel)
     private val infoTab = JPanel(BorderLayout()).apply {
-        background = AdbToolboxTheme.Colors.bg
+        background = DeviceCockpitTheme.Colors.bg
         add(infoGrid, BorderLayout.NORTH)
         add(JBScrollPane(permissionsTable), BorderLayout.CENTER)
     }
@@ -161,11 +161,11 @@ class AppDetailsPanel(
     private val deepLinksModel = RowsModel(listOf("Activity", "Domain", "URI matcher", "Source", "Device", "Warnings"))
     private val deepLinksTable = readOnlyTable(deepLinksModel).apply { name = "appDetailsDeepLinksTable" }
     private val deepLinksTab = JPanel(BorderLayout()).apply {
-        background = AdbToolboxTheme.Colors.bg
+        background = DeviceCockpitTheme.Colors.bg
         add(column(
-            flexRow(AdbToolboxTheme.Spacing.s3, analyzeDeepLinks).apply { border = inset() },
-            flexRow(AdbToolboxTheme.Spacing.s3, deepLinkSearch, fill = deepLinkSearch).apply { border = inset() },
-            flexRow(AdbToolboxTheme.Spacing.s3, deepLinkUri, openDeepLink, fill = deepLinkUri).apply { border = inset() },
+            flexRow(DeviceCockpitTheme.Spacing.s3, analyzeDeepLinks).apply { border = inset() },
+            flexRow(DeviceCockpitTheme.Spacing.s3, deepLinkSearch, fill = deepLinkSearch).apply { border = inset() },
+            flexRow(DeviceCockpitTheme.Spacing.s3, deepLinkUri, openDeepLink, fill = deepLinkUri).apply { border = inset() },
             deepLinksStatus,
         ), BorderLayout.NORTH)
         add(JBScrollPane(deepLinksTable), BorderLayout.CENTER)
@@ -176,7 +176,7 @@ class AppDetailsPanel(
     private val permissionsList = PermissionsList { onIntent(it) }
     private val permissionsStatus = statusText()
     private val permissionsTab = JPanel(BorderLayout()).apply {
-        background = AdbToolboxTheme.Colors.bg
+        background = DeviceCockpitTheme.Colors.bg
         add(permissionsStatus, BorderLayout.NORTH)
         add(permissionsList, BorderLayout.CENTER)
     }
@@ -243,8 +243,8 @@ class AppDetailsPanel(
         toolTipText = "Double-click a cell to edit; type NULL for SQL NULL"
     }
     private val pageLabel = JBLabel().apply {
-        font = AdbToolboxTheme.Typography.monoMeta
-        foreground = AdbToolboxTheme.Colors.textFaint
+        font = DeviceCockpitTheme.Typography.monoMeta
+        foreground = DeviceCockpitTheme.Colors.textFaint
     }
     private var offset = 0L
     private val previousPage = DesignButton("‹", DesignButtonStyle.SECONDARY).apply {
@@ -255,7 +255,7 @@ class AppDetailsPanel(
     }
     private val sqlField = JBTextField().apply {
         name = "appDetailsSql"
-        font = AdbToolboxTheme.Typography.mono
+        font = DeviceCockpitTheme.Typography.mono
         emptyText("SELECT * FROM … / UPDATE …")
         addActionListener { runSql() }
     }
@@ -274,10 +274,10 @@ class AppDetailsPanel(
     private val databaseStatus = statusText()
     private val databaseEditor = JPanel(BorderLayout()).apply {
         isOpaque = false
-        val pager = flexRow(AdbToolboxTheme.Spacing.s2, previousPage, nextPage, pageLabel)
+        val pager = flexRow(DeviceCockpitTheme.Spacing.s2, previousPage, nextPage, pageLabel)
         add(column(fileRow("Database", databaseFiles), fileRow("Table", tables), databaseStatus), BorderLayout.NORTH)
         add(JBScrollPane(rowsTable), BorderLayout.CENTER)
-        val sqlRow = flexRow(AdbToolboxTheme.Spacing.s3, sqlField, runSql, fill = sqlField)
+        val sqlRow = flexRow(DeviceCockpitTheme.Spacing.s3, sqlField, runSql, fill = sqlField)
         val south = column(
             pager.apply { border = inset() },
             sqlRow.apply { border = inset() },
@@ -299,7 +299,7 @@ class AppDetailsPanel(
     }
 
     init {
-        background = AdbToolboxTheme.Colors.bg
+        background = DeviceCockpitTheme.Colors.bg
         add(header, BorderLayout.NORTH)
         add(tabs, BorderLayout.CENTER)
     }
@@ -397,7 +397,7 @@ class AppDetailsPanel(
             else -> analysis.catalog.targets.size.let { n -> "$n ${if (n == 1) "target" else "targets"}" } +
                 " · ${if (analysis.fromCache) "cached" else "analyzed"}"
         }
-        deepLinksStatus.foreground = if (state.deepLinksError != null) AdbToolboxTheme.Colors.red else AdbToolboxTheme.Colors.textFaint
+        deepLinksStatus.foreground = if (state.deepLinksError != null) DeviceCockpitTheme.Colors.red else DeviceCockpitTheme.Colors.textFaint
     }
 
     private fun renderPermissions(state: AppDetailsState) {
@@ -429,16 +429,16 @@ class AppDetailsPanel(
         infoGrid.removeAll()
         rows.forEachIndexed { index, (key, value) ->
             infoGrid.add(JBLabel(key.uppercase()).apply {
-                font = AdbToolboxTheme.Typography.groupLabel
-                foreground = AdbToolboxTheme.Colors.textFaint
+                font = DeviceCockpitTheme.Typography.groupLabel
+                foreground = DeviceCockpitTheme.Colors.textFaint
             }, gbc(0, index, 0.0))
             infoGrid.add(JBLabel(value ?: "—").apply {
-                font = AdbToolboxTheme.Typography.mono
-                foreground = AdbToolboxTheme.Colors.text
+                font = DeviceCockpitTheme.Typography.mono
+                foreground = DeviceCockpitTheme.Colors.text
                 toolTipText = value
             }, gbc(1, index, 1.0))
         }
-        state.detailsError?.let { infoGrid.add(JBLabel(it).apply { foreground = AdbToolboxTheme.Colors.red }, gbc(0, rows.size, 1.0, width = 2)) }
+        state.detailsError?.let { infoGrid.add(JBLabel(it).apply { foreground = DeviceCockpitTheme.Colors.red }, gbc(0, rows.size, 1.0, width = 2)) }
         permissionsModel.setRows(d?.permissions.orEmpty().map { p ->
             listOf(p.name, when (p.granted) { true -> "granted"; false -> "denied"; null -> "requested" }, if (p.runtime) "runtime" else "install")
         })
@@ -477,7 +477,7 @@ class AppDetailsPanel(
             prefs?.dirty == true -> "Unsaved changes — Save to device force-stops the app first."
             else -> "Double-click a value to edit it."
         }
-        prefsStatus.foreground = if (prefs?.error != null) AdbToolboxTheme.Colors.red else AdbToolboxTheme.Colors.textFaint
+        prefsStatus.foreground = if (prefs?.error != null) DeviceCockpitTheme.Colors.red else DeviceCockpitTheme.Colors.textFaint
     }
 
     private fun renderDatabase(files: List<String>, database: DatabaseEditorState?) {
@@ -506,7 +506,7 @@ class AppDetailsPanel(
             is SqlResult.Failed -> queryStatus.text = result.message
             null -> queryStatus.text = ""
         }
-        queryStatus.foreground = if (database?.queryResult is SqlResult.Failed) AdbToolboxTheme.Colors.red else AdbToolboxTheme.Colors.textFaint
+        queryStatus.foreground = if (database?.queryResult is SqlResult.Failed) DeviceCockpitTheme.Colors.red else DeviceCockpitTheme.Colors.textFaint
         val busy = database == null || database.loading || database.saving
         runSql.isEnabled = !busy
         databaseRevert.isEnabled = !busy && database?.dirty == true
@@ -520,7 +520,7 @@ class AppDetailsPanel(
             page != null && page.rowIds == null -> "This table has no rowid, so its rows are read-only here; use SQL to change it."
             else -> "Edits apply to a local copy until you save."
         }
-        databaseStatus.foreground = if (database?.error != null) AdbToolboxTheme.Colors.red else AdbToolboxTheme.Colors.textFaint
+        databaseStatus.foreground = if (database?.error != null) DeviceCockpitTheme.Colors.red else DeviceCockpitTheme.Colors.textFaint
     }
 
     private fun runSql() {
@@ -542,11 +542,11 @@ class AppDetailsPanel(
     }
 
     private fun accessCard(editor: JComponent): JPanel {
-        val message = WrappingText("", AdbToolboxTheme.Typography.body, AdbToolboxTheme.Colors.textDim).apply {
-            border = JBUI.Borders.empty(AdbToolboxTheme.Spacing.s6)
+        val message = WrappingText("", DeviceCockpitTheme.Typography.body, DeviceCockpitTheme.Colors.textDim).apply {
+            border = JBUI.Borders.empty(DeviceCockpitTheme.Spacing.s6)
         }
         return JPanel(CardLayout()).apply {
-            background = AdbToolboxTheme.Colors.bg
+            background = DeviceCockpitTheme.Colors.bg
             add(JPanel(BorderLayout()).apply { isOpaque = false; add(message, BorderLayout.NORTH) }, MESSAGE)
             add(editor, EDITOR)
             putClientProperty(ACCESS_MESSAGE, message)
@@ -556,7 +556,7 @@ class AppDetailsPanel(
     private fun column(vararg children: JComponent): JPanel = JPanel().apply {
         layout = BoxLayout(this, BoxLayout.Y_AXIS)
         isOpaque = false
-        border = JBUI.Borders.empty(AdbToolboxTheme.Spacing.s2, 0)
+        border = JBUI.Borders.empty(DeviceCockpitTheme.Spacing.s2, 0)
         children.forEach { child ->
             child.alignmentX = Component.LEFT_ALIGNMENT
             add(child)
@@ -565,27 +565,27 @@ class AppDetailsPanel(
 
     private fun fileRow(label: String, combo: ComboBox<String>): JComponent {
         val caption = JBLabel(label).apply {
-            font = AdbToolboxTheme.Typography.caption
-            foreground = AdbToolboxTheme.Colors.textDim
+            font = DeviceCockpitTheme.Typography.caption
+            foreground = DeviceCockpitTheme.Colors.textDim
             preferredSize = Dimension(JBUIScale.scale(58), preferredSize.height)
         }
-        return flexRow(AdbToolboxTheme.Spacing.s3, caption, combo, fill = combo).apply { border = JBUI.Borders.empty(2, AdbToolboxTheme.Spacing.sectionInset) }
+        return flexRow(DeviceCockpitTheme.Spacing.s3, caption, combo, fill = combo).apply { border = JBUI.Borders.empty(2, DeviceCockpitTheme.Spacing.sectionInset) }
     }
 
     private fun buttonRow(vararg buttons: JComponent?): JComponent {
         val spacer = flexSpacer()
         val left = buttons.take(2).filterNotNull()
         val right = buttons.drop(3).filterNotNull()
-        return flexRow(AdbToolboxTheme.Spacing.s3, *(left + spacer + right).toTypedArray(), fill = spacer).apply {
-            border = JBUI.Borders.empty(AdbToolboxTheme.Spacing.s3, AdbToolboxTheme.Spacing.sectionInset)
+        return flexRow(DeviceCockpitTheme.Spacing.s3, *(left + spacer + right).toTypedArray(), fill = spacer).apply {
+            border = JBUI.Borders.empty(DeviceCockpitTheme.Spacing.s3, DeviceCockpitTheme.Spacing.sectionInset)
         }
     }
 
-    private fun statusText() = WrappingText("", AdbToolboxTheme.Typography.caption, AdbToolboxTheme.Colors.textFaint).apply {
-        border = JBUI.Borders.empty(AdbToolboxTheme.Spacing.s1, AdbToolboxTheme.Spacing.sectionInset)
+    private fun statusText() = WrappingText("", DeviceCockpitTheme.Typography.caption, DeviceCockpitTheme.Colors.textFaint).apply {
+        border = JBUI.Borders.empty(DeviceCockpitTheme.Spacing.s1, DeviceCockpitTheme.Spacing.sectionInset)
     }
 
-    private fun inset() = JBUI.Borders.empty(0, AdbToolboxTheme.Spacing.sectionInset)
+    private fun inset() = JBUI.Borders.empty(0, DeviceCockpitTheme.Spacing.sectionInset)
 
     private fun readOnlyTable(model: AbstractTableModel) = JBTable(model).apply { setShowGrid(false) }
 
@@ -606,14 +606,14 @@ class AppDetailsPanel(
         weightx = weight
         anchor = GridBagConstraints.WEST
         fill = if (x == 1) GridBagConstraints.HORIZONTAL else GridBagConstraints.NONE
-        insets = JBUI.insets(1, 0, 1, AdbToolboxTheme.Spacing.s4)
+        insets = JBUI.insets(1, 0, 1, DeviceCockpitTheme.Spacing.s4)
     }
 
     private companion object {
         const val PAGE = 100L
         const val MESSAGE = "message"
         const val EDITOR = "editor"
-        const val ACCESS_MESSAGE = "adbToolbox.accessMessage"
+        const val ACCESS_MESSAGE = "deviceCockpit.accessMessage"
     }
 }
 

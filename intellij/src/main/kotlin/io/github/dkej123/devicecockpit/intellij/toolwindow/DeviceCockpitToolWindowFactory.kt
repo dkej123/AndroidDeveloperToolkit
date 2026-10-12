@@ -11,25 +11,25 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.ToolWindow
 import com.intellij.openapi.wm.ToolWindowFactory
 import com.intellij.ui.content.ContentFactory
-import io.github.dkej123.devicecockpit.intellij.composition.AdbToolboxProjectService
-import io.github.dkej123.devicecockpit.intellij.settings.AdbToolboxSettingsOpener
-import io.github.dkej123.devicecockpit.intellij.settings.OpenAdbToolboxSettingsAction
+import io.github.dkej123.devicecockpit.intellij.composition.DeviceCockpitProjectService
+import io.github.dkej123.devicecockpit.intellij.settings.DeviceCockpitSettingsOpener
+import io.github.dkej123.devicecockpit.intellij.settings.OpenDeviceCockpitSettingsAction
 
 /**
  * Registers the plugin's project ToolWindow (`plugin.xml`) and creates its neutral placeholder
  * content (task 007) — real feature views land in later tasks. Delegates all wiring to
- * [AdbToolboxProjectService]; this class only asks the platform for that service and hands its
+ * [DeviceCockpitProjectService]; this class only asks the platform for that service and hands its
  * `shellViewModel`/`dispatcherProvider`/`navigationViewModel`/`feedbackViewModel` to
- * [AdbToolboxToolWindowPanel].
+ * [DeviceCockpitToolWindowPanel].
  *
  * [DumbAware]: nothing in the tool window needs project indexes (it only talks to adb), so the
  * platform must not swap its content for the "waiting for indexing" placeholder.
  */
-class AdbToolboxToolWindowFactory : ToolWindowFactory, DumbAware {
+class DeviceCockpitToolWindowFactory : ToolWindowFactory, DumbAware {
     override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
-        val composition = project.service<AdbToolboxProjectService>()
+        val composition = project.service<DeviceCockpitProjectService>()
         composition.registerMcpTools()
-        val panel = AdbToolboxToolWindowPanel(
+        val panel = DeviceCockpitToolWindowPanel(
             viewModel = composition.shellViewModel,
             dispatchers = composition.dispatcherProvider,
             scope = composition.childScope(),
@@ -78,7 +78,7 @@ class AdbToolboxToolWindowFactory : ToolWindowFactory, DumbAware {
             densityOverrideTracker = composition.densityOverrideTracker,
             deviceContextAggregator = composition.deviceContextAggregator,
             displayScope = composition.childScope(),
-            openSettings = { AdbToolboxSettingsOpener.open(project) },
+            openSettings = { DeviceCockpitSettingsOpener.open(project) },
             mirroringOptionsViewModel = composition.mirroringOptionsViewModel,
             onResetOverrides = { composition.overrideResetCoordinator.resetAll() },
             diagnosticsLog = composition.diagnosticsLog,
@@ -90,8 +90,7 @@ class AdbToolboxToolWindowFactory : ToolWindowFactory, DumbAware {
         val content = ContentFactory.getInstance().createContent(panel, "", false)
         content.setDisposer(panel)
         toolWindow.contentManager.addContent(content)
-        toolWindow.setTitleActions(listOf(OpenAdbToolboxSettingsAction(project)))
-        // The id stays "ADB Toolbox" so saved window layouts survive the rename to Device Cockpit.
+        toolWindow.setTitleActions(listOf(OpenDeviceCockpitSettingsAction(project)))
         toolWindow.stripeTitle = "Device Cockpit"
         project.messageBus.connect(toolWindow.disposable).subscribe(
             ToolWindowManagerListener.TOPIC,
@@ -103,7 +102,12 @@ class AdbToolboxToolWindowFactory : ToolWindowFactory, DumbAware {
         }
     }
 
-    private companion object {
-        const val DIAGNOSTICS_GROUP_ID = "AdbToolbox.Diagnostics"
+    companion object {
+        /** The tool window id (plugin.xml), kept from the pre-rename "ADB Toolbox" name for compatibility: saved window layouts and
+         *  keymaps refer to it. Only the stripe title says "Device Cockpit". */
+        const val TOOL_WINDOW_ID = "ADB Toolbox"
+
+        /** Action group id, kept from the pre-rename "ADB Toolbox" name for compatibility (user keymaps and toolbars refer to it). */
+        private const val DIAGNOSTICS_GROUP_ID = "AdbToolbox.Diagnostics"
     }
 }

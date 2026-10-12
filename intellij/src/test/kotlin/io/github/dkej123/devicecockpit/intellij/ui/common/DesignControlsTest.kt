@@ -49,8 +49,8 @@ class DesignControlsTest : BasePlatformTestCase() {
         val secondary = DesignButton("Launch", DesignButtonStyle.SECONDARY)
         val danger = DesignButton("Uninstall", DesignButtonStyle.DANGER)
 
-        assertEquals(AdbToolboxTheme.Sizes.primaryButton, primary.preferredSize.height)
-        assertEquals(AdbToolboxTheme.Sizes.secondaryButton, secondary.preferredSize.height)
+        assertEquals(DeviceCockpitTheme.Sizes.primaryButton, primary.preferredSize.height)
+        assertEquals(DeviceCockpitTheme.Sizes.secondaryButton, secondary.preferredSize.height)
         assertEquals(JBUI.scale(24), danger.preferredSize.height)
         assertEquals(primary.preferredSize, primary.maximumSize)
         assertEquals(Font.BOLD, primary.font.style)
@@ -62,17 +62,17 @@ class DesignControlsTest : BasePlatformTestCase() {
 
         button.style = DesignButtonStyle.SECONDARY
 
-        assertEquals(AdbToolboxTheme.Colors.text, button.foreground)
+        assertEquals(DeviceCockpitTheme.Colors.text, button.foreground)
         assertEquals(Font.PLAIN, button.font.style)
     }
 
     fun `test body and caption typography are regular weight`() {
-        assertEquals(Font.PLAIN, AdbToolboxTheme.Typography.body.style)
-        assertEquals(Font.PLAIN, AdbToolboxTheme.Typography.caption.style)
+        assertEquals(Font.PLAIN, DeviceCockpitTheme.Typography.body.style)
+        assertEquals(Font.PLAIN, DeviceCockpitTheme.Typography.caption.style)
     }
 
     fun `test wrapping text grows in height when its width is constrained`() {
-        val text = WrappingText("one two three four five six seven eight nine ten eleven twelve", AdbToolboxTheme.Typography.caption, AdbToolboxTheme.Colors.textFaint)
+        val text = WrappingText("one two three four five six seven eight nine ten eleven twelve", DeviceCockpitTheme.Typography.caption, DeviceCockpitTheme.Colors.textFaint)
         val singleLine = text.preferredSize.height
 
         text.setSize(60, 1000)

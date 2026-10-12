@@ -5,7 +5,7 @@ import com.intellij.openapi.options.ShowSettingsUtil
 import com.intellij.openapi.project.Project
 
 /** Shared entry point for the rail and recovery actions that need to open plugin settings. */
-object AdbToolboxSettingsOpener {
+object DeviceCockpitSettingsOpener {
     /**
      * Selects the page by configurable class: `showSettingsDialog(project, String)` matches a page's
      * display name, not its id, and silently opens the default page when nothing matches.
@@ -16,6 +16,6 @@ object AdbToolboxSettingsOpener {
             ShowSettingsUtil.getInstance().showSettingsDialog(target, configurable)
         },
     ) {
-        show(project, AdbToolboxSettingsConfigurable::class.java)
+        show(project, DeviceCockpitSettingsConfigurable::class.java)
     }
 }

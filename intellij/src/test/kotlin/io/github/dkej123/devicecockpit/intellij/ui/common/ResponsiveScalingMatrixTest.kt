@@ -17,7 +17,7 @@ import io.github.dkej123.devicecockpit.intellij.logcat.LogcatRowStyle
  * Source of truth for the width classes: `design/README.md`'s "Responsive rules" table, confirmed
  * against the interactive prototype's own breakpoint math (`design/designs/ADB Toolbox
  * Plugin.dc.html`: `compact = W < 340, wide = W >= 470`) and the code tokens
- * ([AdbToolboxTheme.Breakpoints]).
+ * ([DeviceCockpitTheme.Breakpoints]).
  *
  * | width class          | logcat timestamp | logcat tag | device bar serial | "N online" | facts grid |
  * |-----------------------|:---:|:---:|:---:|:---:|:---:|
@@ -27,19 +27,19 @@ import io.github.dkej123.devicecockpit.intellij.logcat.LogcatRowStyle
  *
  * The 100%/200% scale axis is covered structurally, not by simulating a live IDE UI-scale factor
  * in a headless unit test (there is no supported way to do that here — see
- * [UnscaledBorderGuardTest]): every pixel measurement in [AdbToolboxTheme] is wrapped in
+ * [UnscaledBorderGuardTest]): every pixel measurement in [DeviceCockpitTheme] is wrapped in
  * `JBUI.scale`/`JBUI.Borders`, so once a dimension is drawn from that object it is scale-correct by
  * construction; [UnscaledBorderGuardTest] guards against a raw literal reintroducing an unscaled
  * dimension. The theme axis (light/dark) is covered the same way the rest of this module already
- * covers it — see [AdbToolboxThemeTest] — by toggling [JBColor.setDark] and asserting supplied
+ * covers it — see [DeviceCockpitThemeTest] — by toggling [JBColor.setDark] and asserting supplied
  * light/dark variants; width-class behavior itself does not depend on theme, so this file exercises
  * both dark and light to confirm that holds.
  */
 class ResponsiveScalingMatrixTest : BasePlatformTestCase() {
 
-    private val narrow = AdbToolboxTheme.Breakpoints.narrow - 1
-    private val dock = AdbToolboxTheme.Breakpoints.defaultDock
-    private val wide = AdbToolboxTheme.Breakpoints.wide
+    private val narrow = DeviceCockpitTheme.Breakpoints.narrow - 1
+    private val dock = DeviceCockpitTheme.Breakpoints.defaultDock
+    private val wide = DeviceCockpitTheme.Breakpoints.wide
 
     fun `test logcat column visibility matches the width x breakpoint matrix`() {
         assertColumns(narrow, timestamp = false, tag = false)

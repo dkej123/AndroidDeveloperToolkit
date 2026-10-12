@@ -6,7 +6,7 @@ import io.github.dkej123.devicecockpit.intellij.feedback.FeedbackStatusPanel
 import io.github.dkej123.devicecockpit.intellij.nav.NavigationRailPanel
 import io.github.dkej123.devicecockpit.intellij.display.DisplayPanel
 import io.github.dkej123.devicecockpit.intellij.network.NetworkPanel
-import io.github.dkej123.devicecockpit.intellij.ui.common.AdbToolboxTheme
+import io.github.dkej123.devicecockpit.intellij.ui.common.DeviceCockpitTheme
 import java.awt.BorderLayout
 import java.awt.Component
 import java.awt.Container
@@ -27,24 +27,24 @@ class GlobalChromeLayoutTest : BasePlatformTestCase() {
             add(rail, BorderLayout.WEST)
             add(JPanel(), BorderLayout.CENTER)
             add(status, BorderLayout.SOUTH)
-            setSize(AdbToolboxTheme.Breakpoints.defaultDock, 620)
+            setSize(DeviceCockpitTheme.Breakpoints.defaultDock, 620)
             doLayout()
         }
 
-        assertEquals(AdbToolboxTheme.Sizes.deviceBar, deviceBar.height)
-        assertEquals(AdbToolboxTheme.Sizes.rail, rail.width)
-        assertEquals(AdbToolboxTheme.Sizes.statusBar, status.height)
+        assertEquals(DeviceCockpitTheme.Sizes.deviceBar, deviceBar.height)
+        assertEquals(DeviceCockpitTheme.Sizes.rail, rail.width)
+        assertEquals(DeviceCockpitTheme.Sizes.statusBar, status.height)
     }
 
     fun `test device bar and status bar content is vertically centered in its fixed row`() {
         val deviceBar = DeviceContextBarPanel({}, {}).apply {
             update(io.github.dkej123.devicecockpit.application.devicebar.DeviceBarPresentation.NoDevice)
-            setSize(AdbToolboxTheme.Breakpoints.defaultDock, AdbToolboxTheme.Sizes.deviceBar)
+            setSize(DeviceCockpitTheme.Breakpoints.defaultDock, DeviceCockpitTheme.Sizes.deviceBar)
         }
         val status = FeedbackStatusPanel().apply {
             update(io.github.dkej123.devicecockpit.domain.feedback.StatusState(message = "Ready"))
             updateOverrideCount(2)
-            setSize(AdbToolboxTheme.Breakpoints.defaultDock, AdbToolboxTheme.Sizes.statusBar)
+            setSize(DeviceCockpitTheme.Breakpoints.defaultDock, DeviceCockpitTheme.Sizes.statusBar)
         }
         listOf(deviceBar, status).forEach(::layoutTree)
 
@@ -62,7 +62,7 @@ class GlobalChromeLayoutTest : BasePlatformTestCase() {
         val status = FeedbackStatusPanel().apply {
             update(io.github.dkej123.devicecockpit.domain.feedback.StatusState(message = "Ready"))
             updateOverrideCount(2)
-            setSize(AdbToolboxTheme.Breakpoints.defaultDock, AdbToolboxTheme.Sizes.statusBar)
+            setSize(DeviceCockpitTheme.Breakpoints.defaultDock, DeviceCockpitTheme.Sizes.statusBar)
         }
         layoutTree(status)
 

@@ -31,7 +31,7 @@ internal fun resolveLogcatControlsState(state: LogcatControlsPersistenceState): 
  * pattern: reads/writes only the [LogcatControlsPersistenceState] slice of [projectState].
  */
 class LogcatControlsPersistenceAdapter(
-    private val projectState: AdbToolboxProjectState,
+    private val projectState: DeviceCockpitProjectState,
 ) : LogcatControlsPersistence {
 
     override suspend fun read(): LogcatPersistedControls = readNow()

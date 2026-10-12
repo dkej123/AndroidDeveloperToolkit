@@ -13,6 +13,8 @@ E2E_REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 export E2E_REPO_ROOT
 
 # Root for everything the scripts download or create (SDK, AVD, Studio, sandbox, logs).
+# The default folder (and the AVD name below) keep the pre-rename "ADB Toolbox" name so existing
+# provisioned environments (SDK, AVD, Studio, several GB) stay valid.
 export E2E_HOME="${E2E_HOME:-${XDG_CACHE_HOME:-$HOME/.cache}/adb-toolbox-e2e}"
 
 # Pinned tool versions. Bump deliberately and re-run the whole suite.

@@ -20,9 +20,9 @@ import org.junit.jupiter.api.condition.EnabledIfSystemProperty
  * (`DefaultToolLocatorTest`), per `tasks/README.md`'s "real-device/tool scenarios are opt-in smoke
  * tests only" rule.
  *
- * Enable explicitly with: `./gradlew :adapters-adb:test -DadbToolbox.discoverySmokeTest=true`
+ * Enable explicitly with: `./gradlew :adapters-adb:test -DdeviceCockpit.discoverySmokeTest=true`
  */
-@EnabledIfSystemProperty(named = "adbToolbox.discoverySmokeTest", matches = "true")
+@EnabledIfSystemProperty(named = "deviceCockpit.discoverySmokeTest", matches = "true")
 class DefaultToolLocatorSmokeTest {
 
     @Test

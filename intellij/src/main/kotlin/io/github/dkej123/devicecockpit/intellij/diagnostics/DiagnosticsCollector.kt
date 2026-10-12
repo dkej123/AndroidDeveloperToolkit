@@ -7,7 +7,7 @@ import com.intellij.util.EnvironmentUtil
 import io.github.dkej123.devicecockpit.adapters.jvm.diagnostics.JvmDiagnostics
 import io.github.dkej123.devicecockpit.domain.diagnostics.DiagCategory
 import io.github.dkej123.devicecockpit.domain.diagnostics.DiagLevel
-import io.github.dkej123.devicecockpit.intellij.composition.AdbToolboxProjectService
+import io.github.dkej123.devicecockpit.intellij.composition.DeviceCockpitProjectService
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeoutOrNull
 import java.nio.file.Files
@@ -44,6 +44,7 @@ object DiagnosticsCollector {
             }
             add(BundleEntry.Lazy("threads.txt", JvmDiagnostics::threadDump))
             add(BundleEntry.Lazy("jvm.txt") { JvmDiagnostics.stats().entries.joinToString("\n") { "${it.key}: ${it.value}" } })
+            // The bundle folder mirrors the log folder name, kept from the pre-rename "ADB Toolbox" name.
             service.logFiles().forEach { add(BundleEntry.FileCopy("adb-toolbox/${it.name}", it)) }
             newest(service.logDirectory, RECENT_PERF_REPORTS) { it.name.startsWith("perf-") }
                 .forEach { add(BundleEntry.FileCopy("adb-toolbox/${it.name}", it)) }
@@ -60,7 +61,7 @@ object DiagnosticsCollector {
     fun defaultTarget(stamp: String = timestamp()): Path {
         val desktop = Path.of(System.getProperty("user.home"), "Desktop")
         val directory = if (desktop.isDirectory()) desktop else DiagnosticsService.getInstance().logDirectory
-        return directory.resolve("adb-toolbox-diagnostics-$stamp.zip")
+        return directory.resolve("device-cockpit-diagnostics-$stamp.zip")
     }
 
     fun timestamp(): String = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss"))
@@ -91,7 +92,7 @@ object DiagnosticsCollector {
     // Bounded rather than progress-cancellable: the report must also work outside a progress task
     // (Settings button, tests), and every step inside it has its own timeout.
     private fun adbReport(project: Project): String = runBlocking {
-        withTimeoutOrNull(60.seconds) { project.service<AdbToolboxProjectService>().adbDiagnosticsReport() }
+        withTimeoutOrNull(60.seconds) { project.service<DeviceCockpitProjectService>().adbDiagnosticsReport() }
             ?: "adb report timed out after 60 s"
     }
 

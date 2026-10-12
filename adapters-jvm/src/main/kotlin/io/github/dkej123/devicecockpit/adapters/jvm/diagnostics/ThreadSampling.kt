@@ -57,7 +57,7 @@ class ThreadSampleAggregator(private val edtThreadPrefix: String = "AWT-EventQue
     fun allReport(limit: Int = 30): HotspotReport = all.report(limit)
 
     fun render(durationMs: Long, intervalMs: Long): String = buildString {
-        appendLine("ADB Toolbox performance recording")
+        appendLine("Device Cockpit performance recording")
         appendLine("duration: ${durationMs} ms, interval: ${intervalMs} ms, samples: $rounds")
         appendLine()
         section("EDT ($edtThreadPrefix*) — every state; self = top frame, inclusive = anywhere on the stack", edtReport())

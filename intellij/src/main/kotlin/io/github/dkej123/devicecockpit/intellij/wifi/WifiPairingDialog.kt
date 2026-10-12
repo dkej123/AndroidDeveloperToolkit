@@ -6,8 +6,8 @@ import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBPasswordField
 import com.intellij.ui.components.JBTextField
 import com.intellij.util.ui.FormBuilder
-import io.github.dkej123.devicecockpit.intellij.icons.AdbToolboxIcons
-import io.github.dkej123.devicecockpit.intellij.ui.common.AdbToolboxTheme
+import io.github.dkej123.devicecockpit.intellij.icons.DeviceCockpitIcons
+import io.github.dkej123.devicecockpit.intellij.ui.common.DeviceCockpitTheme
 import java.util.Arrays
 import javax.swing.JComponent
 import javax.swing.SwingConstants
@@ -16,7 +16,7 @@ import javax.swing.SwingConstants
  * Task 039's native, no-bespoke-layout pairing input dialog (`design/README.md` §1's "Pair device
  * over Wi-Fi…" entry point; no dedicated pairing layout is supplied, so this uses IntelliJ's own
  * [DialogWrapper]/[FormBuilder] the same way [io.github.dkej123.devicecockpit.intellij.settings
- * .AdbToolboxSettingsConfigurable] builds its native settings form). The pairing code field is a
+ * .DeviceCockpitSettingsConfigurable] builds its native settings form). The pairing code field is a
  * [JBPasswordField] — masked on screen — and [clearPairingCode] overwrites its backing char array
  * once the caller has read it, so the digits do not linger in a live Swing component any longer
  * than the single call that needs them (task 039: "codes are ... cleared on completion/disposal").
@@ -58,16 +58,16 @@ internal class WifiPairingDialog(project: Project) : DialogWrapper(project, fals
  * unit-testable on a plain [JBTextField], matching [io.github.dkej123.devicecockpit.intellij.apps
  * .styleDestructiveButton]'s "extract the one styled bit" shape for an untested [DialogWrapper]. */
 internal fun styleAddressField(field: JBTextField) {
-    field.font = AdbToolboxTheme.Typography.mono
+    field.font = DeviceCockpitTheme.Typography.mono
 }
 
 /** The dialog's own header, using the supplied `authorize` icon (`design/icons/actions/authorize*.svg`)
  * for this pairing/authorize entry point, since no bespoke pairing layout is supplied. */
 internal fun createPairingHeaderLabel(): JBLabel = JBLabel(
     "Pair device over Wi-Fi",
-    AdbToolboxIcons.Actions.authorize,
+    DeviceCockpitIcons.Actions.authorize,
     SwingConstants.LEFT,
 ).apply {
-    font = AdbToolboxTheme.Typography.sectionTitle
-    foreground = AdbToolboxTheme.Colors.text
+    font = DeviceCockpitTheme.Typography.sectionTitle
+    foreground = DeviceCockpitTheme.Colors.text
 }

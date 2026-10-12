@@ -48,7 +48,7 @@ class ThreadSamplingProfilerTest {
     fun `a short recording samples live threads and renders both tables`() {
         val report = ThreadSamplingProfiler(intervalMs = 20, durationMs = 120).run()
 
-        report shouldContain "ADB Toolbox performance recording"
+        report shouldContain "Device Cockpit performance recording"
         report shouldContain "All RUNNABLE threads"
     }
 

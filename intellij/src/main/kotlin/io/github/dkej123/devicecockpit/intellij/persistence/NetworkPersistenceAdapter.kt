@@ -31,7 +31,7 @@ internal fun resolveNetworkRecents(state: NetworkState): List<ProxyEndpoint> {
  * suspension.
  */
 class NetworkPersistenceAdapter(
-    private val projectState: AdbToolboxProjectState,
+    private val projectState: DeviceCockpitProjectState,
 ) : NetworkRecentsPersistence {
 
     override suspend fun readRecents(): List<ProxyEndpoint> = readRecentsNow()

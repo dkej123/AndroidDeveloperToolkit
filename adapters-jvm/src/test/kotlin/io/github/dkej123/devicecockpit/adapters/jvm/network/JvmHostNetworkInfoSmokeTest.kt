@@ -11,9 +11,9 @@ import org.junit.jupiter.api.condition.EnabledIfSystemProperty
  * default — normal `test`/`koverVerify` runs use synthetic interfaces only (`JvmHostNetworkInfoTest`,
  * `HostIpv4SelectionPolicyTest`), since real interfaces vary unpredictably across dev machines and CI.
  *
- * Enable explicitly with: `./gradlew :adapters-jvm:test -DadbToolbox.hostIpSmokeTest=true`
+ * Enable explicitly with: `./gradlew :adapters-jvm:test -DdeviceCockpit.hostIpSmokeTest=true`
  */
-@EnabledIfSystemProperty(named = "adbToolbox.hostIpSmokeTest", matches = "true")
+@EnabledIfSystemProperty(named = "deviceCockpit.hostIpSmokeTest", matches = "true")
 class JvmHostNetworkInfoSmokeTest {
 
     @Test

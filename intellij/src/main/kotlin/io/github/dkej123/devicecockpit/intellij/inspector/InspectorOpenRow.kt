@@ -3,7 +3,7 @@ package io.github.dkej123.devicecockpit.intellij.inspector
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.scale.JBUIScale
 import com.intellij.util.ui.JBUI
-import io.github.dkej123.devicecockpit.intellij.ui.common.AdbToolboxTheme
+import io.github.dkej123.devicecockpit.intellij.ui.common.DeviceCockpitTheme
 import io.github.dkej123.devicecockpit.intellij.ui.common.DesignButton
 import io.github.dkej123.devicecockpit.intellij.ui.common.DesignButtonStyle
 import io.github.dkej123.devicecockpit.intellij.ui.common.FlexRowLayout
@@ -24,10 +24,10 @@ class InspectorOpenRow(
     onShow: () -> Unit,
     onRecapture: () -> Unit,
     private val timeZone: TimeZone = TimeZone.getDefault(),
-) : JPanel(FlexRowLayout(AdbToolboxTheme.Spacing.s4)) {
+) : JPanel(FlexRowLayout(DeviceCockpitTheme.Spacing.s4)) {
     private val note = JBLabel("").apply {
-        font = AdbToolboxTheme.Typography.caption.deriveFont(JBUIScale.scale(10.5f))
-        foreground = AdbToolboxTheme.Colors.textFaint
+        font = DeviceCockpitTheme.Typography.caption.deriveFont(JBUIScale.scale(10.5f))
+        foreground = DeviceCockpitTheme.Colors.textFaint
     }
     private val showLink = DesignButton("Show", DesignButtonStyle.LINK).apply {
         toolTipText = "Show the Layout Inspector editor tab"
@@ -41,7 +41,7 @@ class InspectorOpenRow(
     init {
         isOpaque = false
         alignmentX = Component.LEFT_ALIGNMENT
-        border = JBUI.Borders.empty(AdbToolboxTheme.Spacing.s1, AdbToolboxTheme.Spacing.sectionInset, 0, AdbToolboxTheme.Spacing.sectionInset)
+        border = JBUI.Borders.empty(DeviceCockpitTheme.Spacing.s1, DeviceCockpitTheme.Spacing.sectionInset, 0, DeviceCockpitTheme.Spacing.sectionInset)
         add(note, FlexRowLayout.FILL)
         add(showLink)
         add(recaptureLink)

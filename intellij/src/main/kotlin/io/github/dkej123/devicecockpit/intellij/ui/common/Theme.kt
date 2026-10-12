@@ -17,7 +17,7 @@ import kotlin.math.roundToInt
  * lazily so they follow the IDE's current UI scale. Durations, counts, and opacity are deliberately
  * not display-scaled because their token units are time, count, and ratio rather than pixels.
  */
-object AdbToolboxTheme {
+object DeviceCockpitTheme {
 
     object Colors {
         val bg = themed(rgb(0xf7f8fa), rgb(0x1e1f22))

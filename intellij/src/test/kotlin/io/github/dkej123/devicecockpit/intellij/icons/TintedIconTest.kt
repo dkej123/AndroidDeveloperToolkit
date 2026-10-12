@@ -24,7 +24,7 @@ class TintedIconTest : TestCase() {
     fun `test tint replaces the color and keeps each pixel's alpha`() {
         val canvas = BufferedImage(4, 4, BufferedImage.TYPE_INT_ARGB)
 
-        AdbToolboxIcons.tinted(glyph, Color.BLUE).paintIcon(null, canvas.createGraphics(), 0, 0)
+        DeviceCockpitIcons.tinted(glyph, Color.BLUE).paintIcon(null, canvas.createGraphics(), 0, 0)
 
         assertEquals(0xFF0000FF.toInt(), canvas.getRGB(0, 0))
         val half = Color(canvas.getRGB(3, 0), true)
@@ -35,7 +35,7 @@ class TintedIconTest : TestCase() {
     }
 
     fun `test tint keeps the source size and paints at device scale`() {
-        val tinted = AdbToolboxIcons.tinted(glyph, Color.BLUE)
+        val tinted = DeviceCockpitIcons.tinted(glyph, Color.BLUE)
         val canvas = BufferedImage(8, 8, BufferedImage.TYPE_INT_ARGB)
 
         tinted.paintIcon(null, canvas.createGraphics().apply { scale(2.0, 2.0) }, 0, 0)

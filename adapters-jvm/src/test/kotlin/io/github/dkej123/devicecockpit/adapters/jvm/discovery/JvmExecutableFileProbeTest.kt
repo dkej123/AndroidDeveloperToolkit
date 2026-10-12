@@ -10,7 +10,7 @@ class JvmExecutableFileProbeTest {
 
     @Test
     fun `an executable regular file validates`() = runTest {
-        val file = Files.createTempFile("adb-toolbox-probe", "").toFile()
+        val file = Files.createTempFile("device-cockpit-probe", "").toFile()
         file.deleteOnExit()
         file.setExecutable(true)
 
@@ -19,7 +19,7 @@ class JvmExecutableFileProbeTest {
 
     @Test
     fun `a non-executable regular file does not validate`() = runTest {
-        val file = Files.createTempFile("adb-toolbox-probe", "").toFile()
+        val file = Files.createTempFile("device-cockpit-probe", "").toFile()
         file.deleteOnExit()
         file.setExecutable(false)
 
@@ -28,14 +28,14 @@ class JvmExecutableFileProbeTest {
 
     @Test
     fun `a missing path does not validate`() = runTest {
-        val missing = File(Files.createTempDirectory("adb-toolbox-probe-dir").toFile(), "does-not-exist")
+        val missing = File(Files.createTempDirectory("device-cockpit-probe-dir").toFile(), "does-not-exist")
 
         JvmExecutableFileProbe().isExecutable(missing.absolutePath) shouldBe false
     }
 
     @Test
     fun `a directory does not validate even if marked executable`() = runTest {
-        val dir = Files.createTempDirectory("adb-toolbox-probe-dir").toFile()
+        val dir = Files.createTempDirectory("device-cockpit-probe-dir").toFile()
         dir.setExecutable(true)
 
         JvmExecutableFileProbe().isExecutable(dir.absolutePath) shouldBe false

@@ -11,7 +11,7 @@ import io.github.dkej123.devicecockpit.domain.network.ProxyHostResult
 import io.github.dkej123.devicecockpit.domain.network.ProxyPort
 import io.github.dkej123.devicecockpit.domain.network.ProxyPortResult
 import io.github.dkej123.devicecockpit.domain.network.ProxyReadState
-import io.github.dkej123.devicecockpit.intellij.ui.common.AdbToolboxTheme
+import io.github.dkej123.devicecockpit.intellij.ui.common.DeviceCockpitTheme
 
 /**
  * Task 047's final visual design for the Network view (`design/README.md` §6): header state meta
@@ -100,7 +100,7 @@ class NetworkPanelTest : BasePlatformTestCase() {
         p.update(ProxyViewState(isDeviceEligible = true, readState = ProxyReadState.Disabled))
 
         assertEquals("off", p.proxyStateLabelForTest.text)
-        assertEquals(AdbToolboxTheme.Colors.textFaint, p.proxyStateLabelForTest.foreground)
+        assertEquals(DeviceCockpitTheme.Colors.textFaint, p.proxyStateLabelForTest.foreground)
         assertEquals("Enable proxy", p.enableButtonForTest.text)
         assertFalse(p.activeBannerLabelForTest.isVisible)
     }
@@ -141,7 +141,7 @@ class NetworkPanelTest : BasePlatformTestCase() {
         p.update(ProxyViewState(isDeviceEligible = true, readState = ProxyReadState.Active(active)))
 
         assertEquals("active", p.proxyStateLabelForTest.text)
-        assertEquals(AdbToolboxTheme.Colors.amber, p.proxyStateLabelForTest.foreground)
+        assertEquals(DeviceCockpitTheme.Colors.amber, p.proxyStateLabelForTest.foreground)
         assertTrue(p.activeBannerLabelForTest.isVisible)
         assertEquals("All traffic routed through 10.0.4.117:8888", p.activeBannerLabelForTest.text)
         assertEquals("Disable", p.enableButtonForTest.text)

@@ -8,13 +8,13 @@ import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import io.github.dkej123.devicecockpit.application.apps.AppLifecycleIntent
 import io.github.dkej123.devicecockpit.application.feedback.FeedbackIntent
 import io.github.dkej123.devicecockpit.domain.feedback.FeedbackSeverity
-import io.github.dkej123.devicecockpit.intellij.composition.AdbToolboxProjectService
+import io.github.dkej123.devicecockpit.intellij.composition.DeviceCockpitProjectService
 
 /**
  * Task 023's global restart shortcut/action: [RestartAppAction] must forward the exact same
  * [AppLifecycleIntent.Restart] the Apps-view Restart button
  * ([io.github.dkej123.devicecockpit.intellij.apps.AppsPanel]) sends, reached through the same shared
- * [AdbToolboxProjectService.appLifecycleViewModel] instance — never a second, independent
+ * [DeviceCockpitProjectService.appLifecycleViewModel] instance — never a second, independent
  * ViewModel/use-case — so the two triggers can never diverge, mirroring
  * [io.github.dkej123.devicecockpit.intellij.mirroring.MirroringToggleActionTest]'s established shape. No device
  * is selected in this headless `:intellij:test` sandbox, so
@@ -22,7 +22,7 @@ import io.github.dkej123.devicecockpit.intellij.composition.AdbToolboxProjectSer
  * device" branch — enough to prove the action reaches the real, shared ViewModel without needing a
  * real/fake device.
  */
-// BasePlatformTestCase's light project — and therefore the cached project.service<AdbToolboxProjectService>()
+// BasePlatformTestCase's light project — and therefore the cached project.service<DeviceCockpitProjectService>()
 // singleton and its one shared feedbackViewModel — is reused not just across this class's own test
 // methods but across every BasePlatformTestCase in this Gradle test JVM (e.g.
 // io.github.dkej123.devicecockpit.intellij.mirroring.MirroringToggleActionTest also drives the same singleton's
@@ -32,7 +32,7 @@ import io.github.dkej123.devicecockpit.intellij.composition.AdbToolboxProjectSer
 class RestartAppActionTest : BasePlatformTestCase() {
 
     fun `test invoking the action forwards Restart to the shared app lifecycle view model`() {
-        val composition = project.service<AdbToolboxProjectService>()
+        val composition = project.service<DeviceCockpitProjectService>()
         val action = RestartAppAction()
         val event = TestActionEvent.createTestEvent(action) { key ->
             if (key === CommonDataKeys.PROJECT.name) project else null
@@ -67,7 +67,7 @@ class RestartAppActionTest : BasePlatformTestCase() {
     }
 
     fun `test the action and a direct view model call both reach the same shared instance`() {
-        val composition = project.service<AdbToolboxProjectService>()
+        val composition = project.service<DeviceCockpitProjectService>()
         val before = composition.feedbackViewModel.state.value.toasts.map { it.id }.toSet()
         val action = RestartAppAction()
         val event = TestActionEvent.createTestEvent(action) { key ->

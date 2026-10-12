@@ -10,7 +10,7 @@ import io.github.dkej123.devicecockpit.application.deviceactions.DeviceActionsVi
 import io.github.dkej123.devicecockpit.application.deviceactions.DeviceActionsViewState
 import io.github.dkej123.devicecockpit.domain.devicecontext.ControlPolicy
 import io.github.dkej123.devicecockpit.domain.dispatch.DispatcherProvider
-import io.github.dkej123.devicecockpit.intellij.ui.common.AdbToolboxTheme
+import io.github.dkej123.devicecockpit.intellij.ui.common.DeviceCockpitTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.launchIn
@@ -33,7 +33,7 @@ class DeviceActionsView(
     private val viewModel: DeviceActionsViewModel,
     private val scope: CoroutineScope,
     private val dispatchers: DispatcherProvider,
-) : JBPanel<DeviceActionsView>(FlexRowLayout(AdbToolboxTheme.Spacing.s3)), Disposable {
+) : JBPanel<DeviceActionsView>(FlexRowLayout(DeviceCockpitTheme.Spacing.s3)), Disposable {
 
     val rebootButton = DesignButton("Reboot", DesignButtonStyle.SECONDARY).apply {
         toolTipText = "Reboot the selected device"

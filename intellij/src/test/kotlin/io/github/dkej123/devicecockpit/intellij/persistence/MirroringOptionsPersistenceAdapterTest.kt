@@ -11,13 +11,13 @@ import io.github.dkej123.devicecockpit.domain.mirroring.MirroringOptions
 class MirroringOptionsPersistenceAdapterTest : BasePlatformTestCase() {
 
     fun `test a fresh project has default mirroring options`() {
-        val adapter = MirroringOptionsPersistenceAdapter(AdbToolboxProjectState())
+        val adapter = MirroringOptionsPersistenceAdapter(DeviceCockpitProjectState())
 
         assertEquals(MirroringOptions.DEFAULT, adapter.readOptionsNow())
     }
 
     fun `test written options round-trip back out, including a null maxSize and bit rate`() {
-        val adapter = MirroringOptionsPersistenceAdapter(AdbToolboxProjectState())
+        val adapter = MirroringOptionsPersistenceAdapter(DeviceCockpitProjectState())
         val options = MirroringOptions(stayAwake = true, showTouches = true, maxSize = 1920, videoBitRateMbps = 8, turnScreenOff = true)
 
         adapter.writeOptionsNow(options)
@@ -26,7 +26,7 @@ class MirroringOptionsPersistenceAdapterTest : BasePlatformTestCase() {
     }
 
     fun `test writing default options clears a previously written maxSize and bit rate`() {
-        val adapter = MirroringOptionsPersistenceAdapter(AdbToolboxProjectState())
+        val adapter = MirroringOptionsPersistenceAdapter(DeviceCockpitProjectState())
         adapter.writeOptionsNow(MirroringOptions(maxSize = 1920, videoBitRateMbps = 8))
 
         adapter.writeOptionsNow(MirroringOptions.DEFAULT)
@@ -35,12 +35,12 @@ class MirroringOptionsPersistenceAdapterTest : BasePlatformTestCase() {
     }
 
     fun `test loadState composes via XmlSerializerUtil so written options survive a reload`() {
-        val projectState = AdbToolboxProjectState()
+        val projectState = DeviceCockpitProjectState()
         val adapter = MirroringOptionsPersistenceAdapter(projectState)
         val options = MirroringOptions(stayAwake = true, maxSize = 1280)
         adapter.writeOptionsNow(options)
 
-        val reloaded = AdbToolboxProjectState()
+        val reloaded = DeviceCockpitProjectState()
         reloaded.loadState(projectState.state)
 
         assertEquals(options, MirroringOptionsPersistenceAdapter(reloaded).readOptionsNow())

@@ -5,7 +5,7 @@ import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.components.service
 import com.intellij.testFramework.TestActionEvent
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
-import io.github.dkej123.devicecockpit.intellij.composition.AdbToolboxProjectService
+import io.github.dkej123.devicecockpit.intellij.composition.DeviceCockpitProjectService
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
@@ -15,13 +15,13 @@ import kotlinx.coroutines.withTimeout
  * Task 050's global refresh shortcut/action: [RefreshDevicesAction] must forward the exact same
  * [io.github.dkej123.devicecockpit.application.devicebar.DeviceBarIntent.Refresh] the device bar's refresh icon
  * button ([DeviceContextBarPanel]) sends, reached through the same shared
- * [AdbToolboxProjectService.deviceBarViewModel] instance, mirroring
+ * [DeviceCockpitProjectService.deviceBarViewModel] instance, mirroring
  * [io.github.dkej123.devicecockpit.intellij.apps.RestartAppActionTest]'s established shape.
  */
 class RefreshDevicesActionTest : BasePlatformTestCase() {
 
     fun `test invoking the action forwards Refresh to the shared device bar view model`() = runBlocking {
-        val composition = project.service<AdbToolboxProjectService>()
+        val composition = project.service<DeviceCockpitProjectService>()
         val action = RefreshDevicesAction()
         val event = TestActionEvent.createTestEvent(action) { key ->
             if (key === CommonDataKeys.PROJECT.name) project else null

@@ -11,7 +11,7 @@ import com.intellij.util.ui.JBUI
 import io.github.dkej123.devicecockpit.application.logcat.LogcatControlsState
 import io.github.dkej123.devicecockpit.domain.logcat.LogSeverity
 import io.github.dkej123.devicecockpit.domain.logcat.LogcatPauseState
-import io.github.dkej123.devicecockpit.intellij.ui.common.AdbToolboxTheme
+import io.github.dkej123.devicecockpit.intellij.ui.common.DeviceCockpitTheme
 import io.github.dkej123.devicecockpit.intellij.ui.common.LevelChip
 import io.github.dkej123.devicecockpit.intellij.ui.common.DesignButton
 import io.github.dkej123.devicecockpit.intellij.ui.common.DesignButtonStyle
@@ -86,7 +86,7 @@ class LogcatPanel(
     private val searchField = JBTextField().apply {
         isOpaque = false
         border = BorderFactory.createEmptyBorder()
-        font = AdbToolboxTheme.Typography.body.deriveFont(JBUIScale.scale(11f))
+        font = DeviceCockpitTheme.Typography.body.deriveFont(JBUIScale.scale(11f))
         emptyText.text = ShortcutHints.withKeyStroke("Search log…", focusSearchKeyStroke())
         toolTipText = ShortcutHints.withKeyStroke("Search log…", focusSearchKeyStroke())
         getAccessibleContext().accessibleName = "Search log"
@@ -111,7 +111,7 @@ class LogcatPanel(
         isContentAreaFilled = false
         isFocusPainted = false
         isBorderPainted = false
-        foreground = AdbToolboxTheme.Colors.textFaint
+        foreground = DeviceCockpitTheme.Colors.textFaint
         margin = java.awt.Insets(0, 0, 0, 0)
         isVisible = false
         toolTipText = "Clear search"
@@ -121,13 +121,13 @@ class LogcatPanel(
 
     // `searchWrapStyle`: 24px, radius 4, `field` fill, 1px `borderStrong`, `padding: 0 7px`, gap 6.
     private val searchFieldWrap = RoundedSurface(
-        AdbToolboxTheme.Colors.field,
-        AdbToolboxTheme.Colors.borderStrong,
-        radius = { AdbToolboxTheme.Radii.field },
+        DeviceCockpitTheme.Colors.field,
+        DeviceCockpitTheme.Colors.borderStrong,
+        radius = { DeviceCockpitTheme.Radii.field },
     ).apply {
-        layout = FlexRowLayout(AdbToolboxTheme.Spacing.s3)
+        layout = FlexRowLayout(DeviceCockpitTheme.Spacing.s3)
         border = JBUI.Borders.empty(0, JBUIScale.scale(7))
-        preferredSize = Dimension(0, AdbToolboxTheme.Sizes.field)
+        preferredSize = Dimension(0, DeviceCockpitTheme.Sizes.field)
         add(searchIconLabel)
         add(searchField, FlexRowLayout.FILL)
         add(clearQueryButton)
@@ -143,13 +143,13 @@ class LogcatPanel(
     }
 
     // `logToolbarBtnsStyle`: gap 2; the divider carries its own `margin: 0 2px`.
-    private val toolbarButtons = flexRow(AdbToolboxTheme.Spacing.s1, pauseButton, followButton, wrapButton, DividerLine(), clearButton)
+    private val toolbarButtons = flexRow(DeviceCockpitTheme.Spacing.s1, pauseButton, followButton, wrapButton, DividerLine(), clearButton)
 
     // `logToolbarStyle`: `padding: 6px 6px 6px 8px`, gap 6, 1px bottom border.
-    private val toolbar = flexRow(AdbToolboxTheme.Spacing.s3, searchFieldWrap, toolbarButtons, fill = searchFieldWrap).apply {
+    private val toolbar = flexRow(DeviceCockpitTheme.Spacing.s3, searchFieldWrap, toolbarButtons, fill = searchFieldWrap).apply {
         border = BorderFactory.createCompoundBorder(
-            BorderFactory.createMatteBorder(0, 0, 1, 0, AdbToolboxTheme.Colors.border),
-            JBUI.Borders.empty(AdbToolboxTheme.Spacing.s3, AdbToolboxTheme.Spacing.s4, AdbToolboxTheme.Spacing.s3, AdbToolboxTheme.Spacing.s3),
+            BorderFactory.createMatteBorder(0, 0, 1, 0, DeviceCockpitTheme.Colors.border),
+            JBUI.Borders.empty(DeviceCockpitTheme.Spacing.s3, DeviceCockpitTheme.Spacing.s4, DeviceCockpitTheme.Spacing.s3, DeviceCockpitTheme.Spacing.s3),
         )
     }
 
@@ -177,13 +177,13 @@ class LogcatPanel(
         flexRow(JBUIScale.scale(3), *levelChips.values.toTypedArray(), spacer, packageFilterChip, fill = spacer)
     }.apply {
         border = BorderFactory.createCompoundBorder(
-            BorderFactory.createMatteBorder(0, 0, 1, 0, AdbToolboxTheme.Colors.border),
-            JBUI.Borders.empty(0, AdbToolboxTheme.Spacing.s4, AdbToolboxTheme.Spacing.s3, AdbToolboxTheme.Spacing.s4),
+            BorderFactory.createMatteBorder(0, 0, 1, 0, DeviceCockpitTheme.Colors.border),
+            JBUI.Borders.empty(0, DeviceCockpitTheme.Spacing.s4, DeviceCockpitTheme.Spacing.s3, DeviceCockpitTheme.Spacing.s4),
         )
     }
 
     private val header = JPanel(BorderLayout()).apply {
-        background = AdbToolboxTheme.Colors.bg
+        background = DeviceCockpitTheme.Colors.bg
         add(toolbar, BorderLayout.NORTH)
         add(filterRow, BorderLayout.SOUTH)
     }
@@ -192,19 +192,19 @@ class LogcatPanel(
 
     private val scrollPane = JScrollPane(virtualList).apply {
         border = BorderFactory.createEmptyBorder()
-        viewport.background = AdbToolboxTheme.Colors.bg
+        viewport.background = DeviceCockpitTheme.Colors.bg
     }
 
     private val jumpToLatestLink = linkButton("Jump to latest") { onJumpToLatest() }
-    private val pausedDotLabel = JBLabel(StatusDotIcon(AdbToolboxTheme.Colors.amber, filled = true, diameter = 6))
+    private val pausedDotLabel = JBLabel(StatusDotIcon(DeviceCockpitTheme.Colors.amber, filled = true, diameter = 6))
     private val pausedTextLabel = JBLabel("").apply {
-        font = AdbToolboxTheme.Typography.body.deriveFont(Font.BOLD, JBUIScale.scale(10.5f))
-        foreground = AdbToolboxTheme.Colors.amber
+        font = DeviceCockpitTheme.Typography.body.deriveFont(Font.BOLD, JBUIScale.scale(10.5f))
+        foreground = DeviceCockpitTheme.Colors.amber
     }
     // `pausedPillStyle`: fully rounded, `panel` fill, 1px amber, `padding: 4px 8px 4px 7px`, gap 7.
-    private val pausedPill = RoundedSurface(AdbToolboxTheme.Colors.panel, AdbToolboxTheme.Colors.amber, radius = { AdbToolboxTheme.Radii.pill }).apply {
+    private val pausedPill = RoundedSurface(DeviceCockpitTheme.Colors.panel, DeviceCockpitTheme.Colors.amber, radius = { DeviceCockpitTheme.Radii.pill }).apply {
         layout = FlexRowLayout(JBUIScale.scale(7))
-        border = JBUI.Borders.empty(AdbToolboxTheme.Spacing.s2, JBUIScale.scale(7), AdbToolboxTheme.Spacing.s2, AdbToolboxTheme.Spacing.s4)
+        border = JBUI.Borders.empty(DeviceCockpitTheme.Spacing.s2, JBUIScale.scale(7), DeviceCockpitTheme.Spacing.s2, DeviceCockpitTheme.Spacing.s4)
         add(pausedDotLabel)
         add(pausedTextLabel)
         add(jumpToLatestLink)
@@ -216,7 +216,7 @@ class LogcatPanel(
     }
     private val pausedPillOverlay = JPanel(BorderLayout()).apply {
         isOpaque = false
-        border = JBUI.Borders.emptyBottom(AdbToolboxTheme.Spacing.s5)
+        border = JBUI.Borders.emptyBottom(DeviceCockpitTheme.Spacing.s5)
         add(pausedPillRow, BorderLayout.SOUTH)
     }
 
@@ -232,12 +232,12 @@ class LogcatPanel(
 
     // `emptyWrapStyle`: centered column, `padding: 34px 16px 16px`, gap 6.
     private val emptyStateTitleLabel = JBLabel("").apply {
-        font = AdbToolboxTheme.Typography.sectionTitle
+        font = DeviceCockpitTheme.Typography.sectionTitle
         alignmentX = Component.CENTER_ALIGNMENT
     }
     private val emptyStateBodyLabel = JBLabel("").apply {
-        font = AdbToolboxTheme.Typography.body.deriveFont(JBUIScale.scale(11f))
-        foreground = AdbToolboxTheme.Colors.textDim
+        font = DeviceCockpitTheme.Typography.body.deriveFont(JBUIScale.scale(11f))
+        foreground = DeviceCockpitTheme.Colors.textDim
         alignmentX = Component.CENTER_ALIGNMENT
     }
     private val resetFiltersLink = linkButton("Reset filters") { onResetFilters() }.apply {
@@ -247,17 +247,17 @@ class LogcatPanel(
     private val emptyStatePanel = JPanel().apply {
         layout = BoxLayout(this, BoxLayout.Y_AXIS)
         isOpaque = false
-        border = JBUI.Borders.empty(JBUIScale.scale(34), AdbToolboxTheme.Spacing.s6, AdbToolboxTheme.Spacing.s6, AdbToolboxTheme.Spacing.s6)
+        border = JBUI.Borders.empty(JBUIScale.scale(34), DeviceCockpitTheme.Spacing.s6, DeviceCockpitTheme.Spacing.s6, DeviceCockpitTheme.Spacing.s6)
         isVisible = false
         add(emptyStateTitleLabel)
-        add(javax.swing.Box.createVerticalStrut(AdbToolboxTheme.Spacing.s3))
+        add(javax.swing.Box.createVerticalStrut(DeviceCockpitTheme.Spacing.s3))
         add(emptyStateBodyLabel)
-        add(javax.swing.Box.createVerticalStrut(AdbToolboxTheme.Spacing.s3))
+        add(javax.swing.Box.createVerticalStrut(DeviceCockpitTheme.Spacing.s3))
         add(resetFiltersLink)
     }
 
     private val centerContainer = JPanel(BorderLayout()).apply {
-        background = AdbToolboxTheme.Colors.bg
+        background = DeviceCockpitTheme.Colors.bg
         add(emptyStatePanel, BorderLayout.NORTH)
         add(bodyStack, BorderLayout.CENTER)
     }
@@ -268,19 +268,19 @@ class LogcatPanel(
     private val footerBufferLabel = footerLabel("")
     private val footer = run {
         val spacer = flexSpacer()
-        flexRow(AdbToolboxTheme.Spacing.s4, footerLabel, spacer, footerBufferLabel, fill = spacer)
+        flexRow(DeviceCockpitTheme.Spacing.s4, footerLabel, spacer, footerBufferLabel, fill = spacer)
     }.apply {
         isOpaque = true
-        preferredSize = Dimension(0, AdbToolboxTheme.Sizes.logcatFooter)
-        background = AdbToolboxTheme.Colors.header
+        preferredSize = Dimension(0, DeviceCockpitTheme.Sizes.logcatFooter)
+        background = DeviceCockpitTheme.Colors.header
         border = BorderFactory.createCompoundBorder(
-            BorderFactory.createMatteBorder(1, 0, 0, 0, AdbToolboxTheme.Colors.border),
-            JBUI.Borders.empty(0, AdbToolboxTheme.Spacing.s4),
+            BorderFactory.createMatteBorder(1, 0, 0, 0, DeviceCockpitTheme.Colors.border),
+            JBUI.Borders.empty(0, DeviceCockpitTheme.Spacing.s4),
         )
     }
 
     init {
-        background = AdbToolboxTheme.Colors.bg
+        background = DeviceCockpitTheme.Colors.bg
         add(header, BorderLayout.NORTH)
         add(centerContainer, BorderLayout.CENTER)
         add(footer, BorderLayout.SOUTH)
@@ -472,8 +472,8 @@ class LogcatPanel(
     private fun presentIconToggle(button: JToggleButton) {
         if (button.isSelected) {
             button.isOpaque = true
-            button.background = AdbToolboxTheme.Colors.accentBg
-            button.border = SolidChipBorder(AdbToolboxTheme.Colors.accentBorder)
+            button.background = DeviceCockpitTheme.Colors.accentBg
+            button.border = SolidChipBorder(DeviceCockpitTheme.Colors.accentBorder)
         } else {
             button.isOpaque = false
             button.border = BorderFactory.createEmptyBorder()
@@ -481,7 +481,7 @@ class LogcatPanel(
     }
 
     private fun presentPackageFilterChip() {
-        packageFilterChip.foreground = if (packageFilterChip.isSelected) AdbToolboxTheme.Colors.accent else AdbToolboxTheme.Colors.textFaint
+        packageFilterChip.foreground = if (packageFilterChip.isSelected) DeviceCockpitTheme.Colors.accent else DeviceCockpitTheme.Colors.textFaint
         packageFilterChip.revalidate()
         packageFilterChip.repaint()
     }
@@ -491,7 +491,7 @@ class LogcatPanel(
 
     private companion object {
         fun iconToggleButton(icon: Icon, tooltip: String, onToggle: () -> Unit): JToggleButton = JToggleButton(icon).apply {
-            preferredSize = Dimension(AdbToolboxTheme.Sizes.iconButton, AdbToolboxTheme.Sizes.iconButton)
+            preferredSize = Dimension(DeviceCockpitTheme.Sizes.iconButton, DeviceCockpitTheme.Sizes.iconButton)
             toolTipText = tooltip
             getAccessibleContext().accessibleName = tooltip.substringBefore("  ")
             isContentAreaFilled = false
@@ -510,8 +510,8 @@ class LogcatPanel(
         }
 
         fun footerLabel(text: String) = JBLabel(text).apply {
-            font = AdbToolboxTheme.Typography.monoMeta
-            foreground = AdbToolboxTheme.Colors.textFaint
+            font = DeviceCockpitTheme.Typography.monoMeta
+            foreground = DeviceCockpitTheme.Colors.textFaint
         }
     }
 }
@@ -529,7 +529,7 @@ private class DividerLine : JComponent() {
     }
 
     override fun paintComponent(g: Graphics) {
-        g.color = AdbToolboxTheme.Colors.border
+        g.color = DeviceCockpitTheme.Colors.border
         g.fillRect(0, (height - JBUIScale.scale(14)) / 2, width, JBUIScale.scale(14))
     }
 }
@@ -540,7 +540,7 @@ private class DividerLine : JComponent() {
  */
 private class PackageFilterChip : JToggleButton() {
     init {
-        font = AdbToolboxTheme.Typography.mono.deriveFont(JBUIScale.scale(10f))
+        font = DeviceCockpitTheme.Typography.mono.deriveFont(JBUIScale.scale(10f))
         isContentAreaFilled = false
         isFocusPainted = false
         isBorderPainted = false
@@ -561,12 +561,12 @@ private class PackageFilterChip : JToggleButton() {
         val g2 = g.create() as Graphics2D
         try {
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
-            val arc = (AdbToolboxTheme.Radii.field * 2).toFloat()
+            val arc = (DeviceCockpitTheme.Radii.field * 2).toFloat()
             if (isSelected) {
-                g2.color = AdbToolboxTheme.Colors.accentBg
+                g2.color = DeviceCockpitTheme.Colors.accentBg
                 g2.fill(RoundRectangle2D.Float(0f, 0f, width.toFloat(), height.toFloat(), arc, arc))
             }
-            g2.color = if (isSelected) AdbToolboxTheme.Colors.accentBorder else AdbToolboxTheme.Colors.border
+            g2.color = if (isSelected) DeviceCockpitTheme.Colors.accentBorder else DeviceCockpitTheme.Colors.border
             g2.draw(RoundRectangle2D.Float(0.5f, 0.5f, width - 1f, height - 1f, arc, arc))
         } finally {
             g2.dispose()

@@ -19,8 +19,10 @@ import com.intellij.util.xmlb.XmlSerializerUtil
  * a future feature adds a new slice/property here, it does not reach into another feature's.
  */
 @Service(Service.Level.PROJECT)
+// State name and file keep the pre-rename "ADB Toolbox" names for compatibility: renaming them would
+// drop every user's saved project state.
 @State(name = "AdbToolboxProjectState", storages = [Storage("adbToolbox.xml")])
-class AdbToolboxProjectState : PersistentStateComponent<AdbToolboxProjectState.State> {
+class DeviceCockpitProjectState : PersistentStateComponent<DeviceCockpitProjectState.State> {
 
     class State {
         var deviceSelection: DeviceSelectionState = DeviceSelectionState()
@@ -42,6 +44,6 @@ class AdbToolboxProjectState : PersistentStateComponent<AdbToolboxProjectState.S
     }
 
     companion object {
-        fun getInstance(project: Project): AdbToolboxProjectState = project.service()
+        fun getInstance(project: Project): DeviceCockpitProjectState = project.service()
     }
 }

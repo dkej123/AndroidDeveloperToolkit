@@ -29,7 +29,7 @@ internal fun resolveAppsSelection(state: AppsSelectionState): SelectedPackage? {
  * functions — the `suspend` port methods are trivial delegations, with no actual suspension.
  */
 class AppsSelectionPersistenceAdapter(
-    private val projectState: AdbToolboxProjectState,
+    private val projectState: DeviceCockpitProjectState,
 ) : SelectedPackagePersistence {
 
     override suspend fun readSelectedPackage(): SelectedPackage? = readSelectedPackageNow()

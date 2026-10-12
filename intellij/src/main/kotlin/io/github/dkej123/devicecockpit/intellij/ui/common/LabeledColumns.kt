@@ -17,7 +17,7 @@ import javax.swing.JPanel
  */
 class ResponsiveColumnsLayout(
     private val minColumn: () -> Int = { JBUIScale.scale(130) },
-    private val gap: () -> Int = { AdbToolboxTheme.Spacing.s4 },
+    private val gap: () -> Int = { DeviceCockpitTheme.Spacing.s4 },
 ) : LayoutManager {
     override fun addLayoutComponent(name: String?, comp: Component) = Unit
 
@@ -68,11 +68,11 @@ fun JComboBox<*>.transparentCombo() {
 /** `dispColStyle`: a 10.5px `textDim` caption 3px above its 24px control. */
 fun labeledColumn(caption: String, control: JComponent): JPanel = verticalStackWithGap(JBUIScale.scale(3),
     JBLabel(caption).apply {
-        font = AdbToolboxTheme.Typography.caption.deriveFont(JBUIScale.scale(10.5f))
-        foreground = AdbToolboxTheme.Colors.textDim
+        font = DeviceCockpitTheme.Typography.caption.deriveFont(JBUIScale.scale(10.5f))
+        foreground = DeviceCockpitTheme.Colors.textDim
         labelFor = control
     },
-    control.apply { preferredSize = Dimension(JBUIScale.scale(130), AdbToolboxTheme.Sizes.field) },
+    control.apply { preferredSize = Dimension(JBUIScale.scale(130), DeviceCockpitTheme.Sizes.field) },
 )
 
 /** A [ResponsiveColumnsLayout] row of [columns] with the section's 10px inset. */
@@ -81,7 +81,7 @@ fun responsiveColumns(vararg columns: JComponent): JPanel = object : JPanel(Resp
 }.apply {
     isOpaque = false
     alignmentX = Component.LEFT_ALIGNMENT
-    border = com.intellij.util.ui.JBUI.Borders.empty(0, AdbToolboxTheme.Spacing.sectionInset)
+    border = com.intellij.util.ui.JBUI.Borders.empty(0, DeviceCockpitTheme.Spacing.sectionInset)
     columns.forEach(::add)
 }
 
@@ -89,7 +89,7 @@ fun responsiveColumns(vararg columns: JComponent): JPanel = object : JPanel(Resp
 fun <T> designCombo(label: (T) -> String): ComboBox<T> = ComboBox<T>().apply {
     transparentCombo()
     renderer = textRenderer(label)
-    font = AdbToolboxTheme.Typography.body.deriveFont(JBUIScale.scale(11.5f))
+    font = DeviceCockpitTheme.Typography.body.deriveFont(JBUIScale.scale(11.5f))
 }
 
 /**

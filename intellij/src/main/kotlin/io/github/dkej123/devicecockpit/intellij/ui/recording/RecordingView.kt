@@ -16,9 +16,9 @@ import io.github.dkej123.devicecockpit.application.recording.RecordingViewModel
 import io.github.dkej123.devicecockpit.application.recording.RecordingViewState
 import io.github.dkej123.devicecockpit.domain.devicecontext.ControlPolicy
 import io.github.dkej123.devicecockpit.domain.dispatch.DispatcherProvider
-import io.github.dkej123.devicecockpit.intellij.ui.common.AdbToolboxTheme
+import io.github.dkej123.devicecockpit.intellij.ui.common.DeviceCockpitTheme
 import io.github.dkej123.devicecockpit.intellij.ui.common.StatusDotIcon
-import io.github.dkej123.devicecockpit.intellij.icons.AdbToolboxIcons
+import io.github.dkej123.devicecockpit.intellij.icons.DeviceCockpitIcons
 import io.github.dkej123.devicecockpit.intellij.ui.common.ToolButtonTone
 import io.github.dkej123.devicecockpit.intellij.ui.common.ScreenToolButton
 import java.awt.Font
@@ -41,7 +41,7 @@ class RecordingView(
     private val dispatchers: DispatcherProvider,
 ) : JBPanel<RecordingView>(FlexRowLayout(0)), Disposable {
 
-    val recordButton = ScreenToolButton(AdbToolboxIcons.Actions.record).apply {
+    val recordButton = ScreenToolButton(DeviceCockpitIcons.Actions.record).apply {
         toolTipText = RECORD_TOOLTIP
         getAccessibleContext().accessibleName = RECORD_NAME
         addActionListener { viewModel.handle(RecordingIntent.Toggle) }
@@ -55,14 +55,14 @@ class RecordingView(
     val toggleButton: JButton get() = if (statusRow.isVisible) stopButton else recordButton
 
     val statusLabel = JBLabel("").apply {
-        font = AdbToolboxTheme.Typography.mono.deriveFont(Font.BOLD)
-        foreground = AdbToolboxTheme.Colors.red
-        icon = StatusDotIcon(AdbToolboxTheme.Colors.red, filled = true)
+        font = DeviceCockpitTheme.Typography.mono.deriveFont(Font.BOLD)
+        foreground = DeviceCockpitTheme.Colors.red
+        icon = StatusDotIcon(DeviceCockpitTheme.Colors.red, filled = true)
         iconTextGap = JBUIScale.scale(7)
     }
 
     // `recordingRowStyle`: margin 0 10, radius 5, `redBg` + 1px `redBorder`, `padding: 6px 8px`, gap 7.
-    val recordingBanner = RoundedSurface(AdbToolboxTheme.Colors.redBg, AdbToolboxTheme.Colors.redBorder).apply {
+    val recordingBanner = RoundedSurface(DeviceCockpitTheme.Colors.redBg, DeviceCockpitTheme.Colors.redBorder).apply {
         layout = FlexRowLayout(JBUIScale.scale(7))
         border = JBUI.Borders.empty(6, 8)
         add(statusLabel, FlexRowLayout.FILL)
@@ -71,7 +71,7 @@ class RecordingView(
 
     val statusRow: JBPanel<Nothing> = JBPanel<Nothing>(java.awt.BorderLayout()).apply {
         isOpaque = false
-        border = JBUI.Borders.empty(0, AdbToolboxTheme.Spacing.sectionInset)
+        border = JBUI.Borders.empty(0, DeviceCockpitTheme.Spacing.sectionInset)
         add(recordingBanner, java.awt.BorderLayout.CENTER)
         isVisible = false
     }
@@ -94,7 +94,7 @@ class RecordingView(
         val isRecording = state.presentationState is RecordingPresentationState.Recording
         statusRow.isVisible = isRecording
         recordButton.tone = if (isRecording) ToolButtonTone.RED else null
-        recordButton.glyph = if (isRecording) AdbToolboxIcons.Actions.stopRecording else AdbToolboxIcons.Actions.record
+        recordButton.glyph = if (isRecording) DeviceCockpitIcons.Actions.stopRecording else DeviceCockpitIcons.Actions.record
         recordButton.getAccessibleContext().accessibleName = if (isRecording) STOP_NAME else RECORD_NAME
         recordButton.toolTipText = (state.presentationState as? RecordingPresentationState.Error)?.message
             ?: when (state.presentationState) {

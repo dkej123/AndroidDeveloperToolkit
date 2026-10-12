@@ -2,7 +2,7 @@ package io.github.dkej123.devicecockpit.intellij.logcat
 
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import io.github.dkej123.devicecockpit.domain.logcat.LogSeverity
-import io.github.dkej123.devicecockpit.intellij.ui.common.AdbToolboxTheme
+import io.github.dkej123.devicecockpit.intellij.ui.common.DeviceCockpitTheme
 
 /**
  * Task 048's pure Logcat presentation helpers (`design/README.md` §7's severity/search-hit tokens,
@@ -12,19 +12,19 @@ import io.github.dkej123.devicecockpit.intellij.ui.common.AdbToolboxTheme
 class LogcatRowStyleTest : BasePlatformTestCase() {
 
     fun `test level and message colors follow the supplied severity palette`() {
-        assertSame(AdbToolboxTheme.LogSeverityColors.warn.level, LogcatRowStyle.levelColor(LogSeverity.WARN))
-        assertSame(AdbToolboxTheme.LogSeverityColors.warn.message, LogcatRowStyle.messageColor(LogSeverity.WARN))
-        assertSame(AdbToolboxTheme.LogSeverityColors.error.level, LogcatRowStyle.levelColor(LogSeverity.ERROR))
-        assertSame(AdbToolboxTheme.LogSeverityColors.assert.level, LogcatRowStyle.levelColor(LogSeverity.ASSERT))
+        assertSame(DeviceCockpitTheme.LogSeverityColors.warn.level, LogcatRowStyle.levelColor(LogSeverity.WARN))
+        assertSame(DeviceCockpitTheme.LogSeverityColors.warn.message, LogcatRowStyle.messageColor(LogSeverity.WARN))
+        assertSame(DeviceCockpitTheme.LogSeverityColors.error.level, LogcatRowStyle.levelColor(LogSeverity.ERROR))
+        assertSame(DeviceCockpitTheme.LogSeverityColors.assert.level, LogcatRowStyle.levelColor(LogSeverity.ASSERT))
     }
 
     fun `test null severity falls back to the verbose palette`() {
-        assertSame(AdbToolboxTheme.LogSeverityColors.verbose.level, LogcatRowStyle.levelColor(null))
-        assertSame(AdbToolboxTheme.LogSeverityColors.verbose.message, LogcatRowStyle.messageColor(null))
+        assertSame(DeviceCockpitTheme.LogSeverityColors.verbose.level, LogcatRowStyle.levelColor(null))
+        assertSame(DeviceCockpitTheme.LogSeverityColors.verbose.message, LogcatRowStyle.messageColor(null))
     }
 
     fun `test only assert rows carry a row background tint and bold weight`() {
-        assertSame(AdbToolboxTheme.LogSeverityColors.assert.rowBg, LogcatRowStyle.rowBackground(LogSeverity.ASSERT))
+        assertSame(DeviceCockpitTheme.LogSeverityColors.assert.rowBg, LogcatRowStyle.rowBackground(LogSeverity.ASSERT))
         assertTrue(LogcatRowStyle.isBoldRow(LogSeverity.ASSERT))
         LogSeverity.entries.filter { it != LogSeverity.ASSERT }.forEach { severity ->
             assertNull(LogcatRowStyle.rowBackground(severity))
@@ -35,8 +35,8 @@ class LogcatRowStyleTest : BasePlatformTestCase() {
     }
 
     fun `test tag column is wide-breakpoint only, timestamp is dock-and-above`() {
-        val dock = LogcatRowStyle.columnsFor(AdbToolboxTheme.Breakpoints.wide - 1)
-        val wide = LogcatRowStyle.columnsFor(AdbToolboxTheme.Breakpoints.wide)
+        val dock = LogcatRowStyle.columnsFor(DeviceCockpitTheme.Breakpoints.wide - 1)
+        val wide = LogcatRowStyle.columnsFor(DeviceCockpitTheme.Breakpoints.wide)
 
         assertFalse(dock.tag)
         assertTrue(dock.timestamp)
@@ -45,8 +45,8 @@ class LogcatRowStyleTest : BasePlatformTestCase() {
     }
 
     fun `test narrow width below the dock breakpoint hides both timestamp and tag`() {
-        val justBelowNarrow = LogcatRowStyle.columnsFor(AdbToolboxTheme.Breakpoints.narrow - 1)
-        val atNarrowIsDock = LogcatRowStyle.columnsFor(AdbToolboxTheme.Breakpoints.narrow)
+        val justBelowNarrow = LogcatRowStyle.columnsFor(DeviceCockpitTheme.Breakpoints.narrow - 1)
+        val atNarrowIsDock = LogcatRowStyle.columnsFor(DeviceCockpitTheme.Breakpoints.narrow)
 
         assertFalse(justBelowNarrow.timestamp)
         assertFalse(justBelowNarrow.tag)

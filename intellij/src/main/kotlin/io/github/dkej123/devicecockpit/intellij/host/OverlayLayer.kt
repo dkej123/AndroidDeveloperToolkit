@@ -16,7 +16,7 @@ import javax.swing.JLayeredPane
  * bottom-left anchor above the status bar (`design/README.md` §1/Global layout). It is re-applied
  * on every [show] call (a coordinator calls [show] again after each state update, once the
  * overlay's own content/preferred size may have changed) and on [relayout] (called from
- * [AdbToolboxHostPanel.doLayout] on every host resize). Overlays with no `layoutBounds` are left at
+ * [DeviceCockpitHostPanel.doLayout] on every host resize). Overlays with no `layoutBounds` are left at
  * whatever bounds they already have — task 010's original, still-supported behavior.
  */
 class OverlayLayer(private val target: JLayeredPane) {

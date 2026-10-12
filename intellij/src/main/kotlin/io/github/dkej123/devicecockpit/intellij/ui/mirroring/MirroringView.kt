@@ -20,8 +20,8 @@ import io.github.dkej123.devicecockpit.application.mirroring.MirroringViewState
 import io.github.dkej123.devicecockpit.application.mirroring.ScrcpyAvailability
 import io.github.dkej123.devicecockpit.domain.devicecontext.ControlPolicy
 import io.github.dkej123.devicecockpit.domain.dispatch.DispatcherProvider
-import io.github.dkej123.devicecockpit.intellij.icons.AdbToolboxIcons
-import io.github.dkej123.devicecockpit.intellij.ui.common.AdbToolboxTheme
+import io.github.dkej123.devicecockpit.intellij.icons.DeviceCockpitIcons
+import io.github.dkej123.devicecockpit.intellij.ui.common.DeviceCockpitTheme
 import io.github.dkej123.devicecockpit.intellij.ui.common.ScreenToolButton
 import io.github.dkej123.devicecockpit.intellij.ui.common.StatusDotIcon
 import io.github.dkej123.devicecockpit.intellij.ui.common.ToolButtonSegment
@@ -49,10 +49,10 @@ class MirroringView(
     private val dispatchers: DispatcherProvider,
     private val optionsPanel: MirroringOptionsPanel? = null,
     private val openInstallGuide: () -> Unit = { BrowserUtil.browse(INSTALL_GUIDE_URL) },
-) : JBPanel<MirroringView>(VerticalStackLayout { AdbToolboxTheme.Spacing.s3 }), Disposable {
+) : JBPanel<MirroringView>(VerticalStackLayout { DeviceCockpitTheme.Spacing.s3 }), Disposable {
 
     /** Monitor glyph; brand-tinted while running, when a click stops the session. */
-    val mirrorButton = ScreenToolButton(AdbToolboxIcons.Actions.mirror, segment = ToolButtonSegment.MAIN).apply {
+    val mirrorButton = ScreenToolButton(DeviceCockpitIcons.Actions.mirror, segment = ToolButtonSegment.MAIN).apply {
         toolTipText = START_TOOLTIP
         getAccessibleContext().accessibleName = START_NAME
         addActionListener { viewModel.handle(MirroringIntent.Toggle) }
@@ -75,13 +75,13 @@ class MirroringView(
     val toggleButton: JButton get() = if (statusRow.isVisible) stopButton else mirrorButton
 
     val runningLabel = JBLabel("Mirroring · Running").apply {
-        font = AdbToolboxTheme.Typography.body.deriveFont(Font.BOLD, JBUIScale.scale(11.5f))
-        foreground = AdbToolboxTheme.Colors.brand
-        icon = StatusDotIcon(AdbToolboxTheme.Colors.brand, filled = true)
+        font = DeviceCockpitTheme.Typography.body.deriveFont(Font.BOLD, JBUIScale.scale(11.5f))
+        foreground = DeviceCockpitTheme.Colors.brand
+        icon = StatusDotIcon(DeviceCockpitTheme.Colors.brand, filled = true)
     }
 
     // `runningRowStyle`: margin 0 10, radius 5, `brandBg` + 1px `brandBorder`, `padding: 6px 8px`, gap 7.
-    val runningBanner = RoundedSurface(AdbToolboxTheme.Colors.brandBg, AdbToolboxTheme.Colors.brandBorder).apply {
+    val runningBanner = RoundedSurface(DeviceCockpitTheme.Colors.brandBg, DeviceCockpitTheme.Colors.brandBorder).apply {
         layout = FlexRowLayout(JBUIScale.scale(7))
         border = JBUI.Borders.empty(6, 8)
         add(runningLabel, FlexRowLayout.FILL)
@@ -90,14 +90,14 @@ class MirroringView(
 
     val statusRow: JBPanel<Nothing> = JBPanel<Nothing>(BorderLayout()).apply {
         isOpaque = false
-        border = JBUI.Borders.empty(0, AdbToolboxTheme.Spacing.sectionInset)
+        border = JBUI.Borders.empty(0, DeviceCockpitTheme.Spacing.sectionInset)
         add(runningBanner, BorderLayout.CENTER)
         isVisible = false
     }
 
     // Shown only while scrcpy is missing (user decision, 2026-09-29): why, and links to fix it.
-    val helpLabel = WrappingText("", AdbToolboxTheme.Typography.caption, AdbToolboxTheme.Colors.textFaint).apply {
-        border = JBUI.Borders.empty(0, AdbToolboxTheme.Spacing.sectionInset)
+    val helpLabel = WrappingText("", DeviceCockpitTheme.Typography.caption, DeviceCockpitTheme.Colors.textFaint).apply {
+        border = JBUI.Borders.empty(0, DeviceCockpitTheme.Spacing.sectionInset)
         isVisible = false
     }
     val openSettingsLink = DesignButton("Open Settings", DesignButtonStyle.LINK).apply {
@@ -111,8 +111,8 @@ class MirroringView(
         toolTipText = INSTALL_GUIDE_URL
         addActionListener { openInstallGuide() }
     }
-    val scrcpyFixRow = flexRow(AdbToolboxTheme.Spacing.s4, openSettingsLink, recheckLink, installGuideLink).apply {
-        border = JBUI.Borders.empty(0, AdbToolboxTheme.Spacing.sectionInset)
+    val scrcpyFixRow = flexRow(DeviceCockpitTheme.Spacing.s4, openSettingsLink, recheckLink, installGuideLink).apply {
+        border = JBUI.Borders.empty(0, DeviceCockpitTheme.Spacing.sectionInset)
         isVisible = false
     }
 

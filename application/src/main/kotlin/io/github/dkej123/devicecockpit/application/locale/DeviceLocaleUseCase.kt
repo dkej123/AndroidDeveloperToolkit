@@ -21,7 +21,7 @@ sealed interface LocaleResult {
     data class Failed(val reason: String) : LocaleResult
 }
 
-/** Where the locale a device had when ADB Toolbox first saw it is kept, per serial (persisted by the IDE layer). */
+/** Where the locale a device had when Device Cockpit first saw it is kept, per serial (persisted by the IDE layer). */
 interface OriginalLocaleStore {
     fun get(serial: DeviceSerial): String?
 

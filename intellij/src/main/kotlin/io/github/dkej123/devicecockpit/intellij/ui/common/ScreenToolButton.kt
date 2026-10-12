@@ -1,7 +1,7 @@
 package io.github.dkej123.devicecockpit.intellij.ui.common
 
 import com.intellij.ui.scale.JBUIScale
-import io.github.dkej123.devicecockpit.intellij.icons.AdbToolboxIcons
+import io.github.dkej123.devicecockpit.intellij.icons.DeviceCockpitIcons
 import java.awt.AlphaComposite
 import java.awt.BasicStroke
 import java.awt.Color
@@ -18,9 +18,9 @@ import javax.swing.border.EmptyBorder
 
 /** The colour a [ScreenToolButton] takes while its action is running (`st.*` in the prototype). */
 enum class ToolButtonTone(val fill: () -> Color, val outline: () -> Color, val glyph: () -> Color) {
-    BRAND({ AdbToolboxTheme.Colors.brandBg }, { AdbToolboxTheme.Colors.brandBorder }, { AdbToolboxTheme.Colors.brand }),
-    RED({ AdbToolboxTheme.Colors.redBg }, { AdbToolboxTheme.Colors.redBorder }, { AdbToolboxTheme.Colors.red }),
-    ACCENT({ AdbToolboxTheme.Colors.accentBg }, { AdbToolboxTheme.Colors.accentBorder }, { AdbToolboxTheme.Colors.accent }),
+    BRAND({ DeviceCockpitTheme.Colors.brandBg }, { DeviceCockpitTheme.Colors.brandBorder }, { DeviceCockpitTheme.Colors.brand }),
+    RED({ DeviceCockpitTheme.Colors.redBg }, { DeviceCockpitTheme.Colors.redBorder }, { DeviceCockpitTheme.Colors.red }),
+    ACCENT({ DeviceCockpitTheme.Colors.accentBg }, { DeviceCockpitTheme.Colors.accentBorder }, { DeviceCockpitTheme.Colors.accent }),
 }
 
 /** Which part of a split button this is: whole, or the main/caret half that shares an edge. */
@@ -49,7 +49,7 @@ class ScreenToolButton(
     var tone: ToolButtonTone? = null
         set(value) {
             field = value
-            foreground = value?.glyph?.invoke() ?: AdbToolboxTheme.Colors.text
+            foreground = value?.glyph?.invoke() ?: DeviceCockpitTheme.Colors.text
             repaint()
         }
 
@@ -69,8 +69,8 @@ class ScreenToolButton(
         isOpaque = false
         isRolloverEnabled = true
         border = EmptyBorder(0, 0, 0, 0)
-        font = AdbToolboxTheme.Typography.body.deriveFont(Font.PLAIN, JBUIScale.scale(11.5f))
-        foreground = AdbToolboxTheme.Colors.text
+        font = DeviceCockpitTheme.Typography.body.deriveFont(Font.PLAIN, JBUIScale.scale(11.5f))
+        foreground = DeviceCockpitTheme.Colors.text
     }
 
     override fun getPreferredSize(): Dimension {
@@ -93,7 +93,7 @@ class ScreenToolButton(
         val g2 = g.create() as Graphics2D
         try {
             if (!isEnabled) {
-                g2.composite = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, AdbToolboxTheme.States.disabledOpacity)
+                g2.composite = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, DeviceCockpitTheme.States.disabledOpacity)
             }
             super.paint(g2)
         } finally {
@@ -110,15 +110,15 @@ class ScreenToolButton(
             val active = tone
             val fill = when {
                 active != null -> active.fill()
-                isOpen -> AdbToolboxTheme.Colors.accentBg
-                isEnabled && model.isRollover -> AdbToolboxTheme.Colors.hover
+                isOpen -> DeviceCockpitTheme.Colors.accentBg
+                isEnabled && model.isRollover -> DeviceCockpitTheme.Colors.hover
                 else -> null
             }
             if (fill != null) {
                 g2.color = fill
                 g2.fill(shape)
             }
-            g2.color = if (isFocusOwner) AdbToolboxTheme.Colors.accent else active?.outline?.invoke() ?: AdbToolboxTheme.Colors.border
+            g2.color = if (isFocusOwner) DeviceCockpitTheme.Colors.accent else active?.outline?.invoke() ?: DeviceCockpitTheme.Colors.border
             g2.stroke = BasicStroke(JBUIScale.scale(1f))
             g2.draw(shape)
 
@@ -126,7 +126,7 @@ class ScreenToolButton(
                 paintCaret(g2)
                 return
             }
-            val icon = glyph?.let { if (active != null) AdbToolboxIcons.tinted(it, active.glyph()) else it }
+            val icon = glyph?.let { if (active != null) DeviceCockpitIcons.tinted(it, active.glyph()) else it }
             val label = text.orEmpty()
             if (label.isEmpty()) {
                 icon?.paintIcon(this, g2, (width - (icon.iconWidth)) / 2, (height - icon.iconHeight) / 2)
@@ -149,7 +149,7 @@ class ScreenToolButton(
     /** The 1px outline; a split button's halves square off (and the caret omits) the shared edge. */
     private fun outline(): java.awt.Shape {
         val stroke = JBUIScale.scale(1f)
-        val arc = (AdbToolboxTheme.Radii.button * 2).toFloat()
+        val arc = (DeviceCockpitTheme.Radii.button * 2).toFloat()
         val w = width.toFloat()
         val h = height.toFloat()
         val half = stroke / 2
@@ -176,7 +176,7 @@ class ScreenToolButton(
         val size = JBUIScale.scale(5f)
         val cx = width / 2f
         val cy = height / 2f
-        g2.color = AdbToolboxTheme.Colors.textDim
+        g2.color = DeviceCockpitTheme.Colors.textDim
         g2.stroke = BasicStroke(JBUIScale.scale(1.3f), BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND)
         g2.draw(
             Path2D.Float().apply {

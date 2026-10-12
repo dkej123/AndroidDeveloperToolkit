@@ -22,6 +22,7 @@ import java.nio.file.Path
 
 /** Entry points shared by the actions, the tool-window gear menu and the Settings page. */
 object DiagnosticsActions {
+    /** Notification group id (plugin.xml), kept from the pre-rename "ADB Toolbox" name for compatibility (users' notification settings refer to it). */
     const val NOTIFICATION_GROUP = "ADB Toolbox Diagnostics"
     private const val RECORDING_SECONDS = 60L
 

@@ -60,26 +60,26 @@ import io.github.dkej123.devicecockpit.domain.process.FakeProcessExecutor
 import io.github.dkej123.devicecockpit.domain.packages.FakePackageRepository
 import io.github.dkej123.devicecockpit.intellij.devicefacts.DeviceFactsPanel
 import io.github.dkej123.devicecockpit.intellij.dispatch.IdeDispatcherProvider
-import io.github.dkej123.devicecockpit.intellij.host.AdbToolboxHostPanel
+import io.github.dkej123.devicecockpit.intellij.host.DeviceCockpitHostPanel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.isActive
 
 /**
- * Task 010 wires the neutral [AdbToolboxHostPanel] (named slots for device context, navigation,
+ * Task 010 wires the neutral [DeviceCockpitHostPanel] (named slots for device context, navigation,
  * active view, and feedback) into the ToolWindow content this panel mounts, replacing the bare
  * placeholder from task 007. Task 013 replaces the feedback slot's `ShellViewModel` status-text
  * stand-in with the real [FeedbackViewModel]-driven feedback/status/toast infrastructure. Task 011
  * mounts the device context bar into the device context slot. Kept as a [BasePlatformTestCase]
  * like every other test in this module.
  */
-class AdbToolboxToolWindowPanelTest : BasePlatformTestCase() {
+class DeviceCockpitToolWindowPanelTest : BasePlatformTestCase() {
 
     // IdeDispatcherProvider() touches ApplicationManager.getApplication() at construction, which
     // is not yet initialized during JUnit-3-style field initialization (before setUp() runs) — so
     // it is constructed fresh per test method instead of as a class-level val, matching
-    // AdbToolboxProjectServiceTest's pattern of only touching platform services inside test bodies.
+    // DeviceCockpitProjectServiceTest's pattern of only touching platform services inside test bodies.
     private fun dispatchers(): DispatcherProvider = IdeDispatcherProvider()
 
     private fun navigationViewModel(scope: CoroutineScope, dispatchers: DispatcherProvider): NavigationViewModel =
@@ -316,12 +316,12 @@ class AdbToolboxToolWindowPanelTest : BasePlatformTestCase() {
         dispatchers: DispatcherProvider,
         harness: Harness,
         openSettings: () -> Unit = {},
-    ): AdbToolboxToolWindowPanel {
+    ): DeviceCockpitToolWindowPanel {
         val feedbackViewModel = FeedbackViewModel(harness.feedbackScope, dispatchers)
         val navigationVm = navigationViewModel(harness.navigationScope, dispatchers)
         val appsModels = appsModels(harness.appsScope, dispatchers, feedbackViewModel)
         val displayModels = displayModels(harness.displayScope, dispatchers)
-        return AdbToolboxToolWindowPanel(
+        return DeviceCockpitToolWindowPanel(
             viewModel = ShellViewModel(harness.scope, dispatchers),
             dispatchers = dispatchers,
             scope = harness.scope,

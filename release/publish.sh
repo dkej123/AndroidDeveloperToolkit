@@ -23,6 +23,7 @@ done
 
 cd "$RELEASE_ROOT"
 version="$(plugin_version)"
+# Permanent Marketplace plugin id, kept from the former name "ADB Toolbox".
 plugin_id="com.github.dkwasniak.adbtoolbox"
 tag="$([[ "$channel" == beta ]] && echo "beta-v$version" || echo "v$version")"
 

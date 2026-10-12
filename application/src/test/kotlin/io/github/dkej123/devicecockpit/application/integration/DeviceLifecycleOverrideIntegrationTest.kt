@@ -69,7 +69,7 @@ private fun String.unquotedLastShellToken(): String =
 
 /**
  * A single [AdbTransport] shared by real font-scale/density/proxy features, the same way one
- * [io.github.dkej123.devicecockpit.intellij.composition.AdbToolboxProjectService.adbTransport] instance backs
+ * [io.github.dkej123.devicecockpit.intellij.composition.DeviceCockpitProjectService.adbTransport] instance backs
  * every feature in production. State is tracked per serial so a device switch (or reconnect)
  * exercises genuinely independent per-serial device truth instead of one shared global value.
  */
@@ -123,7 +123,7 @@ private fun onlineDevice(serial: DeviceSerial) = Device(serial = serial, state =
 /**
  * Cross-feature integration coverage for task 052: real [FontScaleViewModel], [DensityViewModel],
  * and [ProxyController] instances — the exact same feature classes
- * [io.github.dkej123.devicecockpit.intellij.composition.AdbToolboxProjectService] wires in production — driven
+ * [io.github.dkej123.devicecockpit.intellij.composition.DeviceCockpitProjectService] wires in production — driven
  * through [SelectedDeviceViewModel] and reconciled by the real [OverrideResetCoordinator] and
  * [DeviceContextAggregator]. This exercises the actual cross-feature contract task 041 introduced
  * (each feature owns its own state; the coordinator only delegates), not just the coordinator in

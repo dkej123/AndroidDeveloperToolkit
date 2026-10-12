@@ -6,7 +6,7 @@ import io.github.dkej123.devicecockpit.application.devicefacts.DeviceFactsViewMo
 import io.github.dkej123.devicecockpit.application.devicefacts.DeviceFactsViewState
 import io.github.dkej123.devicecockpit.domain.dispatch.DispatcherProvider
 import io.github.dkej123.devicecockpit.domain.nav.ViewId
-import io.github.dkej123.devicecockpit.intellij.host.AdbToolboxHostPanel
+import io.github.dkej123.devicecockpit.intellij.host.DeviceCockpitHostPanel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.launchIn
@@ -14,8 +14,8 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.withContext
 
 /**
- * Connects task 015's [DeviceFactsViewModel] to task 010's [AdbToolboxHostPanel]: registers
- * [DeviceFactsPanel] into [AdbToolboxHostPanel.activeViewHost] under [ViewId.Device]'s route key —
+ * Connects task 015's [DeviceFactsViewModel] to task 010's [DeviceCockpitHostPanel]: registers
+ * [DeviceFactsPanel] into [DeviceCockpitHostPanel.activeViewHost] under [ViewId.Device]'s route key —
  * the first feature view this project actually registers (every earlier task's `FeatureViewHost`
  * seam has stayed unused). Follows
  * [io.github.dkej123.devicecockpit.intellij.nav.NavigationRoutingCoordinator]/[io.github.dkej123.devicecockpit.intellij.feedback.FeedbackOverlayCoordinator]'s
@@ -25,7 +25,7 @@ import kotlinx.coroutines.withContext
  * sandbox.
  */
 class DeviceFactsCoordinator(
-    host: AdbToolboxHostPanel,
+    host: DeviceCockpitHostPanel,
     private val viewModel: DeviceFactsViewModel,
     private val scope: CoroutineScope,
     private val dispatchers: DispatcherProvider,
@@ -34,7 +34,7 @@ class DeviceFactsCoordinator(
 ) : Disposable {
 
     constructor(
-        host: AdbToolboxHostPanel,
+        host: DeviceCockpitHostPanel,
         viewModel: DeviceFactsViewModel,
         scope: CoroutineScope,
         dispatchers: DispatcherProvider,

@@ -39,6 +39,7 @@ import java.util.regex.Pattern;
  */
 public final class FullShotMain {
 
+    // Protocol header kept from the pre-rename "ADB Toolbox" name for compatibility (the IDE side parses it).
     static final String HEADER = "ADBTOOLBOX-FULLSHOT 1";
 
     private static final int HEIGHT_FACTOR = 3;
@@ -123,6 +124,7 @@ public final class FullShotMain {
             flags |= FLAG_TRUSTED | FLAG_OWN_DISPLAY_GROUP | FLAG_ALWAYS_UNLOCKED;
         }
 
+        // On-device thread/display names kept from the pre-rename "ADB Toolbox" name, like the other helper markers.
         HandlerThread frameThread = new HandlerThread("adbtoolbox-fullshot");
         frameThread.start();
         // One frame handed to the caller, one held as the newest, one for acquireLatestImage to swap in.

@@ -70,7 +70,7 @@ class JvmApkDeepLinkAnalyzer(
             .map { it.removePrefix("package:") }.filter { it.startsWith('/') && '\n' !in it && '\r' !in it }.distinct().toList()
         if (paths.isEmpty()) return@withContext DeepLinkAnalysisResult.Failure("pm path returned no APKs for $packageName")
 
-        val temp = Files.createTempDirectory("adb-toolbox-apk-")
+        val temp = Files.createTempDirectory("device-cockpit-apk-")
         try {
             val manifests = mutableListOf<Pair<String, String>>()
             val localApks = mutableListOf<Path>()

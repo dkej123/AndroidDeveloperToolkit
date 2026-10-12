@@ -13,13 +13,13 @@ import io.github.dkej123.devicecockpit.domain.nav.ViewId
 class NavigationPersistenceAdapterTest : BasePlatformTestCase() {
 
     fun `test a fresh project has no persisted last view`() {
-        val adapter = NavigationPersistenceAdapter(AdbToolboxProjectState())
+        val adapter = NavigationPersistenceAdapter(DeviceCockpitProjectState())
 
         assertNull(adapter.readLastViewNow())
     }
 
     fun `test a written view id round-trips back out`() {
-        val adapter = NavigationPersistenceAdapter(AdbToolboxProjectState())
+        val adapter = NavigationPersistenceAdapter(DeviceCockpitProjectState())
 
         adapter.writeLastViewNow(ViewId.Network)
 
@@ -27,7 +27,7 @@ class NavigationPersistenceAdapterTest : BasePlatformTestCase() {
     }
 
     fun `test writing a new view id overwrites the previously persisted one`() {
-        val adapter = NavigationPersistenceAdapter(AdbToolboxProjectState())
+        val adapter = NavigationPersistenceAdapter(DeviceCockpitProjectState())
         adapter.writeLastViewNow(ViewId.Apps)
 
         adapter.writeLastViewNow(ViewId.Settings)
@@ -36,7 +36,7 @@ class NavigationPersistenceAdapterTest : BasePlatformTestCase() {
     }
 
     fun `test the device-selection and navigation slices do not interfere with each other`() {
-        val projectState = AdbToolboxProjectState()
+        val projectState = DeviceCockpitProjectState()
         val deviceAdapter = DeviceSelectionPersistenceAdapter(projectState)
         val navAdapter = NavigationPersistenceAdapter(projectState)
 
@@ -51,11 +51,11 @@ class NavigationPersistenceAdapterTest : BasePlatformTestCase() {
     }
 
     fun `test loadState composes via XmlSerializerUtil so a re-loaded view id survives`() {
-        val projectState = AdbToolboxProjectState()
+        val projectState = DeviceCockpitProjectState()
         val adapter = NavigationPersistenceAdapter(projectState)
         adapter.writeLastViewNow(ViewId.Logcat)
 
-        val reloaded = AdbToolboxProjectState()
+        val reloaded = DeviceCockpitProjectState()
         reloaded.loadState(projectState.state)
 
         assertEquals(ViewId.Logcat, NavigationPersistenceAdapter(reloaded).readLastViewNow())

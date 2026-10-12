@@ -8,7 +8,7 @@ import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBPanel
 import io.github.dkej123.devicecockpit.application.devicebar.DeviceBarPresentation
 import io.github.dkej123.devicecockpit.domain.device.DeviceConnectionKind
-import io.github.dkej123.devicecockpit.intellij.ui.common.AdbToolboxTheme
+import io.github.dkej123.devicecockpit.intellij.ui.common.DeviceCockpitTheme
 import io.github.dkej123.devicecockpit.intellij.ui.common.SolidChipBorder
 import io.github.dkej123.devicecockpit.intellij.ui.common.StatusDotIcon
 import io.github.dkej123.devicecockpit.intellij.ui.common.flexRow
@@ -25,7 +25,7 @@ import javax.swing.JButton
  * treatment applied: 30px `header`-background row, the per-state status dot ([StatusDotIcon]),
  * name/serial/connection-chip selector, right-aligned online count + refresh icon button, and the
  * unauthorized-state "Retry" link and amber banner row. Mounted into
- * [io.github.dkej123.devicecockpit.intellij.host.AdbToolboxHostPanel.deviceContextSlot].
+ * [io.github.dkej123.devicecockpit.intellij.host.DeviceCockpitHostPanel.deviceContextSlot].
  *
  * `design/README.md`'s loading state calls for a "10px teal spinner"; this renders a static teal
  * dot instead (no animation timer) — a documented native simplification, consistent with task 013's
@@ -46,9 +46,9 @@ class DeviceContextBarPanel(
     // was a mouse click. JButton gives Tab-reachability, Enter/Space activation, a platform focus
     // ring, and an accessible name derived from its own text for free.
     private val selectorLabel = JButton("").apply {
-        font = AdbToolboxTheme.Typography.body.deriveFont(Font.BOLD, JBUIScale.scale(11.5f))
-        foreground = AdbToolboxTheme.Colors.text
-        iconTextGap = AdbToolboxTheme.Spacing.s3
+        font = DeviceCockpitTheme.Typography.body.deriveFont(Font.BOLD, JBUIScale.scale(11.5f))
+        foreground = DeviceCockpitTheme.Colors.text
+        iconTextGap = DeviceCockpitTheme.Spacing.s3
         border = JBUI.Borders.empty()
         cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
         toolTipText = "Change device"
@@ -67,31 +67,31 @@ class DeviceContextBarPanel(
     }
 
     private val serialLabel = JBLabel("").apply {
-        font = AdbToolboxTheme.Typography.monoMeta
-        foreground = AdbToolboxTheme.Colors.textFaint
+        font = DeviceCockpitTheme.Typography.monoMeta
+        foreground = DeviceCockpitTheme.Colors.textFaint
     }
 
     private val chipLabel = JBLabel("").apply {
-        font = AdbToolboxTheme.Typography.groupLabel.deriveFont(JBUIScale.scale(9f))
-        foreground = AdbToolboxTheme.Colors.textDim
+        font = DeviceCockpitTheme.Typography.groupLabel.deriveFont(JBUIScale.scale(9f))
+        foreground = DeviceCockpitTheme.Colors.textDim
         border = BorderFactory.createCompoundBorder(
-            SolidChipBorder(AdbToolboxTheme.Colors.border, radius = { JBUIScale.scale(3) }),
+            SolidChipBorder(DeviceCockpitTheme.Colors.border, radius = { JBUIScale.scale(3) }),
             JBUI.Borders.empty(1, 4),
         )
         isVisible = false
     }
 
     private val onlineCountLabel = JBLabel("").apply {
-        font = AdbToolboxTheme.Typography.monoMeta
-        foreground = AdbToolboxTheme.Colors.textFaint
+        font = DeviceCockpitTheme.Typography.monoMeta
+        foreground = DeviceCockpitTheme.Colors.textFaint
     }
 
     // Same JButton-over-JBLabel fix as [selectorLabel] — this was the unauthorized-state's only
     // recovery action and was previously unreachable by keyboard.
     private val retryLabel = JButton("Retry").apply {
-        font = AdbToolboxTheme.Typography.body.deriveFont(Font.BOLD, JBUIScale.scale(11f))
+        font = DeviceCockpitTheme.Typography.body.deriveFont(Font.BOLD, JBUIScale.scale(11f))
         border = JBUI.Borders.empty()
-        foreground = AdbToolboxTheme.Colors.accent
+        foreground = DeviceCockpitTheme.Colors.accent
         cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
         toolTipText = "Re-query the device after accepting the USB debugging prompt"
         isContentAreaFilled = false
@@ -108,16 +108,16 @@ class DeviceContextBarPanel(
     }
 
     private val bannerLabel = JBLabel(UNAUTHORIZED_BANNER_TEXT).apply {
-        font = AdbToolboxTheme.Typography.caption.deriveFont(JBUIScale.scale(10.5f))
-        foreground = AdbToolboxTheme.Colors.amber
-        background = AdbToolboxTheme.Colors.amberBg
+        font = DeviceCockpitTheme.Typography.caption.deriveFont(JBUIScale.scale(10.5f))
+        foreground = DeviceCockpitTheme.Colors.amber
+        background = DeviceCockpitTheme.Colors.amberBg
         isOpaque = true
         border = JBUI.Borders.empty(6, 10)
         isVisible = false
     }
 
     // `caretIconStyle`: 5px chevron after the connection chip, marking the selector as a picker.
-    private val caretLabel = JBLabel(CaretIcon(AdbToolboxTheme.Colors.textDim)).apply { isVisible = false }
+    private val caretLabel = JBLabel(CaretIcon(DeviceCockpitTheme.Colors.textDim)).apply { isVisible = false }
 
     /**
      * The device selector as one toolbar-combo-style control (user request 2026-10-01, matching
@@ -129,21 +129,21 @@ class DeviceContextBarPanel(
     private val row = run {
         val spacer = flexSpacer()
         flexRow(
-            AdbToolboxTheme.Spacing.s3,
+            DeviceCockpitTheme.Spacing.s3,
             selectorGroup, retryLabel, spacer, onlineCountLabel, refreshButton,
             fill = spacer,
             shrink = selectorGroup,
         ).apply {
             // `deviceBarStyle`: 30px row, `padding: 0 4px 0 4px` (the selector's own 4px inset
             // keeps its content at the prototype's 8px), gap 6, every child vertically centered.
-            border = JBUI.Borders.empty(0, AdbToolboxTheme.Spacing.s2, 0, AdbToolboxTheme.Spacing.s2)
-            preferredSize = java.awt.Dimension(0, AdbToolboxTheme.Sizes.deviceBar - JBUIScale.scale(1))
+            border = JBUI.Borders.empty(0, DeviceCockpitTheme.Spacing.s2, 0, DeviceCockpitTheme.Spacing.s2)
+            preferredSize = java.awt.Dimension(0, DeviceCockpitTheme.Sizes.deviceBar - JBUIScale.scale(1))
         }
     }
 
     init {
-        background = AdbToolboxTheme.Colors.header
-        border = BorderFactory.createMatteBorder(0, 0, 1, 0, AdbToolboxTheme.Colors.border)
+        background = DeviceCockpitTheme.Colors.header
+        border = BorderFactory.createMatteBorder(0, 0, 1, 0, DeviceCockpitTheme.Colors.border)
         add(row, BorderLayout.CENTER)
         add(bannerLabel, BorderLayout.SOUTH)
         addComponentListener(object : java.awt.event.ComponentAdapter() {
@@ -154,7 +154,7 @@ class DeviceContextBarPanel(
     /** Fixed 30px bar; the unauthorized banner adds its own height below it (`warnBannerStyle`). */
     override fun getPreferredSize(): java.awt.Dimension {
         val banner = if (bannerLabel.isVisible) bannerLabel.preferredSize.height else 0
-        return java.awt.Dimension(super.getPreferredSize().width, AdbToolboxTheme.Sizes.deviceBar + banner)
+        return java.awt.Dimension(super.getPreferredSize().width, DeviceCockpitTheme.Sizes.deviceBar + banner)
     }
 
     override fun getMinimumSize(): java.awt.Dimension = java.awt.Dimension(0, preferredSize.height)
@@ -162,11 +162,11 @@ class DeviceContextBarPanel(
     private var currentOnline: DeviceBarPresentation.Online? = null
     private var isNarrow = false
 
-    /** `design/README.md`'s narrow-width rule: below [AdbToolboxTheme.Breakpoints.narrow] the
+    /** `design/README.md`'s narrow-width rule: below [DeviceCockpitTheme.Breakpoints.narrow] the
      * device bar drops the serial and shortens "N online" to "N" — mirrors
      * [io.github.dkej123.devicecockpit.intellij.devicefacts.DeviceFactsPanel.applyResponsiveLayout]'s pattern. */
     internal fun applyResponsiveLayout(width: Int) {
-        isNarrow = width < AdbToolboxTheme.Breakpoints.narrow
+        isNarrow = width < DeviceCockpitTheme.Breakpoints.narrow
         currentOnline?.let { renderOnline(it) }
     }
 
@@ -223,31 +223,31 @@ class DeviceContextBarPanel(
         // are regular `textDim` copy (`deviceLoadingTextStyle`, `noDeviceTextStyle`).
         selectorLabel.toolTipText = "Change device"
         val emphasized = bar is DeviceBarPresentation.Online || bar is DeviceBarPresentation.Unauthorized
-        selectorLabel.font = AdbToolboxTheme.Typography.body.deriveFont(
+        selectorLabel.font = DeviceCockpitTheme.Typography.body.deriveFont(
             if (emphasized) Font.BOLD else Font.PLAIN,
             JBUIScale.scale(11.5f),
         )
 
         when (bar) {
             DeviceBarPresentation.Loading -> {
-                selectorLabel.icon = DeviceStatusIcon(AdbToolboxTheme.Colors.brand, filled = true)
-                selectorLabel.foreground = AdbToolboxTheme.Colors.textDim
+                selectorLabel.icon = DeviceStatusIcon(DeviceCockpitTheme.Colors.brand, filled = true)
+                selectorLabel.foreground = DeviceCockpitTheme.Colors.textDim
                 selectorLabel.text = "Querying adb devices…"
             }
             is DeviceBarPresentation.SelectDevice -> {
-                selectorLabel.icon = DeviceStatusIcon(AdbToolboxTheme.Colors.green, filled = false)
-                selectorLabel.foreground = AdbToolboxTheme.Colors.text
+                selectorLabel.icon = DeviceStatusIcon(DeviceCockpitTheme.Colors.green, filled = false)
+                selectorLabel.foreground = DeviceCockpitTheme.Colors.text
                 selectorLabel.text = "${bar.deviceCount} devices — select one"
                 caretLabel.isVisible = true
             }
             DeviceBarPresentation.NoDevice -> {
-                selectorLabel.icon = DeviceStatusIcon(AdbToolboxTheme.Colors.textFaint, filled = false)
-                selectorLabel.foreground = AdbToolboxTheme.Colors.textDim
+                selectorLabel.icon = DeviceStatusIcon(DeviceCockpitTheme.Colors.textFaint, filled = false)
+                selectorLabel.foreground = DeviceCockpitTheme.Colors.textDim
                 selectorLabel.text = "No device connected"
             }
             is DeviceBarPresentation.Online -> {
-                selectorLabel.icon = DeviceStatusIcon(AdbToolboxTheme.Colors.green, filled = true)
-                selectorLabel.foreground = AdbToolboxTheme.Colors.text
+                selectorLabel.icon = DeviceStatusIcon(DeviceCockpitTheme.Colors.green, filled = true)
+                selectorLabel.foreground = DeviceCockpitTheme.Colors.text
                 selectorLabel.text = bar.device.displayName
                 chipLabel.text = connectionChipText(bar.device.connectionKind)
                 chipLabel.isVisible = true
@@ -255,20 +255,20 @@ class DeviceContextBarPanel(
                 renderOnline(bar)
             }
             is DeviceBarPresentation.Unauthorized -> {
-                selectorLabel.icon = DeviceStatusIcon(AdbToolboxTheme.Colors.amber, filled = true)
-                selectorLabel.foreground = AdbToolboxTheme.Colors.amber
+                selectorLabel.icon = DeviceStatusIcon(DeviceCockpitTheme.Colors.amber, filled = true)
+                selectorLabel.foreground = DeviceCockpitTheme.Colors.amber
                 selectorLabel.text = "${bar.device.displayName} — unauthorized"
                 retryLabel.isVisible = true
                 bannerLabel.isVisible = true
             }
             is DeviceBarPresentation.Offline -> {
-                selectorLabel.icon = DeviceStatusIcon(AdbToolboxTheme.Colors.textFaint, filled = true)
-                selectorLabel.foreground = AdbToolboxTheme.Colors.textDim
+                selectorLabel.icon = DeviceStatusIcon(DeviceCockpitTheme.Colors.textFaint, filled = true)
+                selectorLabel.foreground = DeviceCockpitTheme.Colors.textDim
                 selectorLabel.text = "${bar.device.displayName} — offline"
             }
             is DeviceBarPresentation.Error -> {
-                selectorLabel.icon = DeviceStatusIcon(AdbToolboxTheme.Colors.red, filled = true)
-                selectorLabel.foreground = AdbToolboxTheme.Colors.red
+                selectorLabel.icon = DeviceStatusIcon(DeviceCockpitTheme.Colors.red, filled = true)
+                selectorLabel.foreground = DeviceCockpitTheme.Colors.red
                 selectorLabel.text = bar.message
                 // Discovery errors can be long (tried sources, adb stderr); keep the full text reachable.
                 selectorLabel.toolTipText = bar.message
@@ -288,7 +288,7 @@ class DeviceContextBarPanel(
     }
 
     private companion object {
-        const val OPEN_PICKER = "adbToolbox.openDevicePicker"
+        const val OPEN_PICKER = "deviceCockpit.openDevicePicker"
         const val UNAUTHORIZED_BANNER_TEXT =
             "Accept the “Allow USB debugging” prompt on the device, then retry."
     }
@@ -299,13 +299,13 @@ private class SelectorGroup(
     private val button: JButton,
     trailing: List<javax.swing.JComponent>,
     private val onClick: () -> Unit,
-) : JBPanel<SelectorGroup>(io.github.dkej123.devicecockpit.intellij.ui.common.FlexRowLayout(AdbToolboxTheme.Spacing.s3)) {
+) : JBPanel<SelectorGroup>(io.github.dkej123.devicecockpit.intellij.ui.common.FlexRowLayout(DeviceCockpitTheme.Spacing.s3)) {
     internal var hovered = false
         private set
 
     init {
         isOpaque = false
-        border = JBUI.Borders.empty(0, AdbToolboxTheme.Spacing.s2)
+        border = JBUI.Borders.empty(0, DeviceCockpitTheme.Spacing.s2)
         cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
         add(button, io.github.dkej123.devicecockpit.intellij.ui.common.FlexRowLayout.SHRINK)
         trailing.forEach(::add)
@@ -340,8 +340,8 @@ private class SelectorGroup(
         val g2 = g.create() as java.awt.Graphics2D
         try {
             g2.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING, java.awt.RenderingHints.VALUE_ANTIALIAS_ON)
-            g2.color = AdbToolboxTheme.Colors.hover
-            val arc = AdbToolboxTheme.Radii.button * 2
+            g2.color = DeviceCockpitTheme.Colors.hover
+            val arc = DeviceCockpitTheme.Radii.button * 2
             g2.fillRoundRect(0, 0, width, height, arc, arc)
         } finally {
             g2.dispose()
@@ -355,7 +355,7 @@ private class SelectorGroup(
  * Studio's own device picker.
  */
 private class DeviceStatusIcon(private val color: java.awt.Color, private val filled: Boolean) : javax.swing.Icon {
-    private val glyph = io.github.dkej123.devicecockpit.intellij.icons.AdbToolboxIcons.Views.device
+    private val glyph = io.github.dkej123.devicecockpit.intellij.icons.DeviceCockpitIcons.Views.device
 
     override fun getIconWidth(): Int = glyph.iconWidth
     override fun getIconHeight(): Int = glyph.iconHeight
@@ -369,7 +369,7 @@ private class DeviceStatusIcon(private val color: java.awt.Color, private val fi
             val ring = JBUIScale.scale(2)
             val dx = x + iconWidth - dot
             val dy = y + iconHeight - dot
-            g2.color = AdbToolboxTheme.Colors.header
+            g2.color = DeviceCockpitTheme.Colors.header
             g2.fillOval(dx - ring, dy - ring, dot + 2 * ring, dot + 2 * ring)
         } finally {
             g2.dispose()

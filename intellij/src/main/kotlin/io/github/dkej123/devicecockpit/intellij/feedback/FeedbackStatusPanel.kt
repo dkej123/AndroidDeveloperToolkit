@@ -6,7 +6,7 @@ import com.intellij.ui.scale.JBUIScale
 import com.intellij.util.ui.JBUI
 import io.github.dkej123.devicecockpit.domain.feedback.ProcessIndicator
 import io.github.dkej123.devicecockpit.domain.feedback.StatusState
-import io.github.dkej123.devicecockpit.intellij.ui.common.AdbToolboxTheme
+import io.github.dkej123.devicecockpit.intellij.ui.common.DeviceCockpitTheme
 import io.github.dkej123.devicecockpit.intellij.ui.common.RoundedSurface
 import io.github.dkej123.devicecockpit.intellij.ui.common.SolidChipBorder
 import io.github.dkej123.devicecockpit.intellij.ui.common.StatusDotIcon
@@ -24,13 +24,13 @@ import javax.swing.JButton
  * [ProcessIndicator.InProgress.label]'s two supplied shapes, "scrcpy" and "REC …"), the dim
  * last-command message, and the amber "N overrides · reset all" chip populated by [updateOverrideCount]
  * from task 014's aggregated per-serial [io.github.dkej123.devicecockpit.domain.devicecontext.DeviceContextSnapshot.overrides].
- * Mounted into [io.github.dkej123.devicecockpit.intellij.host.AdbToolboxHostPanel.feedbackSlot].
+ * Mounted into [io.github.dkej123.devicecockpit.intellij.host.DeviceCockpitHostPanel.feedbackSlot].
  *
  * The chip's click reverts font scale, density and proxy on the current device
  * (`design/README.md` §8) — that revert is task 041's business logic, not this task's dependency
  * list, so [onResetOverrides] defaults to a no-op and is wired to the real behavior by whichever
  * later composition owns it, the same optional-callback seam `openSettings`/`openMirroringOptions`
- * already establish on [io.github.dkej123.devicecockpit.intellij.toolwindow.AdbToolboxToolWindowPanel].
+ * already establish on [io.github.dkej123.devicecockpit.intellij.toolwindow.DeviceCockpitToolWindowPanel].
  */
 class FeedbackStatusPanel(
     private val onResetOverrides: () -> Unit = {},
@@ -39,8 +39,8 @@ class FeedbackStatusPanel(
 
     // MCP chip (design §8): teal, only while an agent is connected; the dot fills while a call runs.
     private val mcpChip = JButton("").apply {
-        font = AdbToolboxTheme.Typography.mono.deriveFont(Font.BOLD, JBUIScale.scale(9f))
-        foreground = AdbToolboxTheme.Colors.brand
+        font = DeviceCockpitTheme.Typography.mono.deriveFont(Font.BOLD, JBUIScale.scale(9f))
+        foreground = DeviceCockpitTheme.Colors.brand
         isContentAreaFilled = false
         isFocusPainted = false
         isBorderPainted = false
@@ -49,7 +49,7 @@ class FeedbackStatusPanel(
         isVisible = false
         addActionListener { onOpenMcpSettings() }
     }
-    private val mcpChipSurface = RoundedSurface(AdbToolboxTheme.Colors.brandBg, AdbToolboxTheme.Colors.brandBorder, radius = { JBUIScale.scale(4) }).apply {
+    private val mcpChipSurface = RoundedSurface(DeviceCockpitTheme.Colors.brandBg, DeviceCockpitTheme.Colors.brandBorder, radius = { JBUIScale.scale(4) }).apply {
         layout = BorderLayout()
         isVisible = false
         add(mcpChip, BorderLayout.CENTER)
@@ -62,7 +62,7 @@ class FeedbackStatusPanel(
         mcpChip.isVisible = agent != null
         if (agent == null) return
         mcpChip.text = if (width in 1..339) "MCP" else "MCP · $agent"
-        mcpChip.icon = StatusDotIcon(AdbToolboxTheme.Colors.brand, filled = inFlight, diameter = 5)
+        mcpChip.icon = StatusDotIcon(DeviceCockpitTheme.Colors.brand, filled = inFlight, diameter = 5)
         mcpChip.toolTipText = "$agent connected over MCP · $access — click for AI agent settings"
         if (lastCall != null && lastCall != lastMcpCall) {
             lastMcpCall = lastCall
@@ -73,8 +73,8 @@ class FeedbackStatusPanel(
     internal val mcpChipForTest: JButton get() = mcpChip
 
     private val processLabel = JBLabel("").apply {
-        font = AdbToolboxTheme.Typography.mono.deriveFont(Font.BOLD, JBUIScale.scale(9f))
-        icon = StatusDotIcon(AdbToolboxTheme.Colors.brand, filled = true, diameter = 5)
+        font = DeviceCockpitTheme.Typography.mono.deriveFont(Font.BOLD, JBUIScale.scale(9f))
+        icon = StatusDotIcon(DeviceCockpitTheme.Colors.brand, filled = true, diameter = 5)
         iconTextGap = JBUIScale.scale(5)
         border = JBUI.Borders.empty(1, 6)
     }
@@ -87,8 +87,8 @@ class FeedbackStatusPanel(
     }
 
     private val messageLabel = JBLabel("").apply {
-        font = AdbToolboxTheme.Typography.caption.deriveFont(JBUIScale.scale(9.5f))
-        foreground = AdbToolboxTheme.Colors.textDim
+        font = DeviceCockpitTheme.Typography.caption.deriveFont(JBUIScale.scale(9.5f))
+        foreground = DeviceCockpitTheme.Colors.textDim
     }
 
     // A real JButton, not a JBLabel with a MouseListener: task 050's keyboard-only pass found the
@@ -97,10 +97,10 @@ class FeedbackStatusPanel(
     // ([io.github.dkej123.devicecockpit.intellij.devicebar.DeviceContextBarPanel]).
     private val overrideChipLabel = JButton("").apply {
         // `overrideChipStyle`: 9px/700 UI font, amber text and 1px amber border, radius 3, padding 1px 5px.
-        font = AdbToolboxTheme.Typography.body.deriveFont(Font.BOLD, JBUIScale.scale(9f))
-        foreground = AdbToolboxTheme.Colors.amber
+        font = DeviceCockpitTheme.Typography.body.deriveFont(Font.BOLD, JBUIScale.scale(9f))
+        foreground = DeviceCockpitTheme.Colors.amber
         border = BorderFactory.createCompoundBorder(
-            SolidChipBorder(AdbToolboxTheme.Colors.amber, radius = { JBUIScale.scale(3) }),
+            SolidChipBorder(DeviceCockpitTheme.Colors.amber, radius = { JBUIScale.scale(3) }),
             JBUI.Borders.empty(1, 5),
         )
         cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
@@ -115,17 +115,17 @@ class FeedbackStatusPanel(
     }
 
     init {
-        preferredSize = java.awt.Dimension(0, AdbToolboxTheme.Sizes.statusBar)
-        minimumSize = java.awt.Dimension(0, AdbToolboxTheme.Sizes.statusBar)
-        background = AdbToolboxTheme.Colors.header
+        preferredSize = java.awt.Dimension(0, DeviceCockpitTheme.Sizes.statusBar)
+        minimumSize = java.awt.Dimension(0, DeviceCockpitTheme.Sizes.statusBar)
+        background = DeviceCockpitTheme.Colors.header
         border = BorderFactory.createCompoundBorder(
-            BorderFactory.createMatteBorder(1, 0, 0, 0, AdbToolboxTheme.Colors.border),
-            JBUI.Borders.empty(AdbToolboxTheme.Spacing.s2, AdbToolboxTheme.Spacing.s4),
+            BorderFactory.createMatteBorder(1, 0, 0, 0, DeviceCockpitTheme.Colors.border),
+            JBUI.Borders.empty(DeviceCockpitTheme.Spacing.s2, DeviceCockpitTheme.Spacing.s4),
         )
         // `statusBarStyle`: one vertically centered flex row with an 8px gap. The message is the
         // only flexible child, so a long last-command message ellipsises instead of pushing the
         // required "reset all" action out of the bar at narrow widths.
-        val row = flexRow(AdbToolboxTheme.Spacing.s4, processChip, mcpChipSurface, messageLabel, overrideChipLabel, fill = messageLabel)
+        val row = flexRow(DeviceCockpitTheme.Spacing.s4, processChip, mcpChipSurface, messageLabel, overrideChipLabel, fill = messageLabel)
         add(row, BorderLayout.CENTER)
     }
 
@@ -146,11 +146,11 @@ class FeedbackStatusPanel(
                 processLabel.text = process.label
                 processChip.isVisible = true
                 val recording = process.label.startsWith("REC", ignoreCase = true)
-                val color = if (recording) AdbToolboxTheme.Colors.red else AdbToolboxTheme.Colors.brand
+                val color = if (recording) DeviceCockpitTheme.Colors.red else DeviceCockpitTheme.Colors.brand
                 processLabel.foreground = color
                 processLabel.icon = StatusDotIcon(color, filled = true, diameter = 5)
-                processChip.fill = if (recording) AdbToolboxTheme.Colors.redBg else AdbToolboxTheme.Colors.brandBg
-                processChip.outline = if (recording) AdbToolboxTheme.Colors.redBorder else AdbToolboxTheme.Colors.brandBorder
+                processChip.fill = if (recording) DeviceCockpitTheme.Colors.redBg else DeviceCockpitTheme.Colors.brandBg
+                processChip.outline = if (recording) DeviceCockpitTheme.Colors.redBorder else DeviceCockpitTheme.Colors.brandBorder
             }
         }
         messageLabel.text = status.message.orEmpty()

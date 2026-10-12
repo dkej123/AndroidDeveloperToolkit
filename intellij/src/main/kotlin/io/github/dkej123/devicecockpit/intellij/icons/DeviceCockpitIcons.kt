@@ -9,8 +9,8 @@ import javax.swing.Icon
  * selection; `_dark` and the tool window's `@20x20` siblings are picked up by [IconLoader].
  * Refresh, pause/resume, autoscroll, wrap, filter and search come from `AllIcons` instead.
  */
-object AdbToolboxIcons {
-    val toolWindow: Icon get() = load("/icons/expui/toolwindow/adbToolbox.svg")
+object DeviceCockpitIcons {
+    val toolWindow: Icon get() = load("/icons/expui/toolwindow/deviceCockpit.svg")
 
     object Views {
         val device: Icon get() = load("/icons/expui/views/device.svg")
@@ -121,7 +121,7 @@ object AdbToolboxIcons {
         }
     }
 
-    private fun load(path: String): Icon = requireNotNull(IconLoader.getIcon(path, AdbToolboxIcons::class.java)) {
+    private fun load(path: String): Icon = requireNotNull(IconLoader.getIcon(path, DeviceCockpitIcons::class.java)) {
         "Missing icon resource: $path"
     }
 }

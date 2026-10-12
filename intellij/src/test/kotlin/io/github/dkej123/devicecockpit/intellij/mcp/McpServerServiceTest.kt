@@ -21,7 +21,7 @@ private class EchoTool(override val name: String, override val readOnly: Boolean
 }
 
 class McpServerServiceTest : BasePlatformTestCase() {
-    private val settings get() = AdbToolboxAppSettings.getInstance()
+    private val settings get() = DeviceCockpitAppSettings.getInstance()
     private val service get() = McpServerService.getInstance()
 
     override fun tearDown() {

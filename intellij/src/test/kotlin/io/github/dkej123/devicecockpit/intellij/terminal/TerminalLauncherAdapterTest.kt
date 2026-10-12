@@ -15,8 +15,8 @@ import kotlinx.coroutines.runBlocking
  * not covered here: it would spawn a real local shell process/tool-window content in this headless
  * sandbox for no behavioral assertion this module's own code controls (the `terminalPluginPresent`
  * boolean itself is the composition-time decision task 016 owns, exercised directly by
- * [io.github.dkej123.devicecockpit.intellij.composition.AdbToolboxProjectServiceTest]) — mirroring
- * `AdbToolboxProjectServiceTest`'s documented `dispatchers.main` EDT-round-trip gap for this
+ * [io.github.dkej123.devicecockpit.intellij.composition.DeviceCockpitProjectServiceTest]) — mirroring
+ * `DeviceCockpitProjectServiceTest`'s documented `dispatchers.main` EDT-round-trip gap for this
  * sandbox.
  */
 class TerminalLauncherAdapterTest : BasePlatformTestCase() {

@@ -163,7 +163,7 @@ class RestartForegroundAppAction : com.intellij.openapi.actionSystem.AnAction() 
 
     override fun actionPerformed(e: com.intellij.openapi.actionSystem.AnActionEvent) {
         val project = e.project ?: return
-        project.getService(io.github.dkej123.devicecockpit.intellij.composition.AdbToolboxProjectService::class.java)
+        project.getService(io.github.dkej123.devicecockpit.intellij.composition.DeviceCockpitProjectService::class.java)
             .currentAppViewModel.restartOrLaunchForeground()
     }
 }

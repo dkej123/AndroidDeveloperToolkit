@@ -110,7 +110,7 @@ tasks.test {
     // Forwards the opt-in local discovery smoke test's gate (tasks/004-tool-discovery.md
     // Validation) from the Gradle daemon's `-D` into the forked test JVM, which does not inherit
     // arbitrary system properties automatically. Disabled unless explicitly passed.
-    System.getProperty("adbToolbox.discoverySmokeTest")?.let {
-        systemProperty("adbToolbox.discoverySmokeTest", it)
+    System.getProperty("deviceCockpit.discoverySmokeTest")?.let {
+        systemProperty("deviceCockpit.discoverySmokeTest", it)
     }
 }

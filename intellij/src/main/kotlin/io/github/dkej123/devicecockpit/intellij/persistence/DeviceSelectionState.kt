@@ -1,7 +1,7 @@
 package io.github.dkej123.devicecockpit.intellij.persistence
 
 /**
- * The device-selection slice of [AdbToolboxProjectState] (ADR 0006: `selectedDeviceSerial`, a
+ * The device-selection slice of [DeviceCockpitProjectState] (ADR 0006: `selectedDeviceSerial`, a
  * feature-local state carrier composed into the one root `PersistentStateComponent`). A plain
  * mutable bean (public `var`s, no-arg constructor) as IntelliJ's `XmlSerializer` requires.
  *

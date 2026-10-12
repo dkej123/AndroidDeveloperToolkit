@@ -26,7 +26,7 @@ internal fun resolvePersistedSerial(state: DeviceSelectionState): DeviceSerial? 
  * never block a real I/O wait here.
  */
 class DeviceSelectionPersistenceAdapter(
-    private val projectState: AdbToolboxProjectState,
+    private val projectState: DeviceCockpitProjectState,
 ) : DeviceSelectionPersistence {
 
     override suspend fun readSelectedSerial(): DeviceSerial? = readSelectedSerialNow()

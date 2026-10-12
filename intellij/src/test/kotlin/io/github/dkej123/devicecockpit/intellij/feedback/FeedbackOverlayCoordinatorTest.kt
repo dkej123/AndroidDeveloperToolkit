@@ -9,14 +9,14 @@ import io.github.dkej123.devicecockpit.domain.feedback.FeedbackMessage
 import io.github.dkej123.devicecockpit.domain.feedback.FeedbackSeverity
 import io.github.dkej123.devicecockpit.domain.feedback.ProcessIndicator
 import io.github.dkej123.devicecockpit.domain.feedback.StatusState
-import io.github.dkej123.devicecockpit.intellij.host.AdbToolboxHostPanel
+import io.github.dkej123.devicecockpit.intellij.host.DeviceCockpitHostPanel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.isActive
 
 /**
- * Connects task 013's [FeedbackViewModel] to task 010's [AdbToolboxHostPanel] via
+ * Connects task 013's [FeedbackViewModel] to task 010's [DeviceCockpitHostPanel] via
  * [FeedbackOverlayCoordinator]. Kept as a [BasePlatformTestCase] like every other test in this
  * module. Exercises [FeedbackOverlayCoordinator.render] directly against constructed
  * [FeedbackViewState] values — the same "invoke the handler directly, don't depend on a real
@@ -41,7 +41,7 @@ class FeedbackOverlayCoordinatorTest : BasePlatformTestCase() {
         override val main = Dispatchers.EDT
     }
 
-    private fun coordinator(host: AdbToolboxHostPanel): FeedbackOverlayCoordinator {
+    private fun coordinator(host: DeviceCockpitHostPanel): FeedbackOverlayCoordinator {
         val dispatchers = TestDispatchers()
         val scope = CoroutineScope(SupervisorJob() + dispatchers.default)
         val viewModel = FeedbackViewModel(scope, dispatchers)
@@ -49,7 +49,7 @@ class FeedbackOverlayCoordinatorTest : BasePlatformTestCase() {
     }
 
     fun `test construction mounts the status panel into the feedback slot`() {
-        val host = AdbToolboxHostPanel()
+        val host = DeviceCockpitHostPanel()
 
         val coordinator = coordinator(host)
 
@@ -58,7 +58,7 @@ class FeedbackOverlayCoordinatorTest : BasePlatformTestCase() {
     }
 
     fun `test construction shows exactly one toast overlay`() {
-        val host = AdbToolboxHostPanel()
+        val host = DeviceCockpitHostPanel()
         val before = host.overlays.overlayCount
 
         coordinator(host)
@@ -67,7 +67,7 @@ class FeedbackOverlayCoordinatorTest : BasePlatformTestCase() {
     }
 
     fun `test rendering a state with toasts updates the status panel`() {
-        val host = AdbToolboxHostPanel()
+        val host = DeviceCockpitHostPanel()
         val coordinator = coordinator(host)
 
         coordinator.render(
@@ -84,7 +84,7 @@ class FeedbackOverlayCoordinatorTest : BasePlatformTestCase() {
     }
 
     fun `test rendering an in-progress process indicator updates the status panel`() {
-        val host = AdbToolboxHostPanel()
+        val host = DeviceCockpitHostPanel()
         val coordinator = coordinator(host)
 
         coordinator.render(FeedbackViewState(status = StatusState(process = ProcessIndicator.InProgress("scrcpy"))))
@@ -96,7 +96,7 @@ class FeedbackOverlayCoordinatorTest : BasePlatformTestCase() {
     }
 
     fun `test disposing the coordinator cancels its scope and dismisses its toast overlay`() {
-        val host = AdbToolboxHostPanel()
+        val host = DeviceCockpitHostPanel()
         val dispatchers = TestDispatchers()
         val scope = CoroutineScope(SupervisorJob() + dispatchers.default)
         val viewModel = FeedbackViewModel(scope, dispatchers)
@@ -111,7 +111,7 @@ class FeedbackOverlayCoordinatorTest : BasePlatformTestCase() {
     }
 
     fun `test disposing the host also removes the coordinator's toast overlay`() {
-        val host = AdbToolboxHostPanel()
+        val host = DeviceCockpitHostPanel()
         val coordinator = coordinator(host)
         val toastOverlay = host.feedbackSlot.getComponent(0)
 
@@ -123,7 +123,7 @@ class FeedbackOverlayCoordinatorTest : BasePlatformTestCase() {
     }
 
     fun `test the coordinator wires up against a real view model without a construction-time crash`() {
-        val host = AdbToolboxHostPanel()
+        val host = DeviceCockpitHostPanel()
         val dispatchers = TestDispatchers()
         val scope = CoroutineScope(SupervisorJob() + dispatchers.default)
         val viewModel = FeedbackViewModel(scope, dispatchers)

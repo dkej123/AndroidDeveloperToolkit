@@ -13,13 +13,13 @@ import io.github.dkej123.devicecockpit.domain.apps.SelectedPackage
 class AppsSelectionPersistenceAdapterTest : BasePlatformTestCase() {
 
     fun `test a fresh project has no persisted selection`() {
-        val adapter = AppsSelectionPersistenceAdapter(AdbToolboxProjectState())
+        val adapter = AppsSelectionPersistenceAdapter(DeviceCockpitProjectState())
 
         assertNull(adapter.readSelectedPackageNow())
     }
 
     fun `test a written selection round-trips back out`() {
-        val adapter = AppsSelectionPersistenceAdapter(AdbToolboxProjectState())
+        val adapter = AppsSelectionPersistenceAdapter(DeviceCockpitProjectState())
         val selection = SelectedPackage(DeviceSerial.of("R58N90ABCDE"), "com.acme.shop")
 
         adapter.writeSelectedPackageNow(selection)
@@ -28,7 +28,7 @@ class AppsSelectionPersistenceAdapterTest : BasePlatformTestCase() {
     }
 
     fun `test writing null clears the persisted selection`() {
-        val adapter = AppsSelectionPersistenceAdapter(AdbToolboxProjectState())
+        val adapter = AppsSelectionPersistenceAdapter(DeviceCockpitProjectState())
         adapter.writeSelectedPackageNow(SelectedPackage(DeviceSerial.of("R58N90ABCDE"), "com.acme.shop"))
 
         adapter.writeSelectedPackageNow(null)
@@ -37,19 +37,19 @@ class AppsSelectionPersistenceAdapterTest : BasePlatformTestCase() {
     }
 
     fun `test loadState composes via XmlSerializerUtil so a re-loaded selection survives`() {
-        val projectState = AdbToolboxProjectState()
+        val projectState = DeviceCockpitProjectState()
         val adapter = AppsSelectionPersistenceAdapter(projectState)
         val selection = SelectedPackage(DeviceSerial.of("R58N90ABCDE"), "com.acme.shop")
         adapter.writeSelectedPackageNow(selection)
 
-        val reloaded = AdbToolboxProjectState()
+        val reloaded = DeviceCockpitProjectState()
         reloaded.loadState(projectState.state)
 
         assertEquals(selection, AppsSelectionPersistenceAdapter(reloaded).readSelectedPackageNow())
     }
 
     fun `test this adapter never touches the device-selection or settings slices`() {
-        val projectState = AdbToolboxProjectState()
+        val projectState = DeviceCockpitProjectState()
         val deviceAdapter = DeviceSelectionPersistenceAdapter(projectState)
         deviceAdapter.writeSelectedSerialNow(DeviceSerial.of("OTHERSERIAL"))
 

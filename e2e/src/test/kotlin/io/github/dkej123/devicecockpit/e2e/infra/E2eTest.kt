@@ -12,7 +12,7 @@ import java.net.URI
 import java.time.Duration
 
 /**
- * Base for every E2E test: checks the environment is up, brings the ADB Toolbox tool window to a
+ * Base for every E2E test: checks the environment is up, brings the Device Cockpit tool window to a
  * known state with the test device selected, and fails the test if the plugin logged an ERROR while
  * it ran. On failure, a screenshot, the UI hierarchy and the plugin-log tail are saved under
  * `e2e/build/e2e-report/` (see docs/e2e-testing.md → "When a test fails").

@@ -36,6 +36,7 @@ class Studio(val robot: RemoteRobot = RemoteRobot(E2eConfig.robotUrl)) {
     fun openToolWindow(): ContainerFixture {
         robot.runJs(
             PROJECT + """
+            // "ADB Toolbox" is the tool window id, kept for compatibility (DeviceCockpitToolWindowFactory.TOOL_WINDOW_ID).
             var tw = com.intellij.openapi.wm.ToolWindowManager.getInstance(project).getToolWindow("ADB Toolbox");
             tw.show(null);
             """.trimIndent(),
@@ -61,7 +62,7 @@ class Studio(val robot: RemoteRobot = RemoteRobot(E2eConfig.robotUrl)) {
     }
 
     fun toolWindow(): ContainerFixture =
-        robot.find(ContainerFixture::class.java, byXpath("//div[@class='AdbToolboxToolWindowPanel']"), Duration.ofSeconds(30))
+        robot.find(ContainerFixture::class.java, byXpath("//div[@class='DeviceCockpitToolWindowPanel']"), Duration.ofSeconds(30))
 
     fun rail(): JListFixture =
         toolWindow().find(JListFixture::class.java, byXpath("//div[contains(@javaclass,'NavigationRailPanel\$list')]"), ui)

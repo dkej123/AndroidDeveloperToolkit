@@ -1,7 +1,7 @@
 package io.github.dkej123.devicecockpit.intellij.persistence
 
 /**
- * The navigation slice of [AdbToolboxProjectState] (ADR 0006: `lastView`, a feature-local state
+ * The navigation slice of [DeviceCockpitProjectState] (ADR 0006: `lastView`, a feature-local state
  * carrier composed into the one root `PersistentStateComponent`, added as a sibling property next
  * to [DeviceSelectionState] rather than a new component). A plain mutable bean (public `var`s,
  * no-arg constructor) as IntelliJ's `XmlSerializer` requires.

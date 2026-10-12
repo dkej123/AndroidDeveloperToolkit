@@ -6,8 +6,8 @@ import com.intellij.ui.scale.JBUIScale
 import com.intellij.util.ui.JBUI
 import io.github.dkej123.devicecockpit.application.apps.AppsRow
 import io.github.dkej123.devicecockpit.domain.packages.AppIcon
-import io.github.dkej123.devicecockpit.intellij.icons.AdbToolboxIcons
-import io.github.dkej123.devicecockpit.intellij.ui.common.AdbToolboxTheme
+import io.github.dkej123.devicecockpit.intellij.icons.DeviceCockpitIcons
+import io.github.dkej123.devicecockpit.intellij.ui.common.DeviceCockpitTheme
 import io.github.dkej123.devicecockpit.intellij.ui.common.AppIconImages
 import io.github.dkej123.devicecockpit.intellij.ui.common.FlexRowLayout
 import io.github.dkej123.devicecockpit.intellij.ui.common.RoundedSurface
@@ -52,7 +52,7 @@ class AppsVirtualList(
             // else selects the row (see AppsRowRenderer).
             when {
                 e.x >= bounds.x + bounds.width - PIN_HIT_WIDTH() -> onTogglePin(row.packageName)
-                e.x < bounds.x + ICON_HIT_WIDTH() && e.y >= bounds.y + bounds.height - AdbToolboxTheme.Sizes.appRow -> {
+                e.x < bounds.x + ICON_HIT_WIDTH() && e.y >= bounds.y + bounds.height - DeviceCockpitTheme.Sizes.appRow -> {
                     onSelect(row.packageName)
                     onOpenDetails(row.packageName)
                 }
@@ -68,7 +68,7 @@ class AppsVirtualList(
         // `appListStyle`: `padding: 4px 6px` around 34px rows. Heights vary: a row that starts a
         // "Pinned"/"All apps" section also carries that section's header.
         fixedCellHeight = -1
-        border = JBUI.Borders.empty(AdbToolboxTheme.Spacing.s2, AdbToolboxTheme.Spacing.s3)
+        border = JBUI.Borders.empty(DeviceCockpitTheme.Spacing.s2, DeviceCockpitTheme.Spacing.s3)
         isOpaque = false
         addMouseListener(clickListener)
     }
@@ -111,8 +111,8 @@ private val ICON_HIT_WIDTH: () -> Int = { JBUIScale.scale(30) }
 internal class AppsRowRenderer : ListCellRenderer<AppsRow> {
 
     private val sectionHeader = JBLabel().apply {
-        font = AdbToolboxTheme.Typography.body.deriveFont(Font.BOLD, JBUIScale.scale(9.5f))
-        foreground = AdbToolboxTheme.Colors.textFaint
+        font = DeviceCockpitTheme.Typography.body.deriveFont(Font.BOLD, JBUIScale.scale(9.5f))
+        foreground = DeviceCockpitTheme.Colors.textFaint
         border = JBUI.Borders.empty(6, 8, 2, 8)
     }
 
@@ -131,11 +131,11 @@ internal class AppsRowRenderer : ListCellRenderer<AppsRow> {
 
     // `tagStyle`: 9px/700 teal text on `brandBg`, 1px `brandBorder`, radius 3, padding 1px 4px.
     private val debugTagLabel = JBLabel("debug").apply {
-        foreground = AdbToolboxTheme.Colors.brand
-        font = AdbToolboxTheme.Typography.body.deriveFont(Font.BOLD, JBUIScale.scale(9f))
+        foreground = DeviceCockpitTheme.Colors.brand
+        font = DeviceCockpitTheme.Typography.body.deriveFont(Font.BOLD, JBUIScale.scale(9f))
         border = JBUI.Borders.empty(1, 4)
     }
-    private val debugTag = RoundedSurface(AdbToolboxTheme.Colors.brandBg, AdbToolboxTheme.Colors.brandBorder, radius = { JBUIScale.scale(3) }).apply {
+    private val debugTag = RoundedSurface(DeviceCockpitTheme.Colors.brandBg, DeviceCockpitTheme.Colors.brandBorder, radius = { JBUIScale.scale(3) }).apply {
         layout = BorderLayout()
         add(debugTagLabel, BorderLayout.CENTER)
     }
@@ -149,7 +149,7 @@ internal class AppsRowRenderer : ListCellRenderer<AppsRow> {
     // `rowStyle`: 34px, radius 5, `padding: 0 8px`, gap 7, selected = `accentBg` + 1px `accentBorder`.
     private val root = RoundedSurface(null, null).apply {
         layout = FlexRowLayout(JBUIScale.scale(7))
-        border = JBUI.Borders.empty(0, AdbToolboxTheme.Spacing.s4)
+        border = JBUI.Borders.empty(0, DeviceCockpitTheme.Spacing.s4)
         add(tile)
         add(textStack, FlexRowLayout.FILL)
         add(debugTag)
@@ -160,7 +160,7 @@ internal class AppsRowRenderer : ListCellRenderer<AppsRow> {
     // renderer, which would tint a section header sitting above the selected row.
     private val cell = JPanel(BorderLayout()).apply {
         isOpaque = true
-        background = AdbToolboxTheme.Colors.bg
+        background = DeviceCockpitTheme.Colors.bg
         add(sectionHeader, BorderLayout.NORTH)
         add(root, BorderLayout.CENTER)
     }
@@ -181,45 +181,45 @@ internal class AppsRowRenderer : ListCellRenderer<AppsRow> {
         cellHasFocus: Boolean,
     ): Component {
         titleLabel.text = value.label
-        titleLabel.foreground = AdbToolboxTheme.Colors.text
-        titleLabel.font = AdbToolboxTheme.Typography.body.deriveFont(
+        titleLabel.foreground = DeviceCockpitTheme.Colors.text
+        titleLabel.font = DeviceCockpitTheme.Typography.body.deriveFont(
             if (value.isSelected) Font.BOLD else Font.PLAIN,
             JBUIScale.scale(11.5f),
         )
 
         packageLabel.text = value.packageName
-        packageLabel.foreground = AdbToolboxTheme.Colors.textFaint
-        packageLabel.font = AdbToolboxTheme.Typography.monoMeta
+        packageLabel.foreground = DeviceCockpitTheme.Colors.textFaint
+        packageLabel.font = DeviceCockpitTheme.Typography.monoMeta
 
         val debuggable = value.isDebuggable == true
         tile.icon = value.icon?.takeIf { AppIconImages.decode(it) != null }
         tile.fill = when {
             tile.icon != null -> null
-            debuggable -> AdbToolboxTheme.Colors.brandBg
-            else -> AdbToolboxTheme.Colors.header
+            debuggable -> DeviceCockpitTheme.Colors.brandBg
+            else -> DeviceCockpitTheme.Colors.header
         }
         tile.outline = when {
             tile.icon != null -> null
-            debuggable -> AdbToolboxTheme.Colors.brandBorder
-            else -> AdbToolboxTheme.Colors.border
+            debuggable -> DeviceCockpitTheme.Colors.brandBorder
+            else -> DeviceCockpitTheme.Colors.border
         }
         debugTag.isVisible = debuggable
 
-        root.fill = if (value.isSelected) AdbToolboxTheme.Colors.accentBg else null
-        root.outline = if (value.isSelected) AdbToolboxTheme.Colors.accentBorder else null
+        root.fill = if (value.isSelected) DeviceCockpitTheme.Colors.accentBg else null
+        root.outline = if (value.isSelected) DeviceCockpitTheme.Colors.accentBorder else null
 
         // JList's CellRendererPane paints renderer components without validating nested layout
         // managers. Give this compound renderer its final row bounds explicitly so its tile,
         // two-line text stack and debug tag are paintable in both the IDE and off-screen tests.
-        pin.icon = if (value.isPinned) AdbToolboxIcons.Actions.pinned else AdbToolboxIcons.Actions.pin
+        pin.icon = if (value.isPinned) DeviceCockpitIcons.Actions.pinned else DeviceCockpitIcons.Actions.pin
         pin.toolTipText = if (value.isPinned) "Unpin" else "Pin to the top"
         sectionHeader.isVisible = value.sectionHeader != null
         sectionHeader.text = value.sectionHeader?.uppercase().orEmpty()
 
         val rowWidth = (list.width - list.insets.left - list.insets.right).coerceAtLeast(1)
         val headerHeight = if (sectionHeader.isVisible) sectionHeader.preferredSize.height else 0
-        cell.preferredSize = Dimension(rowWidth, headerHeight + AdbToolboxTheme.Sizes.appRow)
-        cell.setSize(rowWidth, headerHeight + AdbToolboxTheme.Sizes.appRow)
+        cell.preferredSize = Dimension(rowWidth, headerHeight + DeviceCockpitTheme.Sizes.appRow)
+        cell.setSize(rowWidth, headerHeight + DeviceCockpitTheme.Sizes.appRow)
         cell.doLayout()
         root.doLayout()
         textStack.doLayout()
@@ -230,7 +230,7 @@ internal class AppsRowRenderer : ListCellRenderer<AppsRow> {
 }
 
 /** The row's 16px tile: paints [icon] scaled into its bounds when set, the rounded tile otherwise. */
-internal class AppIconTile : RoundedSurface(null, null, radius = { AdbToolboxTheme.Radii.field }) {
+internal class AppIconTile : RoundedSurface(null, null, radius = { DeviceCockpitTheme.Radii.field }) {
     var icon: AppIcon? = null
 
     override fun paintComponent(g: Graphics) {

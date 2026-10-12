@@ -17,6 +17,7 @@ import java.lang.reflect.Method;
  */
 public final class LocaleMain {
 
+    // Protocol header kept from the pre-rename "ADB Toolbox" name for compatibility (the IDE side parses it).
     static final String HEADER = "ADBTOOLBOX-LOCALE 1";
 
     private LocaleMain() {

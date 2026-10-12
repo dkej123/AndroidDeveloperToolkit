@@ -10,6 +10,8 @@ import com.intellij.credentialStore.CredentialAttributes;
  * deprecates — which the Marketplace verifier reports.
  */
 final class McpTokenCredentials {
+    // Password-safe service name kept from the pre-rename "ADB Toolbox" name for compatibility: renaming it
+    // would lose the saved token and break every agent already set up with it.
     static final CredentialAttributes TOKEN = new CredentialAttributes("ADB Toolbox MCP token");
 
     private McpTokenCredentials() {

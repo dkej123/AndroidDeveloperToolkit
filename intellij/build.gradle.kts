@@ -67,7 +67,7 @@ dependencies {
         intellijIdeaCommunity(providers.gradleProperty("platformVersion").get())
 
         // org.jetbrains.android (preferred ddmlib/AdbLibService path, docs/adr/0005, when present)
-        // is declared `optional` in plugin.xml (config-file adb-toolbox-android.xml) and, per task
+        // is declared `optional` in plugin.xml (config-file device-cockpit-android.xml) and, per task
         // 007, taken as a compile-time-only dependency here so the composition root can call its
         // real device-bridge APIs. Pinned to the exact build (242.26775.15) matching this module's
         // `platformVersion`/pluginVerifier target for guaranteed binary compatibility; it is never
@@ -83,7 +83,7 @@ dependencies {
         // (`intellij/terminal/TerminalLauncherAdapter`) needs its `TerminalToolWindowManager`/
         // `ShellTerminalWidget` classes at compile time; a user can still disable a bundled plugin,
         // so the adapter also checks `PluginManagerCore` at runtime (the same guard
-        // `AdbToolboxProjectService.androidPluginPresent` already uses) rather than assuming presence.
+        // `DeviceCockpitProjectService.androidPluginPresent` already uses) rather than assuming presence.
         bundledPlugin("org.jetbrains.plugins.terminal")
 
         testFramework(TestFrameworkType.Platform)
@@ -157,6 +157,8 @@ kotlin {
 }
 
 tasks.named<Zip>("buildPlugin") {
+    // Kept from the pre-rename "ADB Toolbox" name for compatibility: it names both the ZIP and the plugin
+    // folder inside it, i.e. the folder installed IDEs and E2E sandboxes already have.
     archiveBaseName.set("adb-toolbox")
 }
 
@@ -211,7 +213,7 @@ tasks.withType<KotlinCompile>().configureEach {
     // `SpillingKt`), which fail with NoClassDefFoundError inside older IDEs.
     compilerOptions.apiVersion.set(KotlinVersion.KOTLIN_1_9)
     // With API 1.9 the compiler falls back to generating DefaultImpls-style bridges in every class
-    // that implements a platform interface, so e.g. AdbToolboxToolWindowFactory "overrides" the
+    // that implements a platform interface, so e.g. DeviceCockpitToolWindowFactory "overrides" the
     // internal/experimental ToolWindowFactory.getAnchor/getIcon/manage in the Plugin Verifier's
     // eyes. The platform ships real JVM default methods (242+), so inherit them instead.
     compilerOptions.jvmDefault.set(JvmDefaultMode.NO_COMPATIBILITY)
@@ -230,7 +232,7 @@ tasks.test {
     // rendered candidates with `-PupdateVisualGoldens=true`; no ambient system property can
     // silently rewrite the repository's reviewed visual contract.
     systemProperty(
-        "adbtoolbox.updateVisualGoldens",
+        "deviceCockpit.updateVisualGoldens",
         providers.gradleProperty("updateVisualGoldens").orElse("false").get(),
     )
 }

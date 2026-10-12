@@ -20,7 +20,7 @@ class UnscaledBorderGuardTest : BasePlatformTestCase() {
         val root = findRepositoryRoot().resolve("intellij/src/main/kotlin")
         val offenders = mutableListOf<String>()
         // Only flags calls whose entire argument list is numeric literals (no identifiers, so no
-        // already-scaled `AdbToolboxTheme.Spacing.sN` token) that isn't all zero.
+        // already-scaled `DeviceCockpitTheme.Spacing.sN` token) that isn't all zero.
         val call = Regex("""createEmptyBorder\(([^)]*)\)""")
         val numericArgsOnly = Regex("""^[0-9,\s]*$""")
         val allZero = Regex("""^\s*(0\s*(,\s*0\s*)*)?$""")

@@ -7,7 +7,7 @@ import io.github.dkej123.devicecockpit.domain.adb.DeviceSerial
 class PinnedAppsPersistenceAdapterTest : BasePlatformTestCase() {
 
     fun `test pinned apps round-trip and survive a selection write`() {
-        val state = AdbToolboxProjectState()
+        val state = DeviceCockpitProjectState()
         val pins = PinnedAppsPersistenceAdapter(state)
 
         pins.writeNow(setOf("com.acme.shop", "com.acme.wallet"))

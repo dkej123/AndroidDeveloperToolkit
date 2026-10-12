@@ -24,7 +24,7 @@ class IdeMcpConfirmation(private val project: Project, private val deviceLabel: 
     override suspend fun confirm(action: DestructiveAppAction, serial: DeviceSerial, packageName: String, agent: String): Boolean =
         suspendCancellableCoroutine { continuation ->
             ApplicationManager.getApplication().invokeLater({
-                ToolWindowManager.getInstance(project).getToolWindow("ADB Toolbox")?.show()
+                ToolWindowManager.getInstance(project).getToolWindow(io.github.dkej123.devicecockpit.intellij.toolwindow.DeviceCockpitToolWindowFactory.TOOL_WINDOW_ID)?.show()
                 val (title, body, ok) = when (action) {
                     DestructiveAppAction.ClearData -> clearDataDialogSpec(packageName, deviceLabel(serial)).let { Triple(it.title, it.message, "Clear data") }
                     DestructiveAppAction.Uninstall -> uninstallDialogSpec(packageName, deviceLabel(serial)).let { Triple(it.title, it.message, "Uninstall") }

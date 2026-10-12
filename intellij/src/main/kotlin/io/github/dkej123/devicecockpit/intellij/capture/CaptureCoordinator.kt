@@ -15,7 +15,7 @@ import kotlinx.coroutines.CoroutineScope
  * component per route, and [io.github.dkej123.devicecockpit.intellij.devicefacts.DeviceFactsCoordinator]
  * already claimed it. [deviceFactsPanel] must therefore already be constructed (this coordinator is
  * built after [io.github.dkej123.devicecockpit.intellij.devicefacts.DeviceFactsCoordinator] in
- * `AdbToolboxToolWindowPanel`), and [scope]/[dispatchers] are this feature's own — cancelling
+ * `DeviceCockpitToolWindowPanel`), and [scope]/[dispatchers] are this feature's own — cancelling
  * [scope] via [dispose] never touches the Device-facts feature's lifecycle.
  */
 class CaptureCoordinator(

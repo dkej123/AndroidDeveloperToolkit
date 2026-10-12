@@ -11,7 +11,7 @@ import io.github.dkej123.devicecockpit.domain.appdata.AppPermission
 import io.github.dkej123.devicecockpit.domain.appdata.PermissionFlag
 import io.github.dkej123.devicecockpit.domain.appdata.PermissionKind
 import io.github.dkej123.devicecockpit.domain.appdata.PermissionState
-import io.github.dkej123.devicecockpit.intellij.ui.common.AdbToolboxTheme
+import io.github.dkej123.devicecockpit.intellij.ui.common.DeviceCockpitTheme
 import io.github.dkej123.devicecockpit.intellij.ui.common.DesignButton
 import io.github.dkej123.devicecockpit.intellij.ui.common.DesignButtonStyle
 import io.github.dkej123.devicecockpit.intellij.ui.common.DesignIconButton
@@ -79,22 +79,22 @@ class PermissionsList(private val onIntent: (AppDetailsIntent) -> Unit) : JPanel
         })
     }
     private val emptyLabel = JBLabel().apply {
-        font = AdbToolboxTheme.Typography.caption
-        foreground = AdbToolboxTheme.Colors.textFaint
-        border = JBUI.Borders.empty(AdbToolboxTheme.Spacing.s5, AdbToolboxTheme.Spacing.sectionInset)
+        font = DeviceCockpitTheme.Typography.caption
+        foreground = DeviceCockpitTheme.Colors.textFaint
+        border = JBUI.Borders.empty(DeviceCockpitTheme.Spacing.s5, DeviceCockpitTheme.Spacing.sectionInset)
         alignmentX = Component.LEFT_ALIGNMENT
     }
     private val rows = mutableMapOf<String, PermissionRow>()
     private val content = ViewportWidthPanel().apply {
         layout = BoxLayout(this, BoxLayout.Y_AXIS)
-        background = AdbToolboxTheme.Colors.bg
+        background = DeviceCockpitTheme.Colors.bg
     }
 
     init {
-        background = AdbToolboxTheme.Colors.bg
+        background = DeviceCockpitTheme.Colors.bg
         add(
-            flexRow(AdbToolboxTheme.Spacing.s3, filter, resetAll, fill = filter, shrink = filter).apply {
-                border = JBUI.Borders.empty(AdbToolboxTheme.Spacing.s3, AdbToolboxTheme.Spacing.sectionInset)
+            flexRow(DeviceCockpitTheme.Spacing.s3, filter, resetAll, fill = filter, shrink = filter).apply {
+                border = JBUI.Borders.empty(DeviceCockpitTheme.Spacing.s3, DeviceCockpitTheme.Spacing.sectionInset)
             },
             BorderLayout.NORTH,
         )
@@ -156,9 +156,9 @@ class PermissionsList(private val onIntent: (AppDetailsIntent) -> Unit) : JPanel
     private fun groupLabel() = object : JBLabel() {
         override fun getMaximumSize(): Dimension = Dimension(Int.MAX_VALUE, preferredSize.height)
     }.apply {
-        font = AdbToolboxTheme.Typography.groupLabel
-        foreground = AdbToolboxTheme.Colors.textFaint
-        border = JBUI.Borders.empty(AdbToolboxTheme.Spacing.s5, AdbToolboxTheme.Spacing.sectionInset, AdbToolboxTheme.Spacing.s2, AdbToolboxTheme.Spacing.sectionInset)
+        font = DeviceCockpitTheme.Typography.groupLabel
+        foreground = DeviceCockpitTheme.Colors.textFaint
+        border = JBUI.Borders.empty(DeviceCockpitTheme.Spacing.s5, DeviceCockpitTheme.Spacing.sectionInset, DeviceCockpitTheme.Spacing.s2, DeviceCockpitTheme.Spacing.sectionInset)
         alignmentX = Component.LEFT_ALIGNMENT
     }
 
@@ -201,15 +201,15 @@ internal fun shortName(permission: String): String =
 private class PermissionRow(permission: AppPermission, busy: String?, onIntent: (AppDetailsIntent) -> Unit) : JPanel(BorderLayout()) {
 
     val shortName = JBLabel(shortName(permission.name)).apply {
-        font = AdbToolboxTheme.Typography.body
-        foreground = AdbToolboxTheme.Colors.text
+        font = DeviceCockpitTheme.Typography.body
+        foreground = DeviceCockpitTheme.Colors.text
     }
     private val fullName = JBLabel(permission.name).apply {
-        font = AdbToolboxTheme.Typography.monoMeta
-        foreground = AdbToolboxTheme.Colors.textFaint
+        font = DeviceCockpitTheme.Typography.monoMeta
+        foreground = DeviceCockpitTheme.Colors.textFaint
     }
     val flags: List<Tag> = permission.flags.sortedBy { it.ordinal }.map { flag ->
-        Tag(FLAG_LABELS.getValue(flag).first, AdbToolboxTheme.Colors.textDim, AdbToolboxTheme.Colors.hover).apply { toolTipText = FLAG_LABELS.getValue(flag).second }
+        Tag(FLAG_LABELS.getValue(flag).first, DeviceCockpitTheme.Colors.textDim, DeviceCockpitTheme.Colors.hover).apply { toolTipText = FLAG_LABELS.getValue(flag).second }
     }
     val state: Tag = stateTag(permission, applying = busy == permission.name)
     val action: JButton? = if (!permission.mutable) null else {
@@ -236,30 +236,30 @@ private class PermissionRow(permission: AppPermission, busy: String?, onIntent: 
         toolTipText = permission.name
         alignmentX = Component.LEFT_ALIGNMENT
         border = JBUI.Borders.compound(
-            JBUI.Borders.customLine(AdbToolboxTheme.Colors.border, 0, 0, 1, 0),
-            JBUI.Borders.empty(AdbToolboxTheme.Spacing.s3, AdbToolboxTheme.Spacing.sectionInset),
+            JBUI.Borders.customLine(DeviceCockpitTheme.Colors.border, 0, 0, 1, 0),
+            JBUI.Borders.empty(DeviceCockpitTheme.Spacing.s3, DeviceCockpitTheme.Spacing.sectionInset),
         )
         // Name and state on the first line, the full name below, flag tags under that; only the
         // actions sit to the right, so the names keep their width in a narrow tool window.
         val names = JPanel().apply {
             layout = BoxLayout(this, BoxLayout.Y_AXIS)
             isOpaque = false
-            add(flexRow(AdbToolboxTheme.Spacing.s3, shortName, state, shrink = shortName).apply { alignmentX = Component.LEFT_ALIGNMENT })
+            add(flexRow(DeviceCockpitTheme.Spacing.s3, shortName, state, shrink = shortName).apply { alignmentX = Component.LEFT_ALIGNMENT })
             add(fullName.apply { alignmentX = Component.LEFT_ALIGNMENT })
             if (flags.isNotEmpty()) {
-                add(Box.createVerticalStrut(AdbToolboxTheme.Spacing.s1))
-                add(flexRow(AdbToolboxTheme.Spacing.s2, *flags.toTypedArray<JComponent>()).apply { alignmentX = Component.LEFT_ALIGNMENT })
+                add(Box.createVerticalStrut(DeviceCockpitTheme.Spacing.s1))
+                add(flexRow(DeviceCockpitTheme.Spacing.s2, *flags.toTypedArray<JComponent>()).apply { alignmentX = Component.LEFT_ALIGNMENT })
             }
         }
         add(names, BorderLayout.CENTER)
         if (action != null || reset != null) {
             add(
-                JPanel(FlowLayout(FlowLayout.RIGHT, AdbToolboxTheme.Spacing.s2, 0)).apply {
+                JPanel(FlowLayout(FlowLayout.RIGHT, DeviceCockpitTheme.Spacing.s2, 0)).apply {
                     isOpaque = false
-                    border = JBUI.Borders.emptyLeft(AdbToolboxTheme.Spacing.s4)
+                    border = JBUI.Borders.emptyLeft(DeviceCockpitTheme.Spacing.s4)
                     action?.let(::add)
                     reset?.let(::add)
-                    preferredSize = Dimension(ACTION_CELL_WIDTH() + AdbToolboxTheme.Spacing.s4, AdbToolboxTheme.Sizes.secondaryButton)
+                    preferredSize = Dimension(ACTION_CELL_WIDTH() + DeviceCockpitTheme.Spacing.s4, DeviceCockpitTheme.Sizes.secondaryButton)
                 },
                 BorderLayout.EAST,
             )
@@ -279,11 +279,11 @@ private class PermissionRow(permission: AppPermission, busy: String?, onIntent: 
 
         /** Wide enough for "Revoke" and the reset button, so state chips line up across rows. */
         val ACTION_CELL_WIDTH: () -> Int = {
-            DesignButton("Revoke", DesignButtonStyle.SECONDARY).preferredSize.width + AdbToolboxTheme.Spacing.s2 * 2 + AdbToolboxTheme.Sizes.iconButton
+            DesignButton("Revoke", DesignButtonStyle.SECONDARY).preferredSize.width + DeviceCockpitTheme.Spacing.s2 * 2 + DeviceCockpitTheme.Sizes.iconButton
         }
 
         fun stateTag(permission: AppPermission, applying: Boolean): Tag {
-            val c = AdbToolboxTheme.Colors
+            val c = DeviceCockpitTheme.Colors
             if (applying) return Tag("Applying…", c.accent, c.accentBg)
             return when (permission.state) {
                 PermissionState.GRANTED -> Tag("Granted", c.green, c.greenBg)
@@ -302,9 +302,9 @@ private class PermissionRow(permission: AppPermission, busy: String?, onIntent: 
 /** A small rounded label: state chips and flag tags. */
 private class Tag(text: String, fg: Color, private val fill: Color) : JBLabel(text) {
     init {
-        font = AdbToolboxTheme.Typography.caption
+        font = DeviceCockpitTheme.Typography.caption
         foreground = fg
-        border = JBUI.Borders.empty(JBUIScale.scale(1), AdbToolboxTheme.Spacing.s3)
+        border = JBUI.Borders.empty(JBUIScale.scale(1), DeviceCockpitTheme.Spacing.s3)
     }
 
     override fun paintComponent(g: Graphics) {
@@ -312,7 +312,7 @@ private class Tag(text: String, fg: Color, private val fill: Color) : JBLabel(te
         try {
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
             g2.color = fill
-            val arc = AdbToolboxTheme.Radii.chip * 2
+            val arc = DeviceCockpitTheme.Radii.chip * 2
             g2.fillRoundRect(0, 0, width, height, arc, arc)
         } finally {
             g2.dispose()

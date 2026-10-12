@@ -38,7 +38,7 @@ class AppInfoHelperBundle(val version: String, val localPath: () -> String?) {
                 .take(16)
             val file by lazy {
                 runCatching {
-                    Files.createTempFile("adb-toolbox-app-info-", ".jar").toFile().apply {
+                    Files.createTempFile("device-cockpit-app-info-", ".jar").toFile().apply {
                         deleteOnExit()
                         writeBytes(bytes)
                     }.absolutePath

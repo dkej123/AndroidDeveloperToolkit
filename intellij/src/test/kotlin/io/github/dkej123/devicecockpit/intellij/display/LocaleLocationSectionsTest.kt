@@ -6,7 +6,7 @@ import io.github.dkej123.devicecockpit.application.locale.LocaleRow
 import io.github.dkej123.devicecockpit.application.locale.LocaleViewState
 import io.github.dkej123.devicecockpit.application.locale.LocationViewState
 import io.github.dkej123.devicecockpit.domain.location.GeoPoint
-import io.github.dkej123.devicecockpit.intellij.ui.common.AdbToolboxTheme
+import io.github.dkej123.devicecockpit.intellij.ui.common.DeviceCockpitTheme
 import java.awt.event.MouseEvent
 
 class LocaleLocationSectionsTest : BasePlatformTestCase() {
@@ -24,7 +24,7 @@ class LocaleLocationSectionsTest : BasePlatformTestCase() {
         section.update(LocaleViewState(locale = DeviceLocaleState("ar-XB", "en-US"), loading = false), deviceOnline = true)
 
         assertEquals("ar-XB applied", section.metaLabelForTest.text)
-        assertEquals(AdbToolboxTheme.Colors.amber, section.metaLabelForTest.foreground)
+        assertEquals(DeviceCockpitTheme.Colors.amber, section.metaLabelForTest.foreground)
         assertTrue(section.overrideRowForTest.isVisible)
     }
 

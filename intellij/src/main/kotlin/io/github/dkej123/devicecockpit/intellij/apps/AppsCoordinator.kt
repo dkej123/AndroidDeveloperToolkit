@@ -35,7 +35,7 @@ import kotlinx.coroutines.withContext
  * [appLifecycleViewModel] is reused verbatim by
  * [io.github.dkej123.devicecockpit.intellij.apps.RestartAppAction]'s global restart shortcut/action (both reach
  * this project's one shared instance via
- * [io.github.dkej123.devicecockpit.intellij.composition.AdbToolboxProjectService]) — the panel button and the
+ * [io.github.dkej123.devicecockpit.intellij.composition.DeviceCockpitProjectService]) — the panel button and the
  * global action can never diverge into two different restart code paths.
  */
 class AppsCoordinator(

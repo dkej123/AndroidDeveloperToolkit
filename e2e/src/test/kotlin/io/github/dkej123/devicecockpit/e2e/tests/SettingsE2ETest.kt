@@ -16,7 +16,7 @@ import java.io.File
 import java.nio.file.Files
 import java.time.Duration
 
-/** The plugin's Settings page (Settings › Tools › ADB Toolbox) and its effect on the tool window. */
+/** The plugin's Settings page (Settings › Tools › Device Cockpit) and its effect on the tool window. */
 class SettingsE2ETest : E2eTest() {
 
     private var captureDir: File? = null
@@ -34,11 +34,11 @@ class SettingsE2ETest : E2eTest() {
     }
 
     @Test
-    fun `the rail's Settings item opens the ADB Toolbox settings page`() {
+    fun `the rail's Settings item opens the Device Cockpit settings page`() {
         studio.navigate(View.Settings)
 
         val dialog = studio.dialog("Settings")
-        awaitUntil(Duration.ofSeconds(10), Duration.ofMillis(300), "the ADB Toolbox page") {
+        awaitUntil(Duration.ofSeconds(10), Duration.ofMillis(300), "the Device Cockpit page") {
             dialog.findAll(ContainerFixture::class.java, byXpath("//div[@name='captureDirectoryField']")).any { it.isShowing }
         }
         studio.closeDialogs()
@@ -99,7 +99,7 @@ class SettingsE2ETest : E2eTest() {
         repeat(2) {
             studio.click("Open Settings")
             val dialog = studio.dialog("Settings")
-            awaitUntil(Duration.ofSeconds(10), Duration.ofMillis(300), "the ADB Toolbox page") {
+            awaitUntil(Duration.ofSeconds(10), Duration.ofMillis(300), "the Device Cockpit page") {
                 dialog.findAll(ContainerFixture::class.java, byXpath("//div[@name='scrcpyPathField']")).any { it.isShowing }
             }
             studio.dialogButton(dialog, "Cancel").click()
@@ -139,7 +139,7 @@ class SettingsE2ETest : E2eTest() {
             false,
         )
         val dialog = studio.dialog("Settings")
-        awaitUntil(Duration.ofSeconds(10), Duration.ofMillis(300), "the ADB Toolbox page") {
+        awaitUntil(Duration.ofSeconds(10), Duration.ofMillis(300), "the Device Cockpit page") {
             dialog.findAll(ContainerFixture::class.java, byXpath("//div[@name='captureDirectoryField']")).any { it.isShowing }
         }
         return dialog

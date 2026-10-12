@@ -33,6 +33,7 @@ class CollapsedSectionsStore(private val properties: () -> PropertiesComponent =
         properties().getValue(KEY).orEmpty().split(',').filter(String::isNotBlank).toSet()
 
     companion object {
+        /** PropertiesComponent key, kept from the pre-rename "ADB Toolbox" name for compatibility (renaming it would reset every user's collapsed sections). */
         const val KEY = "adbToolbox.collapsedSections"
     }
 }
@@ -80,7 +81,7 @@ class CollapsibleSection private constructor(
             val g2 = g.create() as Graphics2D
             try {
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
-                g2.color = AdbToolboxTheme.Colors.textDim
+                g2.color = DeviceCockpitTheme.Colors.textDim
                 val long = JBUIScale.scale(7f)
                 val short = JBUIScale.scale(4f)
                 val cx = width / 2f
@@ -107,7 +108,7 @@ class CollapsibleSection private constructor(
             val constraint = (header.layout as? FlexRowLayout)?.constraintOf(title)
             val chevron = Chevron()
             header.remove(title)
-            val toggle = flexRow(AdbToolboxTheme.Spacing.s3, chevron, title, fill = title.takeIf { constraint == FlexRowLayout.FILL })
+            val toggle = flexRow(DeviceCockpitTheme.Spacing.s3, chevron, title, fill = title.takeIf { constraint == FlexRowLayout.FILL })
             header.add(toggle, constraint, index)
 
             // Everything after the header row (including the gap strut before the first body row).

@@ -17,6 +17,7 @@ import java.lang.reflect.InvocationTargetException;
  */
 public final class DevOptionsMain {
 
+    // Protocol header kept from the pre-rename "ADB Toolbox" name for compatibility (the IDE side parses it).
     static final String HEADER = "ADBTOOLBOX-DEVOPTIONS 1";
 
     private DevOptionsMain() {

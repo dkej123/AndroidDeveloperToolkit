@@ -20,14 +20,14 @@ class DesignIconResourcesTest : BasePlatformTestCase() {
     fun `test production icon catalog loads every tool window and action icon through IntelliJ`() {
         IconLoader.activate()
         try {
-            val icons = AdbToolboxIcons.all
+            val icons = DeviceCockpitIcons.all
             val loadedImages = icons.map { icon ->
                 requireNotNull(IconLoader.toImage(icon)) { "IconLoader did not render $icon" }
             }
 
             assertEquals(30, icons.size)
             assertEquals(30, icons.distinct().size)
-            assertSame(AdbToolboxIcons.toolWindow, icons.first())
+            assertSame(DeviceCockpitIcons.toolWindow, icons.first())
             loadedImages.forEach { image ->
                 assertEquals(16, image.getWidth(null))
                 assertEquals(16, image.getHeight(null))
@@ -54,14 +54,14 @@ class DesignIconResourcesTest : BasePlatformTestCase() {
         val pluginXml = javaClass.getResource("/META-INF/plugin.xml")!!.readText()
 
         assertTrue(
-            "ADB Toolbox toolWindow must use the supplied production icon",
-            Regex("""<toolWindow[^>]*id="ADB Toolbox"[^>]*icon="/icons/expui/toolwindow/adbToolbox\.svg""", RegexOption.DOT_MATCHES_ALL)
+            "The Device Cockpit tool window must use the supplied production icon",
+            Regex("""<toolWindow[^>]*id="ADB Toolbox"[^>]*icon="/icons/expui/toolwindow/deviceCockpit\.svg""", RegexOption.DOT_MATCHES_ALL)
                 .containsMatchIn(pluginXml),
         )
     }
 
     fun `test the tool window icon has the New UI 20px stripe sibling in both themes`() {
-        listOf("adbToolbox", "adbToolbox@20x20").forEach { name ->
+        listOf("deviceCockpit", "deviceCockpit@20x20").forEach { name ->
             assertNotNull(javaClass.getResource("/icons/expui/toolwindow/$name.svg"))
             assertNotNull(javaClass.getResource("/icons/expui/toolwindow/${name}_dark.svg"))
         }
@@ -117,7 +117,7 @@ class DesignIconResourcesTest : BasePlatformTestCase() {
 
     private companion object {
         val expectedIconPaths = buildSet {
-            listOf("adbToolbox", "adbToolbox@20x20").forEach { name ->
+            listOf("deviceCockpit", "deviceCockpit@20x20").forEach { name ->
                 add("toolwindow/$name.svg")
                 add("toolwindow/${name}_dark.svg")
             }

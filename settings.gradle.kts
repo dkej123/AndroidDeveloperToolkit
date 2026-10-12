@@ -1,4 +1,4 @@
-rootProject.name = "adb-toolbox"
+rootProject.name = "device-cockpit"
 
 pluginManagement {
     repositories {

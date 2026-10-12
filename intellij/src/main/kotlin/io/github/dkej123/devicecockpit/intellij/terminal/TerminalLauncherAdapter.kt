@@ -14,7 +14,7 @@ import org.jetbrains.plugins.terminal.TerminalToolWindowManager
  * ADR 0007's Open-shell platform adapter (task 016): creates a new tab in the IDE's own integrated
  * Terminal tool window, pre-seeded with [ShellSessionIntent.commandLine] — never a bespoke
  * PTY/terminal UI (see ADR 0007's rejected alternatives). [terminalPluginPresent] is checked once
- * at composition ([io.github.dkej123.devicecockpit.intellij.composition.AdbToolboxProjectService], the same
+ * at composition ([io.github.dkej123.devicecockpit.intellij.composition.DeviceCockpitProjectService], the same
  * once-per-session guard already used for the optional Android plugin/ddmlib, ADR 0005) so this
  * class never touches an `org.jetbrains.plugins.terminal` class when that plugin is disabled — a
  * user can disable a bundled plugin even though it ships with every IntelliJ Platform install this

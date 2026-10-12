@@ -25,7 +25,7 @@ private const val SQLITE_MAGIC = "SQLite format 3"
  */
 class AdbAppDatabaseTransfer(
     private val transport: AdbTransport,
-    private val tempRoot: () -> File = { Files.createTempDirectory("adb-toolbox-db-").toFile().apply { deleteOnExit() } },
+    private val tempRoot: () -> File = { Files.createTempDirectory("device-cockpit-db-").toFile().apply { deleteOnExit() } },
 ) : AppDatabaseTransfer {
 
     override suspend fun pull(serial: DeviceSerial, access: AppDataAccess, packageName: String, fileName: String): DatabaseCopy {
@@ -54,6 +54,7 @@ class AdbAppDatabaseTransfer(
         val local = File(localPath)
         // adb push keeps the file mode; the app's uid must be able to read the staged copy.
         local.setReadable(true, false)
+        // Device-side name kept from the pre-rename "ADB Toolbox" name for compatibility with helpers and files already on devices.
         val staged = "/data/local/tmp/adb-toolbox-${UUID.randomUUID()}.db"
         val pushed = transport.executeText(AdbDeviceRequest(serial, AdbOperation.Host(listOf("push", local.absolutePath, staged))))
         if (!pushed.succeeded()) return "adb push failed: ${pushed.stderr.trim().ifEmpty { pushed.outcome.toString() }}"

@@ -1,6 +1,9 @@
 <idea-plugin>
     <!-- Marketplace identity (user decision 2026-10-01). Version and change notes come from
          gradle.properties and CHANGELOG.md (intellij/build.gradle.kts). -->
+    <!-- The id and every other "adbtoolbox"/"ADB Toolbox" id below (tool window, configurable,
+         notification group, action ids) are kept from the pre-rename name for compatibility:
+         Marketplace updates, saved layouts, keymaps and settings refer to them. -->
     <id>com.github.dkwasniak.adbtoolbox</id>
     <name>Device Cockpit for Android</name>
     <vendor email="damian.kwasniak@gmail.com">dkwasniak</vendor>
@@ -35,10 +38,10 @@ Formerly <i>ADB Toolbox</i>.</p>
     ]]></description>
 
     <depends>com.intellij.modules.platform</depends>
-    <depends optional="true" config-file="adb-toolbox-android.xml">org.jetbrains.android</depends>
-    <depends optional="true" config-file="adb-toolbox-terminal.xml">org.jetbrains.plugins.terminal</depends>
+    <depends optional="true" config-file="device-cockpit-android.xml">org.jetbrains.android</depends>
+    <depends optional="true" config-file="device-cockpit-terminal.xml">org.jetbrains.plugins.terminal</depends>
 
-    <!-- Project services are registered as light @Service classes (AdbToolboxProjectService),
+    <!-- Project services are registered as light @Service classes (DeviceCockpitProjectService),
          which need no XML entry here. -->
     <extensions defaultExtensionNs="com.intellij">
         <!-- ADR 0015: the project's MCP tools are registered at startup when access is not Off. -->
@@ -46,10 +49,10 @@ Formerly <i>ADB Toolbox</i>.</p>
         <!-- Design §9: the Layout Inspector is a file-less editor tab. -->
         <fileEditorProvider implementation="io.github.dkej123.devicecockpit.intellij.inspector.LayoutInspectorEditorProvider"/>
         <toolWindow id="ADB Toolbox" anchor="right" secondary="false"
-                    icon="/icons/expui/toolwindow/adbToolbox.svg"
-                    factoryClass="io.github.dkej123.devicecockpit.intellij.toolwindow.AdbToolboxToolWindowFactory"/>
+                    icon="/icons/expui/toolwindow/deviceCockpit.svg"
+                    factoryClass="io.github.dkej123.devicecockpit.intellij.toolwindow.DeviceCockpitToolWindowFactory"/>
         <projectConfigurable parentId="tools"
-                             instance="io.github.dkej123.devicecockpit.intellij.settings.AdbToolboxSettingsConfigurable"
+                             instance="io.github.dkej123.devicecockpit.intellij.settings.DeviceCockpitSettingsConfigurable"
                              id="dev.acme.adbtoolbox.settings"
                              displayName="Device Cockpit"/>
         <notificationGroup id="ADB Toolbox Diagnostics" displayType="BALLOON"/>

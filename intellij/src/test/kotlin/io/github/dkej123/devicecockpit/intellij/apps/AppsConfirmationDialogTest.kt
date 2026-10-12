@@ -20,7 +20,7 @@ class AppsConfirmationDialogTest : BasePlatformTestCase() {
 
         // An opaque button would paint a square red block behind the rounded IDE button.
         assertFalse(button.isOpaque)
-        assertEquals(io.github.dkej123.devicecockpit.intellij.ui.common.AdbToolboxTheme.Colors.red, button.getClientProperty("JButton.backgroundColor"))
+        assertEquals(io.github.dkej123.devicecockpit.intellij.ui.common.DeviceCockpitTheme.Colors.red, button.getClientProperty("JButton.backgroundColor"))
         assertEquals(Color.WHITE, button.getClientProperty("JButton.textColor"))
         assertEquals(Color.WHITE, button.foreground)
     }

@@ -15,7 +15,7 @@ import io.github.dkej123.devicecockpit.domain.foreground.ProcessInfo
 import io.github.dkej123.devicecockpit.domain.foreground.RuntimePermission
 import io.github.dkej123.devicecockpit.domain.packages.AppIcon
 import io.github.dkej123.devicecockpit.intellij.apps.DashedTopBorder
-import io.github.dkej123.devicecockpit.intellij.ui.common.AdbToolboxTheme
+import io.github.dkej123.devicecockpit.intellij.ui.common.DeviceCockpitTheme
 import io.github.dkej123.devicecockpit.intellij.ui.common.AppIconImages
 import io.github.dkej123.devicecockpit.intellij.ui.common.DesignButton
 import io.github.dkej123.devicecockpit.intellij.ui.common.DesignButtonStyle
@@ -70,37 +70,37 @@ class CurrentAppSection(
 
     private val tile = IconTile()
     private val labelLabel = JBLabel("").apply {
-        font = AdbToolboxTheme.Typography.body.deriveFont(Font.BOLD, JBUIScale.scale(12f))
-        foreground = AdbToolboxTheme.Colors.text
+        font = DeviceCockpitTheme.Typography.body.deriveFont(Font.BOLD, JBUIScale.scale(12f))
+        foreground = DeviceCockpitTheme.Colors.text
     }
     private val tagLabel = TagLabel()
     private val packageLabel = JBLabel("").apply {
-        font = AdbToolboxTheme.Typography.mono.deriveFont(JBUIScale.scale(9.5f))
-        foreground = AdbToolboxTheme.Colors.textFaint
+        font = DeviceCockpitTheme.Typography.mono.deriveFont(JBUIScale.scale(9.5f))
+        foreground = DeviceCockpitTheme.Colors.textFaint
     }
     private val identityRow = flexRow(
-        AdbToolboxTheme.Spacing.s4,
+        DeviceCockpitTheme.Spacing.s4,
         tile,
         JPanel().apply {
             isOpaque = false
             layout = BoxLayout(this, BoxLayout.Y_AXIS)
-            add(flexRow(AdbToolboxTheme.Spacing.s3, labelLabel, tagLabel).apply { alignmentX = Component.LEFT_ALIGNMENT })
+            add(flexRow(DeviceCockpitTheme.Spacing.s3, labelLabel, tagLabel).apply { alignmentX = Component.LEFT_ALIGNMENT })
             add(packageLabel.apply { alignmentX = Component.LEFT_ALIGNMENT })
         },
-    ).apply { border = JBUI.Borders.empty(0, AdbToolboxTheme.Spacing.sectionInset) }
+    ).apply { border = JBUI.Borders.empty(0, DeviceCockpitTheme.Spacing.sectionInset) }
 
     private val activityValue = factValue()
     private val versionValue = factValue()
     private val processValue = factValue()
     private val targetValue = factValue()
     private val activityCell = factCell("Activity", activityValue)
-    private val factsGrid = JPanel(GridLayout(0, 3, AdbToolboxTheme.Spacing.s4, AdbToolboxTheme.Spacing.s4)).apply {
+    private val factsGrid = JPanel(GridLayout(0, 3, DeviceCockpitTheme.Spacing.s4, DeviceCockpitTheme.Spacing.s4)).apply {
         isOpaque = false
         add(factCell("Version", versionValue))
         add(factCell("Process", processValue))
         add(factCell("Target SDK", targetValue))
     }
-    private val factsPanel = JPanel(BorderLayout(0, AdbToolboxTheme.Spacing.s4)).apply {
+    private val factsPanel = JPanel(BorderLayout(0, DeviceCockpitTheme.Spacing.s4)).apply {
         isOpaque = false
         alignmentX = Component.LEFT_ALIGNMENT
         border = JBUI.Borders.empty(2, 10, 6, 10)
@@ -140,10 +140,10 @@ class CurrentAppSection(
     private val actionRow = run {
         val spacer = flexSpacer()
         flexRow(
-            AdbToolboxTheme.Spacing.s3, primaryButton, killButton, processDeathButton, flexRow(0, resetPermissionsButton, resetMoreButton), spacer, detailsLink,
+            DeviceCockpitTheme.Spacing.s3, primaryButton, killButton, processDeathButton, flexRow(0, resetPermissionsButton, resetMoreButton), spacer, detailsLink,
             fill = spacer,
         )
-    }.apply { border = JBUI.Borders.empty(0, AdbToolboxTheme.Spacing.sectionInset) }
+    }.apply { border = JBUI.Borders.empty(0, DeviceCockpitTheme.Spacing.sectionInset) }
 
     private val clearDataButton = DesignButton("Clear data", DesignButtonStyle.DANGER).apply {
         toolTipText = "Deletes databases, prefs and caches. Cannot be undone."
@@ -156,10 +156,10 @@ class CurrentAppSection(
     private val destructiveZone = run {
         val spacer = flexSpacer()
         flexRow(
-            AdbToolboxTheme.Spacing.s3,
+            DeviceCockpitTheme.Spacing.s3,
             JBLabel("DESTRUCTIVE").apply {
-                font = AdbToolboxTheme.Typography.groupLabel
-                foreground = AdbToolboxTheme.Colors.textFaint
+                font = DeviceCockpitTheme.Typography.groupLabel
+                foreground = DeviceCockpitTheme.Colors.textFaint
             },
             spacer,
             clearDataButton,
@@ -168,41 +168,41 @@ class CurrentAppSection(
         )
     }.apply {
         border = BorderFactory.createCompoundBorder(
-            JBUI.Borders.empty(0, AdbToolboxTheme.Spacing.sectionInset),
+            JBUI.Borders.empty(0, DeviceCockpitTheme.Spacing.sectionInset),
             BorderFactory.createCompoundBorder(
-                DashedTopBorder(AdbToolboxTheme.Colors.border),
-                JBUI.Borders.empty(AdbToolboxTheme.Spacing.s4, AdbToolboxTheme.Spacing.sectionInset, 0, 0),
+                DashedTopBorder(DeviceCockpitTheme.Colors.border),
+                JBUI.Borders.empty(DeviceCockpitTheme.Spacing.s4, DeviceCockpitTheme.Spacing.sectionInset, 0, 0),
             ),
         )
     }
 
     // Home / lock / error / reading collapse to the identity and a note row.
     private val noteLabel = JBLabel("").apply {
-        font = AdbToolboxTheme.Typography.caption.deriveFont(JBUIScale.scale(10.5f))
-        foreground = AdbToolboxTheme.Colors.textDim
+        font = DeviceCockpitTheme.Typography.caption.deriveFont(JBUIScale.scale(10.5f))
+        foreground = DeviceCockpitTheme.Colors.textDim
     }
     private val noteLink = DesignButton("", DesignButtonStyle.LINK)
     private var noteAction: () -> Unit = {}
     private val noteRow = run {
         val spacer = flexSpacer()
-        flexRow(AdbToolboxTheme.Spacing.s4, noteLabel, spacer, noteLink, fill = spacer)
+        flexRow(DeviceCockpitTheme.Spacing.s4, noteLabel, spacer, noteLink, fill = spacer)
     }.apply {
-        border = JBUI.Borders.empty(0, AdbToolboxTheme.Spacing.sectionInset)
+        border = JBUI.Borders.empty(0, DeviceCockpitTheme.Spacing.sectionInset)
         noteLink.addActionListener { noteAction() }
     }
     private val errorTitle = JBLabel("Couldn’t read the foreground app").apply {
-        font = AdbToolboxTheme.Typography.body.deriveFont(Font.BOLD, JBUIScale.scale(11.5f))
-        foreground = AdbToolboxTheme.Colors.text
+        font = DeviceCockpitTheme.Typography.body.deriveFont(Font.BOLD, JBUIScale.scale(11.5f))
+        foreground = DeviceCockpitTheme.Colors.text
     }
     private val errorReason = JBLabel("").apply {
-        font = AdbToolboxTheme.Typography.mono.deriveFont(JBUIScale.scale(9.5f))
-        foreground = AdbToolboxTheme.Colors.textFaint
+        font = DeviceCockpitTheme.Typography.mono.deriveFont(JBUIScale.scale(9.5f))
+        foreground = DeviceCockpitTheme.Colors.textFaint
     }
     private val errorBlock = JPanel().apply {
         isOpaque = false
         layout = BoxLayout(this, BoxLayout.Y_AXIS)
         alignmentX = Component.LEFT_ALIGNMENT
-        border = JBUI.Borders.empty(0, AdbToolboxTheme.Spacing.sectionInset)
+        border = JBUI.Borders.empty(0, DeviceCockpitTheme.Spacing.sectionInset)
         add(errorTitle)
         add(errorReason)
     }
@@ -210,7 +210,7 @@ class CurrentAppSection(
         isOpaque = false
         layout = BoxLayout(this, BoxLayout.Y_AXIS)
         alignmentX = Component.LEFT_ALIGNMENT
-        border = JBUI.Borders.empty(0, AdbToolboxTheme.Spacing.sectionInset)
+        border = JBUI.Borders.empty(0, DeviceCockpitTheme.Spacing.sectionInset)
         listOf(46, 70).forEach { add(Bar(it)); add(javax.swing.Box.createVerticalStrut(JBUIScale.scale(6))) }
     }
 
@@ -347,7 +347,7 @@ class CurrentAppSection(
         shownProcess = process
         showProcessTime()
         if (process?.measuredAt != null && process.runningFor != null) processTicker.start() else processTicker.stop()
-        processValue.foreground = if (process == null) AdbToolboxTheme.Colors.textFaint else AdbToolboxTheme.Colors.text
+        processValue.foreground = if (process == null) DeviceCockpitTheme.Colors.textFaint else DeviceCockpitTheme.Colors.text
         targetValue.text = details?.targetSdk?.toString() ?: "—"
         targetValue.toolTipText = details?.let { "targetSdkVersion ${it.targetSdk} · minSdk ${it.minSdk}" }
 
@@ -430,15 +430,15 @@ class CurrentAppSection(
         const val UNINSTALL_TOOLTIP = "Removes the app and all its data. Cannot be undone."
 
         fun factValue() = JBLabel("—").apply {
-            font = AdbToolboxTheme.Typography.mono.deriveFont(JBUIScale.scale(11f))
-            foreground = AdbToolboxTheme.Colors.text
+            font = DeviceCockpitTheme.Typography.mono.deriveFont(JBUIScale.scale(11f))
+            foreground = DeviceCockpitTheme.Colors.text
         }
 
         fun factCell(key: String, value: JBLabel): JPanel = JPanel(BorderLayout()).apply {
             isOpaque = false
             add(JBLabel(key.uppercase()).apply {
-                font = AdbToolboxTheme.Typography.groupLabel
-                foreground = AdbToolboxTheme.Colors.textFaint
+                font = DeviceCockpitTheme.Typography.groupLabel
+                foreground = DeviceCockpitTheme.Colors.textFaint
                 getAccessibleContext().accessibleName = key
             }, BorderLayout.NORTH)
             add(value, BorderLayout.CENTER)
@@ -471,8 +471,8 @@ class CurrentAppSection(
             this.icon = icon?.takeIf { AppIconImages.decode(it) != null }
             this.dashed = dashed
             this.dimmed = dimmed
-            fill = if (dashed) null else if (debuggable) AdbToolboxTheme.Colors.brandBg else AdbToolboxTheme.Colors.header
-            outline = if (dashed) null else if (debuggable) AdbToolboxTheme.Colors.brandBorder else AdbToolboxTheme.Colors.border
+            fill = if (dashed) null else if (debuggable) DeviceCockpitTheme.Colors.brandBg else DeviceCockpitTheme.Colors.header
+            outline = if (dashed) null else if (debuggable) DeviceCockpitTheme.Colors.brandBorder else DeviceCockpitTheme.Colors.border
             repaint()
         }
 
@@ -484,7 +484,7 @@ class CurrentAppSection(
                 val current = icon
                 when {
                     dashed -> {
-                        g2.color = AdbToolboxTheme.Colors.borderStrong
+                        g2.color = DeviceCockpitTheme.Colors.borderStrong
                         g2.stroke = BasicStroke(JBUIScale.scale(1.5f), BasicStroke.CAP_BUTT, BasicStroke.JOIN_ROUND, 1f, floatArrayOf(JBUIScale.scale(3f), JBUIScale.scale(2f)), 0f)
                         g2.drawRoundRect(1, 1, width - 3, height - 3, JBUIScale.scale(12), JBUIScale.scale(12))
                     }
@@ -500,7 +500,7 @@ class CurrentAppSection(
     /** The Apps-list "debug" tag, or the connection-chip-style "system" tag. */
     private class TagLabel : JBLabel("") {
         init {
-            font = AdbToolboxTheme.Typography.groupLabel.deriveFont(Font.BOLD, JBUIScale.scale(9f))
+            font = DeviceCockpitTheme.Typography.groupLabel.deriveFont(Font.BOLD, JBUIScale.scale(9f))
             border = JBUI.Borders.empty(1, 4)
             isVisible = false
         }
@@ -508,7 +508,7 @@ class CurrentAppSection(
         fun set(tag: String?) {
             isVisible = tag != null
             text = tag.orEmpty()
-            foreground = if (tag == "debug") AdbToolboxTheme.Colors.brand else AdbToolboxTheme.Colors.textDim
+            foreground = if (tag == "debug") DeviceCockpitTheme.Colors.brand else DeviceCockpitTheme.Colors.textDim
             toolTipText = when (tag) {
                 "debug" -> "android:debuggable=true — debugger, run-as and Shared prefs work"
                 "system" -> "Preinstalled on the system image"
@@ -524,10 +524,10 @@ class CurrentAppSection(
                     g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
                     val debug = text == "debug"
                     if (debug) {
-                        g2.color = AdbToolboxTheme.Colors.brandBg
+                        g2.color = DeviceCockpitTheme.Colors.brandBg
                         g2.fillRoundRect(0, 0, width - 1, height - 1, JBUIScale.scale(6), JBUIScale.scale(6))
                     }
-                    g2.color = if (debug) AdbToolboxTheme.Colors.brandBorder else AdbToolboxTheme.Colors.border
+                    g2.color = if (debug) DeviceCockpitTheme.Colors.brandBorder else DeviceCockpitTheme.Colors.border
                     g2.drawRoundRect(0, 0, width - 1, height - 1, JBUIScale.scale(6), JBUIScale.scale(6))
                 } finally {
                     g2.dispose()
@@ -548,7 +548,7 @@ class CurrentAppSection(
             val g2 = g.create() as Graphics2D
             try {
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
-                g2.color = AdbToolboxTheme.Colors.header
+                g2.color = DeviceCockpitTheme.Colors.header
                 g2.fillRoundRect(0, 0, width * percent / 100, height, JBUIScale.scale(6), JBUIScale.scale(6))
             } finally {
                 g2.dispose()

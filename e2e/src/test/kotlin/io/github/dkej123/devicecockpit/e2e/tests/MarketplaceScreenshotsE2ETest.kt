@@ -20,7 +20,7 @@ import javax.imageio.ImageIO
  * JetBrains Marketplace screenshots (docs/marketplace.md), taken from the real Android Studio and
  * emulator. Not a regression test: tagged `marketplace` and excluded from the default run; started
  * by `release/screenshots.sh`. Every picture is the whole IDE window: a Kotlin file in the editor on
- * the left, the full ADB Toolbox tool window on the right — one per view and per App details tab,
+ * the left, the full Device Cockpit tool window on the right — one per view and per App details tab,
  * saved as `<nn>-<scene>-<theme>.png` into `E2E_SCREENSHOT_DIR`. All in Islands Dark (Studio's
  * default): switching to Islands Light at runtime leaves the editor island dark until a restart.
  */
@@ -222,6 +222,7 @@ class MarketplaceScreenshotsE2ETest : E2eTest() {
     /** Wide enough for the device facts grid, three-column toggle tiles and the App details tabs. */
     private fun widenToolWindow() = studio.robot.runJs(
         Studio.PROJECT + """
+        // "ADB Toolbox" is the tool window id, kept for compatibility (DeviceCockpitToolWindowFactory.TOOL_WINDOW_ID).
         var tw = com.intellij.openapi.wm.ToolWindowManager.getInstance(project).getToolWindow("ADB Toolbox");
         var c = tw.getComponent();
         tw.stretchWidth($TOOL_WINDOW_WIDTH - c.getWidth());
@@ -315,7 +316,7 @@ class MarketplaceScreenshotsE2ETest : E2eTest() {
         val BAD_STATE = listOf("Loading", "timed out", "Timed out", "Querying", "Reading installed APK")
 
         /** The E2E fixture app: exported deep links, runtime permissions, debuggable data dir. */
-        const val SAMPLE_APP = "dev.acme.adbtoolbox.e2efixture"
+        const val SAMPLE_APP = "dev.acme.devicecockpit.e2efixture"
         const val DATA_DIR = "/data/data/$SAMPLE_APP"
 
         /** An app with a launcher activity, started so Logcat has something real to show. */

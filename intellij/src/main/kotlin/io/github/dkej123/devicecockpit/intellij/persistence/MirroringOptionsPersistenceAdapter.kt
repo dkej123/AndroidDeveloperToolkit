@@ -62,7 +62,7 @@ internal fun resolveMirroringOptionsState(state: MirroringOptionsPersistenceStat
  * pattern: reads/writes only the [MirroringOptionsPersistenceState] slice of [projectState].
  */
 class MirroringOptionsPersistenceAdapter(
-    private val projectState: AdbToolboxProjectState,
+    private val projectState: DeviceCockpitProjectState,
 ) : MirroringOptionsRepository {
 
     override suspend fun readOptions(): MirroringOptions = readOptionsNow()

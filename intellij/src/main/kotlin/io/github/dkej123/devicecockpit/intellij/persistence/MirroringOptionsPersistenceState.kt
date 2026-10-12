@@ -1,7 +1,7 @@
 package io.github.dkej123.devicecockpit.intellij.persistence
 
 /**
- * The mirroring-options slice of [AdbToolboxProjectState] (task 040), matching
+ * The mirroring-options slice of [DeviceCockpitProjectState] (task 040), matching
  * [SettingsPersistenceState]'s versioned-bean shape: a plain mutable bean (public `var`s, no-arg
  * constructor) as IntelliJ's `XmlSerializer` requires, with [schemaVersion] letting
  * [migrateMirroringOptionsState] recognize and upgrade an older persisted shape rather than

@@ -14,13 +14,13 @@ import io.github.dkej123.devicecockpit.domain.settings.SettingsState
 class SettingsPersistenceAdapterTest : BasePlatformTestCase() {
 
     fun `test a fresh project has default settings`() {
-        val adapter = SettingsPersistenceAdapter(AdbToolboxProjectState())
+        val adapter = SettingsPersistenceAdapter(DeviceCockpitProjectState())
 
         assertEquals(SettingsState.DEFAULT, adapter.readSettingsNow())
     }
 
     fun `test a written settings state round-trips back out`() {
-        val adapter = SettingsPersistenceAdapter(AdbToolboxProjectState())
+        val adapter = SettingsPersistenceAdapter(DeviceCockpitProjectState())
         val settings = SettingsState(
             adbPathOverride = "/opt/tools/adb",
             scrcpyPathOverride = "/opt/tools/scrcpy",
@@ -36,7 +36,7 @@ class SettingsPersistenceAdapterTest : BasePlatformTestCase() {
     }
 
     fun `test writing a fresh SettingsState clears previously written overrides`() {
-        val adapter = SettingsPersistenceAdapter(AdbToolboxProjectState())
+        val adapter = SettingsPersistenceAdapter(DeviceCockpitProjectState())
         adapter.writeSettingsNow(SettingsState(adbPathOverride = "/opt/tools/adb"))
 
         adapter.writeSettingsNow(SettingsState.DEFAULT)
@@ -45,33 +45,33 @@ class SettingsPersistenceAdapterTest : BasePlatformTestCase() {
     }
 
     fun `test loadState composes via XmlSerializerUtil so a re-loaded settings state survives`() {
-        val projectState = AdbToolboxProjectState()
+        val projectState = DeviceCockpitProjectState()
         val adapter = SettingsPersistenceAdapter(projectState)
         val settings = SettingsState(adbPathOverride = "/opt/tools/adb", logcatBufferSizeKb = 2048)
         adapter.writeSettingsNow(settings)
 
-        val reloaded = AdbToolboxProjectState()
+        val reloaded = DeviceCockpitProjectState()
         reloaded.loadState(projectState.state)
 
         assertEquals(settings, SettingsPersistenceAdapter(reloaded).readSettingsNow())
     }
 
-    fun `test AdbToolboxProjectState carrying the settings slice is registered at project scope, not application scope`() {
-        val serviceAnnotation = AdbToolboxProjectState::class.java.getAnnotation(Service::class.java)
+    fun `test DeviceCockpitProjectState carrying the settings slice is registered at project scope, not application scope`() {
+        val serviceAnnotation = DeviceCockpitProjectState::class.java.getAnnotation(Service::class.java)
 
         assertNotNull(serviceAnnotation)
         assertEquals(listOf(Service.Level.PROJECT), serviceAnnotation.value.toList())
     }
 
     fun `test settings persist against the real project-scoped service instance`() {
-        val projectState = project.service<AdbToolboxProjectState>()
+        val projectState = project.service<DeviceCockpitProjectState>()
         val adapter = SettingsPersistenceAdapter(projectState)
 
         adapter.writeSettingsNow(SettingsState(captureDirectory = "/home/user/captures"))
 
         assertEquals(
             "/home/user/captures",
-            project.service<AdbToolboxProjectState>().state.settings.captureDirectory,
+            project.service<DeviceCockpitProjectState>().state.settings.captureDirectory,
         )
     }
 }

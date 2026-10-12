@@ -42,7 +42,7 @@ data class McpStatus(
  */
 @Service(Service.Level.APP)
 class McpServerService : Disposable {
-    private val settings get() = AdbToolboxAppSettings.getInstance()
+    private val settings get() = DeviceCockpitAppSettings.getInstance()
     private val projects = LinkedHashMap<Project, List<McpTool>>()
     private var activeProject: Project? = null
     private var core: McpServerCore? = null
@@ -175,8 +175,8 @@ class McpServerService : Disposable {
 /** Registers the project's MCP tools at startup when agents may connect (access not Off). */
 class McpStartupActivity : com.intellij.openapi.startup.ProjectActivity {
     override suspend fun execute(project: Project) {
-        if (AdbToolboxAppSettings.getInstance().mcpAccess != McpAccess.Off) {
-            project.service<io.github.dkej123.devicecockpit.intellij.composition.AdbToolboxProjectService>().registerMcpTools()
+        if (DeviceCockpitAppSettings.getInstance().mcpAccess != McpAccess.Off) {
+            project.service<io.github.dkej123.devicecockpit.intellij.composition.DeviceCockpitProjectService>().registerMcpTools()
         }
     }
 }

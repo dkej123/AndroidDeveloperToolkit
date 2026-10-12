@@ -127,7 +127,7 @@ class McpE2ETest : E2eTest() {
 
     private fun skillInstalledAnywhere(): Boolean {
         val home = File(System.getProperty("user.home"))
-        return listOf(".claude", ".codex", ".gemini").any { File(home, "$it/skills/adb-toolbox/SKILL.md").exists() }
+        return listOf(".claude", ".codex", ".gemini").any { File(home, "$it/skills/device-cockpit/SKILL.md").exists() }
     }
 
     /** Runs [js] in the IDE with `app`, the plugin's class loader `cl` and its app settings `s`. */
@@ -135,7 +135,7 @@ class McpE2ETest : E2eTest() {
         """
         var app = com.intellij.openapi.application.ApplicationManager.getApplication();
         var cl = com.intellij.ide.plugins.PluginManagerCore.getPlugin(com.intellij.openapi.extensions.PluginId.getId("com.github.dkwasniak.adbtoolbox")).getPluginClassLoader();
-        var s = app.getService(java.lang.Class.forName("io.github.dkej123.devicecockpit.intellij.mcp.AdbToolboxAppSettings", true, cl));
+        var s = app.getService(java.lang.Class.forName("io.github.dkej123.devicecockpit.intellij.mcp.DeviceCockpitAppSettings", true, cl));
         $js
         """.trimIndent(),
         false,

@@ -7,7 +7,7 @@ import io.github.dkej123.devicecockpit.domain.adb.FakeAdbTransport
 /**
  * [selectAdbTransport] needs no IntelliJ Platform API (it is pure, over two already-constructed
  * [io.github.dkej123.devicecockpit.domain.adb.AdbTransport]s) but is kept as a [BasePlatformTestCase] like
- * [AdbToolboxProjectServiceTest]: a plain JUnit 5 `@Test` class in this module is not discovered by
+ * [DeviceCockpitProjectServiceTest]: a plain JUnit 5 `@Test` class in this module is not discovered by
  * `:intellij:test`'s IntelliJ-Platform-aware test runner (`testFramework(TestFrameworkType.Platform)`,
  * task 007's ADR-0005-required Android-plugin compile dependency) — verified directly, not assumed.
  *

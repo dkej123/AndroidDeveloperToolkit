@@ -3,7 +3,7 @@ package io.github.dkej123.devicecockpit.intellij.persistence
 import io.github.dkej123.devicecockpit.domain.apps.PinnedPackagesPersistence
 
 /**
- * The pinned-apps slice of [AdbToolboxProjectState]: a plain `XmlSerializer` bean, kept separate
+ * The pinned-apps slice of [DeviceCockpitProjectState]: a plain `XmlSerializer` bean, kept separate
  * from [AppsSelectionState] because that slice is replaced wholesale on every selection write.
  */
 class PinnedAppsState {
@@ -23,7 +23,7 @@ internal fun resolvePinnedApps(state: PinnedAppsState): Set<String> {
 
 /** The `:intellij` [PinnedPackagesPersistence] adapter, mirroring [AppsSelectionPersistenceAdapter]. */
 class PinnedAppsPersistenceAdapter(
-    private val projectState: AdbToolboxProjectState,
+    private val projectState: DeviceCockpitProjectState,
 ) : PinnedPackagesPersistence {
 
     override suspend fun readPinnedPackages(): Set<String> = readNow()

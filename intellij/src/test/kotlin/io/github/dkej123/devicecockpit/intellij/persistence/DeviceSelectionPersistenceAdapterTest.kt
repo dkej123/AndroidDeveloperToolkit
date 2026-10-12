@@ -6,7 +6,7 @@ import io.github.dkej123.devicecockpit.domain.adb.DeviceSerial
 
 /**
  * Headless platform tests for task 009's persistence adapter — same `:intellij:test` sandbox as
- * [io.github.dkej123.devicecockpit.intellij.composition.AdbToolboxProjectServiceTest]/[io.github.dkej123.devicecockpit.intellij.composition.AdbTransportSelectionTest].
+ * [io.github.dkej123.devicecockpit.intellij.composition.DeviceCockpitProjectServiceTest]/[io.github.dkej123.devicecockpit.intellij.composition.AdbTransportSelectionTest].
  * Exercises [DeviceSelectionPersistenceAdapter.readSelectedSerialNow]/`writeSelectedSerialNow`
  * directly (plain, non-`suspend` functions) rather than the port's `suspend` methods — this
  * sandbox's older bundled coroutines runtime cannot resolve `suspend` calls compiled by this
@@ -18,13 +18,13 @@ import io.github.dkej123.devicecockpit.domain.adb.DeviceSerial
 class DeviceSelectionPersistenceAdapterTest : BasePlatformTestCase() {
 
     fun `test a fresh project has no persisted selection`() {
-        val adapter = DeviceSelectionPersistenceAdapter(AdbToolboxProjectState())
+        val adapter = DeviceSelectionPersistenceAdapter(DeviceCockpitProjectState())
 
         assertNull(adapter.readSelectedSerialNow())
     }
 
     fun `test a written serial round-trips back out`() {
-        val adapter = DeviceSelectionPersistenceAdapter(AdbToolboxProjectState())
+        val adapter = DeviceSelectionPersistenceAdapter(DeviceCockpitProjectState())
         val serial = DeviceSerial.of("R58N90ABCDE")
 
         adapter.writeSelectedSerialNow(serial)
@@ -33,7 +33,7 @@ class DeviceSelectionPersistenceAdapterTest : BasePlatformTestCase() {
     }
 
     fun `test writing null clears the persisted selection`() {
-        val adapter = DeviceSelectionPersistenceAdapter(AdbToolboxProjectState())
+        val adapter = DeviceSelectionPersistenceAdapter(DeviceCockpitProjectState())
         adapter.writeSelectedSerialNow(DeviceSerial.of("R58N90ABCDE"))
 
         adapter.writeSelectedSerialNow(null)
@@ -41,19 +41,19 @@ class DeviceSelectionPersistenceAdapterTest : BasePlatformTestCase() {
         assertNull(adapter.readSelectedSerialNow())
     }
 
-    fun `test AdbToolboxProjectState is a project-scoped singleton`() {
-        val first = project.service<AdbToolboxProjectState>()
-        val second = project.service<AdbToolboxProjectState>()
+    fun `test DeviceCockpitProjectState is a project-scoped singleton`() {
+        val first = project.service<DeviceCockpitProjectState>()
+        val second = project.service<DeviceCockpitProjectState>()
 
         assertSame(first, second)
     }
 
     fun `test loadState composes via XmlSerializerUtil so a re-loaded serial survives`() {
-        val projectState = AdbToolboxProjectState()
+        val projectState = DeviceCockpitProjectState()
         val adapter = DeviceSelectionPersistenceAdapter(projectState)
         adapter.writeSelectedSerialNow(DeviceSerial.of("R58N90ABCDE"))
 
-        val reloaded = AdbToolboxProjectState()
+        val reloaded = DeviceCockpitProjectState()
         reloaded.loadState(projectState.state)
 
         assertEquals(

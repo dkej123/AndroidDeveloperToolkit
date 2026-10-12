@@ -14,7 +14,7 @@ import io.github.dkej123.devicecockpit.domain.devicefacts.DeviceFactsSnapshot
 import io.github.dkej123.devicecockpit.domain.devicefacts.FakeClipboardPort
 import io.github.dkej123.devicecockpit.domain.dispatch.DispatcherProvider
 import io.github.dkej123.devicecockpit.domain.nav.ViewId
-import io.github.dkej123.devicecockpit.intellij.host.AdbToolboxHostPanel
+import io.github.dkej123.devicecockpit.intellij.host.DeviceCockpitHostPanel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -22,7 +22,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.isActive
 
 /**
- * Connects task 015's [DeviceFactsViewModel] to task 010's [AdbToolboxHostPanel] via
+ * Connects task 015's [DeviceFactsViewModel] to task 010's [DeviceCockpitHostPanel] via
  * [DeviceFactsCoordinator]. Kept as a [BasePlatformTestCase] like every other test in this module.
  * Exercises [DeviceFactsCoordinator.render] directly against constructed [DeviceFactsViewState]
  * values — the same "invoke the handler directly, don't depend on a real coroutine round trip"
@@ -39,7 +39,7 @@ class DeviceFactsCoordinatorTest : BasePlatformTestCase() {
         override val main = Dispatchers.EDT
     }
 
-    private fun coordinator(host: AdbToolboxHostPanel): DeviceFactsCoordinator {
+    private fun coordinator(host: DeviceCockpitHostPanel): DeviceFactsCoordinator {
         val dispatchers = TestDispatchers()
         val scope = CoroutineScope(SupervisorJob() + dispatchers.default)
         val selectedDeviceState = MutableStateFlow<SelectedDeviceState>(SelectedDeviceState.None)
@@ -54,7 +54,7 @@ class DeviceFactsCoordinatorTest : BasePlatformTestCase() {
     }
 
     fun `test construction registers the Device view into the host's active view host`() {
-        val host = AdbToolboxHostPanel()
+        val host = DeviceCockpitHostPanel()
 
         val coordinator = coordinator(host)
 
@@ -64,7 +64,7 @@ class DeviceFactsCoordinatorTest : BasePlatformTestCase() {
     }
 
     fun `test registering twice does not recreate the panel`() {
-        val host = AdbToolboxHostPanel()
+        val host = DeviceCockpitHostPanel()
         val first = coordinator(host)
 
         val second = coordinator(host)
@@ -75,7 +75,7 @@ class DeviceFactsCoordinatorTest : BasePlatformTestCase() {
     }
 
     fun `test rendering a Connected state updates the panel and enables Copy report`() {
-        val host = AdbToolboxHostPanel()
+        val host = DeviceCockpitHostPanel()
         val coordinator = coordinator(host)
         val snapshot = DeviceFactsSnapshot(
             serial = DeviceSerial.of("R58N90ABCDE"),
@@ -89,7 +89,7 @@ class DeviceFactsCoordinatorTest : BasePlatformTestCase() {
     }
 
     fun `test rendering NoDevice disables Copy report`() {
-        val host = AdbToolboxHostPanel()
+        val host = DeviceCockpitHostPanel()
         val coordinator = coordinator(host)
 
         coordinator.render(DeviceFactsViewState.NoDevice)
@@ -99,7 +99,7 @@ class DeviceFactsCoordinatorTest : BasePlatformTestCase() {
     }
 
     fun `test disposing the coordinator cancels its scope`() {
-        val host = AdbToolboxHostPanel()
+        val host = DeviceCockpitHostPanel()
         val dispatchers = TestDispatchers()
         val scope = CoroutineScope(SupervisorJob() + dispatchers.default)
         val selectedDeviceState = MutableStateFlow<SelectedDeviceState>(SelectedDeviceState.None)
@@ -118,7 +118,7 @@ class DeviceFactsCoordinatorTest : BasePlatformTestCase() {
     }
 
     fun `test the coordinator wires up against a real view model without a construction-time crash`() {
-        val host = AdbToolboxHostPanel()
+        val host = DeviceCockpitHostPanel()
 
         val coordinator = coordinator(host)
 

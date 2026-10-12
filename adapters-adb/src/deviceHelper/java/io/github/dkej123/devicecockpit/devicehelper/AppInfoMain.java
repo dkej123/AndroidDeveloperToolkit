@@ -43,6 +43,7 @@ import java.util.concurrent.Future;
  */
 public final class AppInfoMain {
 
+    // Protocol header kept from the pre-rename "ADB Toolbox" name for compatibility (the IDE side parses it).
     static final String HEADER = "ADBTOOLBOX-APPINFO 1";
     private static final int FLAG_DEBUGGABLE = 2;
     private static final int THREADS = 4;

@@ -5,7 +5,7 @@ import io.github.dkej123.devicecockpit.application.devicebar.DeviceBarIntent
 import io.github.dkej123.devicecockpit.application.devicebar.DeviceBarViewModel
 import io.github.dkej123.devicecockpit.application.devicebar.DeviceBarViewState
 import io.github.dkej123.devicecockpit.domain.dispatch.DispatcherProvider
-import io.github.dkej123.devicecockpit.intellij.host.AdbToolboxHostPanel
+import io.github.dkej123.devicecockpit.intellij.host.DeviceCockpitHostPanel
 import java.awt.BorderLayout
 import java.awt.Rectangle
 import kotlinx.coroutines.CoroutineScope
@@ -15,9 +15,9 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.withContext
 
 /**
- * Connects task 011's [DeviceBarViewModel] to task 010's [AdbToolboxHostPanel]:
- * [DeviceContextBarPanel] is mounted into [AdbToolboxHostPanel.deviceContextSlot], and
- * [DevicePickerListPanel] is shown as one bounded overlay in [AdbToolboxHostPanel.overlays] only
+ * Connects task 011's [DeviceBarViewModel] to task 010's [DeviceCockpitHostPanel]:
+ * [DeviceContextBarPanel] is mounted into [DeviceCockpitHostPanel.deviceContextSlot], and
+ * [DevicePickerListPanel] is shown as one bounded overlay in [DeviceCockpitHostPanel.overlays] only
  * while the picker is open.
  *
  * Follows [io.github.dkej123.devicecockpit.intellij.feedback.FeedbackOverlayCoordinator]'s established shape:
@@ -27,7 +27,7 @@ import kotlinx.coroutines.withContext
  * real coroutine round trip through this headless test sandbox.
  */
 class DeviceContextBarCoordinator(
-    host: AdbToolboxHostPanel,
+    host: DeviceCockpitHostPanel,
     private val viewModel: DeviceBarViewModel,
     private val scope: CoroutineScope,
     private val dispatchers: DispatcherProvider,

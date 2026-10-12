@@ -32,7 +32,7 @@ private const val LEGACY_DISPLAY_ROUTE = "display"
  * hang workaround).
  */
 class NavigationPersistenceAdapter(
-    private val projectState: AdbToolboxProjectState,
+    private val projectState: DeviceCockpitProjectState,
 ) : NavigationPersistence {
 
     override suspend fun readLastView(): ViewId? = readLastViewNow()

@@ -58,7 +58,7 @@ class LoopbackMcpHttpServer(
         }
         val threads = AtomicInteger()
         val pool = Executors.newFixedThreadPool(4) { runnable ->
-            Thread(runnable, "ADB Toolbox MCP ${threads.incrementAndGet()}").apply { isDaemon = true }
+            Thread(runnable, "Device Cockpit MCP ${threads.incrementAndGet()}").apply { isDaemon = true }
         }
         created.createContext(PATH) { exchange -> exchange.use { respond(it) } }
         created.executor = pool
@@ -81,7 +81,7 @@ class LoopbackMcpHttpServer(
         if (!originAllowed(exchange.requestHeaders.getFirst("Origin"))) return exchange.send(403, error("Origin not allowed"))
         if (!authorized(exchange.requestHeaders.getFirst("Authorization"))) {
             exchange.responseHeaders.add("WWW-Authenticate", "Bearer")
-            return exchange.send(401, error("Missing or wrong token — copy it from Settings › Tools › ADB Toolbox › AI agents"))
+            return exchange.send(401, error("Missing or wrong token — copy it from Settings › Tools › Device Cockpit › AI agents"))
         }
         val sessionId = exchange.requestHeaders.getFirst(SESSION_HEADER)
         when (exchange.requestMethod) {

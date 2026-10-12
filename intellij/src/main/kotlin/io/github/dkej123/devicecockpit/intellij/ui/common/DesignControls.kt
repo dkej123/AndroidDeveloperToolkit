@@ -55,16 +55,16 @@ class DesignButton(text: String, style: DesignButtonStyle) : JButton(text) {
 
     private fun applyStyle() {
         font = when (style) {
-            DesignButtonStyle.PRIMARY -> AdbToolboxTheme.Typography.body.deriveFont(Font.BOLD, JBUIScale.scale(11.5f))
-            DesignButtonStyle.SECONDARY -> AdbToolboxTheme.Typography.body.deriveFont(Font.PLAIN, JBUIScale.scale(11.5f))
-            DesignButtonStyle.DANGER -> AdbToolboxTheme.Typography.body.deriveFont(Font.BOLD, JBUIScale.scale(11f))
-            DesignButtonStyle.LINK -> AdbToolboxTheme.Typography.body.deriveFont(Font.BOLD, JBUIScale.scale(11f))
+            DesignButtonStyle.PRIMARY -> DeviceCockpitTheme.Typography.body.deriveFont(Font.BOLD, JBUIScale.scale(11.5f))
+            DesignButtonStyle.SECONDARY -> DeviceCockpitTheme.Typography.body.deriveFont(Font.PLAIN, JBUIScale.scale(11.5f))
+            DesignButtonStyle.DANGER -> DeviceCockpitTheme.Typography.body.deriveFont(Font.BOLD, JBUIScale.scale(11f))
+            DesignButtonStyle.LINK -> DeviceCockpitTheme.Typography.body.deriveFont(Font.BOLD, JBUIScale.scale(11f))
         }
         foreground = when (style) {
             DesignButtonStyle.PRIMARY -> Color.WHITE
-            DesignButtonStyle.SECONDARY -> AdbToolboxTheme.Colors.text
-            DesignButtonStyle.DANGER -> AdbToolboxTheme.Colors.red
-            DesignButtonStyle.LINK -> AdbToolboxTheme.Colors.accent
+            DesignButtonStyle.SECONDARY -> DeviceCockpitTheme.Colors.text
+            DesignButtonStyle.DANGER -> DeviceCockpitTheme.Colors.red
+            DesignButtonStyle.LINK -> DeviceCockpitTheme.Colors.accent
         }
         border = EmptyBorder(0, 0, 0, 0)
         revalidate()
@@ -81,9 +81,9 @@ class DesignButton(text: String, style: DesignButtonStyle) : JButton(text) {
 
     private val controlHeight: Int
         get() = when (style) {
-            DesignButtonStyle.PRIMARY -> AdbToolboxTheme.Sizes.primaryButton
-            DesignButtonStyle.SECONDARY -> AdbToolboxTheme.Sizes.secondaryButton
-            DesignButtonStyle.DANGER -> AdbToolboxTheme.Sizes.field
+            DesignButtonStyle.PRIMARY -> DeviceCockpitTheme.Sizes.primaryButton
+            DesignButtonStyle.SECONDARY -> DeviceCockpitTheme.Sizes.secondaryButton
+            DesignButtonStyle.DANGER -> DeviceCockpitTheme.Sizes.field
             DesignButtonStyle.LINK -> getFontMetrics(font).height + JBUIScale.scale(2)
         }
 
@@ -101,7 +101,7 @@ class DesignButton(text: String, style: DesignButtonStyle) : JButton(text) {
         val g2 = g.create() as Graphics2D
         try {
             if (!isEnabled) {
-                g2.composite = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, AdbToolboxTheme.States.disabledOpacity)
+                g2.composite = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, DeviceCockpitTheme.States.disabledOpacity)
             }
             super.paint(g2)
         } finally {
@@ -114,37 +114,37 @@ class DesignButton(text: String, style: DesignButtonStyle) : JButton(text) {
         try {
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
             g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON)
-            val arc = (AdbToolboxTheme.Radii.button * 2).toFloat()
+            val arc = (DeviceCockpitTheme.Radii.button * 2).toFloat()
             val stroke = JBUIScale.scale(1f)
             val outline = RoundRectangle2D.Float(stroke / 2, stroke / 2, width - stroke, height - stroke, arc, arc)
             val hovered = isEnabled && model.isRollover
             when (style) {
                 DesignButtonStyle.PRIMARY -> {
-                    g2.color = AdbToolboxTheme.Colors.accent
+                    g2.color = DeviceCockpitTheme.Colors.accent
                     g2.fill(RoundRectangle2D.Float(0f, 0f, width.toFloat(), height.toFloat(), arc, arc))
                 }
                 DesignButtonStyle.SECONDARY -> {
                     if (hovered) {
-                        g2.color = AdbToolboxTheme.Colors.hover
+                        g2.color = DeviceCockpitTheme.Colors.hover
                         g2.fill(outline)
                     }
-                    g2.color = AdbToolboxTheme.Colors.borderStrong
+                    g2.color = DeviceCockpitTheme.Colors.borderStrong
                     g2.stroke = BasicStroke(stroke)
                     g2.draw(outline)
                 }
                 DesignButtonStyle.DANGER -> {
                     if (hovered) {
-                        g2.color = AdbToolboxTheme.Colors.redBg
+                        g2.color = DeviceCockpitTheme.Colors.redBg
                         g2.fill(outline)
                     }
-                    g2.color = AdbToolboxTheme.Colors.redBorder
+                    g2.color = DeviceCockpitTheme.Colors.redBorder
                     g2.stroke = BasicStroke(stroke)
                     g2.draw(outline)
                 }
                 DesignButtonStyle.LINK -> Unit
             }
             if (isFocusOwner && style != DesignButtonStyle.LINK) {
-                g2.color = AdbToolboxTheme.Colors.accent
+                g2.color = DeviceCockpitTheme.Colors.accent
                 g2.stroke = BasicStroke(stroke)
                 g2.draw(outline)
             }
@@ -295,7 +295,7 @@ class VerticalStackLayout(private val gap: () -> Int) : java.awt.LayoutManager {
 }
 
 /** A transparent full-width [VerticalStackLayout] panel with the 6px row gap. */
-fun verticalStack(vararg children: Component): JPanel = object : JPanel(VerticalStackLayout { AdbToolboxTheme.Spacing.s3 }) {
+fun verticalStack(vararg children: Component): JPanel = object : JPanel(VerticalStackLayout { DeviceCockpitTheme.Spacing.s3 }) {
     override fun getMaximumSize(): Dimension = Dimension(Int.MAX_VALUE, preferredSize.height)
 }.apply {
     isOpaque = false
@@ -377,7 +377,7 @@ class CenteredWrappingText(
 open class RoundedSurface(
     var fill: Color?,
     var outline: Color?,
-    private val radius: () -> Int = { AdbToolboxTheme.Radii.button },
+    private val radius: () -> Int = { DeviceCockpitTheme.Radii.button },
 ) : JPanel() {
     init {
         isOpaque = false
@@ -416,39 +416,39 @@ object DesignSections {
         isOpaque = false
         alignmentX = Component.LEFT_ALIGNMENT
         border = javax.swing.BorderFactory.createCompoundBorder(
-            javax.swing.BorderFactory.createMatteBorder(0, 0, 1, 0, AdbToolboxTheme.Colors.border),
+            javax.swing.BorderFactory.createMatteBorder(0, 0, 1, 0, DeviceCockpitTheme.Colors.border),
             JBUI.Borders.empty(10, 0, 12, 0),
         )
         children.forEachIndexed { index, child ->
-            if (index > 0) add(Box.createVerticalStrut(AdbToolboxTheme.Spacing.s3))
+            if (index > 0) add(Box.createVerticalStrut(DeviceCockpitTheme.Spacing.s3))
             if (child is JComponent) child.alignmentX = Component.LEFT_ALIGNMENT
             add(child)
         }
     }
 
     fun titleLabel(text: String): JBLabel = JBLabel(text).apply {
-        font = AdbToolboxTheme.Typography.sectionTitle
-        foreground = AdbToolboxTheme.Colors.text
+        font = DeviceCockpitTheme.Typography.sectionTitle
+        foreground = DeviceCockpitTheme.Colors.text
     }
 
     fun metaLabel(text: String = "—", size: Float = 10f): JBLabel = JBLabel(text).apply {
-        font = AdbToolboxTheme.Typography.mono.deriveFont(JBUIScale.scale(size))
-        foreground = AdbToolboxTheme.Colors.textFaint
+        font = DeviceCockpitTheme.Typography.mono.deriveFont(JBUIScale.scale(size))
+        foreground = DeviceCockpitTheme.Colors.textFaint
     }
 
     fun header(title: Component, trailing: Component?): JPanel {
         val row = if (trailing != null) {
             val spacer = flexSpacer()
-            flexRow(AdbToolboxTheme.Spacing.s4, title, spacer, trailing, fill = spacer)
+            flexRow(DeviceCockpitTheme.Spacing.s4, title, spacer, trailing, fill = spacer)
         } else {
-            flexRow(AdbToolboxTheme.Spacing.s4, title)
+            flexRow(DeviceCockpitTheme.Spacing.s4, title)
         }
-        return row.apply { border = JBUI.Borders.empty(0, AdbToolboxTheme.Spacing.sectionInset) }
+        return row.apply { border = JBUI.Borders.empty(0, DeviceCockpitTheme.Spacing.sectionInset) }
     }
 
     fun helpText(text: String): WrappingText =
-        WrappingText(text, AdbToolboxTheme.Typography.caption, AdbToolboxTheme.Colors.textFaint).apply {
-            border = JBUI.Borders.empty(0, AdbToolboxTheme.Spacing.sectionInset, AdbToolboxTheme.Spacing.s1, AdbToolboxTheme.Spacing.sectionInset)
+        WrappingText(text, DeviceCockpitTheme.Typography.caption, DeviceCockpitTheme.Colors.textFaint).apply {
+            border = JBUI.Borders.empty(0, DeviceCockpitTheme.Spacing.sectionInset, DeviceCockpitTheme.Spacing.s1, DeviceCockpitTheme.Spacing.sectionInset)
         }
 
     /** Makes [section] collapsible from its [title]; see [CollapsibleSection]. */
@@ -461,7 +461,7 @@ object DesignSections {
 
     /** Applies the section's 10px horizontal inset to a row. */
     fun inset(component: JComponent): JComponent = component.apply {
-        border = JBUI.Borders.empty(0, AdbToolboxTheme.Spacing.sectionInset)
+        border = JBUI.Borders.empty(0, DeviceCockpitTheme.Spacing.sectionInset)
         alignmentX = Component.LEFT_ALIGNMENT
     }
 }

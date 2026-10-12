@@ -12,13 +12,13 @@ import io.github.dkej123.devicecockpit.domain.logcat.LogcatPersistedControls
 class LogcatControlsPersistenceAdapterTest : BasePlatformTestCase() {
 
     fun `test a fresh project has the default controls`() {
-        val adapter = LogcatControlsPersistenceAdapter(AdbToolboxProjectState())
+        val adapter = LogcatControlsPersistenceAdapter(DeviceCockpitProjectState())
 
         assertEquals(LogcatPersistedControls(), adapter.readNow())
     }
 
     fun `test written controls round-trip back out`() {
-        val adapter = LogcatControlsPersistenceAdapter(AdbToolboxProjectState())
+        val adapter = LogcatControlsPersistenceAdapter(DeviceCockpitProjectState())
         val controls = LogcatPersistedControls(minSeverity = LogSeverity.WARN, packageFilterOn = false, wrap = true)
 
         adapter.writeNow(controls)
@@ -27,7 +27,7 @@ class LogcatControlsPersistenceAdapterTest : BasePlatformTestCase() {
     }
 
     fun `test a null minimum severity round-trips as no floor`() {
-        val adapter = LogcatControlsPersistenceAdapter(AdbToolboxProjectState())
+        val adapter = LogcatControlsPersistenceAdapter(DeviceCockpitProjectState())
         adapter.writeNow(LogcatPersistedControls(minSeverity = LogSeverity.ERROR))
 
         adapter.writeNow(LogcatPersistedControls(minSeverity = null))
@@ -36,19 +36,19 @@ class LogcatControlsPersistenceAdapterTest : BasePlatformTestCase() {
     }
 
     fun `test loadState composes via XmlSerializerUtil so reloaded controls survive`() {
-        val projectState = AdbToolboxProjectState()
+        val projectState = DeviceCockpitProjectState()
         val adapter = LogcatControlsPersistenceAdapter(projectState)
         val controls = LogcatPersistedControls(minSeverity = LogSeverity.INFO, packageFilterOn = false, wrap = true)
         adapter.writeNow(controls)
 
-        val reloaded = AdbToolboxProjectState()
+        val reloaded = DeviceCockpitProjectState()
         reloaded.loadState(projectState.state)
 
         assertEquals(controls, LogcatControlsPersistenceAdapter(reloaded).readNow())
     }
 
     fun `test an unrecognized severity name degrades to no floor rather than failing the whole read`() {
-        val projectState = AdbToolboxProjectState()
+        val projectState = DeviceCockpitProjectState()
         projectState.state.logcatControls = LogcatControlsPersistenceState().apply {
             minSeverityName = "NOT_A_REAL_LEVEL"
             packageFilterOn = false
@@ -61,7 +61,7 @@ class LogcatControlsPersistenceAdapterTest : BasePlatformTestCase() {
     }
 
     fun `test an older schema version degrades to defaults rather than misinterpreting stale data`() {
-        val projectState = AdbToolboxProjectState()
+        val projectState = DeviceCockpitProjectState()
         projectState.state.logcatControls = LogcatControlsPersistenceState().apply {
             schemaVersion = LogcatControlsPersistenceState.CURRENT_SCHEMA_VERSION + 1
             minSeverityName = "ERROR"
@@ -71,7 +71,7 @@ class LogcatControlsPersistenceAdapterTest : BasePlatformTestCase() {
     }
 
     fun `test this adapter never touches the network slice`() {
-        val projectState = AdbToolboxProjectState()
+        val projectState = DeviceCockpitProjectState()
         val networkAdapter = NetworkPersistenceAdapter(projectState)
         networkAdapter.writeRecentsNow(
             listOf(

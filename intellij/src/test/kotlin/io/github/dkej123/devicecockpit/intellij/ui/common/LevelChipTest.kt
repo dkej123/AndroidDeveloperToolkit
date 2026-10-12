@@ -22,8 +22,8 @@ class LevelChipTest : BasePlatformTestCase() {
         chip.doClick()
 
         assertTrue(chip.isSelected)
-        assertEquals(AdbToolboxTheme.Colors.accentBg, chip.background)
-        assertEquals(AdbToolboxTheme.LogSeverityColors.error.level, chip.foreground)
+        assertEquals(DeviceCockpitTheme.Colors.accentBg, chip.background)
+        assertEquals(DeviceCockpitTheme.LogSeverityColors.error.level, chip.foreground)
     }
 
     fun `test assert is not offered by the supplied minimum level row`() {

@@ -147,7 +147,7 @@ import io.github.dkej123.devicecockpit.intellij.deeplinks.LazyDeepLinkAnalyzer
 import io.github.dkej123.devicecockpit.intellij.deeplinks.androidSdkDirectory
 import io.github.dkej123.devicecockpit.intellij.deeplinks.defaultSdkLocations
 import io.github.dkej123.devicecockpit.intellij.dispatch.IdeDispatcherProvider
-import io.github.dkej123.devicecockpit.intellij.persistence.AdbToolboxProjectState
+import io.github.dkej123.devicecockpit.intellij.persistence.DeviceCockpitProjectState
 import io.github.dkej123.devicecockpit.intellij.persistence.AppsSelectionPersistenceAdapter
 import io.github.dkej123.devicecockpit.intellij.persistence.DeviceSelectionPersistenceAdapter
 import io.github.dkej123.devicecockpit.intellij.persistence.LogcatControlsPersistenceAdapter
@@ -189,7 +189,7 @@ import java.security.MessageDigest
  * another's or the project scope itself.
  */
 @Service(Service.Level.PROJECT)
-class AdbToolboxProjectService(private val project: Project) : Disposable {
+class DeviceCockpitProjectService(private val project: Project) : Disposable {
 
     private val diagnostics: DiagnosticsService = DiagnosticsService.getInstance()
 
@@ -203,7 +203,7 @@ class AdbToolboxProjectService(private val project: Project) : Disposable {
     val processExecutor: ProcessExecutor =
         LoggingProcessExecutor(JvmProcessExecutor(), diagnosticsLog, SystemMonotonicClock, diagnostics.commandStats)
 
-    private val settingsAdapter = SettingsPersistenceAdapter(project.service<AdbToolboxProjectState>())
+    private val settingsAdapter = SettingsPersistenceAdapter(project.service<DeviceCockpitProjectState>())
 
     val settingsRepository: SettingsRepository = settingsAdapter
 
@@ -313,7 +313,7 @@ class AdbToolboxProjectService(private val project: Project) : Disposable {
     val deviceListRefresher: DeviceListRefresher = adbDeviceRepository
 
     val deviceSelectionPersistence: DeviceSelectionPersistence =
-        DeviceSelectionPersistenceAdapter(project.service<AdbToolboxProjectState>())
+        DeviceSelectionPersistenceAdapter(project.service<DeviceCockpitProjectState>())
 
     val selectedDeviceViewModel: SelectedDeviceViewModel = SelectedDeviceViewModel(
         scope = childScope(),
@@ -341,7 +341,7 @@ class AdbToolboxProjectService(private val project: Project) : Disposable {
     )
 
     val navigationPersistence: NavigationPersistence =
-        NavigationPersistenceAdapter(project.service<AdbToolboxProjectState>())
+        NavigationPersistenceAdapter(project.service<DeviceCockpitProjectState>())
 
     val navigationViewModel: NavigationViewModel = NavigationViewModel(
         scope = childScope(),
@@ -437,7 +437,7 @@ class AdbToolboxProjectService(private val project: Project) : Disposable {
         fileNamePolicy = fileNamePolicy,
         fullShotRenderer = FullShotHelper(adbTransport, deviceHelperDeployment),
         clipboard = io.github.dkej123.devicecockpit.intellij.mcp.IdeImageClipboard(),
-        copyToClipboard = { io.github.dkej123.devicecockpit.intellij.mcp.AdbToolboxAppSettings.getInstance().copyScreenshotsToClipboard },
+        copyToClipboard = { io.github.dkej123.devicecockpit.intellij.mcp.DeviceCockpitAppSettings.getInstance().copyScreenshotsToClipboard },
     )
 
     /** Task 019's minimal Device-view screenshot binding, driven by [selectedDeviceViewModel]. */
@@ -489,7 +489,7 @@ class AdbToolboxProjectService(private val project: Project) : Disposable {
     /** Task 040's persisted mirroring-options repository/use case, project-scoped (ADR 0006), matching
      * [settingsRepository]/[settingsUseCase]'s own adapter-behind-a-port shape. */
     val mirroringOptionsRepository: MirroringOptionsRepository =
-        MirroringOptionsPersistenceAdapter(project.service<AdbToolboxProjectState>())
+        MirroringOptionsPersistenceAdapter(project.service<DeviceCockpitProjectState>())
 
     internal val mirroringOptionsUseCase = MirroringOptionsUseCase(repository = mirroringOptionsRepository)
 
@@ -561,7 +561,7 @@ class AdbToolboxProjectService(private val project: Project) : Disposable {
 
     /** Task 022's persisted selected-package contract adapter — the same `AppsSelectionState` slice `:intellij`'s Apps feature reads/writes. */
     val selectedPackagePersistence: SelectedPackagePersistence =
-        AppsSelectionPersistenceAdapter(project.service<AdbToolboxProjectState>())
+        AppsSelectionPersistenceAdapter(project.service<DeviceCockpitProjectState>())
 
     /** Task 022's shared selected-package contract, consumed by [appLifecycleViewModel] and (once wired) the Apps view/Logcat's default package filter. */
     val selectedPackageViewModel: SelectedPackageViewModel = SelectedPackageViewModel(
@@ -585,7 +585,7 @@ class AdbToolboxProjectService(private val project: Project) : Disposable {
         packageRepository = packageRepository,
         selectedDeviceViewModel = selectedDeviceViewModel,
         selectedPackageViewModel = selectedPackageViewModel,
-        pinnedPackages = PinnedAppsPersistenceAdapter(project.service<AdbToolboxProjectState>()),
+        pinnedPackages = PinnedAppsPersistenceAdapter(project.service<DeviceCockpitProjectState>()),
     )
 
     private val appLifecycleUseCase = AppLifecycleUseCase(adbTransport)
@@ -768,7 +768,7 @@ class AdbToolboxProjectService(private val project: Project) : Disposable {
     /** Task 032's host-LAN-IPv4 discovery port ("Use my computer IP") and persisted MRU recents adapter. */
     val hostNetworkInfo: HostNetworkInfo = JvmHostNetworkInfo()
     val networkRecentsPersistence: NetworkRecentsPersistence =
-        NetworkPersistenceAdapter(project.service<AdbToolboxProjectState>())
+        NetworkPersistenceAdapter(project.service<DeviceCockpitProjectState>())
 
     /** Task 030/032's global-proxy presenter: reads/enables/resets and tracks live editing/recents, driven by [selectedDeviceViewModel]. */
     val proxyController: ProxyController = ProxyController(
@@ -820,6 +820,7 @@ class AdbToolboxProjectService(private val project: Project) : Disposable {
             processes = processExecutor,
             apkanalyzer = analyzer.toString(),
             apksigner = signer?.toString(),
+            // Cache folder kept from the pre-rename "ADB Toolbox" name for compatibility (existing caches stay valid).
             cacheRoot = Path.of(PathManager.getSystemPath(), "adb-toolbox", "deep-links"),
             projectHash = projectKey,
             // The platform registers the IDE's proxy settings as the JVM default ProxySelector (242+).
@@ -866,7 +867,7 @@ class AdbToolboxProjectService(private val project: Project) : Disposable {
      * [densityUseCase]/[densityOverrideTracker]'s, and [proxyController] itself (it implements the
      * port directly). [overrideReapplyPersistence] is in-memory only for now — a pending re-apply
      * offer survives a device disconnect/reconnect within this IDE session but not an IDE restart;
-     * wiring it to [AdbToolboxProjectState] (mirroring [deviceSelectionPersistence]'s adapter) is a
+     * wiring it to [DeviceCockpitProjectState] (mirroring [deviceSelectionPersistence]'s adapter) is a
      * natural follow-up, not required by task 041's scope.
      */
     val overrideReapplyPersistence: OverrideReapplyPersistence = InMemoryOverrideReapplyPersistence()
@@ -917,7 +918,7 @@ class AdbToolboxProjectService(private val project: Project) : Disposable {
 
     /** Task 037's persisted level/package-filter/wrap adapter. */
     val logcatControlsPersistence: LogcatControlsPersistence =
-        LogcatControlsPersistenceAdapter(project.service<AdbToolboxProjectState>())
+        LogcatControlsPersistenceAdapter(project.service<DeviceCockpitProjectState>())
 
     /** Task 037's Logcat controls reducer: search/level/package-filter/wrap/pause/follow/clear/footer
      * state, driven by [selectedDeviceViewModel], [selectedPackageViewModel], [logcatSessionManager],
@@ -1020,8 +1021,8 @@ class AdbToolboxProjectService(private val project: Project) : Disposable {
 
 /**
  * An in-memory-only [OverrideReapplyPersistence] (task 041): a pending re-apply offer survives a
- * device disconnect/reconnect for as long as this project's [AdbToolboxProjectService] instance
- * lives, but not an IDE restart. Wiring this to [io.github.dkej123.devicecockpit.intellij.persistence.AdbToolboxProjectState]
+ * device disconnect/reconnect for as long as this project's [DeviceCockpitProjectService] instance
+ * lives, but not an IDE restart. Wiring this to [io.github.dkej123.devicecockpit.intellij.persistence.DeviceCockpitProjectState]
  * for cross-restart persistence (mirroring [DeviceSelectionPersistenceAdapter]'s shape) is a
  * reasonable follow-up, not required by task 041's scope.
  */

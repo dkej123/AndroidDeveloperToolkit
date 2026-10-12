@@ -5,10 +5,10 @@ import com.intellij.ide.plugins.cl.PluginAwareClassLoader
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.extensions.PluginId
 
-/** Registered only by `adb-toolbox-android.xml`, i.e. only while the Android plugin is loaded. */
+/** Registered only by `device-cockpit-android.xml`, i.e. only while the Android plugin is loaded. */
 class AndroidPluginMarker
 
-/** Registered only by `adb-toolbox-terminal.xml`, i.e. only while the Terminal plugin is loaded. */
+/** Registered only by `device-cockpit-terminal.xml`, i.e. only while the Terminal plugin is loaded. */
 class TerminalPluginMarker
 
 /**

@@ -6,7 +6,7 @@ import io.github.dkej123.devicecockpit.domain.layout.LayoutMeasurement
 import io.github.dkej123.devicecockpit.domain.layout.PixelRect
 import io.github.dkej123.devicecockpit.domain.layout.UiHierarchy
 import io.github.dkej123.devicecockpit.domain.layout.UiNode
-import io.github.dkej123.devicecockpit.intellij.ui.common.AdbToolboxTheme
+import io.github.dkej123.devicecockpit.intellij.ui.common.DeviceCockpitTheme
 import java.awt.AlphaComposite
 import java.awt.BasicStroke
 import java.awt.Color
@@ -256,9 +256,9 @@ class InspectorCanvas(
     }
 
     private fun paintBackground(g: Graphics2D) {
-        g.color = AdbToolboxTheme.Colors.bg
+        g.color = DeviceCockpitTheme.Colors.bg
         g.fillRect(0, 0, width, height)
-        g.color = AdbToolboxTheme.Colors.border
+        g.color = DeviceCockpitTheme.Colors.border
         val step = JBUIScale.scale(16)
         var y = step / 2
         while (y < height) {
@@ -282,18 +282,18 @@ class InspectorCanvas(
         g.drawImage(screenshot, screen.x, screen.y, screen.width, screen.height, null)
         if (secure) {
             // FLAG_SECURE: the screenshot is black; the hierarchy stays inspectable as wireframes.
-            g.color = AdbToolboxTheme.Colors.borderStrong
+            g.color = DeviceCockpitTheme.Colors.borderStrong
             g.stroke = BasicStroke(1f)
             h.root.descendantsAndSelf().filter { !it.bounds.isEmpty }.forEach { g.draw(toCanvas(it.bounds)) }
         }
         g.clip = clip
-        g.color = AdbToolboxTheme.Colors.borderStrong
+        g.color = DeviceCockpitTheme.Colors.borderStrong
         g.stroke = BasicStroke(1f)
         g.draw(shape)
     }
 
     private fun paintGrid(g: Graphics2D, screen: Rectangle, h: UiHierarchy) {
-        val accent = AdbToolboxTheme.Colors.accent
+        val accent = DeviceCockpitTheme.Colors.accent
         g.color = Color(accent.red, accent.green, accent.blue, (255 * 0.22).toInt())
         g.stroke = BasicStroke(1f)
         val step = h.px(8.0) * scale
@@ -364,16 +364,16 @@ class InspectorCanvas(
     private fun paintAudit(g: Graphics2D) {
         val report = audit ?: return
         val badge = JBUIScale.scale(16)
-        g.font = AdbToolboxTheme.Typography.mono.deriveFont(Font.BOLD, JBUIScale.scale(9f))
+        g.font = DeviceCockpitTheme.Typography.mono.deriveFont(Font.BOLD, JBUIScale.scale(9f))
         report.stops.forEach { stop ->
             val r = toCanvas(stop.node.bounds)
             val problem = stop.issues.isNotEmpty()
             if (problem) {
-                g.color = AdbToolboxTheme.Colors.red
+                g.color = DeviceCockpitTheme.Colors.red
                 g.stroke = BasicStroke(JBUIScale.scale(1.5f), BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER, 1f, floatArrayOf(JBUIScale.scale(4f), JBUIScale.scale(3f)), 0f)
                 g.draw(r)
             }
-            g.color = if (problem) AdbToolboxTheme.Colors.red else AdbToolboxTheme.Colors.accent
+            g.color = if (problem) DeviceCockpitTheme.Colors.red else DeviceCockpitTheme.Colors.accent
             g.fillOval(r.x - badge / 3, r.y - badge / 3, badge, badge)
             g.color = Color.WHITE
             val text = stop.order.toString()
@@ -384,25 +384,25 @@ class InspectorCanvas(
 
     private fun paintHover(g: Graphics2D, node: UiNode, h: UiHierarchy) {
         val r = toCanvas(node.bounds)
-        g.color = AdbToolboxTheme.Colors.accentBg
+        g.color = DeviceCockpitTheme.Colors.accentBg
         g.fill(r)
-        g.color = AdbToolboxTheme.Colors.accent
+        g.color = DeviceCockpitTheme.Colors.accent
         g.stroke = BasicStroke(1f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER, 1f, floatArrayOf(JBUIScale.scale(3f), JBUIScale.scale(2f)), 0f)
         g.draw(r)
-        pill(g, "${node.shortClassName.ifEmpty { "View" }} · ${size(node, h)}", r.x, r.y - JBUIScale.scale(4), above = true, fill = AdbToolboxTheme.Colors.panel, text = AdbToolboxTheme.Colors.text)
+        pill(g, "${node.shortClassName.ifEmpty { "View" }} · ${size(node, h)}", r.x, r.y - JBUIScale.scale(4), above = true, fill = DeviceCockpitTheme.Colors.panel, text = DeviceCockpitTheme.Colors.text)
     }
 
     private fun paintSelected(g: Graphics2D, node: UiNode, h: UiHierarchy) {
         val r = toCanvas(node.bounds)
-        g.color = AdbToolboxTheme.Colors.accent
+        g.color = DeviceCockpitTheme.Colors.accent
         g.stroke = BasicStroke(JBUIScale.scale(2f))
         g.draw(r)
-        pill(g, size(node, h), r.x, r.y + r.height + JBUIScale.scale(4), above = false, fill = AdbToolboxTheme.Colors.accent, text = Color.WHITE)
+        pill(g, size(node, h), r.x, r.y + r.height + JBUIScale.scale(4), above = false, fill = DeviceCockpitTheme.Colors.accent, text = Color.WHITE)
     }
 
     private fun paintRedlines(g: Graphics2D, selected: UiNode, hovered: UiNode, h: UiHierarchy) {
         val cap = JBUIScale.scale(7) / 2
-        g.color = AdbToolboxTheme.Colors.measure
+        g.color = DeviceCockpitTheme.Colors.measure
         g.stroke = BasicStroke(1f)
         LayoutMeasurement.between(selected.bounds, hovered.bounds, h).forEach { line ->
             val fixed = padding + (line.fixed * scale).roundToInt()
@@ -412,14 +412,14 @@ class InspectorCanvas(
                 g.drawLine(from, fixed, to, fixed)
                 g.drawLine(from, fixed - cap, from, fixed + cap)
                 g.drawLine(to, fixed - cap, to, fixed + cap)
-                pill(g, "${line.dp} dp", (from + to) / 2, fixed - JBUIScale.scale(3), above = true, fill = AdbToolboxTheme.Colors.measure, text = Color.WHITE, centered = true)
+                pill(g, "${line.dp} dp", (from + to) / 2, fixed - JBUIScale.scale(3), above = true, fill = DeviceCockpitTheme.Colors.measure, text = Color.WHITE, centered = true)
             } else {
                 g.drawLine(fixed, from, fixed, to)
                 g.drawLine(fixed - cap, from, fixed + cap, from)
                 g.drawLine(fixed - cap, to, fixed + cap, to)
-                pill(g, "${line.dp} dp", fixed + JBUIScale.scale(4), (from + to) / 2 + JBUIScale.scale(6), above = true, fill = AdbToolboxTheme.Colors.measure, text = Color.WHITE)
+                pill(g, "${line.dp} dp", fixed + JBUIScale.scale(4), (from + to) / 2 + JBUIScale.scale(6), above = true, fill = DeviceCockpitTheme.Colors.measure, text = Color.WHITE)
             }
-            g.color = AdbToolboxTheme.Colors.measure
+            g.color = DeviceCockpitTheme.Colors.measure
         }
     }
 
@@ -429,25 +429,25 @@ class InspectorCanvas(
         val x = p.x + JBUIScale.scale(14)
         val y = p.y + JBUIScale.scale(14)
         val text = hex(color)
-        g.font = AdbToolboxTheme.Typography.mono.deriveFont(JBUIScale.scale(10f))
+        g.font = DeviceCockpitTheme.Typography.mono.deriveFont(JBUIScale.scale(10f))
         val fm = g.fontMetrics
         val hint = "click to copy"
         val w = swatch + JBUIScale.scale(8) + maxOf(fm.stringWidth(text), fm.stringWidth(hint)) + JBUIScale.scale(10)
         val hgt = JBUIScale.scale(34)
-        g.color = AdbToolboxTheme.Colors.panel
+        g.color = DeviceCockpitTheme.Colors.panel
         g.fillRoundRect(x, y, w, hgt, JBUIScale.scale(8), JBUIScale.scale(8))
-        g.color = AdbToolboxTheme.Colors.borderStrong
+        g.color = DeviceCockpitTheme.Colors.borderStrong
         g.drawRoundRect(x, y, w, hgt, JBUIScale.scale(8), JBUIScale.scale(8))
         g.color = color
         g.fillRect(x + JBUIScale.scale(6), y + (hgt - swatch) / 2, swatch, swatch)
-        g.color = AdbToolboxTheme.Colors.text
+        g.color = DeviceCockpitTheme.Colors.text
         g.drawString(text, x + swatch + JBUIScale.scale(12), y + JBUIScale.scale(14))
-        g.color = AdbToolboxTheme.Colors.textFaint
+        g.color = DeviceCockpitTheme.Colors.textFaint
         g.drawString(hint, x + swatch + JBUIScale.scale(12), y + JBUIScale.scale(27))
     }
 
     private fun pill(g: Graphics2D, label: String, x: Int, y: Int, above: Boolean, fill: Color, text: Color, centered: Boolean = false) {
-        g.font = AdbToolboxTheme.Typography.mono.deriveFont(Font.BOLD, JBUIScale.scale(10f))
+        g.font = DeviceCockpitTheme.Typography.mono.deriveFont(Font.BOLD, JBUIScale.scale(10f))
         val fm = g.fontMetrics
         val w = fm.stringWidth(label) + JBUIScale.scale(10)
         val hgt = fm.height + JBUIScale.scale(2)
@@ -455,8 +455,8 @@ class InspectorCanvas(
         val top = if (above) y - hgt else y
         g.color = fill
         g.fillRoundRect(left, top, w, hgt, JBUIScale.scale(8), JBUIScale.scale(8))
-        if (fill == AdbToolboxTheme.Colors.panel) {
-            g.color = AdbToolboxTheme.Colors.borderStrong
+        if (fill == DeviceCockpitTheme.Colors.panel) {
+            g.color = DeviceCockpitTheme.Colors.borderStrong
             g.drawRoundRect(left, top, w, hgt, JBUIScale.scale(8), JBUIScale.scale(8))
         }
         g.color = text

@@ -25,6 +25,7 @@ enum class AppDataAccess(val label: String) {
 data class AppDataListing(val sharedPrefs: List<String>, val databases: List<String>)
 
 private const val LISTING_SEPARATOR = "---"
+// Device-side name kept from the pre-rename "ADB Toolbox" name for compatibility with helpers and files already on devices.
 private const val UPLOAD_TEMP = ".adbtoolbox-upload.tmp"
 private val SQLITE_SIDE_FILE = Regex("""-(wal|shm|journal)$""")
 private val NUMERIC_UID = Regex("""^\d+$""")

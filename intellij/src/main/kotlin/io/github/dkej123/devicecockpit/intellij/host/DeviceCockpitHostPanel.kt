@@ -17,7 +17,7 @@ import javax.swing.JLayeredPane
  * `JLayeredPane`). [contentPanel] always fills the full bounds; overlay components position
  * themselves when shown.
  */
-class AdbToolboxHostPanel : JLayeredPane(), Disposable {
+class DeviceCockpitHostPanel : JLayeredPane(), Disposable {
 
     val deviceContextSlot: JBPanel<*> = JBPanel<Nothing>(BorderLayout())
     val navigationSlot: JBPanel<*> = JBPanel<Nothing>(BorderLayout())

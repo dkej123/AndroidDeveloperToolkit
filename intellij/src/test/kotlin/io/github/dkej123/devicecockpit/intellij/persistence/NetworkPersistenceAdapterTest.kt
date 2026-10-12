@@ -20,13 +20,13 @@ private fun endpoint(host: String, port: Int) = ProxyEndpoint(
 class NetworkPersistenceAdapterTest : BasePlatformTestCase() {
 
     fun `test a fresh project has no persisted recents`() {
-        val adapter = NetworkPersistenceAdapter(AdbToolboxProjectState())
+        val adapter = NetworkPersistenceAdapter(DeviceCockpitProjectState())
 
         assertEquals(emptyList<ProxyEndpoint>(), adapter.readRecentsNow())
     }
 
     fun `test written recents round-trip back out, most-recent first`() {
-        val adapter = NetworkPersistenceAdapter(AdbToolboxProjectState())
+        val adapter = NetworkPersistenceAdapter(DeviceCockpitProjectState())
         val recents = listOf(endpoint("proxy.acme.dev", 3128), endpoint("10.0.4.117", 8888))
 
         adapter.writeRecentsNow(recents)
@@ -35,7 +35,7 @@ class NetworkPersistenceAdapterTest : BasePlatformTestCase() {
     }
 
     fun `test writing an empty list clears the persisted recents`() {
-        val adapter = NetworkPersistenceAdapter(AdbToolboxProjectState())
+        val adapter = NetworkPersistenceAdapter(DeviceCockpitProjectState())
         adapter.writeRecentsNow(listOf(endpoint("10.0.4.117", 8888)))
 
         adapter.writeRecentsNow(emptyList())
@@ -44,19 +44,19 @@ class NetworkPersistenceAdapterTest : BasePlatformTestCase() {
     }
 
     fun `test loadState composes via XmlSerializerUtil so reloaded recents survive`() {
-        val projectState = AdbToolboxProjectState()
+        val projectState = DeviceCockpitProjectState()
         val adapter = NetworkPersistenceAdapter(projectState)
         val recents = listOf(endpoint("10.0.4.117", 8888))
         adapter.writeRecentsNow(recents)
 
-        val reloaded = AdbToolboxProjectState()
+        val reloaded = DeviceCockpitProjectState()
         reloaded.loadState(projectState.state)
 
         assertEquals(recents, NetworkPersistenceAdapter(reloaded).readRecentsNow())
     }
 
     fun `test a corrupt individual entry is dropped rather than failing the whole list`() {
-        val projectState = AdbToolboxProjectState()
+        val projectState = DeviceCockpitProjectState()
         projectState.state.network = NetworkState().apply {
             recentEndpoints = mutableListOf("10.0.4.117:8888", "not-a-valid-endpoint", "proxy.acme.dev:3128")
         }
@@ -67,7 +67,7 @@ class NetworkPersistenceAdapterTest : BasePlatformTestCase() {
     }
 
     fun `test an older schema version degrades to an empty list rather than misinterpreting stale data`() {
-        val projectState = AdbToolboxProjectState()
+        val projectState = DeviceCockpitProjectState()
         projectState.state.network = NetworkState().apply {
             schemaVersion = NetworkState.CURRENT_SCHEMA_VERSION + 1
             recentEndpoints = mutableListOf("10.0.4.117:8888")
@@ -77,7 +77,7 @@ class NetworkPersistenceAdapterTest : BasePlatformTestCase() {
     }
 
     fun `test this adapter never touches the device-selection or apps slices`() {
-        val projectState = AdbToolboxProjectState()
+        val projectState = DeviceCockpitProjectState()
         val deviceAdapter = DeviceSelectionPersistenceAdapter(projectState)
         deviceAdapter.writeSelectedSerialNow(io.github.dkej123.devicecockpit.domain.adb.DeviceSerial.of("OTHERSERIAL"))
 

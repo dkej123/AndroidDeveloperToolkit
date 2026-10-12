@@ -3,7 +3,7 @@ package io.github.dkej123.devicecockpit.intellij.logcat
 import javax.swing.plaf.basic.BasicListUI
 import com.intellij.ui.components.JBList
 import com.intellij.util.ui.JBUI
-import io.github.dkej123.devicecockpit.intellij.ui.common.AdbToolboxTheme
+import io.github.dkej123.devicecockpit.intellij.ui.common.DeviceCockpitTheme
 import java.awt.Component
 import javax.swing.DefaultListCellRenderer
 import javax.swing.JLabel
@@ -45,7 +45,7 @@ class LogcatVirtualList(
             cellHeight = -1
             cellWidth = (list.width - list.insets.left - list.insets.right).coerceAtLeast(1)
             cellHeights = wrappedHeights.pixels(
-                virtualModel.size, cellsPerLine(), presentation, AdbToolboxTheme.Sizes.logLineHeight, virtualModel::getElementAt,
+                virtualModel.size, cellsPerLine(), presentation, DeviceCockpitTheme.Sizes.logLineHeight, virtualModel::getElementAt,
             )
         }
     }
@@ -56,7 +56,7 @@ class LogcatVirtualList(
     private inner class WrappedHeightsTracker : ListDataListener {
         override fun intervalAdded(e: ListDataEvent) {
             if (presentation.wrapLines) {
-                wrappedHeights.added(e.index0, e.index1, cellsPerLine(), presentation, AdbToolboxTheme.Sizes.logLineHeight, virtualModel::getElementAt)
+                wrappedHeights.added(e.index0, e.index1, cellsPerLine(), presentation, DeviceCockpitTheme.Sizes.logLineHeight, virtualModel::getElementAt)
             }
         }
 
@@ -66,15 +66,15 @@ class LogcatVirtualList(
 
         override fun contentsChanged(e: ListDataEvent) {
             if (presentation.wrapLines && e.index0 >= 0) {
-                wrappedHeights.changed(e.index0, e.index1, cellsPerLine(), presentation, AdbToolboxTheme.Sizes.logLineHeight, virtualModel::getElementAt)
+                wrappedHeights.changed(e.index0, e.index1, cellsPerLine(), presentation, DeviceCockpitTheme.Sizes.logLineHeight, virtualModel::getElementAt)
             }
         }
     }
 
     /** Monospace cells that fit on one wrapped line at the list's current width. */
     internal fun cellsPerLine(): Int {
-        val charWidth = getFontMetrics(AdbToolboxTheme.Typography.mono).charWidth('m').coerceAtLeast(1)
-        val usable = width - insets.left - insets.right - AdbToolboxTheme.Spacing.s4 * 2
+        val charWidth = getFontMetrics(DeviceCockpitTheme.Typography.mono).charWidth('m').coerceAtLeast(1)
+        val usable = width - insets.left - insets.right - DeviceCockpitTheme.Spacing.s4 * 2
         return (usable / charWidth).coerceAtLeast(MIN_WRAP_CELLS)
     }
 
@@ -99,9 +99,9 @@ class LogcatVirtualList(
     }
 
     init {
-        background = AdbToolboxTheme.Colors.bg
+        background = DeviceCockpitTheme.Colors.bg
         // `logBodyStyle`: `padding: 4px 0 6px`.
-        border = JBUI.Borders.empty(AdbToolboxTheme.Spacing.s2, 0, AdbToolboxTheme.Spacing.s3, 0)
+        border = JBUI.Borders.empty(DeviceCockpitTheme.Spacing.s2, 0, DeviceCockpitTheme.Spacing.s3, 0)
         cellRenderer = RowRenderer { presentation }
         virtualModel.addListDataListener(WidestRowTracker())
         virtualModel.addListDataListener(WrappedHeightsTracker())
@@ -114,7 +114,7 @@ class LogcatVirtualList(
 
     /** Unwrapped rows use the fixed 16px log line height; wrapped rows measure their own height. */
     private fun applyRowHeight() {
-        fixedCellHeight = if (presentation.wrapLines) -1 else AdbToolboxTheme.Sizes.logLineHeight
+        fixedCellHeight = if (presentation.wrapLines) -1 else DeviceCockpitTheme.Sizes.logLineHeight
     }
 
     /**
@@ -128,8 +128,8 @@ class LogcatVirtualList(
             fixedCellWidth = -1
             return
         }
-        val cellWidth = getFontMetrics(AdbToolboxTheme.Typography.mono).charWidth('m')
-        fixedCellWidth = (widestRowCells + ROW_WIDTH_SLACK_CELLS) * cellWidth + AdbToolboxTheme.Spacing.s4 * 2
+        val cellWidth = getFontMetrics(DeviceCockpitTheme.Typography.mono).charWidth('m')
+        fixedCellWidth = (widestRowCells + ROW_WIDTH_SLACK_CELLS) * cellWidth + DeviceCockpitTheme.Spacing.s4 * 2
     }
 
     private inner class WidestRowTracker : ListDataListener {
@@ -192,7 +192,7 @@ class LogcatVirtualList(
             val component = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus) as JLabel
             val row = value as? LogcatRenderRow ?: return component
             val options = presentation()
-            val mono = AdbToolboxTheme.Typography.mono
+            val mono = DeviceCockpitTheme.Typography.mono
             component.font = mono
             if (mono != cachedFont) {
                 // Parsed views bake in the font; a theme or zoom change invalidates them.
@@ -200,15 +200,15 @@ class LogcatVirtualList(
                 cachedFont = mono
             }
             // `rowStyle`: `padding: 0 8px`.
-            component.border = JBUI.Borders.empty(0, AdbToolboxTheme.Spacing.s4)
+            component.border = JBUI.Borders.empty(0, DeviceCockpitTheme.Spacing.s4)
 
             val wrapCells = if (options.wrapLines) (list as? LogcatVirtualList)?.cellsPerLine() else null
             setHtml(component, LogcatRowStyle.rowHtml(row, options, wrapCells))
 
             component.isOpaque = true
             component.background = when {
-                isSelected -> AdbToolboxTheme.Colors.accentBg
-                else -> LogcatRowStyle.rowBackground(row.severity) ?: AdbToolboxTheme.Colors.bg
+                isSelected -> DeviceCockpitTheme.Colors.accentBg
+                else -> LogcatRowStyle.rowBackground(row.severity) ?: DeviceCockpitTheme.Colors.bg
             }
             return component
         }

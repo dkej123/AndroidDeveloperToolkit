@@ -27,8 +27,8 @@ import io.github.dkej123.devicecockpit.application.layout.LayoutInspectorViewMod
 import io.github.dkej123.devicecockpit.application.currentapp.CurrentAppUseCase
 import io.github.dkej123.devicecockpit.application.nav.NavigationIntent
 import io.github.dkej123.devicecockpit.domain.nav.ViewId
-import io.github.dkej123.devicecockpit.intellij.composition.AdbToolboxProjectService
-import io.github.dkej123.devicecockpit.intellij.icons.AdbToolboxIcons
+import io.github.dkej123.devicecockpit.intellij.composition.DeviceCockpitProjectService
+import io.github.dkej123.devicecockpit.intellij.icons.DeviceCockpitIcons
 import java.beans.PropertyChangeListener
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -50,7 +50,7 @@ object LayoutCaptureFileType : FileType {
     override fun getName() = "Device Cockpit Layout Capture"
     override fun getDescription() = "Device Cockpit layout capture"
     override fun getDefaultExtension() = ""
-    override fun getIcon(): Icon = AdbToolboxIcons.Actions.layoutInspector
+    override fun getIcon(): Icon = DeviceCockpitIcons.Actions.layoutInspector
     override fun isBinary() = true
     override fun isReadOnly() = true
 }
@@ -73,7 +73,7 @@ class LayoutInspectorService(private val project: Project) : Disposable {
     val status: StateFlow<InspectorOpenStatus?> = _status.asStateFlow()
 
     fun open() {
-        val composition = project.service<AdbToolboxProjectService>()
+        val composition = project.service<DeviceCockpitProjectService>()
         val name = (composition.selectedDeviceViewModel.state.value as? io.github.dkej123.devicecockpit.domain.device.SelectedDeviceState.Online)
             ?.device?.displayName ?: "no device"
         val file = LayoutInspectorFile("Layout · $name · ${SimpleDateFormat("HH:mm:ss").format(Date())}")
@@ -128,6 +128,7 @@ class LayoutInspectorEditorProvider : FileEditorProvider, DumbAware {
 
     override fun createEditor(project: Project, file: VirtualFile): FileEditor = LayoutInspectorEditor(project, file as LayoutInspectorFile)
 
+    // Editor type id kept from the pre-rename "ADB Toolbox" name for compatibility: the IDE stores it with reopened editor tabs.
     override fun getEditorTypeId() = "adb-toolbox-layout-inspector"
 
     override fun getPolicy() = FileEditorPolicy.HIDE_DEFAULT_EDITOR
@@ -135,14 +136,14 @@ class LayoutInspectorEditorProvider : FileEditorProvider, DumbAware {
 
 class LayoutInspectorEditor(private val project: Project, private val file: LayoutInspectorFile) : UserDataHolderBase(), FileEditor {
     private val service = project.service<LayoutInspectorService>()
-    private val composition = project.service<AdbToolboxProjectService>()
+    private val composition = project.service<DeviceCockpitProjectService>()
     private val scope = CoroutineScope(composition.dispatcherProvider.main + SupervisorJob())
     private val model = service.model(file)
 
     private val panel = LayoutInspectorPanel(
         onRecapture = { model?.recapture() },
         onOpenQuickToggles = {
-            ToolWindowManager.getInstance(project).getToolWindow("ADB Toolbox")?.show()
+            ToolWindowManager.getInstance(project).getToolWindow(io.github.dkej123.devicecockpit.intellij.toolwindow.DeviceCockpitToolWindowFactory.TOOL_WINDOW_ID)?.show()
             composition.navigationViewModel.handle(NavigationIntent.Select(ViewId.Device))
         },
         chooseOverlayFile = {
@@ -177,7 +178,7 @@ class LayoutInspectorEditor(private val project: Project, private val file: Layo
     }
 
     @Suppress("unused")
-    private val key = Key.create<Unit>("adbtoolbox.inspector")
+    private val key = Key.create<Unit>("deviceCockpit.inspector")
 }
 
 /** ⌥⇧⌘I and Capture → Inspect layout: capture the selected device into a new inspector tab (design §9). */

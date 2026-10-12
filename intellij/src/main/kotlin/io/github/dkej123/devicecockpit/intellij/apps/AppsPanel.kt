@@ -2,7 +2,7 @@ package io.github.dkej123.devicecockpit.intellij.apps
 
 import com.intellij.icons.AllIcons
 import com.intellij.ui.scale.JBUIScale
-import io.github.dkej123.devicecockpit.intellij.icons.AdbToolboxIcons
+import io.github.dkej123.devicecockpit.intellij.icons.DeviceCockpitIcons
 import io.github.dkej123.devicecockpit.intellij.ui.common.ShortcutHints
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBPanel
@@ -13,7 +13,7 @@ import io.github.dkej123.devicecockpit.application.apps.AppsViewState
 import io.github.dkej123.devicecockpit.application.apps.ClearDataViewState
 import io.github.dkej123.devicecockpit.application.apps.UninstallViewState
 import io.github.dkej123.devicecockpit.domain.devicecontext.ControlPolicy
-import io.github.dkej123.devicecockpit.intellij.ui.common.AdbToolboxTheme
+import io.github.dkej123.devicecockpit.intellij.ui.common.DeviceCockpitTheme
 import io.github.dkej123.devicecockpit.intellij.ui.common.DesignButton
 import io.github.dkej123.devicecockpit.intellij.ui.common.DesignButtonStyle
 import io.github.dkej123.devicecockpit.intellij.ui.common.FlexRowLayout
@@ -70,7 +70,7 @@ class AppsPanel(
     private val searchField = JBTextField().apply {
         isOpaque = false
         border = BorderFactory.createEmptyBorder()
-        font = AdbToolboxTheme.Typography.body.deriveFont(JBUIScale.scale(11f))
+        font = DeviceCockpitTheme.Typography.body.deriveFont(JBUIScale.scale(11f))
         emptyText.text = "Filter packages…"
         getAccessibleContext().accessibleName = "Filter packages"
         document.addDocumentListener(object : DocumentListener {
@@ -84,7 +84,7 @@ class AppsPanel(
         isContentAreaFilled = false
         isFocusPainted = false
         isBorderPainted = false
-        foreground = AdbToolboxTheme.Colors.textFaint
+        foreground = DeviceCockpitTheme.Colors.textFaint
         margin = java.awt.Insets(0, 0, 0, 0)
         isVisible = false
         addActionListener { onClearFilter() }
@@ -92,20 +92,20 @@ class AppsPanel(
 
     // `searchWrapStyle`: 24px, radius 4, `field` fill, 1px `borderStrong`, `padding: 0 7px`, gap 6.
     private val searchFieldWrap = RoundedSurface(
-        AdbToolboxTheme.Colors.field,
-        AdbToolboxTheme.Colors.borderStrong,
-        radius = { AdbToolboxTheme.Radii.field },
+        DeviceCockpitTheme.Colors.field,
+        DeviceCockpitTheme.Colors.borderStrong,
+        radius = { DeviceCockpitTheme.Radii.field },
     ).apply {
-        layout = FlexRowLayout(AdbToolboxTheme.Spacing.s3)
+        layout = FlexRowLayout(DeviceCockpitTheme.Spacing.s3)
         border = JBUI.Borders.empty(0, JBUIScale.scale(7))
-        preferredSize = Dimension(0, AdbToolboxTheme.Sizes.field)
+        preferredSize = Dimension(0, DeviceCockpitTheme.Sizes.field)
         add(searchIconLabel)
         add(searchField, FlexRowLayout.FILL)
         add(clearQueryButton)
     }
 
     private val systemToggle = JToggleButton(AllIcons.Actions.Show).apply {
-        preferredSize = Dimension(AdbToolboxTheme.Sizes.iconButton, AdbToolboxTheme.Sizes.iconButton)
+        preferredSize = Dimension(DeviceCockpitTheme.Sizes.iconButton, DeviceCockpitTheme.Sizes.iconButton)
         toolTipText = "Show system packages"
         isContentAreaFilled = false
         isFocusPainted = false
@@ -118,29 +118,29 @@ class AppsPanel(
         presentSystemToggle(this, active = false)
     }
 
-    private val toolbar = flexRow(AdbToolboxTheme.Spacing.s3, searchFieldWrap, systemToggle, fill = searchFieldWrap).apply {
+    private val toolbar = flexRow(DeviceCockpitTheme.Spacing.s3, searchFieldWrap, systemToggle, fill = searchFieldWrap).apply {
         isOpaque = true
-        background = AdbToolboxTheme.Colors.bg
+        background = DeviceCockpitTheme.Colors.bg
         border = BorderFactory.createCompoundBorder(
-            BorderFactory.createMatteBorder(0, 0, 1, 0, AdbToolboxTheme.Colors.border),
-            JBUI.Borders.empty(AdbToolboxTheme.Spacing.s3, AdbToolboxTheme.Spacing.s4),
+            BorderFactory.createMatteBorder(0, 0, 1, 0, DeviceCockpitTheme.Colors.border),
+            JBUI.Borders.empty(DeviceCockpitTheme.Spacing.s3, DeviceCockpitTheme.Spacing.s4),
         )
     }
 
     private val list = AppsVirtualList(onSelect = onSelect, onTogglePin = onTogglePin, onOpenDetails = onOpenDetails)
     private val scrollPane = JScrollPane(list).apply {
         border = BorderFactory.createEmptyBorder()
-        viewport.background = AdbToolboxTheme.Colors.bg
+        viewport.background = DeviceCockpitTheme.Colors.bg
     }
 
     // `emptyWrapStyle`: centered column, `padding: 34px 16px 16px`, gap 6.
     private val emptyStateTitleLabel = JBLabel("").apply {
-        font = AdbToolboxTheme.Typography.sectionTitle
+        font = DeviceCockpitTheme.Typography.sectionTitle
         alignmentX = Component.CENTER_ALIGNMENT
     }
     private val emptyStateBodyLabel = JBLabel("").apply {
-        font = AdbToolboxTheme.Typography.body.deriveFont(JBUIScale.scale(11f))
-        foreground = AdbToolboxTheme.Colors.textDim
+        font = DeviceCockpitTheme.Typography.body.deriveFont(JBUIScale.scale(11f))
+        foreground = DeviceCockpitTheme.Colors.textDim
         alignmentX = Component.CENTER_ALIGNMENT
     }
     private val clearFilterLink = DesignButton("Clear filter", DesignButtonStyle.LINK).apply {
@@ -150,17 +150,17 @@ class AppsPanel(
     private val emptyStatePanel = JPanel().apply {
         layout = javax.swing.BoxLayout(this, javax.swing.BoxLayout.Y_AXIS)
         isOpaque = false
-        border = JBUI.Borders.empty(JBUIScale.scale(34), AdbToolboxTheme.Spacing.s6, AdbToolboxTheme.Spacing.s6, AdbToolboxTheme.Spacing.s6)
+        border = JBUI.Borders.empty(JBUIScale.scale(34), DeviceCockpitTheme.Spacing.s6, DeviceCockpitTheme.Spacing.s6, DeviceCockpitTheme.Spacing.s6)
         add(emptyStateTitleLabel)
-        add(javax.swing.Box.createVerticalStrut(AdbToolboxTheme.Spacing.s3))
+        add(javax.swing.Box.createVerticalStrut(DeviceCockpitTheme.Spacing.s3))
         add(emptyStateBodyLabel)
-        add(javax.swing.Box.createVerticalStrut(AdbToolboxTheme.Spacing.s3))
+        add(javax.swing.Box.createVerticalStrut(DeviceCockpitTheme.Spacing.s3))
         add(clearFilterLink)
         isVisible = false
     }
 
     private val centerContainer = JPanel(BorderLayout()).apply {
-        background = AdbToolboxTheme.Colors.bg
+        background = DeviceCockpitTheme.Colors.bg
         add(scrollPane, BorderLayout.CENTER)
         add(emptyStatePanel, BorderLayout.NORTH)
     }
@@ -168,12 +168,12 @@ class AppsPanel(
     // ---- pinned action footer (`design/README.md` §4) ----
 
     private val selectedAppLabel = JBLabel("").apply {
-        font = AdbToolboxTheme.Typography.sectionTitle.deriveFont(JBUIScale.scale(12f))
-        foreground = AdbToolboxTheme.Colors.text
+        font = DeviceCockpitTheme.Typography.sectionTitle.deriveFont(JBUIScale.scale(12f))
+        foreground = DeviceCockpitTheme.Colors.text
     }
     private val selectedAppPackageLabel = JBLabel("").apply {
-        font = AdbToolboxTheme.Typography.monoMeta
-        foreground = AdbToolboxTheme.Colors.textFaint
+        font = DeviceCockpitTheme.Typography.monoMeta
+        foreground = DeviceCockpitTheme.Colors.textFaint
     }
     private var selectedPackageName: String? = null
     private val detailsLink = DesignButton("Details", DesignButtonStyle.LINK).apply {
@@ -188,10 +188,10 @@ class AppsPanel(
             add(selectedAppLabel)
             add(selectedAppPackageLabel)
         }
-        flexRow(AdbToolboxTheme.Spacing.s3, names, detailsLink, fill = names)
+        flexRow(DeviceCockpitTheme.Spacing.s3, names, detailsLink, fill = names)
     }.apply {
         alignmentX = Component.LEFT_ALIGNMENT
-        border = JBUI.Borders.empty(0, AdbToolboxTheme.Spacing.sectionInset)
+        border = JBUI.Borders.empty(0, DeviceCockpitTheme.Spacing.sectionInset)
     }
 
     private val restartButton = DesignButton("Restart", DesignButtonStyle.PRIMARY).apply {
@@ -209,13 +209,13 @@ class AppsPanel(
         isEnabled = false
         addActionListener { onLaunch() }
     }
-    private val actionRow = flexRow(AdbToolboxTheme.Spacing.s3, restartButton, forceStopButton, launchButton).apply {
-        border = JBUI.Borders.empty(0, AdbToolboxTheme.Spacing.sectionInset)
+    private val actionRow = flexRow(DeviceCockpitTheme.Spacing.s3, restartButton, forceStopButton, launchButton).apply {
+        border = JBUI.Borders.empty(0, DeviceCockpitTheme.Spacing.sectionInset)
     }
 
     private val destructiveLabel = JBLabel("DESTRUCTIVE").apply {
-        font = AdbToolboxTheme.Typography.groupLabel
-        foreground = AdbToolboxTheme.Colors.textFaint
+        font = DeviceCockpitTheme.Typography.groupLabel
+        foreground = DeviceCockpitTheme.Colors.textFaint
     }
     private val clearDataButton = DesignButton("Clear data", DesignButtonStyle.DANGER).apply {
         toolTipText = CLEAR_DATA_TOOLTIP
@@ -232,29 +232,29 @@ class AppsPanel(
     // takes `margin-right: auto`, so both destructive buttons sit on the trailing edge.
     private val destructiveZone = run {
         val spacer = flexSpacer()
-        flexRow(AdbToolboxTheme.Spacing.s3, destructiveLabel, spacer, clearDataButton, uninstallButton, fill = spacer)
+        flexRow(DeviceCockpitTheme.Spacing.s3, destructiveLabel, spacer, clearDataButton, uninstallButton, fill = spacer)
     }.apply {
         border = BorderFactory.createCompoundBorder(
-            JBUI.Borders.empty(0, AdbToolboxTheme.Spacing.sectionInset),
+            JBUI.Borders.empty(0, DeviceCockpitTheme.Spacing.sectionInset),
             BorderFactory.createCompoundBorder(
-                DashedTopBorder(AdbToolboxTheme.Colors.border),
-                JBUI.Borders.empty(AdbToolboxTheme.Spacing.s4, AdbToolboxTheme.Spacing.sectionInset, 0, 0),
+                DashedTopBorder(DeviceCockpitTheme.Colors.border),
+                JBUI.Borders.empty(DeviceCockpitTheme.Spacing.s4, DeviceCockpitTheme.Spacing.sectionInset, 0, 0),
             ),
         )
     }
 
     private val actionFooterPanel = JPanel().apply {
         layout = javax.swing.BoxLayout(this, javax.swing.BoxLayout.Y_AXIS)
-        background = AdbToolboxTheme.Colors.panel
+        background = DeviceCockpitTheme.Colors.panel
         isOpaque = true
         border = BorderFactory.createCompoundBorder(
-            BorderFactory.createMatteBorder(1, 0, 0, 0, AdbToolboxTheme.Colors.border),
-            JBUI.Borders.empty(AdbToolboxTheme.Spacing.s4, 0, JBUIScale.scale(10), 0),
+            BorderFactory.createMatteBorder(1, 0, 0, 0, DeviceCockpitTheme.Colors.border),
+            JBUI.Borders.empty(DeviceCockpitTheme.Spacing.s4, 0, JBUIScale.scale(10), 0),
         )
         add(selectedAppRow)
-        add(javax.swing.Box.createVerticalStrut(AdbToolboxTheme.Spacing.s4))
+        add(javax.swing.Box.createVerticalStrut(DeviceCockpitTheme.Spacing.s4))
         add(actionRow)
-        add(javax.swing.Box.createVerticalStrut(AdbToolboxTheme.Spacing.s4))
+        add(javax.swing.Box.createVerticalStrut(DeviceCockpitTheme.Spacing.s4))
         add(destructiveZone)
     }
 
@@ -378,10 +378,10 @@ class AppsPanel(
     }
 
     private fun presentSystemToggle(button: JToggleButton, active: Boolean) {
-        button.icon = if (active) AdbToolboxIcons.tinted(AllIcons.Actions.Show, AdbToolboxTheme.Colors.accent) else AllIcons.Actions.Show
-        button.background = if (active) AdbToolboxTheme.Colors.accentBg else AdbToolboxTheme.Colors.panel
+        button.icon = if (active) DeviceCockpitIcons.tinted(AllIcons.Actions.Show, DeviceCockpitTheme.Colors.accent) else AllIcons.Actions.Show
+        button.background = if (active) DeviceCockpitTheme.Colors.accentBg else DeviceCockpitTheme.Colors.panel
         button.border = if (active) {
-            SolidChipBorder(AdbToolboxTheme.Colors.accentBorder)
+            SolidChipBorder(DeviceCockpitTheme.Colors.accentBorder)
         } else {
             BorderFactory.createEmptyBorder()
         }

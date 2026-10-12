@@ -1,7 +1,7 @@
 package io.github.dkej123.devicecockpit.intellij.persistence
 
 /**
- * The Apps-selection slice of [AdbToolboxProjectState] (`design/README.md`'s State model:
+ * The Apps-selection slice of [DeviceCockpitProjectState] (`design/README.md`'s State model:
  * `selectedPackage`, task 022). A plain mutable bean (public `var`s, no-arg constructor) as
  * IntelliJ's `XmlSerializer` requires — mirrors [DeviceSelectionState]'s shape.
  *

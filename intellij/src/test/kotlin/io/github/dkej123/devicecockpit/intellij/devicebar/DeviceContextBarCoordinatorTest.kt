@@ -15,14 +15,14 @@ import io.github.dkej123.devicecockpit.domain.device.FakeDeviceListRefresher
 import io.github.dkej123.devicecockpit.domain.device.FakeDeviceRepository
 import io.github.dkej123.devicecockpit.domain.device.FakeDeviceSelectionPersistence
 import io.github.dkej123.devicecockpit.domain.dispatch.DispatcherProvider
-import io.github.dkej123.devicecockpit.intellij.host.AdbToolboxHostPanel
+import io.github.dkej123.devicecockpit.intellij.host.DeviceCockpitHostPanel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.isActive
 
 /**
- * Connects task 011's [DeviceBarViewModel] to task 010's [AdbToolboxHostPanel] via
+ * Connects task 011's [DeviceBarViewModel] to task 010's [DeviceCockpitHostPanel] via
  * [DeviceContextBarCoordinator]. Kept as a [BasePlatformTestCase] like every other test in this
  * module. Exercises [DeviceContextBarCoordinator.render] directly against constructed
  * [DeviceBarViewState] values — the same "invoke the handler directly" pattern
@@ -56,14 +56,14 @@ class DeviceContextBarCoordinatorTest : BasePlatformTestCase() {
         )
     }
 
-    private fun coordinator(host: AdbToolboxHostPanel): DeviceContextBarCoordinator {
+    private fun coordinator(host: DeviceCockpitHostPanel): DeviceContextBarCoordinator {
         val dispatchers = TestDispatchers()
         val scope = CoroutineScope(SupervisorJob() + dispatchers.default)
         return DeviceContextBarCoordinator(host, viewModel(dispatchers, scope), scope, dispatchers)
     }
 
     fun `test construction mounts the bar panel into the device context slot`() {
-        val host = AdbToolboxHostPanel()
+        val host = DeviceCockpitHostPanel()
 
         val coordinator = coordinator(host)
 
@@ -72,7 +72,7 @@ class DeviceContextBarCoordinatorTest : BasePlatformTestCase() {
     }
 
     fun `test construction does not show the picker overlay until it is opened`() {
-        val host = AdbToolboxHostPanel()
+        val host = DeviceCockpitHostPanel()
         val before = host.overlays.overlayCount
 
         coordinator(host)
@@ -90,7 +90,7 @@ class DeviceContextBarCoordinatorTest : BasePlatformTestCase() {
     )
 
     fun `test rendering a state with the picker open shows exactly one overlay and updates both panels`() {
-        val host = AdbToolboxHostPanel()
+        val host = DeviceCockpitHostPanel()
         val coordinator = coordinator(host)
         val before = host.overlays.overlayCount
 
@@ -107,7 +107,7 @@ class DeviceContextBarCoordinatorTest : BasePlatformTestCase() {
     }
 
     fun `test rendering a state with the picker closed dismisses the overlay`() {
-        val host = AdbToolboxHostPanel()
+        val host = DeviceCockpitHostPanel()
         val coordinator = coordinator(host)
         coordinator.render(DeviceBarViewState(picker = DevicePickerState(isOpen = true, items = listOf(item("AAA")))))
         val whileOpen = host.overlays.overlayCount
@@ -119,7 +119,7 @@ class DeviceContextBarCoordinatorTest : BasePlatformTestCase() {
     }
 
     fun `test disposing the coordinator cancels its scope and dismisses the picker overlay`() {
-        val host = AdbToolboxHostPanel()
+        val host = DeviceCockpitHostPanel()
         val dispatchers = TestDispatchers()
         val scope = CoroutineScope(SupervisorJob() + dispatchers.default)
         val coordinator = DeviceContextBarCoordinator(host, viewModel(dispatchers, scope), scope, dispatchers)
@@ -132,7 +132,7 @@ class DeviceContextBarCoordinatorTest : BasePlatformTestCase() {
     }
 
     fun `test disposing the host also removes the coordinator's picker overlay`() {
-        val host = AdbToolboxHostPanel()
+        val host = DeviceCockpitHostPanel()
         val coordinator = coordinator(host)
         coordinator.render(DeviceBarViewState(picker = DevicePickerState(isOpen = true, items = listOf(item("AAA")))))
 
@@ -145,7 +145,7 @@ class DeviceContextBarCoordinatorTest : BasePlatformTestCase() {
     // ---- Task 050: opening/closing the picker via keyboard must move focus with it ----
 
     fun `test opening the picker moves keyboard focus into the row list exactly once`() {
-        val host = AdbToolboxHostPanel()
+        val host = DeviceCockpitHostPanel()
         val coordinator = coordinator(host)
         val openState = DeviceBarViewState(picker = DevicePickerState(isOpen = true, items = listOf(item("AAA"))))
 
@@ -159,7 +159,7 @@ class DeviceContextBarCoordinatorTest : BasePlatformTestCase() {
     }
 
     fun `test closing the picker returns keyboard focus to the selector button`() {
-        val host = AdbToolboxHostPanel()
+        val host = DeviceCockpitHostPanel()
         val coordinator = coordinator(host)
         coordinator.render(DeviceBarViewState(picker = DevicePickerState(isOpen = true, items = listOf(item("AAA")))))
 
@@ -170,7 +170,7 @@ class DeviceContextBarCoordinatorTest : BasePlatformTestCase() {
     }
 
     fun `test a state that never opens the picker never touches focus`() {
-        val host = AdbToolboxHostPanel()
+        val host = DeviceCockpitHostPanel()
         val coordinator = coordinator(host)
 
         coordinator.render(DeviceBarViewState(bar = DeviceBarPresentation.NoDevice))
@@ -181,7 +181,7 @@ class DeviceContextBarCoordinatorTest : BasePlatformTestCase() {
     }
 
     fun `test the coordinator wires up against a real view model without a construction-time crash`() {
-        val host = AdbToolboxHostPanel()
+        val host = DeviceCockpitHostPanel()
         val dispatchers = TestDispatchers()
         val scope = CoroutineScope(SupervisorJob() + dispatchers.default)
 

@@ -10,7 +10,7 @@ import io.github.dkej123.devicecockpit.domain.nav.FakeNavigationPersistence
 import io.github.dkej123.devicecockpit.domain.nav.NavigationBadge
 import io.github.dkej123.devicecockpit.domain.nav.NavigationState
 import io.github.dkej123.devicecockpit.domain.nav.ViewId
-import io.github.dkej123.devicecockpit.intellij.host.AdbToolboxHostPanel
+import io.github.dkej123.devicecockpit.intellij.host.DeviceCockpitHostPanel
 import javax.swing.JLabel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -19,14 +19,14 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.isActive
 
 /**
- * Connects task 012's [NavigationViewModel] to task 010's [AdbToolboxHostPanel] via
+ * Connects task 012's [NavigationViewModel] to task 010's [DeviceCockpitHostPanel] via
  * [NavigationRoutingCoordinator]. Kept as a [BasePlatformTestCase] like every other test in this
  * module. Exercises [NavigationRoutingCoordinator.route] directly against constructed
  * [NavigationState] values — the same "invoke the handler directly, don't depend on a real
  * coroutine round trip" pattern [io.github.dkej123.devicecockpit.intellij.host.HostPresentationSignalsTest]
  * documents, and for the same reason: this headless sandbox's coroutine round trips through
  * `:application`'s `NavigationViewModel` (`combine`/`stateIn`) are unreliable here (see
- * [io.github.dkej123.devicecockpit.intellij.composition.AdbToolboxProjectServiceTest]'s `Dispatchers.EDT`
+ * [io.github.dkej123.devicecockpit.intellij.composition.DeviceCockpitProjectServiceTest]'s `Dispatchers.EDT`
  * class-doc note for the same class of gap). A separate smoke test below constructs a real
  * [NavigationRoutingCoordinator] with a real [NavigationViewModel] to exercise wiring/disposal
  * without asserting on async state propagation.
@@ -42,7 +42,7 @@ class NavigationRoutingCoordinatorTest : BasePlatformTestCase() {
     }
 
     private fun coordinator(
-        host: AdbToolboxHostPanel,
+        host: DeviceCockpitHostPanel,
         rail: NavigationRailPanel,
         openSettings: () -> Unit = {},
     ): NavigationRoutingCoordinator {
@@ -53,7 +53,7 @@ class NavigationRoutingCoordinatorTest : BasePlatformTestCase() {
     }
 
     fun `test routing to a registered view shows it in the host and syncs the rail`() {
-        val host = AdbToolboxHostPanel()
+        val host = DeviceCockpitHostPanel()
         val deviceView = JLabel("device")
         host.registerFeatureView(ViewId.Device.routeKey) { deviceView }
         val rail = NavigationRailPanel()
@@ -68,7 +68,7 @@ class NavigationRoutingCoordinatorTest : BasePlatformTestCase() {
     }
 
     fun `test routing does not recreate an already-registered view instance`() {
-        val host = AdbToolboxHostPanel()
+        val host = DeviceCockpitHostPanel()
         var constructionCount = 0
         host.registerFeatureView(ViewId.Apps.routeKey) { constructionCount++; JLabel("apps") }
         val rail = NavigationRailPanel()
@@ -84,7 +84,7 @@ class NavigationRoutingCoordinatorTest : BasePlatformTestCase() {
     }
 
     fun `test routing back and forth between two registered views preserves each instance`() {
-        val host = AdbToolboxHostPanel()
+        val host = DeviceCockpitHostPanel()
         val deviceView = JLabel("device")
         val appsView = JLabel("apps")
         host.registerFeatureView(ViewId.Device.routeKey) { deviceView }
@@ -103,7 +103,7 @@ class NavigationRoutingCoordinatorTest : BasePlatformTestCase() {
     }
 
     fun `test routing to an unregistered view highlights it in the rail without crashing`() {
-        val host = AdbToolboxHostPanel()
+        val host = DeviceCockpitHostPanel()
         val rail = NavigationRailPanel()
         val coordinator = coordinator(host, rail)
 
@@ -116,7 +116,7 @@ class NavigationRoutingCoordinatorTest : BasePlatformTestCase() {
     }
 
     fun `test every Settings request opens the dialog and the rail keeps the current view`() {
-        val host = AdbToolboxHostPanel()
+        val host = DeviceCockpitHostPanel()
         val rail = NavigationRailPanel()
         var opened = 0
         val dispatchers = TestDispatchers()
@@ -140,7 +140,7 @@ class NavigationRoutingCoordinatorTest : BasePlatformTestCase() {
     }
 
     fun `test routing a Loading or Error state does nothing`() {
-        val host = AdbToolboxHostPanel()
+        val host = DeviceCockpitHostPanel()
         val rail = NavigationRailPanel()
         rail.setSelected(ViewId.Device)
         val coordinator = coordinator(host, rail)
@@ -154,7 +154,7 @@ class NavigationRoutingCoordinatorTest : BasePlatformTestCase() {
     }
 
     fun `test routing to a registered view moves focus into its content`() {
-        val host = AdbToolboxHostPanel()
+        val host = DeviceCockpitHostPanel()
         var focusRequested = false
         val deviceView = object : JLabel("device") {
             override fun requestFocusInWindow(): Boolean {
@@ -174,7 +174,7 @@ class NavigationRoutingCoordinatorTest : BasePlatformTestCase() {
     }
 
     fun `test the coordinator wires the rail's selection through to the view model without a construction-time crash`() {
-        val host = AdbToolboxHostPanel()
+        val host = DeviceCockpitHostPanel()
         val rail = NavigationRailPanel()
         val coordinator = coordinator(host, rail)
 
@@ -184,7 +184,7 @@ class NavigationRoutingCoordinatorTest : BasePlatformTestCase() {
     }
 
     fun `test constructing with a device-context badge source does not crash and badges reach the rail directly`() {
-        val host = AdbToolboxHostPanel()
+        val host = DeviceCockpitHostPanel()
         val rail = NavigationRailPanel()
         val dispatchers = TestDispatchers()
         val scope = CoroutineScope(SupervisorJob() + dispatchers.default)
@@ -202,7 +202,7 @@ class NavigationRoutingCoordinatorTest : BasePlatformTestCase() {
     }
 
     fun `test disposing the coordinator cancels its scope`() {
-        val host = AdbToolboxHostPanel()
+        val host = DeviceCockpitHostPanel()
         val rail = NavigationRailPanel()
         val dispatchers = TestDispatchers()
         val scope = CoroutineScope(SupervisorJob() + dispatchers.default)

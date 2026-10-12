@@ -3,7 +3,7 @@ package io.github.dkej123.devicecockpit.intellij.display
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.scale.JBUIScale
 import com.intellij.util.ui.JBUI
-import io.github.dkej123.devicecockpit.intellij.ui.common.AdbToolboxTheme
+import io.github.dkej123.devicecockpit.intellij.ui.common.DeviceCockpitTheme
 import io.github.dkej123.devicecockpit.intellij.ui.common.ToggleSwitch
 import java.awt.Component
 import java.awt.Container
@@ -33,8 +33,8 @@ internal class QuickToggleTile(
     // Labels are never truncated (design §5.3 extended grid): an HTML label wraps at its width; its
     // accessible name stays the plain label for assistive tech and the E2E caption lookup.
     private val labelComponent = JBLabel("<html>${com.intellij.openapi.util.text.StringUtil.escapeXmlEntities(label)}</html>").apply {
-        font = AdbToolboxTheme.Typography.body.deriveFont(JBUIScale.scale(11.5f))
-        foreground = AdbToolboxTheme.Colors.text
+        font = DeviceCockpitTheme.Typography.body.deriveFont(JBUIScale.scale(11.5f))
+        foreground = DeviceCockpitTheme.Colors.text
         getAccessibleContext().accessibleName = label
         verticalAlignment = javax.swing.SwingConstants.TOP
     }
@@ -58,7 +58,7 @@ internal class QuickToggleTile(
     init {
         isOpaque = false
         toggle.getAccessibleContext().accessibleName = label
-        valueLabel.font = AdbToolboxTheme.Typography.mono.deriveFont(JBUIScale.scale(9.5f))
+        valueLabel.font = DeviceCockpitTheme.Typography.mono.deriveFont(JBUIScale.scale(9.5f))
         add(labelComponent)
         add(valueLabel)
         add(toggle)
@@ -93,7 +93,7 @@ internal class QuickToggleTile(
     private fun refresh() {
         val on = toggle.isSelected
         labelComponent.font = labelComponent.font.deriveFont(if (on) Font.BOLD else Font.PLAIN)
-        valueLabel.foreground = if (on) AdbToolboxTheme.Colors.accent else AdbToolboxTheme.Colors.textFaint
+        valueLabel.foreground = if (on) DeviceCockpitTheme.Colors.accent else DeviceCockpitTheme.Colors.textFaint
         cursor = Cursor.getPredefinedCursor(if (toggle.isEnabled) Cursor.HAND_CURSOR else Cursor.DEFAULT_CURSOR)
         toolTipText = toggle.toolTipText
         repaint()
@@ -104,7 +104,7 @@ internal class QuickToggleTile(
         if (isEnabled) return super.paint(graphics)
         val g2 = graphics.create() as Graphics2D
         try {
-            g2.composite = java.awt.AlphaComposite.getInstance(java.awt.AlphaComposite.SRC_OVER, AdbToolboxTheme.States.disabledOpacity)
+            g2.composite = java.awt.AlphaComposite.getInstance(java.awt.AlphaComposite.SRC_OVER, DeviceCockpitTheme.States.disabledOpacity)
             super.paint(g2)
         } finally {
             g2.dispose()
@@ -124,15 +124,15 @@ internal class QuickToggleTile(
             val arc = JBUIScale.scale(6) * 2
             val on = toggle.isSelected
             val fill = when {
-                on -> AdbToolboxTheme.Colors.accentBg
-                hovered && toggle.isEnabled -> AdbToolboxTheme.Colors.hover
+                on -> DeviceCockpitTheme.Colors.accentBg
+                hovered && toggle.isEnabled -> DeviceCockpitTheme.Colors.hover
                 else -> null
             }
             if (fill != null) {
                 g2.color = fill
                 g2.fillRoundRect(0, 0, width, height, arc, arc)
             }
-            g2.color = if (on) AdbToolboxTheme.Colors.accentBorder else AdbToolboxTheme.Colors.border
+            g2.color = if (on) DeviceCockpitTheme.Colors.accentBorder else DeviceCockpitTheme.Colors.border
             g2.drawRoundRect(0, 0, width - 1, height - 1, arc, arc)
         } finally {
             g2.dispose()
@@ -196,7 +196,7 @@ internal class QuickToggleGrid(tiles: List<QuickToggleTile>) : JPanel(null) {
     init {
         isOpaque = false
         alignmentX = Component.LEFT_ALIGNMENT
-        border = JBUI.Borders.empty(0, AdbToolboxTheme.Spacing.sectionInset)
+        border = JBUI.Borders.empty(0, DeviceCockpitTheme.Spacing.sectionInset)
         tiles.forEach(::add)
         layout = GridLayout()
     }

@@ -50,7 +50,7 @@ class HostPresentationSignals(private val hostComponent: JComponent) {
      * Wires both listeners. The theme listener subscribes to [LafManagerListener.TOPIC] on the
      * application message bus — `LafManager.add/removeLafManagerListener` are removed in 2026.1+ —
      * and [detach] disconnects it explicitly, matching this module's manual-cleanup `dispose()`
-     * convention (`AdbToolboxProjectService`, `AdbToolboxToolWindowPanel`, task 007).
+     * convention (`DeviceCockpitProjectService`, `DeviceCockpitToolWindowPanel`, task 007).
      */
     fun attach() {
         if (connection != null) return

@@ -6,8 +6,8 @@ import io.github.dkej123.devicecockpit.application.feedback.FeedbackViewModel
 import io.github.dkej123.devicecockpit.application.feedback.FeedbackViewState
 import io.github.dkej123.devicecockpit.domain.devicecontext.DeviceContextSnapshot
 import io.github.dkej123.devicecockpit.domain.dispatch.DispatcherProvider
-import io.github.dkej123.devicecockpit.intellij.host.AdbToolboxHostPanel
-import io.github.dkej123.devicecockpit.intellij.ui.common.AdbToolboxTheme
+import io.github.dkej123.devicecockpit.intellij.host.DeviceCockpitHostPanel
+import io.github.dkej123.devicecockpit.intellij.ui.common.DeviceCockpitTheme
 import java.awt.BorderLayout
 import java.awt.Rectangle
 import kotlinx.coroutines.CoroutineScope
@@ -18,10 +18,10 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.withContext
 
 /**
- * Connects task 013's [FeedbackViewModel] to task 010's [AdbToolboxHostPanel]: [FeedbackStatusPanel]
- * is mounted into [AdbToolboxHostPanel.feedbackSlot] (replacing task 007's `ShellViewModel`
- * status-text stand-in — `AdbToolboxToolWindowPanel`'s class doc), and [ToastStackPanel] is shown
- * as one bounded overlay in [AdbToolboxHostPanel.overlays] (`design/IMPLEMENTATION.md` §3: toasts
+ * Connects task 013's [FeedbackViewModel] to task 010's [DeviceCockpitHostPanel]: [FeedbackStatusPanel]
+ * is mounted into [DeviceCockpitHostPanel.feedbackSlot] (replacing task 007's `ShellViewModel`
+ * status-text stand-in — `DeviceCockpitToolWindowPanel`'s class doc), and [ToastStackPanel] is shown
+ * as one bounded overlay in [DeviceCockpitHostPanel.overlays] (`design/IMPLEMENTATION.md` §3: toasts
  * live in the tool window's `JLayeredPane`).
  *
  * Follows [io.github.dkej123.devicecockpit.intellij.nav.NavigationRoutingCoordinator]'s established shape:
@@ -32,7 +32,7 @@ import kotlinx.coroutines.withContext
  * directly" pattern documented on [io.github.dkej123.devicecockpit.intellij.nav.NavigationRoutingCoordinator.route]).
  */
 class FeedbackOverlayCoordinator(
-    host: AdbToolboxHostPanel,
+    host: DeviceCockpitHostPanel,
     private val viewModel: FeedbackViewModel,
     private val scope: CoroutineScope,
     private val dispatchers: DispatcherProvider,
@@ -80,7 +80,7 @@ class FeedbackOverlayCoordinator(
         val inset = 8
         val insetWidth = (width - inset * 2).coerceAtLeast(0)
         val preferredHeight = toastStackPanel.preferredSize.height
-        val bottom = height - AdbToolboxTheme.Sizes.statusBar - inset
+        val bottom = height - DeviceCockpitTheme.Sizes.statusBar - inset
         val top = (bottom - preferredHeight).coerceAtLeast(0)
         return Rectangle(inset, top, insetWidth, preferredHeight)
     }

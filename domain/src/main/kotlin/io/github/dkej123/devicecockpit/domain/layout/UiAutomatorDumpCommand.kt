@@ -27,6 +27,7 @@ sealed interface UiDumpRead {
  * Ported from Oh My Android, MIT — `Sources/Core/Android/LayoutSnapshot.swift` (`UIAutomatorSnapshotReader`).
  */
 object UiAutomatorDumpCommand {
+    // Device-side name kept from the pre-rename "ADB Toolbox" name for compatibility with helpers and files already on devices.
     private const val FILE = "/data/local/tmp/adbtoolbox-ui.xml"
 
     fun request(serial: DeviceSerial): AdbDeviceRequest = AdbDeviceRequest(

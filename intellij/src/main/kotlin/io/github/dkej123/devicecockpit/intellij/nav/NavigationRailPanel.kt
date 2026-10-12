@@ -2,12 +2,12 @@ package io.github.dkej123.devicecockpit.intellij.nav
 
 import com.intellij.icons.AllIcons
 import com.intellij.ui.scale.JBUIScale
-import io.github.dkej123.devicecockpit.intellij.icons.AdbToolboxIcons
+import io.github.dkej123.devicecockpit.intellij.icons.DeviceCockpitIcons
 import com.intellij.ui.components.JBList
 import com.intellij.ui.components.JBPanel
 import io.github.dkej123.devicecockpit.domain.nav.NavigationBadge
 import io.github.dkej123.devicecockpit.domain.nav.ViewId
-import io.github.dkej123.devicecockpit.intellij.ui.common.AdbToolboxTheme
+import io.github.dkej123.devicecockpit.intellij.ui.common.DeviceCockpitTheme
 import java.awt.BorderLayout
 import java.awt.Component
 import java.awt.Graphics
@@ -67,7 +67,7 @@ class NavigationRailPanel : JBPanel<NavigationRailPanel>(BorderLayout()) {
             val index = super.locationToIndex(location)
             if (index !in 0 until model.size || model.getElementAt(index) != ViewId.Settings) return index
             val bounds = getCellBounds(index, index) ?: return index
-            return if (location.y >= bounds.y + bounds.height - AdbToolboxTheme.Sizes.railButton) index else -1
+            return if (location.y >= bounds.y + bounds.height - DeviceCockpitTheme.Sizes.railButton) index else -1
         }
 
         // Cell heights depend on the rail height (the stretched Settings row), so a height change
@@ -86,7 +86,7 @@ class NavigationRailPanel : JBPanel<NavigationRailPanel>(BorderLayout()) {
         isOpaque = false
         // `railStyle`: `padding: 4px 0 6px`.
         border = javax.swing.BorderFactory.createEmptyBorder(
-            AdbToolboxTheme.Spacing.s2, 0, AdbToolboxTheme.Spacing.s3, 0,
+            DeviceCockpitTheme.Spacing.s2, 0, DeviceCockpitTheme.Spacing.s3, 0,
         )
         cellRenderer = RailCellRenderer({ badgeFor(it) }, { settingsRowHeight() }, { hoveredIndex })
     }
@@ -97,10 +97,10 @@ class NavigationRailPanel : JBPanel<NavigationRailPanel>(BorderLayout()) {
     private var suppressSelectionEvents = false
 
     init {
-        preferredSize = java.awt.Dimension(AdbToolboxTheme.Sizes.rail, 0)
-        minimumSize = java.awt.Dimension(AdbToolboxTheme.Sizes.rail, 0)
+        preferredSize = java.awt.Dimension(DeviceCockpitTheme.Sizes.rail, 0)
+        minimumSize = java.awt.Dimension(DeviceCockpitTheme.Sizes.rail, 0)
         isOpaque = true
-        background = AdbToolboxTheme.Colors.panel
+        background = DeviceCockpitTheme.Colors.panel
         add(list, BorderLayout.CENTER)
         val hoverTracker = object : java.awt.event.MouseAdapter() {
             override fun mouseMoved(e: MouseEvent) = hover(list.locationToIndex(e.point))
@@ -150,7 +150,7 @@ class NavigationRailPanel : JBPanel<NavigationRailPanel>(BorderLayout()) {
 }
 
 /** A 26px rail button plus the rail's 2px gap. */
-private val RAIL_ROW_HEIGHT: () -> Int = { AdbToolboxTheme.Sizes.railButton + AdbToolboxTheme.Spacing.s1 }
+private val RAIL_ROW_HEIGHT: () -> Int = { DeviceCockpitTheme.Sizes.railButton + DeviceCockpitTheme.Spacing.s1 }
 
 /** Shared by [NavigationRailPanel]'s mouse-hover tooltip and [RailCellRenderer]'s per-row accessible name. */
 private val TOOLTIPS: Map<ViewId, String> = mapOf(
@@ -190,15 +190,15 @@ private class RailCellRenderer(
     ): Component {
         pinnedToBottom = value == ViewId.Settings
         val height = if (pinnedToBottom) settingsRowHeight() else RAIL_ROW_HEIGHT()
-        preferredSize = java.awt.Dimension(AdbToolboxTheme.Sizes.rail, height)
+        preferredSize = java.awt.Dimension(DeviceCockpitTheme.Sizes.rail, height)
         badge = badgeFor(value)
         selected = isSelected
         hovered = index == hoveredIndex()
-        background = if (isSelected) AdbToolboxTheme.Colors.accentBg else AdbToolboxTheme.Colors.panel
+        background = if (isSelected) DeviceCockpitTheme.Colors.accentBg else DeviceCockpitTheme.Colors.panel
 
         // Icon set v2 view glyphs; the selected one is recolored to `accent` like the prototype.
         val glyph = railIcon(value)
-        icon = if (isSelected && value != ViewId.Settings) AdbToolboxIcons.tinted(glyph, AdbToolboxTheme.Colors.accent) else glyph
+        icon = if (isSelected && value != ViewId.Settings) DeviceCockpitIcons.tinted(glyph, DeviceCockpitTheme.Colors.accent) else glyph
 
         toolTipText = TOOLTIPS[value] ?: value.name
         getAccessibleContext().accessibleName = TOOLTIPS[value] ?: value.name
@@ -213,20 +213,20 @@ private class RailCellRenderer(
             // The platform list UI has already filled the whole cell on hover/selection; the
             // Settings cell is the stretched spacer, so that fill covered half the rail. Only the
             // 26px button below may show a fill.
-            g2.color = AdbToolboxTheme.Colors.panel
+            g2.color = DeviceCockpitTheme.Colors.panel
             g2.fillRect(0, 0, width, height)
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
-            val size = AdbToolboxTheme.Sizes.railButton
+            val size = DeviceCockpitTheme.Sizes.railButton
             val x = (width - size) / 2
             val y = if (pinnedToBottom) height - size else 0
-            val arc = AdbToolboxTheme.Radii.railButton * 2
+            val arc = DeviceCockpitTheme.Radii.railButton * 2
             if (selected) {
                 g2.color = background
                 g2.fillRoundRect(x, y, size, size, arc, arc)
-                g2.color = AdbToolboxTheme.Colors.accentBorder
+                g2.color = DeviceCockpitTheme.Colors.accentBorder
                 g2.drawRoundRect(x, y, size - 1, size - 1, arc, arc)
             } else if (hovered) {
-                g2.color = AdbToolboxTheme.Colors.hover
+                g2.color = DeviceCockpitTheme.Colors.hover
                 g2.fillRoundRect(x, y, size, size, arc, arc)
             }
             icon?.let { glyph ->
@@ -252,15 +252,15 @@ private class RailCellRenderer(
      * it paints amber (Display/Network).
      */
     private fun badgeColor(badge: NavigationBadge) = when (badge) {
-        is NavigationBadge.Attention -> AdbToolboxTheme.Colors.red
-        else -> AdbToolboxTheme.Colors.amber
+        is NavigationBadge.Attention -> DeviceCockpitTheme.Colors.red
+        else -> DeviceCockpitTheme.Colors.amber
     }
 }
 
 private fun railIcon(viewId: ViewId): javax.swing.Icon = when (viewId) {
-    ViewId.Device -> AdbToolboxIcons.Views.device
-    ViewId.Apps -> AdbToolboxIcons.Views.apps
-    ViewId.Network -> AdbToolboxIcons.Views.network
-    ViewId.Logcat -> AdbToolboxIcons.Views.logcat
+    ViewId.Device -> DeviceCockpitIcons.Views.device
+    ViewId.Apps -> DeviceCockpitIcons.Views.apps
+    ViewId.Network -> DeviceCockpitIcons.Views.network
+    ViewId.Logcat -> DeviceCockpitIcons.Views.logcat
     ViewId.Settings -> AllIcons.General.Settings
 }

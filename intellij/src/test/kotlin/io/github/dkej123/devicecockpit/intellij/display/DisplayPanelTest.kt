@@ -14,7 +14,7 @@ import io.github.dkej123.devicecockpit.domain.display.toggles.ScreenRotation
 import io.github.dkej123.devicecockpit.domain.display.AnimationsSummary
 import io.github.dkej123.devicecockpit.domain.display.density.DensityReading
 import io.github.dkej123.devicecockpit.domain.display.fontscale.FontScaleState
-import io.github.dkej123.devicecockpit.intellij.ui.common.AdbToolboxTheme
+import io.github.dkej123.devicecockpit.intellij.ui.common.DeviceCockpitTheme
 import java.awt.event.ActionEvent
 
 /**
@@ -142,7 +142,7 @@ class DisplayPanelTest : BasePlatformTestCase() {
         p.update(FontScaleState.Idle(1.0))
 
         assertEquals("default", p.displayMetaLabelForTest.text)
-        assertEquals(AdbToolboxTheme.Colors.textFaint, p.displayMetaLabelForTest.foreground)
+        assertEquals(DeviceCockpitTheme.Colors.textFaint, p.displayMetaLabelForTest.foreground)
         assertFalse(p.fontOverrideRowForTest.isVisible)
     }
 
@@ -152,13 +152,13 @@ class DisplayPanelTest : BasePlatformTestCase() {
         p.update(FontScaleState.Idle(1.3))
 
         assertEquals("1.3× applied", p.displayMetaLabelForTest.text)
-        assertEquals(AdbToolboxTheme.Colors.amber, p.displayMetaLabelForTest.foreground)
-        assertEquals(AdbToolboxTheme.Colors.amber, p.fontComboForTest.foreground)
+        assertEquals(DeviceCockpitTheme.Colors.amber, p.displayMetaLabelForTest.foreground)
+        assertEquals(DeviceCockpitTheme.Colors.amber, p.fontComboForTest.foreground)
         assertEquals("warning", p.fontComboForTest.getClientProperty("JComponent.outline"))
         assertTrue(p.fontOverrideRowForTest.isVisible)
 
         p.update(FontScaleState.Idle(1.0))
-        assertFalse(p.fontComboForTest.foreground == AdbToolboxTheme.Colors.amber)
+        assertFalse(p.fontComboForTest.foreground == DeviceCockpitTheme.Colors.amber)
         assertNull(p.fontComboForTest.getClientProperty("JComponent.outline"))
         assertFalse(p.fontOverrideRowForTest.isVisible)
     }
@@ -231,7 +231,7 @@ class DisplayPanelTest : BasePlatformTestCase() {
         p.update(DensityViewState.Idle(DensityReading(420, null)))
 
         assertEquals("default", p.displayMetaLabelForTest.text)
-        assertEquals(AdbToolboxTheme.Colors.textFaint, p.displayMetaLabelForTest.foreground)
+        assertEquals(DeviceCockpitTheme.Colors.textFaint, p.displayMetaLabelForTest.foreground)
         assertFalse(p.densityOverrideRowForTest.isVisible)
         assertTrue(p.densityHelpLabelForTest.text.contains("420 dpi"))
     }
@@ -242,7 +242,7 @@ class DisplayPanelTest : BasePlatformTestCase() {
         p.update(DensityViewState.Idle(DensityReading(420, 525)))
 
         assertEquals("525 dpi applied", p.displayMetaLabelForTest.text)
-        assertEquals(AdbToolboxTheme.Colors.amber, p.displayMetaLabelForTest.foreground)
+        assertEquals(DeviceCockpitTheme.Colors.amber, p.displayMetaLabelForTest.foreground)
         assertTrue(p.densityOverrideRowForTest.isVisible)
     }
 
@@ -455,7 +455,7 @@ class DisplayPanelTest : BasePlatformTestCase() {
         p.update(DeviceSettingTogglesViewState(rotation = QuickToggleFieldState.Idle(ScreenRotation.Landscape)))
 
         assertEquals("landscape · locked", p.rotationValueLabelForTest.text)
-        assertEquals(io.github.dkej123.devicecockpit.intellij.ui.common.AdbToolboxTheme.Colors.amber, p.rotationValueLabelForTest.foreground)
+        assertEquals(io.github.dkej123.devicecockpit.intellij.ui.common.DeviceCockpitTheme.Colors.amber, p.rotationValueLabelForTest.foreground)
         p.rotationChipRowForTest.chips.first { it.value == ScreenRotation.Auto }.doClick()
         assertEquals(listOf(ScreenRotation.Auto), chosen)
     }
@@ -534,14 +534,14 @@ class DisplayPanelTest : BasePlatformTestCase() {
 
         assertEquals(listOf("Standard", "0", "1", "2", "3", "4"), p.processLimitChipRowForTest.chips.map { it.label })
         assertEquals("standard", p.processLimitValueLabelForTest.text)
-        assertEquals(AdbToolboxTheme.Colors.textFaint, p.processLimitValueLabelForTest.foreground)
+        assertEquals(DeviceCockpitTheme.Colors.textFaint, p.processLimitValueLabelForTest.foreground)
 
         p.processLimitChipRowForTest.chips.first { it.label == "2" }.doClick()
         assertEquals(2, applied)
 
         p.update(DeveloperOptionsViewState(processLimit = QuickToggleFieldState.Idle(2)))
         assertEquals("2 max", p.processLimitValueLabelForTest.text)
-        assertEquals(AdbToolboxTheme.Colors.amber, p.processLimitValueLabelForTest.foreground)
+        assertEquals(DeviceCockpitTheme.Colors.amber, p.processLimitValueLabelForTest.foreground)
         assertEquals(2, p.processLimitChipRowForTest.selectedValue)
     }
 

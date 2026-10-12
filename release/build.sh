@@ -11,7 +11,8 @@ gradle build-plugin clean :intellij:buildPlugin
 zip="$(plugin_zip)"
 [[ -f "$zip" ]] || rdie "expected $zip"
 
-# The descriptor inside the plugin jar must carry the release identity and version.
+# The descriptor inside the plugin jar must carry the release identity and version. The folder inside the ZIP
+# (adb-toolbox/, archiveBaseName) and the plugin id keep the former name for compatibility.
 descriptor="$(unzip -p "$zip" "adb-toolbox/lib/intellij-$version.jar" 2>/dev/null | python3 -c '
 import sys, io, zipfile
 data = sys.stdin.buffer.read()

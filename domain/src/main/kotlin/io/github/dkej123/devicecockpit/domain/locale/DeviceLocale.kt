@@ -94,6 +94,7 @@ interface DeviceLocalePort {
  * `locales=<comma-separated tags>` or `error=<exception>`, then `END`.
  */
 object LocaleHelperCommand {
+    // Device-side name kept from the pre-rename "ADB Toolbox" name for compatibility with helpers and files already on devices.
     private const val HEADER = "ADBTOOLBOX-LOCALE 1"
     private const val MAIN_CLASS = "io.github.dkej123.devicecockpit.devicehelper.LocaleMain"
 

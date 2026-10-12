@@ -11,7 +11,7 @@ internal class ViewportWidthPanel : JPanel(), Scrollable {
     override fun getPreferredScrollableViewportSize(): Dimension = preferredSize
 
     override fun getScrollableUnitIncrement(visibleRect: Rectangle, orientation: Int, direction: Int): Int =
-        if (orientation == SwingConstants.VERTICAL) AdbToolboxTheme.Spacing.s5 else AdbToolboxTheme.Spacing.s4
+        if (orientation == SwingConstants.VERTICAL) DeviceCockpitTheme.Spacing.s5 else DeviceCockpitTheme.Spacing.s4
 
     override fun getScrollableBlockIncrement(visibleRect: Rectangle, orientation: Int, direction: Int): Int =
         if (orientation == SwingConstants.VERTICAL) visibleRect.height else visibleRect.width

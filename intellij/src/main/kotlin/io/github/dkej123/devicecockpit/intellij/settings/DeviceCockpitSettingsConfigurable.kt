@@ -13,12 +13,12 @@ import io.github.dkej123.devicecockpit.application.settings.SettingsApplyResult
 import io.github.dkej123.devicecockpit.application.settings.SettingsUseCase
 import io.github.dkej123.devicecockpit.domain.settings.SettingsFieldError
 import io.github.dkej123.devicecockpit.domain.settings.SettingsState
-import io.github.dkej123.devicecockpit.intellij.composition.AdbToolboxProjectService
+import io.github.dkej123.devicecockpit.intellij.composition.DeviceCockpitProjectService
 import io.github.dkej123.devicecockpit.intellij.diagnostics.DiagnosticsActions
 import io.github.dkej123.devicecockpit.intellij.diagnostics.DiagnosticsService
-import io.github.dkej123.devicecockpit.intellij.persistence.AdbToolboxProjectState
+import io.github.dkej123.devicecockpit.intellij.persistence.DeviceCockpitProjectState
 import io.github.dkej123.devicecockpit.intellij.persistence.SettingsPersistenceAdapter
-import io.github.dkej123.devicecockpit.intellij.ui.common.AdbToolboxTheme
+import io.github.dkej123.devicecockpit.intellij.ui.common.DeviceCockpitTheme
 import kotlinx.coroutines.runBlocking
 import java.awt.FlowLayout
 import javax.swing.JButton
@@ -40,7 +40,7 @@ internal interface AppPreferences {
 }
 
 private object ServiceAppPreferences : AppPreferences {
-    private val settings get() = io.github.dkej123.devicecockpit.intellij.mcp.AdbToolboxAppSettings.getInstance()
+    private val settings get() = io.github.dkej123.devicecockpit.intellij.mcp.DeviceCockpitAppSettings.getInstance()
     override var copyScreenshotsToClipboard: Boolean
         get() = settings.copyScreenshotsToClipboard
         set(value) {
@@ -54,7 +54,7 @@ private object ServiceAppPreferences : AppPreferences {
 
     override fun applyMcp(project: Project?) {
         if (project != null && mcpAccess != io.github.dkej123.devicecockpit.application.mcp.McpAccess.Off) {
-            project.service<AdbToolboxProjectService>().registerMcpTools()
+            project.service<DeviceCockpitProjectService>().registerMcpTools()
         }
         io.github.dkej123.devicecockpit.intellij.mcp.McpServerService.getInstance().applyAccess()
     }
@@ -69,7 +69,7 @@ private object ServiceDiagnosticsPreferences : DiagnosticsPreferences {
 }
 
 /** Native, project-scoped editor for the persisted task 038 settings, plus the diagnostics tools. */
-class AdbToolboxSettingsConfigurable internal constructor(
+class DeviceCockpitSettingsConfigurable internal constructor(
     private val backend: SettingsEditorBackend,
     private val project: Project? = null,
     private val diagnosticsPreferences: DiagnosticsPreferences = ServiceDiagnosticsPreferences,
@@ -162,7 +162,7 @@ class AdbToolboxSettingsConfigurable internal constructor(
         val copyToClipboard = JBCheckBox("Also copy screenshots to the clipboard").apply { name = "copyScreenshotsCheckBox" }
         val mcp = io.github.dkej123.devicecockpit.intellij.mcp.McpSettingsPanel(
             status = { io.github.dkej123.devicecockpit.intellij.mcp.McpServerService.getInstance().status.value },
-            token = { io.github.dkej123.devicecockpit.intellij.mcp.AdbToolboxAppSettings.getInstance().mcpToken() },
+            token = { io.github.dkej123.devicecockpit.intellij.mcp.DeviceCockpitAppSettings.getInstance().mcpToken() },
             regenerate = { io.github.dkej123.devicecockpit.intellij.mcp.McpServerService.getInstance().regenerateToken() },
             tools = io.github.dkej123.devicecockpit.application.mcp.tools.mcpCatalog(),
         )
@@ -221,6 +221,7 @@ class AdbToolboxSettingsConfigurable internal constructor(
     }
 
     companion object {
+        /** Configurable id (plugin.xml), kept from the pre-rename "ADB Toolbox" name for compatibility (links and search to the page use it). */
         const val ID: String = "dev.acme.adbtoolbox.settings"
 
         private fun settingsField(componentName: String): JBTextField = JBTextField().apply {
@@ -228,9 +229,9 @@ class AdbToolboxSettingsConfigurable internal constructor(
             columns = 36
             // Paths and the buffer-size value are copy-paste targets, per the design system's
             // "serials, IPs, ports, package names, densities... are always mono" rule (matches the
-            // same JBTextField().apply { font = AdbToolboxTheme.Typography.mono } custom-field
+            // same JBTextField().apply { font = DeviceCockpitTheme.Typography.mono } custom-field
             // pattern task 046's DisplayPanel uses for its own numeric override fields).
-            font = AdbToolboxTheme.Typography.mono
+            font = DeviceCockpitTheme.Typography.mono
         }
 
         private fun Set<SettingsFieldError>.toMessage(): String = map { error ->
@@ -255,9 +256,9 @@ internal interface SettingsEditorBackend {
 private class ProjectSettingsEditorBackend(
     private val project: Project,
 ) : SettingsEditorBackend {
-    private val persistence = SettingsPersistenceAdapter(project.service<AdbToolboxProjectState>())
+    private val persistence = SettingsPersistenceAdapter(project.service<DeviceCockpitProjectState>())
     private val settings: SettingsUseCase
-        get() = project.service<AdbToolboxProjectService>().settingsUseCase
+        get() = project.service<DeviceCockpitProjectService>().settingsUseCase
 
     // Reading the in-memory PersistentStateComponent slice is intentionally lightweight. In
     // particular it must not initialize the full composition service while IntelliJ's

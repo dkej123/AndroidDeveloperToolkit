@@ -66,7 +66,7 @@ class ShortcutsAndDiagnosticsE2ETest : E2eTest() {
 
         var bundle: File? = null
         awaitUntil(Duration.ofSeconds(60), Duration.ofMillis(500), "a diagnostics ZIP") {
-            bundle = desktop.listFiles().orEmpty().firstOrNull { it.name !in before && it.name.startsWith("adb-toolbox-diagnostics") && it.name.endsWith(".zip") }
+            bundle = desktop.listFiles().orEmpty().firstOrNull { it.name !in before && it.name.startsWith("device-cockpit-diagnostics") && it.name.endsWith(".zip") }
             bundle != null
         }
         Thread.sleep(1000)

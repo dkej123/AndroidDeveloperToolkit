@@ -10,7 +10,7 @@ import io.github.dkej123.devicecockpit.application.locale.LocaleViewState
 import io.github.dkej123.devicecockpit.application.locale.LocationViewModel
 import io.github.dkej123.devicecockpit.application.locale.LocationViewState
 import io.github.dkej123.devicecockpit.domain.location.EmulatorLocationCommand
-import io.github.dkej123.devicecockpit.intellij.ui.common.AdbToolboxTheme
+import io.github.dkej123.devicecockpit.intellij.ui.common.DeviceCockpitTheme
 import io.github.dkej123.devicecockpit.intellij.ui.common.DesignButton
 import io.github.dkej123.devicecockpit.intellij.ui.common.DesignButtonStyle
 import io.github.dkej123.devicecockpit.intellij.ui.common.DesignSections
@@ -51,7 +51,7 @@ class LocaleSection(
     private val searchField = JBTextField().apply {
         isOpaque = false
         border = BorderFactory.createEmptyBorder()
-        font = AdbToolboxTheme.Typography.body.deriveFont(JBUIScale.scale(11f))
+        font = DeviceCockpitTheme.Typography.body.deriveFont(JBUIScale.scale(11f))
         emptyText.text = "Search languages and regions…"
         getAccessibleContext().accessibleName = "Search languages and regions"
         document.addDocumentListener(object : DocumentListener {
@@ -65,16 +65,16 @@ class LocaleSection(
         isContentAreaFilled = false
         isFocusPainted = false
         isBorderPainted = false
-        foreground = AdbToolboxTheme.Colors.textFaint
+        foreground = DeviceCockpitTheme.Colors.textFaint
         margin = java.awt.Insets(0, 0, 0, 0)
         isVisible = false
         toolTipText = "Clear"
         addActionListener { searchField.text = "" }
     }
-    private val searchWrap = RoundedSurface(AdbToolboxTheme.Colors.field, AdbToolboxTheme.Colors.borderStrong, radius = { AdbToolboxTheme.Radii.field }).apply {
-        layout = FlexRowLayout(AdbToolboxTheme.Spacing.s3)
+    private val searchWrap = RoundedSurface(DeviceCockpitTheme.Colors.field, DeviceCockpitTheme.Colors.borderStrong, radius = { DeviceCockpitTheme.Radii.field }).apply {
+        layout = FlexRowLayout(DeviceCockpitTheme.Spacing.s3)
         border = JBUI.Borders.empty(0, JBUIScale.scale(7))
-        preferredSize = Dimension(0, AdbToolboxTheme.Sizes.field)
+        preferredSize = Dimension(0, DeviceCockpitTheme.Sizes.field)
         add(JBLabel(AllIcons.Actions.Search))
         add(searchField, FlexRowLayout.FILL)
         add(clearButton)
@@ -84,12 +84,12 @@ class LocaleSection(
     }.apply {
         isOpaque = false
         alignmentX = Component.LEFT_ALIGNMENT
-        border = JBUI.Borders.empty(0, AdbToolboxTheme.Spacing.sectionInset)
+        border = JBUI.Borders.empty(0, DeviceCockpitTheme.Spacing.sectionInset)
         add(searchWrap, BorderLayout.CENTER)
     }
     private val groupLabel = JBLabel("TEST LOCALES").apply {
-        font = AdbToolboxTheme.Typography.groupLabel
-        foreground = AdbToolboxTheme.Colors.textFaint
+        font = DeviceCockpitTheme.Typography.groupLabel
+        foreground = DeviceCockpitTheme.Colors.textFaint
     }
     private val rowsPanel = JPanel().apply {
         layout = BoxLayout(this, BoxLayout.Y_AXIS)
@@ -101,13 +101,13 @@ class LocaleSection(
         "Changes the system language; the foreground activity restarts. Pseudo-locales only change strings in builds with pseudoLocalesEnabled.",
     )
     private val originalNote = JBLabel("").apply {
-        font = AdbToolboxTheme.Typography.caption.deriveFont(JBUIScale.scale(10.5f))
-        foreground = AdbToolboxTheme.Colors.textFaint
+        font = DeviceCockpitTheme.Typography.caption.deriveFont(JBUIScale.scale(10.5f))
+        foreground = DeviceCockpitTheme.Colors.textFaint
     }
     private val resetLink = DesignButton("Reset to original", DesignButtonStyle.LINK).apply { addActionListener { onReset() } }
-    private val overrideRow = flexRow(AdbToolboxTheme.Spacing.s4, originalNote, resetLink, fill = originalNote).apply {
+    private val overrideRow = flexRow(DeviceCockpitTheme.Spacing.s4, originalNote, resetLink, fill = originalNote).apply {
         isVisible = false
-        border = JBUI.Borders.empty(AdbToolboxTheme.Spacing.s1, AdbToolboxTheme.Spacing.sectionInset, 0, AdbToolboxTheme.Spacing.sectionInset)
+        border = JBUI.Borders.empty(DeviceCockpitTheme.Spacing.s1, DeviceCockpitTheme.Spacing.sectionInset, 0, DeviceCockpitTheme.Spacing.sectionInset)
     }
     private var currentRows: List<LocaleRow> = emptyList()
     private var activeTag: String? = null
@@ -150,7 +150,7 @@ class LocaleSection(
             locale.overridden -> "${locale.current} applied"
             else -> locale.current
         }
-        metaLabel.foreground = if (locale?.overridden == true) AdbToolboxTheme.Colors.amber else AdbToolboxTheme.Colors.textFaint
+        metaLabel.foreground = if (locale?.overridden == true) DeviceCockpitTheme.Colors.amber else DeviceCockpitTheme.Colors.textFaint
         metaLabel.toolTipText = state.error
         activeTag = locale?.takeIf { it.overridden }?.current
         groupLabel.text = if (state.searching) "RESULTS" else "TEST LOCALES"
@@ -180,27 +180,27 @@ class LocaleSection(
         init {
             isOpaque = false
             alignmentX = Component.LEFT_ALIGNMENT
-            layout = FlexRowLayout(AdbToolboxTheme.Spacing.s4)
-            border = JBUI.Borders.empty(0, AdbToolboxTheme.Spacing.sectionInset)
+            layout = FlexRowLayout(DeviceCockpitTheme.Spacing.s4)
+            border = JBUI.Borders.empty(0, DeviceCockpitTheme.Spacing.sectionInset)
             preferredSize = Dimension(0, JBUIScale.scale(26))
             maximumSize = Dimension(Int.MAX_VALUE, JBUIScale.scale(26))
             val code = JBLabel(row.tag).apply {
-                font = AdbToolboxTheme.Typography.mono.deriveFont(if (active) Font.BOLD else Font.PLAIN, JBUIScale.scale(11f))
-                foreground = if (active) AdbToolboxTheme.Colors.amber else AdbToolboxTheme.Colors.text
+                font = DeviceCockpitTheme.Typography.mono.deriveFont(if (active) Font.BOLD else Font.PLAIN, JBUIScale.scale(11f))
+                foreground = if (active) DeviceCockpitTheme.Colors.amber else DeviceCockpitTheme.Colors.text
                 preferredSize = Dimension(JBUIScale.scale(44), preferredSize.height)
                 minimumSize = preferredSize
             }
             val explanation = JBLabel(if (applying) "Applying…" else row.explanation).apply {
-                font = AdbToolboxTheme.Typography.caption.deriveFont(JBUIScale.scale(10.5f))
-                foreground = AdbToolboxTheme.Colors.textFaint
+                font = DeviceCockpitTheme.Typography.caption.deriveFont(JBUIScale.scale(10.5f))
+                foreground = DeviceCockpitTheme.Colors.textFaint
                 minimumSize = Dimension(0, preferredSize.height)
             }
             add(code)
             add(explanation, FlexRowLayout.FILL)
             if (active) {
                 add(JBLabel("applied").apply {
-                    font = AdbToolboxTheme.Typography.groupLabel.deriveFont(Font.BOLD, JBUIScale.scale(9f))
-                    foreground = AdbToolboxTheme.Colors.amber
+                    font = DeviceCockpitTheme.Typography.groupLabel.deriveFont(Font.BOLD, JBUIScale.scale(9f))
+                    foreground = DeviceCockpitTheme.Colors.amber
                 })
             }
             toolTipText = "${row.tag} — ${row.explanation}"
@@ -228,7 +228,7 @@ class LocaleSection(
             if (enabledForDevice) return super.paint(g)
             val g2 = g.create() as Graphics2D
             try {
-                g2.composite = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, AdbToolboxTheme.States.disabledOpacity)
+                g2.composite = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, DeviceCockpitTheme.States.disabledOpacity)
                 super.paint(g2)
             } finally {
                 g2.dispose()
@@ -237,8 +237,8 @@ class LocaleSection(
 
         override fun paintComponent(g: Graphics) {
             val fill = when {
-                active -> AdbToolboxTheme.Colors.amberBg
-                hovered && enabledForDevice -> AdbToolboxTheme.Colors.hover
+                active -> DeviceCockpitTheme.Colors.amberBg
+                hovered && enabledForDevice -> DeviceCockpitTheme.Colors.hover
                 else -> null
             } ?: return
             g.color = fill
@@ -271,7 +271,7 @@ class LocationSection(
     ).apply {
         clearSelection()
         chips.last().accessibleContext.accessibleName = "Custom location"
-        border = JBUI.Borders.empty(0, AdbToolboxTheme.Spacing.sectionInset - AdbToolboxTheme.Spacing.s2)
+        border = JBUI.Borders.empty(0, DeviceCockpitTheme.Spacing.sectionInset - DeviceCockpitTheme.Spacing.s2)
         chips.forEach { chip ->
             chip.toolTipText = when (val value = chip.value) {
                 is Choice.City -> EmulatorLocationCommand.cities.first { it.name == value.name }.point.let { p ->
@@ -295,19 +295,19 @@ class LocationSection(
     private val latitudeField: JBTextField = coordinateField(84, "latitude")
     private val longitudeField: JBTextField = coordinateField(92, "longitude")
     private val errorLabel: JBLabel = JBLabel("").apply {
-        font = AdbToolboxTheme.Typography.caption.deriveFont(JBUIScale.scale(10.5f))
-        foreground = AdbToolboxTheme.Colors.red
+        font = DeviceCockpitTheme.Typography.caption.deriveFont(JBUIScale.scale(10.5f))
+        foreground = DeviceCockpitTheme.Colors.red
         isVisible = false
     }
     private val applyButton: DesignButton = DesignButton("Apply", DesignButtonStyle.SECONDARY).apply { addActionListener { applyCustom() } }
     private val customRow: JPanel = flexRow(
-        AdbToolboxTheme.Spacing.s3,
+        DeviceCockpitTheme.Spacing.s3,
         latitudeField,
-        JBLabel(",").apply { font = AdbToolboxTheme.Typography.mono; foreground = AdbToolboxTheme.Colors.textFaint },
+        JBLabel(",").apply { font = DeviceCockpitTheme.Typography.mono; foreground = DeviceCockpitTheme.Colors.textFaint },
         longitudeField,
         applyButton,
     ).apply {
-        border = JBUI.Borders.empty(AdbToolboxTheme.Spacing.s1, AdbToolboxTheme.Spacing.sectionInset, 0, AdbToolboxTheme.Spacing.sectionInset)
+        border = JBUI.Borders.empty(DeviceCockpitTheme.Spacing.s1, DeviceCockpitTheme.Spacing.sectionInset, 0, DeviceCockpitTheme.Spacing.sectionInset)
     }
     private val errorRow = DesignSections.inset(errorLabel)
 
@@ -341,14 +341,14 @@ class LocationSection(
     }
 
     private fun coordinateField(width: Int, name: String): JBTextField = JBTextField().apply {
-        font = AdbToolboxTheme.Typography.mono
-        background = AdbToolboxTheme.Colors.field
-        preferredSize = Dimension(JBUIScale.scale(width), AdbToolboxTheme.Sizes.field)
+        font = DeviceCockpitTheme.Typography.mono
+        background = DeviceCockpitTheme.Colors.field
+        preferredSize = Dimension(JBUIScale.scale(width), DeviceCockpitTheme.Sizes.field)
         emptyText.text = name
         getAccessibleContext().accessibleName = name.replaceFirstChar(Char::uppercase)
         border = BorderFactory.createCompoundBorder(
-            SolidChipBorder(AdbToolboxTheme.Colors.borderStrong, radius = { AdbToolboxTheme.Radii.field }),
-            JBUI.Borders.empty(0, AdbToolboxTheme.Spacing.s3),
+            SolidChipBorder(DeviceCockpitTheme.Colors.borderStrong, radius = { DeviceCockpitTheme.Radii.field }),
+            JBUI.Borders.empty(0, DeviceCockpitTheme.Spacing.s3),
         )
         addActionListener { applyCustom() }
     }
@@ -380,8 +380,8 @@ class LocationSection(
         val errors = listOfNotNull(state.latitudeError, state.longitudeError)
         errorLabel.text = errors.joinToString(" · ")
         errorLabel.isVisible = errors.isNotEmpty()
-        latitudeField.foreground = if (state.latitudeError != null) AdbToolboxTheme.Colors.red else AdbToolboxTheme.Colors.text
-        longitudeField.foreground = if (state.longitudeError != null) AdbToolboxTheme.Colors.red else AdbToolboxTheme.Colors.text
+        latitudeField.foreground = if (state.latitudeError != null) DeviceCockpitTheme.Colors.red else DeviceCockpitTheme.Colors.text
+        longitudeField.foreground = if (state.longitudeError != null) DeviceCockpitTheme.Colors.red else DeviceCockpitTheme.Colors.text
         helpLabel.text = if (deviceOnline && !state.emulator) {
             "Emulator only — a physical device reports its real GPS. Pick an emulator in the device bar."
         } else {

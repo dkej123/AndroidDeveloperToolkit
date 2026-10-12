@@ -2,7 +2,7 @@ package io.github.dkej123.devicecockpit.intellij.logcat
 
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import io.github.dkej123.devicecockpit.domain.logcat.LogSeverity
-import io.github.dkej123.devicecockpit.intellij.ui.common.AdbToolboxTheme
+import io.github.dkej123.devicecockpit.intellij.ui.common.DeviceCockpitTheme
 import javax.swing.JLabel
 
 class LogcatVirtualListTest : BasePlatformTestCase() {
@@ -79,7 +79,7 @@ class LogcatVirtualListTest : BasePlatformTestCase() {
         layOut(scrollPane)
 
         assertEquals(scrollPane.viewport.width, list.width)
-        assertTrue("the long row wraps onto several lines", list.getCellBounds(0, 0).height > AdbToolboxTheme.Sizes.logLineHeight)
+        assertTrue("the long row wraps onto several lines", list.getCellBounds(0, 0).height > DeviceCockpitTheme.Sizes.logLineHeight)
     }
 
     fun `test unwrapped layout does not render every row yet stays wide enough for the longest one`() {
@@ -129,7 +129,7 @@ class LogcatVirtualListTest : BasePlatformTestCase() {
         val longHeight = list.getCellBounds(1_999, 1_999).height
 
         assertTrue("rendered $renderedRows rows to lay out", renderedRows < 50)
-        assertEquals(io.github.dkej123.devicecockpit.intellij.ui.common.AdbToolboxTheme.Sizes.logLineHeight, shortHeight)
+        assertEquals(io.github.dkej123.devicecockpit.intellij.ui.common.DeviceCockpitTheme.Sizes.logLineHeight, shortHeight)
         assertTrue("long=$longHeight short=$shortHeight", longHeight > shortHeight * 5)
     }
 

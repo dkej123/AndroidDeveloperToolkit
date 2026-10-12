@@ -8,7 +8,7 @@ import io.github.dkej123.devicecockpit.application.mirroring.MirroringOptionsInt
 import io.github.dkej123.devicecockpit.application.mirroring.MirroringOptionsViewModel
 import io.github.dkej123.devicecockpit.application.mirroring.MirroringOptionsViewState
 import io.github.dkej123.devicecockpit.domain.dispatch.DispatcherProvider
-import io.github.dkej123.devicecockpit.intellij.ui.common.AdbToolboxTheme
+import io.github.dkej123.devicecockpit.intellij.ui.common.DeviceCockpitTheme
 import io.github.dkej123.devicecockpit.intellij.ui.common.RoundedSurface
 import io.github.dkej123.devicecockpit.intellij.ui.common.VerticalStackLayout
 import io.github.dkej123.devicecockpit.intellij.ui.common.designCombo
@@ -55,8 +55,8 @@ class MirroringOptionsPanel(
     val turnScreenOffBox = checkBox("Turn device screen off", "scrcpy --turn-screen-off — mirror stays on")
 
     val noteLabel = JBLabel(NOTE_IDLE).apply {
-        font = AdbToolboxTheme.Typography.caption.deriveFont(JBUIScale.scale(10f))
-        foreground = AdbToolboxTheme.Colors.textFaint
+        font = DeviceCockpitTheme.Typography.caption.deriveFont(JBUIScale.scale(10f))
+        foreground = DeviceCockpitTheme.Colors.textFaint
     }
 
     /** Set while [render] writes into the controls, so it never echoes back as an edit. */
@@ -65,24 +65,24 @@ class MirroringOptionsPanel(
     init {
         isOpaque = false
         alignmentX = Component.LEFT_ALIGNMENT
-        border = JBUI.Borders.empty(0, AdbToolboxTheme.Spacing.sectionInset)
+        border = JBUI.Borders.empty(0, DeviceCockpitTheme.Spacing.sectionInset)
         val title = JBLabel("Mirroring options").apply {
-            font = AdbToolboxTheme.Typography.body.deriveFont(Font.BOLD, JBUIScale.scale(11.5f))
-            foreground = AdbToolboxTheme.Colors.text
+            font = DeviceCockpitTheme.Typography.body.deriveFont(Font.BOLD, JBUIScale.scale(11.5f))
+            foreground = DeviceCockpitTheme.Colors.text
         }
         val spacer = flexSpacer()
-        val head = flexRow(AdbToolboxTheme.Spacing.s3, title, spacer, noteLabel, fill = spacer).apply {
-            border = JBUI.Borders.empty(0, AdbToolboxTheme.Spacing.sectionInset)
+        val head = flexRow(DeviceCockpitTheme.Spacing.s3, title, spacer, noteLabel, fill = spacer).apply {
+            border = JBUI.Borders.empty(0, DeviceCockpitTheme.Spacing.sectionInset)
         }
         val checks = JPanel(VerticalStackLayout { JBUIScale.scale(5) }).apply {
             isOpaque = false
-            border = JBUI.Borders.empty(0, AdbToolboxTheme.Spacing.sectionInset)
+            border = JBUI.Borders.empty(0, DeviceCockpitTheme.Spacing.sectionInset)
             add(stayAwakeBox)
             add(showTouchesBox)
             add(turnScreenOffBox)
         }
-        val card = RoundedSurface(AdbToolboxTheme.Colors.header, AdbToolboxTheme.Colors.border).apply {
-            layout = VerticalStackLayout { AdbToolboxTheme.Spacing.s4 }
+        val card = RoundedSurface(DeviceCockpitTheme.Colors.header, DeviceCockpitTheme.Colors.border).apply {
+            layout = VerticalStackLayout { DeviceCockpitTheme.Spacing.s4 }
             border = JBUI.Borders.empty(8, 0, 10, 0)
             add(head)
             add(responsiveColumns(labeledColumn("Max resolution", maxSizeCombo), labeledColumn("Bitrate", bitRateCombo)))
@@ -136,7 +136,7 @@ class MirroringOptionsPanel(
     private fun checkBox(text: String, tooltip: String) = JBCheckBox(text).apply {
         isOpaque = false
         toolTipText = tooltip
-        font = AdbToolboxTheme.Typography.body.deriveFont(JBUIScale.scale(11.5f))
+        font = DeviceCockpitTheme.Typography.body.deriveFont(JBUIScale.scale(11.5f))
     }
 
     private companion object {

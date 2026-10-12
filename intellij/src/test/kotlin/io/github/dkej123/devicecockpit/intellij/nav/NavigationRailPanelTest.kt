@@ -104,8 +104,8 @@ class NavigationRailPanelTest : BasePlatformTestCase() {
             panel.list.cellRenderer.getListCellRendererComponent(panel.list, ViewId.Network, 3, false, false) as JLabel
             ).background
 
-        assertEquals(io.github.dkej123.devicecockpit.intellij.ui.common.AdbToolboxTheme.Colors.accentBg, activeBackground)
-        assertEquals(io.github.dkej123.devicecockpit.intellij.ui.common.AdbToolboxTheme.Colors.panel, inactiveBackground)
+        assertEquals(io.github.dkej123.devicecockpit.intellij.ui.common.DeviceCockpitTheme.Colors.accentBg, activeBackground)
+        assertEquals(io.github.dkej123.devicecockpit.intellij.ui.common.DeviceCockpitTheme.Colors.panel, inactiveBackground)
     }
 
     fun `test Settings uses the platform gear icon instead of a supplied rail glyph`() {
@@ -163,7 +163,7 @@ class NavigationRailPanelTest : BasePlatformTestCase() {
         val settingsIndex = ViewId.entries.indexOf(ViewId.Settings)
         val bounds = panel.list.getCellBounds(settingsIndex, settingsIndex)
         val bottom = panel.list.height - panel.list.insets.bottom
-        val railButton = io.github.dkej123.devicecockpit.intellij.ui.common.AdbToolboxTheme.Sizes.railButton
+        val railButton = io.github.dkej123.devicecockpit.intellij.ui.common.DeviceCockpitTheme.Sizes.railButton
         val idle = paint(panel)
 
         panel.list.selectedIndex = settingsIndex
@@ -198,7 +198,7 @@ class NavigationRailPanelTest : BasePlatformTestCase() {
         val bottom = panel.list.height - panel.list.insets.bottom
         assertEquals("Settings row must reach the rail bottom", bottom, bounds.y + bounds.height)
 
-        val railButton = io.github.dkej123.devicecockpit.intellij.ui.common.AdbToolboxTheme.Sizes.railButton
+        val railButton = io.github.dkej123.devicecockpit.intellij.ui.common.DeviceCockpitTheme.Sizes.railButton
         assertEquals(settingsIndex, panel.list.locationToIndex(java.awt.Point(17, bottom - railButton / 2)))
         assertEquals(-1, panel.list.locationToIndex(java.awt.Point(17, bounds.y + 2)))
     }

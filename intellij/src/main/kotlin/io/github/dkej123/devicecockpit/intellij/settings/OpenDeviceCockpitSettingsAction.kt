@@ -5,12 +5,12 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.project.DumbAwareAction
 import com.intellij.openapi.project.Project
 
-class OpenAdbToolboxSettingsAction internal constructor(
+class OpenDeviceCockpitSettingsAction internal constructor(
     private val project: Project,
     private val openSettings: (Project) -> Unit,
 ) : DumbAwareAction("Settings", "Open Device Cockpit settings", AllIcons.General.GearPlain) {
 
-    constructor(project: Project) : this(project, AdbToolboxSettingsOpener::open)
+    constructor(project: Project) : this(project, DeviceCockpitSettingsOpener::open)
 
     override fun actionPerformed(event: AnActionEvent) {
         openSettings(project)

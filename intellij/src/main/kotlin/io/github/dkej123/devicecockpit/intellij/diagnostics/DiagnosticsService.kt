@@ -29,6 +29,8 @@ import java.util.concurrent.TimeUnit
  * preference, since the log itself is application-wide.
  */
 @Service(Service.Level.APP)
+// State name and file keep the pre-rename "ADB Toolbox" names for compatibility: renaming them would
+// drop every user's saved setting.
 @State(name = "AdbToolboxDiagnostics", storages = [Storage("adbToolboxDiagnostics.xml")])
 class DiagnosticsService : PersistentStateComponent<DiagnosticsService.Settings>, Disposable {
 
@@ -38,6 +40,7 @@ class DiagnosticsService : PersistentStateComponent<DiagnosticsService.Settings>
 
     private var settings = Settings()
 
+    // Log folder (and adb-toolbox.log) kept from the pre-rename "ADB Toolbox" name for compatibility: users, bug reports and docs point to it.
     val logDirectory: Path = PathManager.getLogDir().resolve("adb-toolbox")
 
     private val fileLog = FileDiagnosticsLog(
@@ -110,6 +113,7 @@ class DiagnosticsService : PersistentStateComponent<DiagnosticsService.Settings>
     companion object {
         private val IDE_LOG = Logger.getInstance("#io.github.dkej123.devicecockpit")
         private const val STATS_PERIOD_SECONDS = 60L
+        // Marketplace plugin id, kept from the pre-rename "ADB Toolbox" name: it identifies the plugin.
         const val PLUGIN_ID = "com.github.dkwasniak.adbtoolbox"
 
         fun getInstance(): DiagnosticsService = service()

@@ -7,7 +7,7 @@ import io.github.dkej123.devicecockpit.domain.devicecontext.DeviceContextSnapsho
 import io.github.dkej123.devicecockpit.domain.dispatch.DispatcherProvider
 import io.github.dkej123.devicecockpit.domain.nav.NavigationState
 import io.github.dkej123.devicecockpit.domain.nav.ViewId
-import io.github.dkej123.devicecockpit.intellij.host.AdbToolboxHostPanel
+import io.github.dkej123.devicecockpit.intellij.host.DeviceCockpitHostPanel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.Flow
@@ -16,15 +16,15 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.withContext
 
 /**
- * Connects [viewModel]'s [NavigationState] to task 010's [AdbToolboxHostPanel] — the seam the
+ * Connects [viewModel]'s [NavigationState] to task 010's [DeviceCockpitHostPanel] — the seam the
  * team-lead brief calls "the actual navigation UI/state that will call
  * [io.github.dkej123.devicecockpit.intellij.host.FeatureViewHost.show]." Neither this class nor [viewModel]
  * ever grows a hardcoded per-feature branch: a later feature task registers its view into
- * [AdbToolboxHostPanel.activeViewHost] from its own file (task 010's seam), and the next
+ * [DeviceCockpitHostPanel.activeViewHost] from its own file (task 010's seam), and the next
  * [NavigationState.Ready] emission here picks it up automatically via [io.github.dkej123.devicecockpit.domain.nav.ViewId.routeKey].
  *
  * **Unknown registration** (task 012 TDD plan: "selecting/restoring a ViewId that has no
- * registered feature view yet"): [AdbToolboxHostPanel.activeViewHost]'s own `show` throws for an
+ * registered feature view yet"): [DeviceCockpitHostPanel.activeViewHost]'s own `show` throws for an
  * unregistered route key (task 010, by design — "fails loudly instead of silently no-oping" for a
  * *programming* error), so this coordinator checks `isRegistered` first and simply skips the
  * `show` call when the destination has no view yet — the rail still highlights it as selected
@@ -38,7 +38,7 @@ import kotlinx.coroutines.withContext
  * before the tool window is visible), so this never fights the IDE for initial focus.
  */
 class NavigationRoutingCoordinator(
-    private val host: AdbToolboxHostPanel,
+    private val host: DeviceCockpitHostPanel,
     private val rail: NavigationRailPanel,
     private val viewModel: NavigationViewModel,
     private val scope: CoroutineScope,
@@ -71,7 +71,7 @@ class NavigationRoutingCoordinator(
      * directly unit-testable against constructed [NavigationState] values without depending on
      * [viewModel]'s own coroutine machinery — this module's established testing constraint (see
      * [io.github.dkej123.devicecockpit.intellij.host.HostPresentationSignalsTest]'s class doc for the same
-     * "invoke the handler directly" pattern, and [io.github.dkej123.devicecockpit.intellij.composition.AdbToolboxProjectServiceTest]'s
+     * "invoke the handler directly" pattern, and [io.github.dkej123.devicecockpit.intellij.composition.DeviceCockpitProjectServiceTest]'s
      * `Dispatchers.EDT` class-doc note for why coroutine round trips are avoided in this headless
      * sandbox where avoidable). Production code always reaches this already marshaled onto
      * [dispatchers]' `main` context, from [init]'s collector.

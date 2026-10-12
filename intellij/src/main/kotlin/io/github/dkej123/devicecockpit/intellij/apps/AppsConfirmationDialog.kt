@@ -4,7 +4,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.scale.JBUIScale
-import io.github.dkej123.devicecockpit.intellij.ui.common.AdbToolboxTheme
+import io.github.dkej123.devicecockpit.intellij.ui.common.DeviceCockpitTheme
 import java.awt.BorderLayout
 import java.awt.Color
 import java.awt.Dimension
@@ -46,26 +46,26 @@ internal class AppsConfirmationDialog(
 
     override fun createCenterPanel(): JComponent {
         val titleLabel = JBLabel(title).apply {
-            font = AdbToolboxTheme.Typography.sectionTitle
-            foreground = AdbToolboxTheme.Colors.text
+            font = DeviceCockpitTheme.Typography.sectionTitle
+            foreground = DeviceCockpitTheme.Colors.text
         }
         val bodyWidth = JBUIScale.scale(272)
         val bodyLabel = JBLabel("<html><body style='width:${bodyWidth}px'>$bodyText</body></html>").apply {
-            font = AdbToolboxTheme.Typography.body
-            foreground = AdbToolboxTheme.Colors.textDim
+            font = DeviceCockpitTheme.Typography.body
+            foreground = DeviceCockpitTheme.Colors.textDim
             verticalAlignment = SwingConstants.TOP
             border = EmptyBorder(JBUIScale.scale(4), 0, 0, 0)
         }
         return JPanel(BorderLayout()).apply {
-            background = AdbToolboxTheme.Colors.panel
+            background = DeviceCockpitTheme.Colors.panel
             border = EmptyBorder(JBUIScale.scale(14), JBUIScale.scale(14), JBUIScale.scale(14), JBUIScale.scale(14))
             preferredSize = Dimension(JBUIScale.scale(300), preferredSize.height)
             add(titleLabel, BorderLayout.NORTH)
             add(bodyLabel, BorderLayout.CENTER)
             agentNote?.let { note ->
                 add(JBLabel("<html><body style='width:${bodyWidth}px'>$note</body></html>").apply {
-                    font = AdbToolboxTheme.Typography.caption.deriveFont(JBUIScale.scale(10.5f))
-                    foreground = AdbToolboxTheme.Colors.brand
+                    font = DeviceCockpitTheme.Typography.caption.deriveFont(JBUIScale.scale(10.5f))
+                    foreground = DeviceCockpitTheme.Colors.brand
                     border = EmptyBorder(JBUIScale.scale(6), 0, 0, 0)
                 }, BorderLayout.SOUTH)
             }
@@ -85,7 +85,7 @@ internal class AppsConfirmationDialog(
  */
 internal fun styleDestructiveButton(button: javax.swing.JButton) {
     button.isOpaque = false
-    button.putClientProperty("JButton.backgroundColor", AdbToolboxTheme.Colors.red)
+    button.putClientProperty("JButton.backgroundColor", DeviceCockpitTheme.Colors.red)
     button.putClientProperty("JButton.textColor", Color.WHITE)
     button.foreground = Color.WHITE
 }

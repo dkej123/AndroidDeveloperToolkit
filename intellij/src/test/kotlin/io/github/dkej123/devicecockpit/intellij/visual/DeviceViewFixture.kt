@@ -63,7 +63,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlin.time.Duration.Companion.minutes
 
 /**
- * The connected Device view exactly as [io.github.dkej123.devicecockpit.intellij.toolwindow.AdbToolboxToolWindowPanel]
+ * The connected Device view exactly as [io.github.dkej123.devicecockpit.intellij.toolwindow.DeviceCockpitToolWindowPanel]
  * composes it: [DeviceFactsPanel] with the real mirroring, capture, recording and device-action views
  * mounted into its slots. View models get inert fakes; each view is driven by `render` with the
  * supplied idle/enabled design state, never by a real coroutine round trip.
@@ -178,7 +178,7 @@ internal object DeviceViewFixture {
         panel.screenStatusSlot.add(recording.statusRow)
         panel.inspectSlot.add(
             io.github.dkej123.devicecockpit.intellij.ui.common.ScreenToolButton(
-                io.github.dkej123.devicecockpit.intellij.icons.AdbToolboxIcons.Actions.layoutInspector,
+                io.github.dkej123.devicecockpit.intellij.icons.DeviceCockpitIcons.Actions.layoutInspector,
                 if (active) "Re-capture layout" else "Inspect layout",
             ).apply { if (active) tone = io.github.dkej123.devicecockpit.intellij.ui.common.ToolButtonTone.ACCENT },
         )

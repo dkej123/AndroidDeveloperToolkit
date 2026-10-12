@@ -36,6 +36,7 @@ sealed interface AppInfoLine {
     data class Malformed(val line: String, val reason: String) : AppInfoLine
 }
 
+// Device-side name kept from the pre-rename "ADB Toolbox" name for compatibility with helpers and files already on devices.
 private const val HEADER = "ADBTOOLBOX-APPINFO 1"
 private const val MAIN_CLASS = "io.github.dkej123.devicecockpit.devicehelper.AppInfoMain"
 private const val PRESENT = "present"

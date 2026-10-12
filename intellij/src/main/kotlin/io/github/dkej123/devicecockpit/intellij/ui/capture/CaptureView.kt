@@ -2,11 +2,11 @@ package io.github.dkej123.devicecockpit.intellij.ui.capture
 
 import com.intellij.openapi.ui.JBMenuItem
 import com.intellij.openapi.ui.JBPopupMenu
-import io.github.dkej123.devicecockpit.intellij.icons.AdbToolboxIcons
+import io.github.dkej123.devicecockpit.intellij.icons.DeviceCockpitIcons
 import io.github.dkej123.devicecockpit.intellij.ui.common.ScreenToolButton
 import io.github.dkej123.devicecockpit.intellij.ui.common.ToolButtonSegment
 import io.github.dkej123.devicecockpit.intellij.ui.common.FlexRowLayout
-import io.github.dkej123.devicecockpit.intellij.ui.common.AdbToolboxTheme
+import io.github.dkej123.devicecockpit.intellij.ui.common.DeviceCockpitTheme
 import com.intellij.openapi.Disposable
 import com.intellij.ui.components.JBPanel
 import io.github.dkej123.devicecockpit.application.capture.CaptureIntent
@@ -51,7 +51,7 @@ class CaptureView(
     private var lastState = CaptureViewState()
 
     /** The Screen toolbar's camera button (design §3): saves a PNG of the current screen. */
-    val screenshotButton = ScreenToolButton(AdbToolboxIcons.Actions.screenshot, segment = ToolButtonSegment.MAIN).apply {
+    val screenshotButton = ScreenToolButton(DeviceCockpitIcons.Actions.screenshot, segment = ToolButtonSegment.MAIN).apply {
         getAccessibleContext().accessibleName = "Screenshot"
         toolTipText = screenshotTooltip()
         addActionListener { viewModel.handle(CaptureIntent.CaptureScreenshot) }

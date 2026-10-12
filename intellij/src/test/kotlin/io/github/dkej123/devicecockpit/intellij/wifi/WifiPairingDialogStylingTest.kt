@@ -2,8 +2,8 @@ package io.github.dkej123.devicecockpit.intellij.wifi
 
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import com.intellij.ui.components.JBTextField
-import io.github.dkej123.devicecockpit.intellij.icons.AdbToolboxIcons
-import io.github.dkej123.devicecockpit.intellij.ui.common.AdbToolboxTheme
+import io.github.dkej123.devicecockpit.intellij.icons.DeviceCockpitIcons
+import io.github.dkej123.devicecockpit.intellij.ui.common.DeviceCockpitTheme
 
 /**
  * [WifiPairingDialog] itself wraps [com.intellij.openapi.ui.DialogWrapper] (untested directly, the
@@ -19,14 +19,14 @@ class WifiPairingDialogStylingTest : BasePlatformTestCase() {
 
         styleAddressField(field)
 
-        assertEquals(AdbToolboxTheme.Typography.mono, field.font)
+        assertEquals(DeviceCockpitTheme.Typography.mono, field.font)
     }
 
     fun `test the header label carries the supplied authorize icon and task 039 entry point copy`() {
         val header = createPairingHeaderLabel()
 
         assertEquals("Pair device over Wi-Fi", header.text)
-        assertEquals(AdbToolboxIcons.Actions.authorize, header.icon)
-        assertEquals(AdbToolboxTheme.Typography.sectionTitle, header.font)
+        assertEquals(DeviceCockpitIcons.Actions.authorize, header.icon)
+        assertEquals(DeviceCockpitTheme.Typography.sectionTitle, header.font)
     }
 }

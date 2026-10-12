@@ -11,7 +11,7 @@ import io.github.dkej123.devicecockpit.application.devicebar.DevicePickerState
 import io.github.dkej123.devicecockpit.domain.adb.DeviceSerial
 import io.github.dkej123.devicecockpit.domain.device.DeviceConnectionKind
 import io.github.dkej123.devicecockpit.domain.device.DeviceConnectionState
-import io.github.dkej123.devicecockpit.intellij.ui.common.AdbToolboxTheme
+import io.github.dkej123.devicecockpit.intellij.ui.common.DeviceCockpitTheme
 import io.github.dkej123.devicecockpit.intellij.ui.common.DesignButton
 import io.github.dkej123.devicecockpit.intellij.ui.common.DesignButtonStyle
 import io.github.dkej123.devicecockpit.intellij.ui.common.FlexRowLayout
@@ -38,7 +38,7 @@ import javax.swing.ListSelectionModel
  * the uppercase "Connected devices" header, 28px rows (status dot, name, mono serial, connection
  * chip, `accentBg` selected-row fill), and the `header`-background footer with the
  * "Pair device over Wi-Fi…" link and the "↑↓ to select · ⏎ to apply" hint. Mounted as one bounded
- * overlay in [io.github.dkej123.devicecockpit.intellij.host.AdbToolboxHostPanel.overlays].
+ * overlay in [io.github.dkej123.devicecockpit.intellij.host.DeviceCockpitHostPanel.overlays].
  *
  * Interactions are unchanged from task 011: mouse click to select immediately, Up/Down to move the
  * keyboard highlight ([JBList]'s own native arrow-key browsing, surfaced via [onHighlightChange]),
@@ -56,14 +56,14 @@ class DevicePickerListPanel(
     private val list = JBList(model)
 
     private val headerLabel = JBLabel("CONNECTED DEVICES").apply {
-        font = AdbToolboxTheme.Typography.groupLabel
-        foreground = AdbToolboxTheme.Colors.textFaint
+        font = DeviceCockpitTheme.Typography.groupLabel
+        foreground = DeviceCockpitTheme.Colors.textFaint
         border = JBUI.Borders.empty(7, 10, 4, 10)
     }
 
     private val hintLabel = JBLabel("↑↓ to select · ⏎ to apply").apply {
-        font = AdbToolboxTheme.Typography.mono.deriveFont(JBUIScale.scale(9f))
-        foreground = AdbToolboxTheme.Colors.textFaint
+        font = DeviceCockpitTheme.Typography.mono.deriveFont(JBUIScale.scale(9f))
+        foreground = DeviceCockpitTheme.Colors.textFaint
     }
 
     private val pairOverWifiButton: JButton = DesignButton("Pair device over Wi-Fi…", DesignButtonStyle.LINK).apply {
@@ -71,9 +71,9 @@ class DevicePickerListPanel(
     }
 
     private val footer = JBPanel<Nothing>(BorderLayout()).apply {
-        background = AdbToolboxTheme.Colors.header
+        background = DeviceCockpitTheme.Colors.header
         border = BorderFactory.createCompoundBorder(
-            BorderFactory.createMatteBorder(1, 0, 0, 0, AdbToolboxTheme.Colors.border),
+            BorderFactory.createMatteBorder(1, 0, 0, 0, DeviceCockpitTheme.Colors.border),
             JBUI.Borders.empty(6, 10),
         )
         add(pairOverWifiButton, BorderLayout.WEST)
@@ -86,7 +86,7 @@ class DevicePickerListPanel(
     /** No max height until more than [MAX_ROWS] devices; then the list scrolls and header/footer stay put. */
     private val listScroll = object : JBScrollPane(list) {
         override fun getPreferredSize(): Dimension =
-            Dimension(super.getPreferredSize().width, AdbToolboxTheme.Sizes.listRow * model.size().coerceIn(1, MAX_ROWS))
+            Dimension(super.getPreferredSize().width, DeviceCockpitTheme.Sizes.listRow * model.size().coerceIn(1, MAX_ROWS))
     }.apply {
         border = BorderFactory.createEmptyBorder()
         isOpaque = false
@@ -95,14 +95,14 @@ class DevicePickerListPanel(
     }
 
     init {
-        background = AdbToolboxTheme.Colors.panel
+        background = DeviceCockpitTheme.Colors.panel
         isOpaque = false
         // 1px for the rounded `borderStrong` outline painted in paintBorder.
         border = JBUI.Borders.empty(1)
 
         list.selectionMode = ListSelectionModel.SINGLE_SELECTION
         list.isOpaque = false
-        list.fixedCellHeight = AdbToolboxTheme.Sizes.listRow
+        list.fixedCellHeight = DeviceCockpitTheme.Sizes.listRow
         list.cellRenderer = DeviceRowRenderer()
 
         list.addListSelectionListener { event ->
@@ -149,7 +149,7 @@ class DevicePickerListPanel(
         val g2 = g.create() as java.awt.Graphics2D
         try {
             g2.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING, java.awt.RenderingHints.VALUE_ANTIALIAS_ON)
-            g2.color = AdbToolboxTheme.Colors.panel
+            g2.color = DeviceCockpitTheme.Colors.panel
             g2.fill(outline())
         } finally {
             g2.dispose()
@@ -170,7 +170,7 @@ class DevicePickerListPanel(
         val g2 = g.create() as java.awt.Graphics2D
         try {
             g2.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING, java.awt.RenderingHints.VALUE_ANTIALIAS_ON)
-            g2.color = AdbToolboxTheme.Colors.borderStrong
+            g2.color = DeviceCockpitTheme.Colors.borderStrong
             g2.stroke = java.awt.BasicStroke(JBUIScale.scale(1f))
             g2.draw(outline())
         } finally {
@@ -231,17 +231,17 @@ private class DeviceRowRenderer : ListCellRenderer<DevicePickerItem> {
     private val dotLabel = JBLabel()
     private val nameLabel = JBLabel()
     private val serialLabel = JBLabel().apply {
-        font = AdbToolboxTheme.Typography.monoMeta
-        foreground = AdbToolboxTheme.Colors.textFaint
+        font = DeviceCockpitTheme.Typography.monoMeta
+        foreground = DeviceCockpitTheme.Colors.textFaint
     }
     private val chipLabel = JBLabel().apply {
-        font = AdbToolboxTheme.Typography.groupLabel.deriveFont(JBUIScale.scale(9f))
+        font = DeviceCockpitTheme.Typography.groupLabel.deriveFont(JBUIScale.scale(9f))
     }
     private val row = object : JBPanel<Nothing>(FlexRowLayout(JBUIScale.scale(7))) {
-        override fun getPreferredSize(): Dimension = Dimension(super.getPreferredSize().width, AdbToolboxTheme.Sizes.listRow)
+        override fun getPreferredSize(): Dimension = Dimension(super.getPreferredSize().width, DeviceCockpitTheme.Sizes.listRow)
     }.apply {
         isOpaque = true
-        border = BorderFactory.createEmptyBorder(0, AdbToolboxTheme.Spacing.sectionInset, 0, AdbToolboxTheme.Spacing.sectionInset)
+        border = BorderFactory.createEmptyBorder(0, DeviceCockpitTheme.Spacing.sectionInset, 0, DeviceCockpitTheme.Spacing.sectionInset)
         add(dotLabel)
         add(nameLabel)
         add(serialLabel, FlexRowLayout.FILL)
@@ -258,30 +258,30 @@ private class DeviceRowRenderer : ListCellRenderer<DevicePickerItem> {
         // `accentBg` and `hover` are translucent: compose them over the popup's `panel` so the list's
         // own selection painting underneath never shows through.
         row.background = when {
-            value.isSelected -> blend(AdbToolboxTheme.Colors.panel, AdbToolboxTheme.Colors.accentBg)
-            isSelected -> blend(AdbToolboxTheme.Colors.panel, AdbToolboxTheme.Colors.hover)
-            else -> AdbToolboxTheme.Colors.panel
+            value.isSelected -> blend(DeviceCockpitTheme.Colors.panel, DeviceCockpitTheme.Colors.accentBg)
+            isSelected -> blend(DeviceCockpitTheme.Colors.panel, DeviceCockpitTheme.Colors.hover)
+            else -> DeviceCockpitTheme.Colors.panel
         }
         val unauthorized = value.connectionState == DeviceConnectionState.Unauthorized
         dotLabel.icon = StatusDotIcon(
             when (value.connectionState) {
-                DeviceConnectionState.Online -> AdbToolboxTheme.Colors.green
-                DeviceConnectionState.Unauthorized -> AdbToolboxTheme.Colors.amber
-                else -> AdbToolboxTheme.Colors.textFaint
+                DeviceConnectionState.Online -> DeviceCockpitTheme.Colors.green
+                DeviceConnectionState.Unauthorized -> DeviceCockpitTheme.Colors.amber
+                else -> DeviceCockpitTheme.Colors.textFaint
             },
             filled = true,
         )
         nameLabel.text = value.model ?: value.product ?: value.serial.toString()
-        nameLabel.font = AdbToolboxTheme.Typography.body.deriveFont(if (value.isSelected) Font.BOLD else Font.PLAIN, JBUIScale.scale(11.5f))
-        nameLabel.foreground = AdbToolboxTheme.Colors.text
+        nameLabel.font = DeviceCockpitTheme.Typography.body.deriveFont(if (value.isSelected) Font.BOLD else Font.PLAIN, JBUIScale.scale(11.5f))
+        nameLabel.foreground = DeviceCockpitTheme.Colors.text
         serialLabel.text = value.serial.toString()
         chipLabel.text = chipText(value.connectionKind)
-        chipLabel.foreground = if (unauthorized) AdbToolboxTheme.Colors.amber else AdbToolboxTheme.Colors.textDim
+        chipLabel.foreground = if (unauthorized) DeviceCockpitTheme.Colors.amber else DeviceCockpitTheme.Colors.textDim
         chipLabel.border = BorderFactory.createCompoundBorder(
-            SolidChipBorder(if (unauthorized) AdbToolboxTheme.Colors.amber else AdbToolboxTheme.Colors.border, radius = { JBUIScale.scale(3) }),
+            SolidChipBorder(if (unauthorized) DeviceCockpitTheme.Colors.amber else DeviceCockpitTheme.Colors.border, radius = { JBUIScale.scale(3) }),
             JBUI.Borders.empty(1, 4),
         )
-        row.setSize(list.width, AdbToolboxTheme.Sizes.listRow)
+        row.setSize(list.width, DeviceCockpitTheme.Sizes.listRow)
         row.doLayout()
         return row
     }

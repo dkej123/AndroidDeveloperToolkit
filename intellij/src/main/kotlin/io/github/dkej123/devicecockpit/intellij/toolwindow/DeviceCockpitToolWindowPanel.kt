@@ -35,7 +35,7 @@ import io.github.dkej123.devicecockpit.intellij.devicebar.DeviceContextBarCoordi
 import io.github.dkej123.devicecockpit.intellij.devicefacts.DeviceFactsCoordinator
 import io.github.dkej123.devicecockpit.intellij.display.DisplayCoordinator
 import io.github.dkej123.devicecockpit.intellij.feedback.FeedbackOverlayCoordinator
-import io.github.dkej123.devicecockpit.intellij.host.AdbToolboxHostPanel
+import io.github.dkej123.devicecockpit.intellij.host.DeviceCockpitHostPanel
 import io.github.dkej123.devicecockpit.intellij.logcat.LogcatCoordinator
 import io.github.dkej123.devicecockpit.intellij.mirroring.MirroringCoordinator
 import io.github.dkej123.devicecockpit.intellij.nav.NavigationRailPanel
@@ -53,28 +53,28 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /**
- * The tool-window content root. Mounts [host] — task 010's neutral [AdbToolboxHostPanel] with its
+ * The tool-window content root. Mounts [host] — task 010's neutral [DeviceCockpitHostPanel] with its
  * named slots for device context, navigation, active view, and feedback — replacing task 007's
  * bare placeholder.
  *
- * [feedbackViewModel] drives [AdbToolboxHostPanel.feedbackSlot] and its toast overlay (task 013)
+ * [feedbackViewModel] drives [DeviceCockpitHostPanel.feedbackSlot] and its toast overlay (task 013)
  * via [FeedbackOverlayCoordinator], on its own [feedbackScope] child scope — replacing task 007's
  * [ShellViewModel]-status-text stand-in that used to be rendered directly into `feedbackSlot`.
  * [ShellViewModel] itself is kept (it remains the seam proving the MVI pattern end to end for
  * `:intellij`'s composition); its effects are simply no longer surfaced through `feedbackSlot`.
  *
- * [navigationViewModel] drives [AdbToolboxHostPanel.navigationSlot] (task 012): a
+ * [navigationViewModel] drives [DeviceCockpitHostPanel.navigationSlot] (task 012): a
  * [NavigationRailPanel] is mounted there and connected to
- * [AdbToolboxHostPanel.activeViewHost] via [NavigationRoutingCoordinator], on its own
+ * [DeviceCockpitHostPanel.activeViewHost] via [NavigationRoutingCoordinator], on its own
  * [navigationScope] child scope so navigation's lifecycle never depends on the feedback channel's.
  *
  * [deviceFactsViewModel] drives the Device view's facts section (task 015) via
  * [DeviceFactsCoordinator], on its own [deviceFactsScope] child scope — the first real feature view
- * registered into [AdbToolboxHostPanel.activeViewHost] (`ViewId.Device`'s route key), constructed
+ * registered into [DeviceCockpitHostPanel.activeViewHost] (`ViewId.Device`'s route key), constructed
  * before [navigationCoordinator] so the Device view is already registered for
  * [NavigationRoutingCoordinator]'s initial routing decision.
  *
- * [deviceBarViewModel] drives [AdbToolboxHostPanel.deviceContextSlot] and its picker overlay
+ * [deviceBarViewModel] drives [DeviceCockpitHostPanel.deviceContextSlot] and its picker overlay
  * (task 011) via [DeviceContextBarCoordinator], on its own [deviceBarScope] child scope so the
  * device bar's lifecycle never depends on navigation/feedback/device-facts'.
  *
@@ -97,7 +97,7 @@ import kotlinx.coroutines.withContext
  *
  * [proxyController] drives task 032's Network view via [NetworkCoordinator], on its own
  * [networkScope] child scope, registering its own [ViewId.Network] route into
- * [AdbToolboxHostPanel.activeViewHost] the same way [appsCoordinator] registers [ViewId.Apps].
+ * [DeviceCockpitHostPanel.activeViewHost] the same way [appsCoordinator] registers [ViewId.Apps].
  *
  * [fontScaleViewModel]/[densityViewModel]/[quickTogglesViewModel] drive the display sections via
  * [DisplayCoordinator], on its own [displayScope] child scope, mounted into the Device view's
@@ -109,7 +109,7 @@ import kotlinx.coroutines.withContext
  * [networkCoordinator] registers [ViewId.Network]; it publishes its own error-badge contribution
  * into [deviceContextAggregator] the same way [displayCoordinator] does.
  */
-class AdbToolboxToolWindowPanel(
+class DeviceCockpitToolWindowPanel(
     viewModel: ShellViewModel,
     dispatchers: DispatcherProvider,
     private val scope: CoroutineScope,
@@ -164,9 +164,9 @@ class AdbToolboxToolWindowPanel(
     inspectorStatus: StateFlow<io.github.dkej123.devicecockpit.intellij.inspector.InspectorOpenStatus?>? = null,
     onShowInspector: () -> Unit = {},
     onRecaptureInspector: () -> Unit = {},
-) : JBPanel<AdbToolboxToolWindowPanel>(BorderLayout()), Disposable {
+) : JBPanel<DeviceCockpitToolWindowPanel>(BorderLayout()), Disposable {
 
-    val host = AdbToolboxHostPanel()
+    val host = DeviceCockpitHostPanel()
 
     private val navigationRail = NavigationRailPanel()
 
@@ -235,14 +235,14 @@ class AdbToolboxToolWindowPanel(
     // Design §3 Screen / §9: "Inspect layout" opens the selected device in a Layout Inspector tab;
     // while that tab is open it reads "Re-capture layout" in the accent tone (see the init below).
     private val inspectLayoutButton = io.github.dkej123.devicecockpit.intellij.ui.common.ScreenToolButton(
-        io.github.dkej123.devicecockpit.intellij.icons.AdbToolboxIcons.Actions.layoutInspector,
+        io.github.dkej123.devicecockpit.intellij.icons.DeviceCockpitIcons.Actions.layoutInspector,
         INSPECT_LABEL,
     ).apply {
         toolTipText = io.github.dkej123.devicecockpit.intellij.ui.common.ShortcutHints.withAction(INSPECT_TOOLTIP, "AdbToolbox.InspectLayout")
         addActionListener {
             val actions = com.intellij.openapi.actionSystem.ActionManager.getInstance()
             actions.getAction("AdbToolbox.InspectLayout")?.let { action ->
-                actions.tryToExecute(action, null, this, "AdbToolboxCapture", true)
+                actions.tryToExecute(action, null, this, "DeviceCockpitCapture", true)
             }
         }
     }.also { deviceFactsCoordinator.panel.inspectSlot.add(it) }
@@ -397,7 +397,7 @@ class AdbToolboxToolWindowPanel(
     private val skillInstaller = io.github.dkej123.devicecockpit.intellij.mcp.AgentSkillInstaller.forUser()
     private val skillTip = io.github.dkej123.devicecockpit.intellij.mcp.SkillTipBanner(
         installer = skillInstaller,
-        onDismiss = { io.github.dkej123.devicecockpit.intellij.mcp.AdbToolboxAppSettings.getInstance().skillTipDismissed = true },
+        onDismiss = { io.github.dkej123.devicecockpit.intellij.mcp.DeviceCockpitAppSettings.getInstance().skillTipDismissed = true },
         onOpenSettings = openSettings,
         runIo = { work -> feedbackScope.launch(dispatchers.io) { work() } },
     )
@@ -410,7 +410,7 @@ class AdbToolboxToolWindowPanel(
                 val session = status.sessions.firstOrNull()
                 val tip = io.github.dkej123.devicecockpit.intellij.mcp.showSkillTip(
                     status.access,
-                    dismissed = io.github.dkej123.devicecockpit.intellij.mcp.AdbToolboxAppSettings.getInstance().skillTipDismissed,
+                    dismissed = io.github.dkej123.devicecockpit.intellij.mcp.DeviceCockpitAppSettings.getInstance().skillTipDismissed,
                     installed = withContext(dispatchers.io) { skillInstaller.anyInstalled() },
                 )
                 withContext(dispatchers.main) {

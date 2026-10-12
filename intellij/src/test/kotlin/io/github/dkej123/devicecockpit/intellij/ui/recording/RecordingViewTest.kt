@@ -172,7 +172,7 @@ class RecordingViewTest : BasePlatformTestCase() {
 
         view.render(RecordingViewState(ControlPolicy.Enabled, RecordingPresentationState.Recording, elapsedLabel = "00:42"))
         assertEquals(io.github.dkej123.devicecockpit.intellij.ui.common.ToolButtonTone.RED, view.recordButton.tone)
-        assertEquals(io.github.dkej123.devicecockpit.intellij.icons.AdbToolboxIcons.Actions.stopRecording.toString(), view.recordButton.glyph.toString())
+        assertEquals(io.github.dkej123.devicecockpit.intellij.icons.DeviceCockpitIcons.Actions.stopRecording.toString(), view.recordButton.glyph.toString())
         assertEquals("Stop recording", view.recordButton.accessibleContext.accessibleName)
         assertTrue(view.statusRow.isVisible)
         view.dispose()

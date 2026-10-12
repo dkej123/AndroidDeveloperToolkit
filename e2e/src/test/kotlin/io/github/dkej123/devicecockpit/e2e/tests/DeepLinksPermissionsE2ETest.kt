@@ -93,7 +93,7 @@ class DeepLinksPermissionsE2ETest : E2eTest() {
     private fun named(name: String) = studio.component("//div[@name='$name']")
 
     private companion object {
-        const val APP = "dev.acme.adbtoolbox.e2efixture"
+        const val APP = "dev.acme.devicecockpit.e2efixture"
         const val CAMERA = "android.permission.CAMERA"
         const val URI = "toolbox://e2e/open/from-test"
     }

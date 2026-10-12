@@ -62,7 +62,7 @@ class PresetChipRowTest : BasePlatformTestCase() {
             selected = "custom",
         )
 
-        assertEquals(AdbToolboxTheme.Sizes.iconButton, row.chips.single().preferredSize.height)
+        assertEquals(DeviceCockpitTheme.Sizes.iconButton, row.chips.single().preferredSize.height)
         assertEquals(PresetChipKind.CUSTOM, row.chips.single().kind)
         assertTrue(row.chips.single().border is DashedChipBorder)
     }
@@ -99,14 +99,14 @@ class PresetChipRowTest : BasePlatformTestCase() {
     fun `test default selection is neutral while a selected override is amber`() {
         val row = fontScaleRow(selected = 1.0)
 
-        assertEquals(AdbToolboxTheme.Colors.text, row.chips[1].foreground)
+        assertEquals(DeviceCockpitTheme.Colors.text, row.chips[1].foreground)
         assertEquals(java.awt.Font.BOLD, row.chips[1].font.style)
 
         row.setSelectedValue(1.15)
 
-        assertEquals(AdbToolboxTheme.Colors.amber, row.chips[2].foreground)
-        assertEquals(AdbToolboxTheme.Colors.amberBg, row.chips[2].background)
-        assertEquals(AdbToolboxTheme.Colors.textDim, row.chips[1].foreground)
+        assertEquals(DeviceCockpitTheme.Colors.amber, row.chips[2].foreground)
+        assertEquals(DeviceCockpitTheme.Colors.amberBg, row.chips[2].background)
+        assertEquals(DeviceCockpitTheme.Colors.textDim, row.chips[1].foreground)
     }
 
     fun `test row rejects ambiguous choices and an unknown initial selection`() {
@@ -198,12 +198,12 @@ class PresetChipRowTest : BasePlatformTestCase() {
             selected = -1,
             style = PresetChipRowStyle.SEGMENTED,
         )
-        assertEquals(AdbToolboxTheme.Colors.text, row.chips[0].foreground)
-        assertEquals(AdbToolboxTheme.Colors.textDim, row.chips[1].foreground)
+        assertEquals(DeviceCockpitTheme.Colors.text, row.chips[0].foreground)
+        assertEquals(DeviceCockpitTheme.Colors.textDim, row.chips[1].foreground)
 
         row.chips[1].doClick()
 
-        assertEquals(AdbToolboxTheme.Colors.amber, row.chips[1].foreground)
-        assertEquals(AdbToolboxTheme.Colors.textDim, row.chips[0].foreground)
+        assertEquals(DeviceCockpitTheme.Colors.amber, row.chips[1].foreground)
+        assertEquals(DeviceCockpitTheme.Colors.textDim, row.chips[0].foreground)
     }
 }

@@ -16,8 +16,10 @@ import java.security.SecureRandom
  * the MCP access level and port. The MCP token lives in the IDE's password safe, never in XML.
  */
 @Service(Service.Level.APP)
+// State name and file keep the pre-rename "ADB Toolbox" names for compatibility: renaming them would
+// drop every user's saved settings.
 @State(name = "AdbToolboxAppSettings", storages = [Storage("adbToolboxApp.xml")])
-class AdbToolboxAppSettings : PersistentStateComponent<AdbToolboxAppSettings.State> {
+class DeviceCockpitAppSettings : PersistentStateComponent<DeviceCockpitAppSettings.State> {
 
     class State {
         var copyScreenshotsToClipboard: Boolean = true
@@ -66,6 +68,7 @@ class AdbToolboxAppSettings : PersistentStateComponent<AdbToolboxAppSettings.Sta
     fun regenerateMcpToken(): String {
         val bytes = ByteArray(20).also(SecureRandom()::nextBytes)
         val token = "atk_" + bytes.joinToString("") { "%02x".format(it) }
+        // Credential user name kept from the pre-rename "ADB Toolbox" name for compatibility.
         PasswordSafe.instance.set(TOKEN, Credentials("adb-toolbox-mcp", token))
         return token
     }
@@ -73,6 +76,6 @@ class AdbToolboxAppSettings : PersistentStateComponent<AdbToolboxAppSettings.Sta
     companion object {
         private val TOKEN = McpTokenCredentials.TOKEN
 
-        fun getInstance(): AdbToolboxAppSettings = service()
+        fun getInstance(): DeviceCockpitAppSettings = service()
     }
 }

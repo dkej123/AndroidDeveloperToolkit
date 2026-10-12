@@ -10,6 +10,7 @@ import java.time.Duration
 object E2eConfig {
     private fun env(name: String): String? = System.getenv(name)?.takeIf { it.isNotBlank() }
 
+    // Same default as e2e/scripts/lib.sh (kept pre-rename folder name, so provisioned environments stay valid).
     val home: File = File(env("E2E_HOME") ?: "${System.getProperty("user.home")}/.cache/adb-toolbox-e2e")
     val robotUrl: String = "http://127.0.0.1:${env("E2E_ROBOT_PORT") ?: "8082"}"
     val serial: String = env("E2E_DEVICE_SERIAL") ?: "emulator-5554"
@@ -19,6 +20,7 @@ object E2eConfig {
     val fixtures: File = File(env("E2E_FIXTURES") ?: File(home, "fixtures").path)
     val reportDir: File = File(System.getProperty("e2e.reportDir") ?: "build/e2e-report").apply { mkdirs() }
 
+    // The plugin log folder keeps its pre-rename name (DiagnosticsService).
     val pluginLog: File get() = File(sandbox, "log/adb-toolbox/adb-toolbox.log")
     val ideaLog: File get() = File(sandbox, "log/idea.log")
     val adb: File get() = File(sdkRoot, "platform-tools/adb")

@@ -42,6 +42,7 @@ sealed interface ForegroundState {
  * Partly from Oh My Android, MIT — `Sources/Core/Android/ForegroundAppReader.swift`.
  */
 object ForegroundAppCommand {
+    // Device-side name kept from the pre-rename "ADB Toolbox" name for compatibility with helpers and files already on devices.
     private const val SEPARATOR = "--adbtoolbox-window--"
     private val ACTIVITY_RECORD = Regex("""ActivityRecord\{\S+ u(\d+) ([\w.]+)/([\w.$]+)""")
     private val RESUMED_LINE = Regex("""^\s*(topResumedActivity=|ResumedActivity:|mResumedActivity:|Resumed:)""")

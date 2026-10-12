@@ -1,7 +1,7 @@
 package io.github.dkej123.devicecockpit.intellij.persistence
 
 /**
- * The Logcat-controls slice of [AdbToolboxProjectState] (task 037, `design/README.md`'s state
+ * The Logcat-controls slice of [DeviceCockpitProjectState] (task 037, `design/README.md`'s state
  * model: `logMinLevel`, `logPackageFilterOn`, `logWrap`). A plain mutable bean (public `var`s,
  * no-arg constructor) as IntelliJ's `XmlSerializer` requires, mirroring [NetworkState]'s shape.
  * Named with the `Persistence` suffix (unlike [NetworkState]) specifically to avoid colliding with

@@ -15,10 +15,10 @@ import kotlinx.coroutines.runBlocking
  * real `adb` binary: everything here runs through `:intellij:test` (JUnit Platform + IntelliJ's
  * light-project test fixture, task 001's bootstrap).
  */
-class AdbToolboxProjectServiceTest : BasePlatformTestCase() {
+class DeviceCockpitProjectServiceTest : BasePlatformTestCase() {
 
     fun `test the project service composes a working process, discovery, and transport graph`() {
-        val service = project.service<AdbToolboxProjectService>()
+        val service = project.service<DeviceCockpitProjectService>()
 
         assertNotNull(service.processExecutor)
         assertNotNull(service.toolLocator)
@@ -53,7 +53,7 @@ class AdbToolboxProjectServiceTest : BasePlatformTestCase() {
     }
 
     fun `test the Logcat buffer takes its size from Settings and follows a change`() {
-        val service = project.service<AdbToolboxProjectService>()
+        val service = project.service<DeviceCockpitProjectService>()
         val buffer = service.logcatSessionManager.buffer
         val original = runBlocking(service.dispatcherProvider.io) { service.settingsUseCase.load() }
         assertEquals(original.logcatBufferSizeKb * 1024, buffer.capacityBytes)
@@ -70,14 +70,14 @@ class AdbToolboxProjectServiceTest : BasePlatformTestCase() {
     }
 
     fun `test the project service is a singleton per project`() {
-        val first = project.service<AdbToolboxProjectService>()
-        val second = project.service<AdbToolboxProjectService>()
+        val first = project.service<DeviceCockpitProjectService>()
+        val second = project.service<DeviceCockpitProjectService>()
 
         assertSame(first, second)
     }
 
     fun `test io dispatcher work runs off the EDT`() {
-        val service = project.service<AdbToolboxProjectService>()
+        val service = project.service<DeviceCockpitProjectService>()
         var observedOffEdt = false
 
         runBlocking(service.dispatcherProvider.io) {
@@ -97,7 +97,7 @@ class AdbToolboxProjectServiceTest : BasePlatformTestCase() {
     // only the coroutine-dispatcher round trip is. Documented gap: `Dispatchers.EDT` marshaling is
     // exercised for real every time the plugin runs in an actual IDE (a live Swing EDT continuously
     // pumps events there, unlike this sandbox), but cannot be verified by an automated headless test
-    // in this environment. `AdbToolboxToolWindowPanel` uses the same `dispatchers.main` seam as
+    // in this environment. `DeviceCockpitToolWindowPanel` uses the same `dispatchers.main` seam as
     // production wiring — see its class doc.
     fun `test invokeAndWait marshals work onto the EDT (the primitive dispatchers-main is built on)`() {
         var observedOnEdt = false
@@ -109,15 +109,15 @@ class AdbToolboxProjectServiceTest : BasePlatformTestCase() {
         assertTrue("invokeAndWait-marshaled work must run on the EDT", observedOnEdt)
     }
 
-    // Disposal tests build their own AdbToolboxProjectService(project) rather than fetching the
-    // shared project.service<AdbToolboxProjectService>() singleton: BasePlatformTestCase reuses the
+    // Disposal tests build their own DeviceCockpitProjectService(project) rather than fetching the
+    // shared project.service<DeviceCockpitProjectService>() singleton: BasePlatformTestCase reuses the
     // same light project (and so the same cached service instance) across every test method in this
     // class, so disposing the shared singleton here would leave it disposed for whichever test runs
     // next. Constructing our own instance exercises the exact same dispose()/childScope() logic
     // without that cross-test interaction.
 
     fun `test a child scope is cancelled when the project service is disposed`() {
-        val service = AdbToolboxProjectService(project)
+        val service = DeviceCockpitProjectService(project)
         val childScope = service.childScope()
         assertTrue(childScope.isActive)
 
@@ -127,14 +127,14 @@ class AdbToolboxProjectServiceTest : BasePlatformTestCase() {
     }
 
     fun `test disposing the project service twice does not throw`() {
-        val service = AdbToolboxProjectService(project)
+        val service = DeviceCockpitProjectService(project)
 
         service.dispose()
         service.dispose()
     }
 
     fun `test disposing the project service also rejects further feedback posts as a safe no-op`() {
-        val service = AdbToolboxProjectService(project)
+        val service = DeviceCockpitProjectService(project)
         val stateBefore = service.feedbackViewModel.state.value
 
         service.dispose()

@@ -232,7 +232,7 @@ class AppsCoordinatorTest : BasePlatformTestCase() {
         // this proves the click reaches the exact shared view model instance without depending on
         // this headless sandbox's Dispatchers.Default scheduling latency (see
         // io.github.dkej123.devicecockpit.intellij.deviceactions.DeviceActionsCoordinatorTest and
-        // AdbToolboxProjectServiceTest's own documented dispatcher-timing caveats, neither of which
+        // DeviceCockpitProjectServiceTest's own documented dispatcher-timing caveats, neither of which
         // asserts on a coordinator's own background state-collection job completing).
         val f = fixture()
         val coordinator = coordinator(f)

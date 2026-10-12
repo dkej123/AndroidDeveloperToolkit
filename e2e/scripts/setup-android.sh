@@ -47,21 +47,21 @@ done <"$E2E_REPO_ROOT/e2e/fixtures/apks.txt"
 
 # Purpose-built fixture for deep-link opening and runtime-permission mutations. Building it here
 # keeps the repository free of opaque APK binaries while pinning every SDK input above.
-deep_link_apk="$E2E_FIXTURES/dev.acme.adbtoolbox.e2efixture.apk"
+deep_link_apk="$E2E_FIXTURES/dev.acme.devicecockpit.e2efixture.apk"
 if [[ ! -s "$deep_link_apk" ]]; then
     log "building deep-link fixture"
     fixture_src="$E2E_REPO_ROOT/e2e/fixtures/deeplink"
     fixture_tmp="$(mktemp -d)"
     mkdir -p "$fixture_tmp/classes" "$fixture_tmp/dex"
     "$JAVA_HOME/bin/javac" -source 8 -target 8 -classpath "$ANDROID_SDK_ROOT/platforms/android-35/android.jar" \
-        -d "$fixture_tmp/classes" "$fixture_src/src/io/github/dkej123/devicecockpit/e2efixture/MainActivity.java"
+        -d "$fixture_tmp/classes" "$fixture_src/src/dev/acme/devicecockpit/e2efixture/MainActivity.java"
     "$ANDROID_SDK_ROOT/build-tools/35.0.0/d8" --lib "$ANDROID_SDK_ROOT/platforms/android-35/android.jar" \
-        --output "$fixture_tmp/dex" "$fixture_tmp/classes/io/github/dkej123/devicecockpit/e2efixture/MainActivity.class"
+        --output "$fixture_tmp/dex" "$fixture_tmp/classes/dev/acme/devicecockpit/e2efixture/MainActivity.class"
     "$ANDROID_SDK_ROOT/build-tools/35.0.0/aapt" package -f -M "$fixture_src/AndroidManifest.xml" \
         -I "$ANDROID_SDK_ROOT/platforms/android-35/android.jar" -F "$fixture_tmp/unsigned.apk"
     "$JAVA_HOME/bin/jar" uf "$fixture_tmp/unsigned.apk" -C "$fixture_tmp/dex" classes.dex
     "$JAVA_HOME/bin/keytool" -genkeypair -keystore "$fixture_tmp/debug.keystore" -storepass android -keypass android \
-        -alias androiddebugkey -dname "CN=ADB Toolbox E2E,O=Android,C=US" -keyalg RSA -validity 10000 >/dev/null 2>&1
+        -alias androiddebugkey -dname "CN=Device Cockpit E2E,O=Android,C=US" -keyalg RSA -validity 10000 >/dev/null 2>&1
     "$ANDROID_SDK_ROOT/build-tools/35.0.0/apksigner" sign --ks "$fixture_tmp/debug.keystore" \
         --ks-pass pass:android --key-pass pass:android --out "$deep_link_apk" "$fixture_tmp/unsigned.apk"
     rm -rf "$fixture_tmp"

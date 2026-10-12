@@ -5,7 +5,7 @@ import com.intellij.ui.components.JBPanel
 import com.intellij.util.ui.JBUI
 import io.github.dkej123.devicecockpit.domain.feedback.FeedbackMessage
 import io.github.dkej123.devicecockpit.domain.feedback.FeedbackSeverity
-import io.github.dkej123.devicecockpit.intellij.ui.common.AdbToolboxTheme
+import io.github.dkej123.devicecockpit.intellij.ui.common.DeviceCockpitTheme
 import java.awt.BorderLayout
 import java.awt.Color
 import java.awt.FlowLayout
@@ -21,7 +21,7 @@ import javax.swing.JButton
  * gets the amber border and [FeedbackSeverity.Info] the neutral `borderStrong` one, both with no
  * glyph, since the supplied design only specifies copy/treatment for success and error toasts), and
  * the accent fix-action button next to a plain dismiss button. Mounted as one overlay in
- * [io.github.dkej123.devicecockpit.intellij.host.AdbToolboxHostPanel.overlays]; anchoring (bottom-left, 8px
+ * [io.github.dkej123.devicecockpit.intellij.host.DeviceCockpitHostPanel.overlays]; anchoring (bottom-left, 8px
  * inset above the status bar) is [io.github.dkej123.devicecockpit.intellij.feedback.FeedbackOverlayCoordinator]'s
  * concern, not this panel's own layout.
  *
@@ -57,7 +57,7 @@ class ToastStackPanel(
 
         init {
             isOpaque = true
-            background = AdbToolboxTheme.Colors.panel
+            background = DeviceCockpitTheme.Colors.panel
             val (borderColor, glyph) = severityTreatment(message.severity)
             border = BorderFactory.createCompoundBorder(
                 BorderFactory.createMatteBorder(0, 2, 0, 0, borderColor),
@@ -65,18 +65,18 @@ class ToastStackPanel(
             )
 
             val textLabel = JBLabel(if (glyph != null) "$glyph  ${message.text}" else message.text).apply {
-                foreground = AdbToolboxTheme.Colors.text
-                font = AdbToolboxTheme.Typography.body
+                foreground = DeviceCockpitTheme.Colors.text
+                font = DeviceCockpitTheme.Typography.body
             }
             add(textLabel, BorderLayout.CENTER)
 
-            val actionsRow = JBPanel<Nothing>(FlowLayout(FlowLayout.TRAILING, AdbToolboxTheme.Spacing.s2, 0)).apply {
+            val actionsRow = JBPanel<Nothing>(FlowLayout(FlowLayout.TRAILING, DeviceCockpitTheme.Spacing.s2, 0)).apply {
                 isOpaque = false
             }
             message.action?.let { action ->
                 actionsRow.add(
                     JButton(action.label).apply {
-                        foreground = AdbToolboxTheme.Colors.accent
+                        foreground = DeviceCockpitTheme.Colors.accent
                         isContentAreaFilled = false
                         addActionListener { onAction(message.id) }
                     },
@@ -87,10 +87,10 @@ class ToastStackPanel(
         }
 
         private fun severityTreatment(severity: FeedbackSeverity): Pair<Color, String?> = when (severity) {
-            FeedbackSeverity.Success -> AdbToolboxTheme.Colors.green to "✓"
-            FeedbackSeverity.Error -> AdbToolboxTheme.Colors.red to "✕"
-            FeedbackSeverity.Warning -> AdbToolboxTheme.Colors.amber to null
-            FeedbackSeverity.Info -> AdbToolboxTheme.Colors.borderStrong to null
+            FeedbackSeverity.Success -> DeviceCockpitTheme.Colors.green to "✓"
+            FeedbackSeverity.Error -> DeviceCockpitTheme.Colors.red to "✕"
+            FeedbackSeverity.Warning -> DeviceCockpitTheme.Colors.amber to null
+            FeedbackSeverity.Info -> DeviceCockpitTheme.Colors.borderStrong to null
         }
     }
 }

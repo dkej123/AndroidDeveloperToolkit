@@ -54,7 +54,7 @@ class PresetChipRow<T : Any>(
     private val style: PresetChipRowStyle = PresetChipRowStyle.WRAP,
 ) : JBPanel<PresetChipRow<T>>(
     when (style) {
-        PresetChipRowStyle.WRAP -> WrappingFlowLayout(FlowLayout.LEADING, AdbToolboxTheme.Spacing.s2, 0)
+        PresetChipRowStyle.WRAP -> WrappingFlowLayout(FlowLayout.LEADING, DeviceCockpitTheme.Spacing.s2, 0)
         PresetChipRowStyle.SEGMENTED -> SegmentedLayout()
     },
 ) {
@@ -111,9 +111,9 @@ class PresetChipRow<T : Any>(
             val w = width - insets.left - insets.right
             val h = height - insets.top - insets.bottom
             val arc = JBUIScale.scale(6) * 2
-            copy.color = AdbToolboxTheme.Colors.field
+            copy.color = DeviceCockpitTheme.Colors.field
             copy.fillRoundRect(x, y, w, h, arc, arc)
-            copy.color = AdbToolboxTheme.Colors.borderStrong
+            copy.color = DeviceCockpitTheme.Colors.borderStrong
             copy.drawRoundRect(x, y, w - 1, h - 1, arc, arc)
         } finally {
             copy.dispose()
@@ -164,7 +164,7 @@ class PresetChipRow<T : Any>(
     }
 
     private fun bindTraversal(chip: PresetChip<T>, index: Int, keyCode: Int, offset: Int) {
-        val actionKey = "adbToolbox.presetChip.$keyCode"
+        val actionKey = "deviceCockpit.presetChip.$keyCode"
         chip.getInputMap(JComponent.WHEN_FOCUSED).put(KeyStroke.getKeyStroke(keyCode, 0), actionKey)
         chip.actionMap.put(actionKey, object : AbstractAction() {
             override fun actionPerformed(event: ActionEvent?) {
@@ -271,12 +271,12 @@ class PresetChip<T : Any> internal constructor(
         isOpaque = false
         isContentAreaFilled = false
         isFocusPainted = false
-        font = AdbToolboxTheme.Typography.body
+        font = DeviceCockpitTheme.Typography.body
         margin = Insets(0, JBUIScale.scale(if (segmented) 6 else 9), 0, JBUIScale.scale(if (segmented) 6 else 9))
         val widestFont = baseFont().deriveFont(java.awt.Font.BOLD)
         preferredSize = Dimension(
             getFontMetrics(widestFont).stringWidth(text) + margin.left + margin.right,
-            if (segmented) JBUIScale.scale(22) else AdbToolboxTheme.Sizes.iconButton,
+            if (segmented) JBUIScale.scale(22) else DeviceCockpitTheme.Sizes.iconButton,
         )
         addItemListener { refreshPresentation() }
         getAccessibleContext().accessibleName = choice.label
@@ -285,9 +285,9 @@ class PresetChip<T : Any> internal constructor(
 
     /** Segmented numbers are mono 11 and the default ("Standard") is UI 11, per the prototype. */
     private fun baseFont(): java.awt.Font = when {
-        !segmented -> AdbToolboxTheme.Typography.body
-        !choice.monospaced -> AdbToolboxTheme.Typography.body.deriveFont(JBUIScale.scale(11f))
-        else -> AdbToolboxTheme.Typography.mono.deriveFont(JBUIScale.scale(11f))
+        !segmented -> DeviceCockpitTheme.Typography.body
+        !choice.monospaced -> DeviceCockpitTheme.Typography.body.deriveFont(JBUIScale.scale(11f))
+        else -> DeviceCockpitTheme.Typography.mono.deriveFont(JBUIScale.scale(11f))
     }
 
     private val highlighted: Boolean
@@ -300,22 +300,22 @@ class PresetChip<T : Any> internal constructor(
         }
         when {
             isSelected && !choice.isDefault && choice.kind == PresetChipKind.PRESET -> {
-                foreground = AdbToolboxTheme.Colors.amber
-                background = AdbToolboxTheme.Colors.amberBg
-                border = SolidChipBorder(AdbToolboxTheme.Colors.amber)
+                foreground = DeviceCockpitTheme.Colors.amber
+                background = DeviceCockpitTheme.Colors.amberBg
+                border = SolidChipBorder(DeviceCockpitTheme.Colors.amber)
             }
             isSelected -> {
-                foreground = AdbToolboxTheme.Colors.text
-                background = AdbToolboxTheme.Colors.panel
-                border = borderForKind(AdbToolboxTheme.Colors.borderStrong)
+                foreground = DeviceCockpitTheme.Colors.text
+                background = DeviceCockpitTheme.Colors.panel
+                border = borderForKind(DeviceCockpitTheme.Colors.borderStrong)
             }
             else -> {
-                foreground = AdbToolboxTheme.Colors.textDim
-                background = AdbToolboxTheme.Colors.panel
-                border = borderForKind(AdbToolboxTheme.Colors.border)
+                foreground = DeviceCockpitTheme.Colors.textDim
+                background = DeviceCockpitTheme.Colors.panel
+                border = borderForKind(DeviceCockpitTheme.Colors.border)
             }
         }
-        font = AdbToolboxTheme.Typography.body.deriveFont(
+        font = DeviceCockpitTheme.Typography.body.deriveFont(
             if (isSelected) java.awt.Font.BOLD else java.awt.Font.PLAIN,
         )
         isContentAreaFilled = false
@@ -323,20 +323,20 @@ class PresetChip<T : Any> internal constructor(
     }
 
     private fun refreshSegmentedPresentation() {
-        val radius = { AdbToolboxTheme.Radii.field }
+        val radius = { DeviceCockpitTheme.Radii.field }
         when {
             highlighted -> {
-                foreground = AdbToolboxTheme.Colors.amber
-                background = AdbToolboxTheme.Colors.amberBg
-                border = SolidChipBorder(AdbToolboxTheme.Colors.amber, radius)
+                foreground = DeviceCockpitTheme.Colors.amber
+                background = DeviceCockpitTheme.Colors.amberBg
+                border = SolidChipBorder(DeviceCockpitTheme.Colors.amber, radius)
             }
             isSelected -> {
-                foreground = AdbToolboxTheme.Colors.text
-                background = AdbToolboxTheme.Colors.header
-                border = SolidChipBorder(AdbToolboxTheme.Colors.borderStrong, radius)
+                foreground = DeviceCockpitTheme.Colors.text
+                background = DeviceCockpitTheme.Colors.header
+                border = SolidChipBorder(DeviceCockpitTheme.Colors.borderStrong, radius)
             }
             else -> {
-                foreground = AdbToolboxTheme.Colors.textDim
+                foreground = DeviceCockpitTheme.Colors.textDim
                 background = null
                 border = JBUI.Borders.empty(1)
             }
@@ -353,7 +353,7 @@ class PresetChip<T : Any> internal constructor(
             try {
                 copy.color = background
                 copy.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
-                val arc = (if (segmented) AdbToolboxTheme.Radii.field else AdbToolboxTheme.Radii.chip) * 2
+                val arc = (if (segmented) DeviceCockpitTheme.Radii.field else DeviceCockpitTheme.Radii.chip) * 2
                 copy.fillRoundRect(0, 0, width, height, arc, arc)
             } finally {
                 copy.dispose()
@@ -375,7 +375,7 @@ class LevelChip(val level: LogSeverity) : JToggleButton(level.symbol) {
         isOpaque = false
         isContentAreaFilled = false
         isFocusPainted = false
-        font = AdbToolboxTheme.Typography.mono
+        font = DeviceCockpitTheme.Typography.mono
         margin = Insets(0, 0, 0, 0)
         preferredSize = Dimension(JBUIScale.scale(20), JBUIScale.scale(20))
         addItemListener { refreshPresentation() }
@@ -386,11 +386,11 @@ class LevelChip(val level: LogSeverity) : JToggleButton(level.symbol) {
     // `levelChips[].style`: the active chip takes the level's own color, 700 weight, `accentBg` and
     // a 1px `accentBorder`; inactive chips are borderless `textFaint` glyphs with hover-only fill.
     private fun refreshPresentation() {
-        foreground = if (isSelected) severityColor(level) else AdbToolboxTheme.Colors.textFaint
-        font = AdbToolboxTheme.Typography.mono.deriveFont(if (isSelected) java.awt.Font.BOLD else java.awt.Font.PLAIN)
-        background = if (isSelected) AdbToolboxTheme.Colors.accentBg else AdbToolboxTheme.Colors.panel
+        foreground = if (isSelected) severityColor(level) else DeviceCockpitTheme.Colors.textFaint
+        font = DeviceCockpitTheme.Typography.mono.deriveFont(if (isSelected) java.awt.Font.BOLD else java.awt.Font.PLAIN)
+        background = if (isSelected) DeviceCockpitTheme.Colors.accentBg else DeviceCockpitTheme.Colors.panel
         border = if (isSelected) {
-            SolidChipBorder(AdbToolboxTheme.Colors.accentBorder, radius = { AdbToolboxTheme.Radii.field })
+            SolidChipBorder(DeviceCockpitTheme.Colors.accentBorder, radius = { DeviceCockpitTheme.Radii.field })
         } else {
             javax.swing.BorderFactory.createEmptyBorder()
         }
@@ -403,7 +403,7 @@ class LevelChip(val level: LogSeverity) : JToggleButton(level.symbol) {
             try {
                 copy.color = background
                 copy.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
-                val arc = AdbToolboxTheme.Radii.field * 2
+                val arc = DeviceCockpitTheme.Radii.field * 2
                 copy.fillRoundRect(0, 0, width, height, arc, arc)
             } finally {
                 copy.dispose()
@@ -424,17 +424,17 @@ private val LogSeverity.symbol: String
     }
 
 private fun severityColor(level: LogSeverity) = when (level) {
-    LogSeverity.VERBOSE -> AdbToolboxTheme.LogSeverityColors.verbose.level
-    LogSeverity.DEBUG -> AdbToolboxTheme.LogSeverityColors.debug.level
-    LogSeverity.INFO -> AdbToolboxTheme.LogSeverityColors.info.level
-    LogSeverity.WARN -> AdbToolboxTheme.LogSeverityColors.warn.level
-    LogSeverity.ERROR -> AdbToolboxTheme.LogSeverityColors.error.level
-    LogSeverity.ASSERT -> AdbToolboxTheme.LogSeverityColors.assert.level
+    LogSeverity.VERBOSE -> DeviceCockpitTheme.LogSeverityColors.verbose.level
+    LogSeverity.DEBUG -> DeviceCockpitTheme.LogSeverityColors.debug.level
+    LogSeverity.INFO -> DeviceCockpitTheme.LogSeverityColors.info.level
+    LogSeverity.WARN -> DeviceCockpitTheme.LogSeverityColors.warn.level
+    LogSeverity.ERROR -> DeviceCockpitTheme.LogSeverityColors.error.level
+    LogSeverity.ASSERT -> DeviceCockpitTheme.LogSeverityColors.assert.level
 }
 
 internal open class SolidChipBorder(
     private val color: Color,
-    private val radius: () -> Int = { AdbToolboxTheme.Radii.chip },
+    private val radius: () -> Int = { DeviceCockpitTheme.Radii.chip },
 ) : AbstractBorder() {
     override fun getBorderInsets(component: Component): Insets = Insets(
         JBUIScale.scale(1),

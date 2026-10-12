@@ -74,12 +74,12 @@ class AppsVirtualListTest : BasePlatformTestCase() {
         list.cellRenderer.getListCellRendererComponent(list, first, 0, false, false)
         assertTrue(renderer.sectionHeaderForTest.isVisible)
         assertEquals("PINNED", renderer.sectionHeaderForTest.text)
-        assertSame(io.github.dkej123.devicecockpit.intellij.icons.AdbToolboxIcons.Actions.pinned, renderer.pinForTest.icon)
+        assertSame(io.github.dkej123.devicecockpit.intellij.icons.DeviceCockpitIcons.Actions.pinned, renderer.pinForTest.icon)
         assertTrue(list.getCellBounds(0, 0).height > list.getCellBounds(1, 1).height)
 
         list.cellRenderer.getListCellRendererComponent(list, plain, 1, false, false)
         assertFalse(renderer.sectionHeaderForTest.isVisible)
-        assertSame(io.github.dkej123.devicecockpit.intellij.icons.AdbToolboxIcons.Actions.pin, renderer.pinForTest.icon)
+        assertSame(io.github.dkej123.devicecockpit.intellij.icons.DeviceCockpitIcons.Actions.pin, renderer.pinForTest.icon)
     }
 
     fun `test a row with a launcher icon paints that icon in place of the colored tile`() {
@@ -99,7 +99,7 @@ class AppsVirtualListTest : BasePlatformTestCase() {
 
         list.cellRenderer.getListCellRendererComponent(list, withoutIcon, 1, false, false)
         assertNull(renderer.tileForTest.icon)
-        assertEquals(io.github.dkej123.devicecockpit.intellij.ui.common.AdbToolboxTheme.Colors.brandBg, renderer.tileForTest.fill)
+        assertEquals(io.github.dkej123.devicecockpit.intellij.ui.common.DeviceCockpitTheme.Colors.brandBg, renderer.tileForTest.fill)
     }
 
     fun `test an undecodable icon falls back to the colored tile`() {
@@ -112,7 +112,7 @@ class AppsVirtualListTest : BasePlatformTestCase() {
         list.cellRenderer.getListCellRendererComponent(list, broken, 0, false, false)
 
         assertNull(renderer.tileForTest.icon)
-        assertEquals(io.github.dkej123.devicecockpit.intellij.ui.common.AdbToolboxTheme.Colors.header, renderer.tileForTest.fill)
+        assertEquals(io.github.dkej123.devicecockpit.intellij.ui.common.DeviceCockpitTheme.Colors.header, renderer.tileForTest.fill)
     }
 
     fun `test clicking a row invokes onSelect with its exact package name`() {
@@ -170,11 +170,11 @@ class AppsVirtualListTest : BasePlatformTestCase() {
 
         list.cellRenderer.getListCellRendererComponent(list, debuggable, 0, false, false)
         assertTrue(renderer.debugTagForTest.isVisible)
-        assertEquals(io.github.dkej123.devicecockpit.intellij.ui.common.AdbToolboxTheme.Colors.brandBg, renderer.tileForTest.fill)
+        assertEquals(io.github.dkej123.devicecockpit.intellij.ui.common.DeviceCockpitTheme.Colors.brandBg, renderer.tileForTest.fill)
 
         list.cellRenderer.getListCellRendererComponent(list, notDebuggable, 1, false, false)
         assertFalse(renderer.debugTagForTest.isVisible)
-        assertEquals(io.github.dkej123.devicecockpit.intellij.ui.common.AdbToolboxTheme.Colors.header, renderer.tileForTest.fill)
+        assertEquals(io.github.dkej123.devicecockpit.intellij.ui.common.DeviceCockpitTheme.Colors.header, renderer.tileForTest.fill)
     }
 
     fun `test a selected row is bold and tinted with the accent background`() {
@@ -187,8 +187,8 @@ class AppsVirtualListTest : BasePlatformTestCase() {
         list.cellRenderer.getListCellRendererComponent(list, selected, 0, false, false)
 
         assertEquals(java.awt.Font.BOLD, renderer.titleLabelForTest.font.style)
-        assertEquals(io.github.dkej123.devicecockpit.intellij.ui.common.AdbToolboxTheme.Colors.accentBg, renderer.rootForTest.fill)
-        assertEquals(io.github.dkej123.devicecockpit.intellij.ui.common.AdbToolboxTheme.Colors.accentBorder, renderer.rootForTest.outline)
+        assertEquals(io.github.dkej123.devicecockpit.intellij.ui.common.DeviceCockpitTheme.Colors.accentBg, renderer.rootForTest.fill)
+        assertEquals(io.github.dkej123.devicecockpit.intellij.ui.common.DeviceCockpitTheme.Colors.accentBorder, renderer.rootForTest.outline)
     }
 
     fun `test the app tile is a 16px square that is not stretched to the row height`() {
@@ -203,7 +203,7 @@ class AppsVirtualListTest : BasePlatformTestCase() {
         val tile = renderer.tileForTest
         assertEquals(com.intellij.util.ui.JBUI.scale(16), tile.width)
         assertEquals(com.intellij.util.ui.JBUI.scale(16), tile.height)
-        assertTrue(renderer.debugTagForTest.height < io.github.dkej123.devicecockpit.intellij.ui.common.AdbToolboxTheme.Sizes.appRow / 2)
+        assertTrue(renderer.debugTagForTest.height < io.github.dkej123.devicecockpit.intellij.ui.common.DeviceCockpitTheme.Sizes.appRow / 2)
     }
 
     fun `test the selected row is reflected as the JList selection`() {

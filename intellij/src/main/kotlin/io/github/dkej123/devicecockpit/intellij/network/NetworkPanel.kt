@@ -14,7 +14,7 @@ import com.intellij.util.ui.JBUI
 import io.github.dkej123.devicecockpit.application.network.ProxyViewState
 import io.github.dkej123.devicecockpit.domain.network.ProxyEndpoint
 import io.github.dkej123.devicecockpit.domain.network.ProxyReadState
-import io.github.dkej123.devicecockpit.intellij.ui.common.AdbToolboxTheme
+import io.github.dkej123.devicecockpit.intellij.ui.common.DeviceCockpitTheme
 import io.github.dkej123.devicecockpit.intellij.ui.common.DesignButton
 import io.github.dkej123.devicecockpit.intellij.ui.common.DesignButtonStyle
 import io.github.dkej123.devicecockpit.intellij.ui.common.DesignSections
@@ -69,8 +69,8 @@ class NetworkPanel(
 
     // `proxyStateStyle`: 10px/700 UI font, `textFaint` when off, amber when active.
     private val proxyStateLabel = JBLabel("—").apply {
-        font = AdbToolboxTheme.Typography.body.deriveFont(Font.BOLD, JBUIScale.scale(10f))
-        foreground = AdbToolboxTheme.Colors.textFaint
+        font = DeviceCockpitTheme.Typography.body.deriveFont(Font.BOLD, JBUIScale.scale(10f))
+        foreground = DeviceCockpitTheme.Colors.textFaint
     }
     private val proxyHeader = DesignSections.header(proxyTitleLabel, proxyStateLabel)
 
@@ -84,11 +84,11 @@ class NetworkPanel(
         })
     }
     private val colonLabel = JBLabel(":").apply {
-        font = AdbToolboxTheme.Typography.mono.deriveFont(JBUIScale.scale(12f))
-        foreground = AdbToolboxTheme.Colors.textFaint
+        font = DeviceCockpitTheme.Typography.mono.deriveFont(JBUIScale.scale(12f))
+        foreground = DeviceCockpitTheme.Colors.textFaint
     }
     private val portField = monoField().apply {
-        preferredSize = Dimension(JBUIScale.scale(66), AdbToolboxTheme.Sizes.field)
+        preferredSize = Dimension(JBUIScale.scale(66), DeviceCockpitTheme.Sizes.field)
         getAccessibleContext().accessibleName = "Proxy port"
         document.addDocumentListener(object : DocumentListener {
             override fun insertUpdate(e: DocumentEvent) = onPortChange(text)
@@ -98,7 +98,7 @@ class NetworkPanel(
     }
     // `proxyFieldRowStyle`: host (flex) · mono ":" · 66px port, gap 5, `padding: 0 10px`.
     private val fieldRow = flexRow(JBUIScale.scale(5), hostField, colonLabel, portField, fill = hostField).apply {
-        border = JBUI.Borders.empty(0, AdbToolboxTheme.Spacing.sectionInset)
+        border = JBUI.Borders.empty(0, DeviceCockpitTheme.Spacing.sectionInset)
     }
 
     private val fieldErrorLabel = errorLabel()
@@ -115,23 +115,23 @@ class NetworkPanel(
     // `actionRowStyle` + spacer: the link on the leading edge, the primary action on the trailing edge.
     private val actionRow = run {
         val spacer = flexSpacer()
-        flexRow(AdbToolboxTheme.Spacing.s3, useComputerIpLink, spacer, primaryProxyButton, fill = spacer)
+        flexRow(DeviceCockpitTheme.Spacing.s3, useComputerIpLink, spacer, primaryProxyButton, fill = spacer)
     }.apply {
-        border = JBUI.Borders.empty(0, AdbToolboxTheme.Spacing.sectionInset)
+        border = JBUI.Borders.empty(0, DeviceCockpitTheme.Spacing.sectionInset)
     }
 
-    private val liveDotLabel = JBLabel(StatusDotIcon(AdbToolboxTheme.Colors.amber, filled = true))
+    private val liveDotLabel = JBLabel(StatusDotIcon(DeviceCockpitTheme.Colors.amber, filled = true))
     private val activeBannerTextLabel = JBLabel("").apply {
-        font = AdbToolboxTheme.Typography.body.deriveFont(Font.BOLD, JBUIScale.scale(11f))
-        foreground = AdbToolboxTheme.Colors.amber
+        font = DeviceCockpitTheme.Typography.body.deriveFont(Font.BOLD, JBUIScale.scale(11f))
+        foreground = DeviceCockpitTheme.Colors.amber
     }
     private val resetLink = linkButton("Reset") { onReset() }
 
     // `proxyActiveBannerStyle`: `padding: 6px 8px`, radius 5, `amberBg` + 1px amber, gap 7. The text
     // is the row's only flexible child, so it ellipsises before it can reach the Reset action.
-    private val activeBanner = RoundedSurface(AdbToolboxTheme.Colors.amberBg, AdbToolboxTheme.Colors.amber).apply {
+    private val activeBanner = RoundedSurface(DeviceCockpitTheme.Colors.amberBg, DeviceCockpitTheme.Colors.amber).apply {
         layout = FlexRowLayout(JBUIScale.scale(7))
-        border = JBUI.Borders.empty(AdbToolboxTheme.Spacing.s3, AdbToolboxTheme.Spacing.s4)
+        border = JBUI.Borders.empty(DeviceCockpitTheme.Spacing.s3, DeviceCockpitTheme.Spacing.s4)
         add(liveDotLabel)
         add(activeBannerTextLabel, FlexRowLayout.FILL)
         add(resetLink)
@@ -139,7 +139,7 @@ class NetworkPanel(
     private val activeBannerWrap = JPanel(BorderLayout()).apply {
         isOpaque = false
         isVisible = false
-        border = JBUI.Borders.empty(AdbToolboxTheme.Spacing.s1, AdbToolboxTheme.Spacing.sectionInset, 0, AdbToolboxTheme.Spacing.sectionInset)
+        border = JBUI.Borders.empty(DeviceCockpitTheme.Spacing.s1, DeviceCockpitTheme.Spacing.sectionInset, 0, DeviceCockpitTheme.Spacing.sectionInset)
         add(activeBanner, BorderLayout.CENTER)
     }
 
@@ -161,9 +161,9 @@ class NetworkPanel(
         fixedCellHeight = JBUIScale.scale(26)
         cellRenderer = ListCellRenderer<ProxyEndpoint> { _, value, _, _, _ ->
             JBLabel(value.render()).apply {
-                font = AdbToolboxTheme.Typography.mono
-                foreground = AdbToolboxTheme.Colors.text
-                border = JBUI.Borders.empty(0, AdbToolboxTheme.Spacing.sectionInset)
+                font = DeviceCockpitTheme.Typography.mono
+                foreground = DeviceCockpitTheme.Colors.text
+                border = JBUI.Borders.empty(0, DeviceCockpitTheme.Spacing.sectionInset)
             }
         }
         addListSelectionListener { event ->
@@ -195,7 +195,7 @@ class NetworkPanel(
 
     private val contentPanel = ViewportWidthPanel().apply {
         layout = BoxLayout(this, BoxLayout.Y_AXIS)
-        background = AdbToolboxTheme.Colors.bg
+        background = DeviceCockpitTheme.Colors.bg
         add(proxySection)
         add(throttleSection)
         add(recentSection)
@@ -218,9 +218,9 @@ class NetworkPanel(
             else -> state.customDescription ?: "—"
         }
         throttleMetaLabel.foreground = if (emulator && current != null && current != NetworkThrottle.Off) {
-            AdbToolboxTheme.Colors.amber
+            DeviceCockpitTheme.Colors.amber
         } else {
-            AdbToolboxTheme.Colors.textFaint
+            DeviceCockpitTheme.Colors.textFaint
         }
         throttleHelpLabel.text = when {
             state.error != null -> state.error
@@ -232,11 +232,11 @@ class NetworkPanel(
     private val scrollPane = JScrollPane(contentPanel).apply {
         border = BorderFactory.createEmptyBorder()
         horizontalScrollBarPolicy = ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER
-        verticalScrollBar.unitIncrement = AdbToolboxTheme.Spacing.s5
+        verticalScrollBar.unitIncrement = DeviceCockpitTheme.Spacing.s5
     }
 
     init {
-        background = AdbToolboxTheme.Colors.bg
+        background = DeviceCockpitTheme.Colors.bg
         add(scrollPane, BorderLayout.CENTER)
     }
 
@@ -259,13 +259,13 @@ class NetworkPanel(
         isActive = active != null
 
         val portInvalid = state.portError != null
-        portField.foreground = if (portInvalid) AdbToolboxTheme.Colors.red else AdbToolboxTheme.Colors.text
+        portField.foreground = if (portInvalid) DeviceCockpitTheme.Colors.red else DeviceCockpitTheme.Colors.text
         portField.border = BorderFactory.createCompoundBorder(
             SolidChipBorder(
-                if (portInvalid) AdbToolboxTheme.Colors.red else AdbToolboxTheme.Colors.borderStrong,
-                radius = { AdbToolboxTheme.Radii.field },
+                if (portInvalid) DeviceCockpitTheme.Colors.red else DeviceCockpitTheme.Colors.borderStrong,
+                radius = { DeviceCockpitTheme.Radii.field },
             ),
-            JBUI.Borders.empty(0, AdbToolboxTheme.Spacing.s3),
+            JBUI.Borders.empty(0, DeviceCockpitTheme.Spacing.s3),
         )
 
         hostField.isEnabled = state.isDeviceEligible
@@ -277,7 +277,7 @@ class NetworkPanel(
             active != null -> "active"
             else -> "off"
         }
-        proxyStateLabel.foreground = if (active != null) AdbToolboxTheme.Colors.amber else AdbToolboxTheme.Colors.textFaint
+        proxyStateLabel.foreground = if (active != null) DeviceCockpitTheme.Colors.amber else DeviceCockpitTheme.Colors.textFaint
 
         presentProxyButton(active != null)
         primaryProxyButton.isEnabled = state.isDeviceEligible && !state.isBusy && (active != null || state.canSubmit)
@@ -328,20 +328,20 @@ class NetworkPanel(
             if (isDeviceEligible) this else "$this — Connect a device to use this"
 
         fun monoField() = JBTextField().apply {
-            font = AdbToolboxTheme.Typography.mono
-            background = AdbToolboxTheme.Colors.field
-            preferredSize = Dimension(preferredSize.width, AdbToolboxTheme.Sizes.field)
+            font = DeviceCockpitTheme.Typography.mono
+            background = DeviceCockpitTheme.Colors.field
+            preferredSize = Dimension(preferredSize.width, DeviceCockpitTheme.Sizes.field)
             border = BorderFactory.createCompoundBorder(
-                SolidChipBorder(AdbToolboxTheme.Colors.borderStrong, radius = { AdbToolboxTheme.Radii.field }),
-                JBUI.Borders.empty(0, AdbToolboxTheme.Spacing.s3),
+                SolidChipBorder(DeviceCockpitTheme.Colors.borderStrong, radius = { DeviceCockpitTheme.Radii.field }),
+                JBUI.Borders.empty(0, DeviceCockpitTheme.Spacing.s3),
             )
         }
 
         fun errorLabel() = JBLabel("").apply {
-            font = AdbToolboxTheme.Typography.caption.deriveFont(JBUIScale.scale(10.5f))
-            foreground = AdbToolboxTheme.Colors.red
+            font = DeviceCockpitTheme.Typography.caption.deriveFont(JBUIScale.scale(10.5f))
+            foreground = DeviceCockpitTheme.Colors.red
             isVisible = false
-            border = JBUI.Borders.empty(0, AdbToolboxTheme.Spacing.sectionInset)
+            border = JBUI.Borders.empty(0, DeviceCockpitTheme.Spacing.sectionInset)
         }
 
         fun linkButton(text: String, onClick: () -> Unit) = DesignButton(text, DesignButtonStyle.LINK).apply {

@@ -1,4 +1,4 @@
-package dev.acme.adbtoolbox.e2efixture;
+package dev.acme.devicecockpit.e2efixture;
 
 import android.app.Activity;
 import android.os.Bundle;

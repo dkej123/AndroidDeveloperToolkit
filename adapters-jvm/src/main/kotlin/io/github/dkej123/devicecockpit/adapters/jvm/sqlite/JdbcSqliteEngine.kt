@@ -40,7 +40,7 @@ private class JdbcSqliteSession(private val connection: Connection) : SqliteSess
         val quoted = quoteIdentifier(table)
         val total = connection.createStatement().use { it.executeQuery("SELECT count(*) FROM $quoted").use { rs -> rs.next(); rs.getLong(1) } }
         val withRowId = try {
-            select("SELECT rowid AS __adbtoolbox_rowid, * FROM $quoted LIMIT $limit OFFSET $offset", rowIdColumn = true)
+            select("SELECT rowid AS __devicecockpit_rowid, * FROM $quoted LIMIT $limit OFFSET $offset", rowIdColumn = true)
         } catch (_: SQLException) {
             // WITHOUT ROWID tables (and views) have no rowid: readable, not editable.
             select("SELECT * FROM $quoted LIMIT $limit OFFSET $offset", rowIdColumn = false)

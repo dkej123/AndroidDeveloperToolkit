@@ -32,7 +32,7 @@ import io.github.dkej123.devicecockpit.domain.display.fontscale.FontScalePresets
 import io.github.dkej123.devicecockpit.domain.display.fontscale.FontScaleRange
 import io.github.dkej123.devicecockpit.domain.display.fontscale.FontScaleState
 import io.github.dkej123.devicecockpit.domain.display.fontscale.formatFontScale
-import io.github.dkej123.devicecockpit.intellij.ui.common.AdbToolboxTheme
+import io.github.dkej123.devicecockpit.intellij.ui.common.DeviceCockpitTheme
 import io.github.dkej123.devicecockpit.intellij.ui.common.PresetChipChoice
 import io.github.dkej123.devicecockpit.intellij.ui.common.PresetChipKind
 import io.github.dkej123.devicecockpit.intellij.ui.common.PresetChipRow
@@ -245,7 +245,7 @@ class DisplayPanel(
             overrideDpi?.takeIf { densityOverridden }?.let { "$it dpi" },
         )
         displayMetaLabel.text = if (applied.isEmpty()) "default" else applied.joinToString(" · ") + " applied"
-        displayMetaLabel.foreground = if (applied.isEmpty()) AdbToolboxTheme.Colors.textFaint else AdbToolboxTheme.Colors.amber
+        displayMetaLabel.foreground = if (applied.isEmpty()) DeviceCockpitTheme.Colors.textFaint else DeviceCockpitTheme.Colors.amber
     }
 
     private var lastFontScale: Double? = null
@@ -331,7 +331,7 @@ class DisplayPanel(
         selected = ScreenRotation.Auto,
         style = PresetChipRowStyle.SEGMENTED,
     ).apply {
-        border = JBUI.Borders.empty(0, AdbToolboxTheme.Spacing.sectionInset)
+        border = JBUI.Borders.empty(0, DeviceCockpitTheme.Spacing.sectionInset)
         chips.forEach { chip ->
             chip.toolTipText = if (chip.value == ScreenRotation.Auto) {
                 "settings put system accelerometer_rotation 1"
@@ -358,7 +358,7 @@ class DisplayPanel(
         selected = BackgroundProcessLimit.STANDARD,
         style = PresetChipRowStyle.SEGMENTED,
     ).apply {
-        border = JBUI.Borders.empty(0, AdbToolboxTheme.Spacing.sectionInset)
+        border = JBUI.Borders.empty(0, DeviceCockpitTheme.Spacing.sectionInset)
         chips.forEach { chip -> chip.toolTipText = BackgroundProcessLimit.label(chip.value) }
         onSelectionChanged = { limit -> onSetProcessLimit(limit) }
     }
@@ -396,7 +396,7 @@ class DisplayPanel(
 
     private val contentPanel = ViewportWidthPanel().apply {
         layout = BoxLayout(this, BoxLayout.Y_AXIS)
-        background = AdbToolboxTheme.Colors.bg
+        background = DeviceCockpitTheme.Colors.bg
         add(displaySection)
         add(localeSlot)
         add(locationSlot)
@@ -406,11 +406,11 @@ class DisplayPanel(
     private val scrollPane = JScrollPane(contentPanel).apply {
         border = BorderFactory.createEmptyBorder()
         horizontalScrollBarPolicy = ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER
-        verticalScrollBar.unitIncrement = AdbToolboxTheme.Spacing.s5
+        verticalScrollBar.unitIncrement = DeviceCockpitTheme.Spacing.s5
     }
 
     init {
-        background = AdbToolboxTheme.Colors.bg
+        background = DeviceCockpitTheme.Colors.bg
         if (embedded) {
             isOpaque = false
             add(contentPanel, BorderLayout.CENTER)
@@ -593,7 +593,7 @@ class DisplayPanel(
             else -> "$limit max"
         }
         processLimitValueLabel.foreground =
-            if (limit != null && limit >= 0) AdbToolboxTheme.Colors.amber else AdbToolboxTheme.Colors.textFaint
+            if (limit != null && limit >= 0) DeviceCockpitTheme.Colors.amber else DeviceCockpitTheme.Colors.textFaint
         processLimitValueLabel.toolTipText = (limitField as? QuickToggleFieldState.Error)?.message
         if (limit != null && limit in BackgroundProcessLimit.PRESETS) processLimitChipRow.setSelectedValue(limit)
         processLimitChipRow.applyPending = limitField is QuickToggleFieldState.Applying
@@ -649,7 +649,7 @@ class DisplayPanel(
             else -> "${rotation.name.lowercase()} · locked"
         }
         rotationValueLabel.foreground =
-            if (rotation != null && rotation != ScreenRotation.Auto) AdbToolboxTheme.Colors.amber else AdbToolboxTheme.Colors.textFaint
+            if (rotation != null && rotation != ScreenRotation.Auto) DeviceCockpitTheme.Colors.amber else DeviceCockpitTheme.Colors.textFaint
         rotationValueLabel.toolTipText = (rotationField as? QuickToggleFieldState.Error)?.message
         if (rotation != null) rotationChipRow.setSelectedValue(rotation)
         rotationChipRow.applyPending = rotationField is QuickToggleFieldState.Applying
@@ -725,12 +725,12 @@ class DisplayPanel(
         /** A 24px dropdown for the Display section; [markOverridden] colours its shown value. */
         fun <T> displayCombo(label: (T?) -> String): ComboBox<T> = ComboBox<T>().apply {
             transparentCombo()
-            font = AdbToolboxTheme.Typography.body.deriveFont(JBUIScale.scale(11.5f))
+            font = DeviceCockpitTheme.Typography.body.deriveFont(JBUIScale.scale(11.5f))
             renderer = textRenderer<T> { value -> label(value) }
             putClientProperty(DEFAULT_FOREGROUND, foreground)
         }
 
-        private const val DEFAULT_FOREGROUND = "adbToolbox.defaultForeground"
+        private const val DEFAULT_FOREGROUND = "deviceCockpit.defaultForeground"
 
         /**
          * Design §5 "Overridden combo: amber text + amber border". The combo UI paints its shown value
@@ -738,7 +738,7 @@ class DisplayPanel(
          * is the closest native border.
          */
         fun markOverridden(combo: JComboBox<*>, overridden: Boolean) {
-            combo.foreground = if (overridden) AdbToolboxTheme.Colors.amber else combo.getClientProperty(DEFAULT_FOREGROUND) as? java.awt.Color
+            combo.foreground = if (overridden) DeviceCockpitTheme.Colors.amber else combo.getClientProperty(DEFAULT_FOREGROUND) as? java.awt.Color
             combo.putClientProperty("JComponent.outline", if (overridden) "warning" else null)
         }
 
@@ -749,12 +749,12 @@ class DisplayPanel(
         fun sectionHeader(title: JBLabel, meta: JBLabel?) = DesignSections.header(title, meta)
 
         fun customField() = JBTextField().apply {
-            font = AdbToolboxTheme.Typography.mono
-            background = AdbToolboxTheme.Colors.field
-            preferredSize = Dimension(JBUIScale.scale(64), AdbToolboxTheme.Sizes.field)
+            font = DeviceCockpitTheme.Typography.mono
+            background = DeviceCockpitTheme.Colors.field
+            preferredSize = Dimension(JBUIScale.scale(64), DeviceCockpitTheme.Sizes.field)
             border = BorderFactory.createCompoundBorder(
-                SolidChipBorder(AdbToolboxTheme.Colors.borderStrong, radius = { AdbToolboxTheme.Radii.field }),
-                JBUI.Borders.empty(0, AdbToolboxTheme.Spacing.s3),
+                SolidChipBorder(DeviceCockpitTheme.Colors.borderStrong, radius = { DeviceCockpitTheme.Radii.field }),
+                JBUI.Borders.empty(0, DeviceCockpitTheme.Spacing.s3),
             )
         }
 
@@ -766,8 +766,8 @@ class DisplayPanel(
         }
 
         fun errorLabel() = JBLabel("").apply {
-            font = AdbToolboxTheme.Typography.caption.deriveFont(JBUIScale.scale(10.5f))
-            foreground = AdbToolboxTheme.Colors.red
+            font = DeviceCockpitTheme.Typography.caption.deriveFont(JBUIScale.scale(10.5f))
+            foreground = DeviceCockpitTheme.Colors.red
             isVisible = false
         }
 
@@ -775,21 +775,21 @@ class DisplayPanel(
         fun customDisclosureRow(field: JBTextField, unit: String, errorLabel: JBLabel, onApply: () -> Unit): JPanel {
             field.addActionListener { onApply() }
             val unitLabel = JBLabel(unit).apply {
-                font = AdbToolboxTheme.Typography.mono
-                foreground = AdbToolboxTheme.Colors.textFaint
+                font = DeviceCockpitTheme.Typography.mono
+                foreground = DeviceCockpitTheme.Colors.textFaint
             }
             val applyButton = DesignButton("Apply", DesignButtonStyle.SECONDARY).apply {
                 addActionListener { onApply() }
             }
-            return flexRow(AdbToolboxTheme.Spacing.s3, field, unitLabel, applyButton, errorLabel).apply {
+            return flexRow(DeviceCockpitTheme.Spacing.s3, field, unitLabel, applyButton, errorLabel).apply {
                 isVisible = false
-                border = JBUI.Borders.empty(AdbToolboxTheme.Spacing.s1, AdbToolboxTheme.Spacing.sectionInset, 0, AdbToolboxTheme.Spacing.sectionInset)
+                border = JBUI.Borders.empty(DeviceCockpitTheme.Spacing.s1, DeviceCockpitTheme.Spacing.sectionInset, 0, DeviceCockpitTheme.Spacing.sectionInset)
             }
         }
 
         fun overrideNoteLabel(text: String) = JBLabel(text).apply {
-            font = AdbToolboxTheme.Typography.caption.deriveFont(JBUIScale.scale(10.5f))
-            foreground = AdbToolboxTheme.Colors.textFaint
+            font = DeviceCockpitTheme.Typography.caption.deriveFont(JBUIScale.scale(10.5f))
+            foreground = DeviceCockpitTheme.Colors.textFaint
         }
 
         fun linkButton(text: String, onClick: () -> Unit) = DesignButton(text, DesignButtonStyle.LINK).apply {
@@ -797,9 +797,9 @@ class DisplayPanel(
         }
 
         // `resetRowStyle`: note (`margin-right: auto`) and link, gap 8, `padding: 2px 10px 0`.
-        fun overrideRow(note: JBLabel, link: JButton) = flexRow(AdbToolboxTheme.Spacing.s4, note, link, fill = note).apply {
+        fun overrideRow(note: JBLabel, link: JButton) = flexRow(DeviceCockpitTheme.Spacing.s4, note, link, fill = note).apply {
             isVisible = false
-            border = JBUI.Borders.empty(AdbToolboxTheme.Spacing.s1, AdbToolboxTheme.Spacing.sectionInset, 0, AdbToolboxTheme.Spacing.sectionInset)
+            border = JBUI.Borders.empty(DeviceCockpitTheme.Spacing.s1, DeviceCockpitTheme.Spacing.sectionInset, 0, DeviceCockpitTheme.Spacing.sectionInset)
         }
 
         fun helpLabel(text: String) = DesignSections.helpText(text)
@@ -807,14 +807,14 @@ class DisplayPanel(
         fun section(vararg children: java.awt.Component) = DesignSections.section(*children)
 
         fun toggleValueLabel() = JBLabel("").apply {
-            font = AdbToolboxTheme.Typography.mono.deriveFont(JBUIScale.scale(10f))
-            foreground = AdbToolboxTheme.Colors.textFaint
+            font = DeviceCockpitTheme.Typography.mono.deriveFont(JBUIScale.scale(10f))
+            foreground = DeviceCockpitTheme.Colors.textFaint
         }
 
         // Group caption: 9.5 bold uppercase `textFaint`; the accessible name keeps the readable casing.
         fun groupLabel(text: String) = JBLabel(text.uppercase()).apply {
-            font = AdbToolboxTheme.Typography.groupLabel
-            foreground = AdbToolboxTheme.Colors.textFaint
+            font = DeviceCockpitTheme.Typography.groupLabel
+            foreground = DeviceCockpitTheme.Colors.textFaint
             getAccessibleContext().accessibleName = text
         }
 
@@ -831,8 +831,8 @@ class DisplayPanel(
         // Caption · spacer · mono value.
         fun labeledValueRow(caption: JBLabel, valueLabel: JBLabel): JPanel {
             val spacer = flexSpacer()
-            return flexRow(AdbToolboxTheme.Spacing.s4, caption, spacer, valueLabel, fill = spacer).apply {
-                border = JBUI.Borders.empty(AdbToolboxTheme.Spacing.s1, AdbToolboxTheme.Spacing.sectionInset, 0, AdbToolboxTheme.Spacing.sectionInset)
+            return flexRow(DeviceCockpitTheme.Spacing.s4, caption, spacer, valueLabel, fill = spacer).apply {
+                border = JBUI.Borders.empty(DeviceCockpitTheme.Spacing.s1, DeviceCockpitTheme.Spacing.sectionInset, 0, DeviceCockpitTheme.Spacing.sectionInset)
             }
         }
 

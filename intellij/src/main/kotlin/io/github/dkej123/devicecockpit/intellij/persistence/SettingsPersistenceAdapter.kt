@@ -71,7 +71,7 @@ internal fun resolveSettingsState(state: SettingsPersistenceState): SettingsStat
  * workaround).
  */
 class SettingsPersistenceAdapter(
-    private val projectState: AdbToolboxProjectState,
+    private val projectState: DeviceCockpitProjectState,
 ) : SettingsRepository {
 
     override suspend fun readSettings(): SettingsState = readSettingsNow()

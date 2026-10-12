@@ -5,7 +5,7 @@ import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.components.service
 import io.github.dkej123.devicecockpit.application.apps.AppLifecycleIntent
-import io.github.dkej123.devicecockpit.intellij.composition.AdbToolboxProjectService
+import io.github.dkej123.devicecockpit.intellij.composition.DeviceCockpitProjectService
 
 /**
  * Task 023's global restart shortcut/action (`design/README.md` §4's Restart tooltip: "Force-stop,
@@ -13,7 +13,7 @@ import io.github.dkej123.devicecockpit.intellij.composition.AdbToolboxProjectSer
  * exact action id, `AdbToolbox.RestartApp`). Forwards to the exact same
  * [io.github.dkej123.devicecockpit.application.apps.AppLifecycleViewModel.handle] entry point
  * [AppsPanel]'s Restart button uses (both reached via
- * [AdbToolboxProjectService.appLifecycleViewModel]), so the shortcut and the button can never
+ * [DeviceCockpitProjectService.appLifecycleViewModel]), so the shortcut and the button can never
  * diverge into two different restart code paths — mirrors
  * [io.github.dkej123.devicecockpit.intellij.mirroring.MirroringToggleAction]'s established shape exactly.
  *
@@ -32,6 +32,6 @@ class RestartAppAction : AnAction() {
 
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
-        project.service<AdbToolboxProjectService>().appLifecycleViewModel.handle(AppLifecycleIntent.Restart)
+        project.service<DeviceCockpitProjectService>().appLifecycleViewModel.handle(AppLifecycleIntent.Restart)
     }
 }

@@ -5,18 +5,18 @@ import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import io.github.dkej123.devicecockpit.application.settings.SettingsApplyResult
 import io.github.dkej123.devicecockpit.domain.settings.SettingsState
 import io.github.dkej123.devicecockpit.domain.settings.SettingsFieldError
-import io.github.dkej123.devicecockpit.intellij.ui.common.AdbToolboxTheme
+import io.github.dkej123.devicecockpit.intellij.ui.common.DeviceCockpitTheme
 import java.awt.Component
 import java.awt.Container
 import javax.swing.JTextField
 
-class AdbToolboxSettingsConfigurableTest : BasePlatformTestCase() {
+class DeviceCockpitSettingsConfigurableTest : BasePlatformTestCase() {
 
     private class FakeDiagnosticsPreferences(override var verbose: Boolean = false) : DiagnosticsPreferences
 
     fun `test the verbose diagnostics checkbox reflects, modifies and applies the preference`() {
         val preferences = FakeDiagnosticsPreferences(verbose = false)
-        val configurable = AdbToolboxSettingsConfigurable(FakeSettingsEditorBackend(), diagnosticsPreferences = preferences)
+        val configurable = DeviceCockpitSettingsConfigurable(FakeSettingsEditorBackend(), diagnosticsPreferences = preferences)
         val component = configurable.createComponent()
         val checkbox = descendants(component).filterIsInstance<javax.swing.JCheckBox>().single { it.name == "verboseDiagnosticsCheckBox" }
 
@@ -43,7 +43,7 @@ class AdbToolboxSettingsConfigurableTest : BasePlatformTestCase() {
 
     fun `test the clipboard checkbox and the MCP access level are applied application-wide`() {
         val preferences = FakeAppPreferences()
-        val configurable = AdbToolboxSettingsConfigurable(FakeSettingsEditorBackend(), appPreferences = preferences)
+        val configurable = DeviceCockpitSettingsConfigurable(FakeSettingsEditorBackend(), appPreferences = preferences)
         val component = configurable.createComponent()
         val checkbox = descendants(component).filterIsInstance<javax.swing.JCheckBox>().single { it.name == "copyScreenshotsCheckBox" }
         val fullControl = descendants(component).filterIsInstance<javax.swing.JRadioButton>().single { it.text == "Full control" }
@@ -65,14 +65,14 @@ class AdbToolboxSettingsConfigurableTest : BasePlatformTestCase() {
         listOf(component) + ((component as? Container)?.components?.flatMap(::descendants) ?: emptyList())
 
     fun `test path and buffer fields use the design system's mono font for copy-paste values`() {
-        val configurable = AdbToolboxSettingsConfigurable(FakeSettingsEditorBackend())
+        val configurable = DeviceCockpitSettingsConfigurable(FakeSettingsEditorBackend())
 
         val component = configurable.createComponent()
 
-        assertEquals(AdbToolboxTheme.Typography.mono, field(component, "adbPathField").font)
-        assertEquals(AdbToolboxTheme.Typography.mono, field(component, "scrcpyPathField").font)
-        assertEquals(AdbToolboxTheme.Typography.mono, field(component, "captureDirectoryField").font)
-        assertEquals(AdbToolboxTheme.Typography.mono, field(component, "logcatBufferSizeKbField").font)
+        assertEquals(DeviceCockpitTheme.Typography.mono, field(component, "adbPathField").font)
+        assertEquals(DeviceCockpitTheme.Typography.mono, field(component, "scrcpyPathField").font)
+        assertEquals(DeviceCockpitTheme.Typography.mono, field(component, "captureDirectoryField").font)
+        assertEquals(DeviceCockpitTheme.Typography.mono, field(component, "logcatBufferSizeKbField").font)
         configurable.disposeUIResources()
     }
 
@@ -85,7 +85,7 @@ class AdbToolboxSettingsConfigurableTest : BasePlatformTestCase() {
                 logcatBufferSizeKb = 8192,
             ),
         )
-        val configurable = AdbToolboxSettingsConfigurable(backend)
+        val configurable = DeviceCockpitSettingsConfigurable(backend)
 
         val component = configurable.createComponent()
 
@@ -99,7 +99,7 @@ class AdbToolboxSettingsConfigurableTest : BasePlatformTestCase() {
 
     fun `test custom TalkBack commands are shown, mark the form modified and are applied`() {
         val backend = FakeSettingsEditorBackend(persisted = SettingsState(talkBackOnCommand = "settings put secure a 1"))
-        val configurable = AdbToolboxSettingsConfigurable(backend)
+        val configurable = DeviceCockpitSettingsConfigurable(backend)
         val component = configurable.createComponent()
         val onField = field(component, "talkBackOnCommandField")
         val offField = field(component, "talkBackOffCommandField")
@@ -117,7 +117,7 @@ class AdbToolboxSettingsConfigurableTest : BasePlatformTestCase() {
 
     fun `test reset restores persisted values and clears modified state`() {
         val backend = FakeSettingsEditorBackend(persisted = SettingsState(logcatBufferSizeKb = 4096))
-        val configurable = AdbToolboxSettingsConfigurable(backend)
+        val configurable = DeviceCockpitSettingsConfigurable(backend)
         val component = configurable.createComponent()
         val bufferField = field(component, "logcatBufferSizeKbField")
         bufferField.text = "2048"
@@ -132,7 +132,7 @@ class AdbToolboxSettingsConfigurableTest : BasePlatformTestCase() {
 
     fun `test modified checks compare locally without reloading settings on the EDT`() {
         val backend = FakeSettingsEditorBackend()
-        val configurable = AdbToolboxSettingsConfigurable(backend)
+        val configurable = DeviceCockpitSettingsConfigurable(backend)
         val component = configurable.createComponent()
         assertEquals(1, backend.readCount)
 
@@ -156,7 +156,7 @@ class AdbToolboxSettingsConfigurableTest : BasePlatformTestCase() {
                 ),
             )
         }
-        val configurable = AdbToolboxSettingsConfigurable(backend)
+        val configurable = DeviceCockpitSettingsConfigurable(backend)
         val component = configurable.createComponent()
         field(component, "adbPathField").text = "   "
         field(component, "scrcpyPathField").text = ""
@@ -174,7 +174,7 @@ class AdbToolboxSettingsConfigurableTest : BasePlatformTestCase() {
     fun `test apply rejects malformed or out of range buffer without persisting`() {
         val original = SettingsState(logcatBufferSizeKb = 4096)
         val backend = FakeSettingsEditorBackend(persisted = original)
-        val configurable = AdbToolboxSettingsConfigurable(backend)
+        val configurable = DeviceCockpitSettingsConfigurable(backend)
         val component = configurable.createComponent()
 
         field(component, "logcatBufferSizeKbField").text = "not-a-number"
@@ -194,7 +194,7 @@ class AdbToolboxSettingsConfigurableTest : BasePlatformTestCase() {
         val backend = FakeSettingsEditorBackend(
             result = SettingsApplyResult.Invalid(setOf(SettingsFieldError.AdbPathNotExecutable)),
         )
-        val configurable = AdbToolboxSettingsConfigurable(backend)
+        val configurable = DeviceCockpitSettingsConfigurable(backend)
         val component = configurable.createComponent()
         field(component, "adbPathField").text = "/definitely/missing/adb"
 
@@ -208,7 +208,7 @@ class AdbToolboxSettingsConfigurableTest : BasePlatformTestCase() {
 
     fun `test dispose releases the form and recreates it from persisted state`() {
         val backend = FakeSettingsEditorBackend()
-        val configurable = AdbToolboxSettingsConfigurable(backend)
+        val configurable = DeviceCockpitSettingsConfigurable(backend)
         val first = configurable.createComponent()
         field(first, "logcatBufferSizeKbField").text = "2048"
 

@@ -57,7 +57,7 @@ import io.github.dkej123.devicecockpit.intellij.logcat.LogcatRenderRow
 import io.github.dkej123.devicecockpit.intellij.logcat.LogcatVirtualList
 import io.github.dkej123.devicecockpit.intellij.nav.NavigationRailPanel
 import io.github.dkej123.devicecockpit.intellij.network.NetworkPanel
-import io.github.dkej123.devicecockpit.intellij.ui.common.AdbToolboxTheme
+import io.github.dkej123.devicecockpit.intellij.ui.common.DeviceCockpitTheme
 import java.awt.BorderLayout
 import java.awt.Color
 import java.awt.Component
@@ -116,7 +116,7 @@ class VisualRegressionTest : BasePlatformTestCase() {
             }
         }, noDevice = true),
         Scenario("device-connected-dark-dock", 380, 620, dark = true, selected = ViewId.Device, view = {
-            DeviceViewFixture.connected(SERIAL).apply { applyResponsiveLayout(380 - AdbToolboxTheme.Sizes.rail) }
+            DeviceViewFixture.connected(SERIAL).apply { applyResponsiveLayout(380 - DeviceCockpitTheme.Sizes.rail) }
         }),
         // Design handoff 4 §1 QA: compare with design/screenshots/device-picker.png.
         Scenario("device-picker-dark-wide", 560, 196, dark = true, selected = ViewId.Device, chrome = false, view = {
@@ -144,13 +144,13 @@ class VisualRegressionTest : BasePlatformTestCase() {
                 )
             }
             JPanel(BorderLayout()).apply {
-                background = AdbToolboxTheme.Colors.bg
+                background = DeviceCockpitTheme.Colors.bg
                 border = javax.swing.BorderFactory.createEmptyBorder(8, 8, 8, 8)
                 add(picker, BorderLayout.NORTH)
             }
         }),
         Scenario("device-screen-active-light-dock", 380, 620, dark = false, selected = ViewId.Device, view = {
-            DeviceViewFixture.connected(SERIAL, active = true).apply { applyResponsiveLayout(380 - AdbToolboxTheme.Sizes.rail) }
+            DeviceViewFixture.connected(SERIAL, active = true).apply { applyResponsiveLayout(380 - DeviceCockpitTheme.Sizes.rail) }
         }),
         Scenario("device-scrcpy-missing-light-dock", 380, 620, dark = false, selected = ViewId.Device, view = {
             val missing = ScrcpyAvailability.Missing(
@@ -158,7 +158,7 @@ class VisualRegressionTest : BasePlatformTestCase() {
                 installCommand = "brew install scrcpy",
                 configuredPathInvalid = false,
             )
-            DeviceViewFixture.connected(SERIAL, scrcpy = missing).apply { applyResponsiveLayout(380 - AdbToolboxTheme.Sizes.rail) }
+            DeviceViewFixture.connected(SERIAL, scrcpy = missing).apply { applyResponsiveLayout(380 - DeviceCockpitTheme.Sizes.rail) }
         }),
         Scenario("apps-dark-dock", 380, 620, dark = true, selected = ViewId.Apps, view = {
             AppsPanel({}, {}, {}, {}).apply {
@@ -245,7 +245,7 @@ class VisualRegressionTest : BasePlatformTestCase() {
         Scenario("device-locale-location-dark-dock", 380, 620, dark = true, selected = ViewId.Device, view = {
             javax.swing.JPanel().apply {
                 layout = javax.swing.BoxLayout(this, javax.swing.BoxLayout.Y_AXIS)
-                background = io.github.dkej123.devicecockpit.intellij.ui.common.AdbToolboxTheme.Colors.bg
+                background = io.github.dkej123.devicecockpit.intellij.ui.common.DeviceCockpitTheme.Colors.bg
                 add(io.github.dkej123.devicecockpit.intellij.display.LocaleSection({}, {}, {}).apply {
                     update(
                         io.github.dkej123.devicecockpit.application.locale.LocaleViewState(
@@ -368,7 +368,7 @@ class VisualRegressionTest : BasePlatformTestCase() {
                 updateOverrideCount(scenario.overrideCount)
             }
             val root = JPanel(BorderLayout()).apply {
-                background = AdbToolboxTheme.Colors.bg
+                background = DeviceCockpitTheme.Colors.bg
                 if (scenario.chrome) {
                     add(deviceBar, BorderLayout.NORTH)
                     add(rail, BorderLayout.WEST)
@@ -497,10 +497,10 @@ class VisualRegressionTest : BasePlatformTestCase() {
 
         fun applyHeadlessThemeDefaults() {
             fun snapshot(color: Color) = Color(color.rgb, true)
-            val bg = snapshot(AdbToolboxTheme.Colors.bg)
-            val panel = snapshot(AdbToolboxTheme.Colors.panel)
-            val field = snapshot(AdbToolboxTheme.Colors.field)
-            val text = snapshot(AdbToolboxTheme.Colors.text)
+            val bg = snapshot(DeviceCockpitTheme.Colors.bg)
+            val panel = snapshot(DeviceCockpitTheme.Colors.panel)
+            val field = snapshot(DeviceCockpitTheme.Colors.field)
+            val text = snapshot(DeviceCockpitTheme.Colors.text)
             UIManager.put("Panel.background", panel)
             UIManager.put("Viewport.background", bg)
             UIManager.put("ScrollPane.background", bg)
@@ -561,7 +561,7 @@ private object GoldenImages {
         val actualPath = reportDir.resolve("$name-actual.png")
         ImageIO.write(actual, "png", actualPath.toFile())
 
-        if (System.getProperty("adbtoolbox.updateVisualGoldens") == "true") {
+        if (System.getProperty("deviceCockpit.updateVisualGoldens") == "true") {
             Files.createDirectories(golden.parent)
             ImageIO.write(actual, "png", golden.toFile())
             return null

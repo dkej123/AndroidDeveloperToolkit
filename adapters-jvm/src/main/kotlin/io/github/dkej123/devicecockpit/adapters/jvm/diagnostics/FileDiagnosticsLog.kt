@@ -14,6 +14,7 @@ import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicLong
 
+/** Kept from the pre-rename "ADB Toolbox" name for compatibility: users, bug reports and docs point to it. */
 const val DIAGNOSTICS_LOG_FILE_NAME = "adb-toolbox.log"
 
 /**
@@ -44,7 +45,7 @@ class FileDiagnosticsLog(
 
     private val queue = ArrayBlockingQueue<Item>(queueCapacity)
     private val dropped = AtomicLong()
-    private val writerThread = Thread(::drain, "adb-toolbox-diagnostics-writer").apply { isDaemon = true }
+    private val writerThread = Thread(::drain, "device-cockpit-diagnostics-writer").apply { isDaemon = true }
 
     @Volatile
     private var started = false

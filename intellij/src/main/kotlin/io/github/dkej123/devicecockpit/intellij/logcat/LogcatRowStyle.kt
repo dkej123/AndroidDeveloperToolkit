@@ -2,7 +2,7 @@ package io.github.dkej123.devicecockpit.intellij.logcat
 
 import com.intellij.ui.JBColor
 import io.github.dkej123.devicecockpit.domain.logcat.LogSeverity
-import io.github.dkej123.devicecockpit.intellij.ui.common.AdbToolboxTheme
+import io.github.dkej123.devicecockpit.intellij.ui.common.DeviceCockpitTheme
 import java.awt.Color
 import kotlin.math.roundToInt
 
@@ -28,8 +28,8 @@ object LogcatRowStyle {
      * Plugin.dc.html`). */
     fun columnsFor(width: Int): LogcatColumnVisibility =
         LogcatColumnVisibility(
-            timestamp = width >= AdbToolboxTheme.Breakpoints.narrow,
-            tag = width >= AdbToolboxTheme.Breakpoints.wide,
+            timestamp = width >= DeviceCockpitTheme.Breakpoints.narrow,
+            tag = width >= DeviceCockpitTheme.Breakpoints.wide,
         )
 
     /** The supplied level-chip row has no separate "clear filter" chip: the V chip itself is the
@@ -118,14 +118,14 @@ object LogcatRowStyle {
     }
 
     private fun runsOf(row: LogcatRenderRow, presentation: LogcatRenderPresentation): List<Run> = buildList {
-        val gap = Run(" ", AdbToolboxTheme.LogSeverityColors.timestamp, bold = false)
+        val gap = Run(" ", DeviceCockpitTheme.LogSeverityColors.timestamp, bold = false)
         row.severity?.let { severity ->
             add(Run(severity.name.first().toString(), levelColor(severity), bold = isBoldRow(severity)))
             add(gap)
         }
         if (presentation.columns.timestamp) {
             row.timestamp?.let {
-                add(Run(displayTimestamp(it), AdbToolboxTheme.LogSeverityColors.timestamp, bold = false))
+                add(Run(displayTimestamp(it), DeviceCockpitTheme.LogSeverityColors.timestamp, bold = false))
                 add(gap)
             }
         }
@@ -133,7 +133,7 @@ object LogcatRowStyle {
             row.tag?.let { tag ->
                 // Fixed-width mono column (`tagStyle`: 104px ≈ 15 cells of the 11px editor font), so
                 // messages start on one vertical edge instead of right after each tag.
-                add(Run(truncateTag(tag, TAG_COLUMN_CHARS).padEnd(TAG_COLUMN_CHARS), AdbToolboxTheme.LogSeverityColors.tag, bold = false))
+                add(Run(truncateTag(tag, TAG_COLUMN_CHARS).padEnd(TAG_COLUMN_CHARS), DeviceCockpitTheme.LogSeverityColors.tag, bold = false))
                 add(gap)
             }
         }
@@ -181,9 +181,9 @@ object LogcatRowStyle {
 
     /** A search-hit background solid enough for Swing's basic HTML `background-color` (which does
      * not reliably parse `rgba()`), blended from the supplied translucent token
-     * ([AdbToolboxTheme.LogSeverityColors.searchHit]) over the Logcat body background. */
+     * ([DeviceCockpitTheme.LogSeverityColors.searchHit]) over the Logcat body background. */
     private fun searchHitBackground(): Color =
-        blendOverBackground(AdbToolboxTheme.LogSeverityColors.searchHit, AdbToolboxTheme.Colors.bg)
+        blendOverBackground(DeviceCockpitTheme.LogSeverityColors.searchHit, DeviceCockpitTheme.Colors.bg)
 
     internal fun blendOverBackground(overlay: Color, background: Color): Color {
         val overlayRgb = overlay.rgb
@@ -203,17 +203,17 @@ object LogcatRowStyle {
 
     private fun paletteFor(severity: LogSeverity?): Palette = when (severity) {
         null, LogSeverity.VERBOSE -> Palette(
-            AdbToolboxTheme.LogSeverityColors.verbose.level,
-            AdbToolboxTheme.LogSeverityColors.verbose.message,
+            DeviceCockpitTheme.LogSeverityColors.verbose.level,
+            DeviceCockpitTheme.LogSeverityColors.verbose.message,
         )
-        LogSeverity.DEBUG -> Palette(AdbToolboxTheme.LogSeverityColors.debug.level, AdbToolboxTheme.LogSeverityColors.debug.message)
-        LogSeverity.INFO -> Palette(AdbToolboxTheme.LogSeverityColors.info.level, AdbToolboxTheme.LogSeverityColors.info.message)
-        LogSeverity.WARN -> Palette(AdbToolboxTheme.LogSeverityColors.warn.level, AdbToolboxTheme.LogSeverityColors.warn.message)
-        LogSeverity.ERROR -> Palette(AdbToolboxTheme.LogSeverityColors.error.level, AdbToolboxTheme.LogSeverityColors.error.message)
+        LogSeverity.DEBUG -> Palette(DeviceCockpitTheme.LogSeverityColors.debug.level, DeviceCockpitTheme.LogSeverityColors.debug.message)
+        LogSeverity.INFO -> Palette(DeviceCockpitTheme.LogSeverityColors.info.level, DeviceCockpitTheme.LogSeverityColors.info.message)
+        LogSeverity.WARN -> Palette(DeviceCockpitTheme.LogSeverityColors.warn.level, DeviceCockpitTheme.LogSeverityColors.warn.message)
+        LogSeverity.ERROR -> Palette(DeviceCockpitTheme.LogSeverityColors.error.level, DeviceCockpitTheme.LogSeverityColors.error.message)
         LogSeverity.ASSERT -> Palette(
-            AdbToolboxTheme.LogSeverityColors.assert.level,
-            AdbToolboxTheme.LogSeverityColors.assert.message,
-            AdbToolboxTheme.LogSeverityColors.assert.rowBg,
+            DeviceCockpitTheme.LogSeverityColors.assert.level,
+            DeviceCockpitTheme.LogSeverityColors.assert.message,
+            DeviceCockpitTheme.LogSeverityColors.assert.rowBg,
         )
     }
 }

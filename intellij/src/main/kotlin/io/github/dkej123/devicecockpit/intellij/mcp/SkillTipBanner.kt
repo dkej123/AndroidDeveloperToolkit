@@ -2,7 +2,7 @@ package io.github.dkej123.devicecockpit.intellij.mcp
 
 import com.intellij.util.ui.JBUI
 import com.intellij.ui.scale.JBUIScale
-import io.github.dkej123.devicecockpit.intellij.ui.common.AdbToolboxTheme
+import io.github.dkej123.devicecockpit.intellij.ui.common.DeviceCockpitTheme
 import io.github.dkej123.devicecockpit.intellij.ui.common.WrappingText
 import java.awt.BorderLayout
 import java.awt.Cursor
@@ -24,7 +24,7 @@ class SkillTipBanner(
     private val runIo: (() -> Unit) -> Unit,
 ) : JPanel(BorderLayout()) {
 
-    private val message = WrappingText(TIP, AdbToolboxTheme.Typography.caption.deriveFont(JBUIScale.scale(10.5f)), AdbToolboxTheme.Colors.amber)
+    private val message = WrappingText(TIP, DeviceCockpitTheme.Typography.caption.deriveFont(JBUIScale.scale(10.5f)), DeviceCockpitTheme.Colors.amber)
     private val install = link("Install for Claude Code") { installForClaude() }
     private val other = link("Other agents…") { onOpenSettings() }
     private val links = JPanel(FlowLayout(FlowLayout.LEADING, JBUIScale.scale(12), 0)).apply {
@@ -37,7 +37,7 @@ class SkillTipBanner(
     private var showingResult = false
 
     init {
-        background = AdbToolboxTheme.Colors.amberBg
+        background = DeviceCockpitTheme.Colors.amberBg
         isOpaque = true
         border = JBUI.Borders.empty(6, 10)
         add(message, BorderLayout.CENTER)
@@ -78,8 +78,8 @@ class SkillTipBanner(
     }
 
     private fun link(text: String, action: () -> Unit) = JButton(text).apply {
-        font = AdbToolboxTheme.Typography.body.deriveFont(Font.BOLD, JBUIScale.scale(10.5f))
-        foreground = AdbToolboxTheme.Colors.accent
+        font = DeviceCockpitTheme.Typography.body.deriveFont(Font.BOLD, JBUIScale.scale(10.5f))
+        foreground = DeviceCockpitTheme.Colors.accent
         border = JBUI.Borders.empty()
         cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
         isContentAreaFilled = false

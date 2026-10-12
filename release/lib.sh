@@ -9,10 +9,12 @@ mkdir -p "$RELEASE_LOGS"
 rlog() { printf '\033[1;34m[release]\033[0m %s\n' "$*" >&2; }
 rdie() { printf '\033[1;31m[release] error:\033[0m %s\n' "$*" >&2; exit 1; }
 
-# Numeric ID of the plugin page (https://plugins.jetbrains.com/plugin/34857-adb-toolbox), for the page API.
+# Numeric ID of the plugin page, for the page API. The URL slug (34857-adb-toolbox) is the
+# Marketplace's and keeps the plugin's former name: https://plugins.jetbrains.com/plugin/34857-adb-toolbox
 MARKETPLACE_PLUGIN_ID=34857
 
 plugin_version() { awk -F '=' '/^pluginVersion/ { gsub(/[[:space:]]/, "", $2); print $2 }' "$RELEASE_ROOT/gradle.properties"; }
+# The ZIP keeps the pre-rename name (intellij/build.gradle.kts, archiveBaseName).
 plugin_zip() { echo "$RELEASE_ROOT/intellij/build/distributions/adb-toolbox-$(plugin_version).zip"; }
 
 # A JDK 21 for Gradle: JAVA_HOME when it is 21, else the first JDK 21 found in the usual places.

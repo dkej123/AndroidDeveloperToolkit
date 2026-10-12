@@ -28,6 +28,7 @@ fun interface FullShotRenderer {
     suspend fun render(serial: DeviceSerial): FullShotRender
 }
 
+// Device-side name kept from the pre-rename "ADB Toolbox" name for compatibility with helpers and files already on devices.
 private const val HEADER = "ADBTOOLBOX-FULLSHOT 1"
 private const val MAIN_CLASS = "io.github.dkej123.devicecockpit.devicehelper.FullShotMain"
 private const val FILE_PREFIX = "file="
@@ -43,6 +44,7 @@ private val SIZE = Regex("""(\d+)x(\d+)""")
 object FullShotHelperCommand {
 
     /** Where the helper writes its PNG; a fixed name, so a leftover is overwritten by the next capture. */
+    // Device-side name kept from the pre-rename "ADB Toolbox" name for compatibility with helpers and files already on devices.
     const val OUTPUT_PATH = "/data/local/tmp/adbtoolbox-fullshot.png"
 
     /**
