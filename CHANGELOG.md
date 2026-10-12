@@ -7,6 +7,8 @@ the Marketplace change notes and the GitHub release notes are generated from it
 ## [1.2.0] - 2026-10-09
 
 ### Added
+- **Connect Claude Code**: one button in Settings › AI agents registers the running MCP server with
+  Claude Code (`claude mcp add`, user scope) and installs the agent skill — no snippet to paste.
 - **Process death**: Current app › Process death sends the app home, lets Android kill it in the
   background (`am kill`) and reopens it, so its activities are recreated from saved state — the
   `SavedStateHandle` / `onSaveInstanceState` path "Don't keep activities" does not exercise. Also

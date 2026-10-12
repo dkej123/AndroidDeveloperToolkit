@@ -3,7 +3,12 @@ package io.github.dkej123.devicecockpit.intellij.mcp
 import com.intellij.openapi.ide.CopyPasteManager
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBRadioButton
+import io.github.dkej123.devicecockpit.adapters.jvm.process.JvmProcessExecutor
+import io.github.dkej123.devicecockpit.application.mcp.ClaudeCodeConnection
+import io.github.dkej123.devicecockpit.application.mcp.ClaudeCodeConnector
 import io.github.dkej123.devicecockpit.application.mcp.MCP_SERVER_NAME
+import io.github.dkej123.devicecockpit.application.mcp.findClaudeCli
+import kotlinx.coroutines.runBlocking
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.components.JBTabbedPane
 import com.intellij.ui.scale.JBUIScale
@@ -68,6 +73,9 @@ class McpSettingsPanel(
     tools: List<McpTool>,
     private val skills: AgentSkillInstaller = AgentSkillInstaller.forUser(),
     private val runIo: (() -> Unit) -> Unit = { com.intellij.openapi.application.ApplicationManager.getApplication().executeOnPooledThread(it) },
+    private val claudeCode: ClaudeCodeConnector = ClaudeCodeConnector(JvmProcessExecutor()) {
+        findClaudeCli(System.getProperty("user.home"), System.getenv("PATH"), com.intellij.openapi.util.SystemInfo.isWindows) { java.io.File(it).canExecute() }
+    },
 ) : JPanel() {
     private val off = JBRadioButton("Off")
     private val readOnly = JBRadioButton("Read only")
@@ -117,6 +125,11 @@ class McpSettingsPanel(
         JBLabel() to JButton("Install").apply { addActionListener { installSkill(agent) } }
     }
     private val skillResult = JBLabel().apply { foreground = DeviceCockpitTheme.Colors.textDim }
+    private val connectResult = JBLabel().apply { foreground = DeviceCockpitTheme.Colors.textDim }
+    private val connectClaudeCode = JButton("Connect Claude Code").apply {
+        toolTipText = "Runs claude mcp add for you (user scope) and installs the agent skill"
+        addActionListener { connectClaudeCode() }
+    }
 
     init {
         layout = BoxLayout(this, BoxLayout.Y_AXIS)
@@ -136,6 +149,13 @@ class McpSettingsPanel(
         add(credentialsRow)
         add(gap())
         add(JBLabel("Set up an agent").apply { alignmentX = Component.LEFT_ALIGNMENT; font = font.deriveFont(java.awt.Font.BOLD) })
+        add(JPanel(FlowLayout(FlowLayout.LEADING, JBUIScale.scale(8), 0)).apply {
+            alignmentX = Component.LEFT_ALIGNMENT
+            add(connectClaudeCode)
+            add(connectResult)
+            maximumSize = Dimension(Int.MAX_VALUE, preferredSize.height)
+        })
+        add(comment("Or copy the snippet for your agent:"))
         agentSnippets("", "").forEach { snippet ->
             val area = JTextArea(4, 60).apply {
                 font = DeviceCockpitTheme.Typography.mono
@@ -249,6 +269,7 @@ class McpSettingsPanel(
             else -> "Apply to start it."
         }
         copyUrl.isEnabled = running
+        if (connectResult.text != "Connecting…") connectClaudeCode.isEnabled = running
         portLabel.text = current.port?.toString() ?: (DeviceCockpitAppSettings.getInstance().mcpPort.takeIf { it > 0 }?.toString() ?: "picked on first start")
         tokenLabel.text = maskToken(token())
         val dimmed = access == McpAccess.Off
@@ -275,6 +296,28 @@ class McpSettingsPanel(
                 label.toolTipText = file.toString()
                 button.text = if (state == SkillState.NotInstalled) "Install" else "Update"
                 button.isEnabled = state != SkillState.Current
+            }
+        }
+    }
+
+    /** One click: registers the running server with Claude Code and installs its skill. */
+    private fun connectClaudeCode() {
+        val port = status().port ?: return
+        connectClaudeCode.isEnabled = false
+        connectResult.text = "Connecting…"
+        val secret = token()
+        runIo {
+            val result = runBlocking { claudeCode.connect(url(port), secret) }
+            val skill = if (result == ClaudeCodeConnection.Connected) runCatching { skills.install(SkillAgent.ClaudeCode) }.isSuccess else false
+            javax.swing.SwingUtilities.invokeLater {
+                connectResult.text = when (result) {
+                    ClaudeCodeConnection.Connected ->
+                        "Connected as $MCP_SERVER_NAME" + (if (skill) " with the skill" else "") + ". Start a new Claude Code session to use it."
+                    ClaudeCodeConnection.CliNotFound -> "Claude Code (claude) not found — install it or use the snippet below."
+                    is ClaudeCodeConnection.Failed -> "Couldn’t connect: ${result.reason.lineSequence().first()}"
+                }
+                connectClaudeCode.isEnabled = status().port != null
+                refreshSkills()
             }
         }
     }
