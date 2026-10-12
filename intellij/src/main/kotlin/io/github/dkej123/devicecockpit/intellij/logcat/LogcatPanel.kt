@@ -287,9 +287,17 @@ class LogcatPanel(
 
         val bar = scrollPane.verticalScrollBar
         bar.addAdjustmentListener(AdjustmentListener {
-            val scrolledAway = followTracker.onAdjusted(bar.value, bar.visibleAmount, bar.maximum)
+            val scrolledAway = followTracker.onAdjusted(bar.value, bar.visibleAmount, bar.maximum, bar.valueIsAdjusting)
             if (programmaticScroll || !isShowing) return@AdjustmentListener
             if (scrolledAway) onManualScrollAway()
+        })
+        // Only the user scrolling may switch autoscroll off (FollowScrollTracker).
+        scrollPane.addMouseWheelListener { followTracker.userInput() }
+        bar.addMouseListener(object : java.awt.event.MouseAdapter() {
+            override fun mousePressed(e: java.awt.event.MouseEvent) = followTracker.userInput()
+        })
+        virtualList.addKeyListener(object : java.awt.event.KeyAdapter() {
+            override fun keyPressed(e: KeyEvent) = followTracker.userInput()
         })
         // Autoscroll follows the rows themselves: they reach the list separately from (and often
         // after) the controller state that triggers a render. One catch-up per EDT burst.
