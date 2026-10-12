@@ -3,11 +3,9 @@ package io.github.dkej123.devicecockpit.intellij.mcp
 import com.intellij.openapi.ide.CopyPasteManager
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBRadioButton
-import io.github.dkej123.devicecockpit.adapters.jvm.process.JvmProcessExecutor
 import io.github.dkej123.devicecockpit.application.mcp.ClaudeCodeConnection
 import io.github.dkej123.devicecockpit.application.mcp.ClaudeCodeConnector
 import io.github.dkej123.devicecockpit.application.mcp.MCP_SERVER_NAME
-import io.github.dkej123.devicecockpit.application.mcp.findClaudeCli
 import kotlinx.coroutines.runBlocking
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.components.JBTabbedPane
@@ -73,9 +71,7 @@ class McpSettingsPanel(
     tools: List<McpTool>,
     private val skills: AgentSkillInstaller = AgentSkillInstaller.forUser(),
     private val runIo: (() -> Unit) -> Unit = { com.intellij.openapi.application.ApplicationManager.getApplication().executeOnPooledThread(it) },
-    private val claudeCode: ClaudeCodeConnector = ClaudeCodeConnector(JvmProcessExecutor()) {
-        findClaudeCli(System.getProperty("user.home"), System.getenv("PATH"), com.intellij.openapi.util.SystemInfo.isWindows) { java.io.File(it).canExecute() }
-    },
+    private val claudeCode: ClaudeCodeConnector = defaultClaudeCodeConnector(),
 ) : JPanel() {
     private val off = JBRadioButton("Off")
     private val readOnly = JBRadioButton("Read only")

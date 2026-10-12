@@ -396,10 +396,15 @@ class DeviceCockpitToolWindowPanel(
 
     private val skillInstaller = io.github.dkej123.devicecockpit.intellij.mcp.AgentSkillInstaller.forUser()
     private val skillTip = io.github.dkej123.devicecockpit.intellij.mcp.SkillTipBanner(
-        installer = skillInstaller,
+        connect = { report ->
+            feedbackScope.launch(dispatchers.io) {
+                val result = runCatching { io.github.dkej123.devicecockpit.intellij.mcp.McpOnboarding.turnOnAndConnectClaudeCode() }
+                    .getOrElse { "Couldn’t turn agents on: ${it.message}. Try Settings › AI agents." }
+                withContext(dispatchers.main) { report(result) }
+            }
+        },
         onDismiss = { io.github.dkej123.devicecockpit.intellij.mcp.DeviceCockpitAppSettings.getInstance().skillTipDismissed = true },
         onOpenSettings = openSettings,
-        runIo = { work -> feedbackScope.launch(dispatchers.io) { work() } },
     )
 
     init {
@@ -414,7 +419,7 @@ class DeviceCockpitToolWindowPanel(
                     installed = withContext(dispatchers.io) { skillInstaller.anyInstalled() },
                 )
                 withContext(dispatchers.main) {
-                    skillTip.render(tip)
+                    skillTip.render(tip, serverOn = status.access != io.github.dkej123.devicecockpit.application.mcp.McpAccess.Off)
                     feedbackCoordinator.statusPanel.updateMcp(
                         agent = session?.clientName?.takeIf { status.running },
                         access = if (status.access == io.github.dkej123.devicecockpit.application.mcp.McpAccess.FullControl) "Full control" else "Read only",

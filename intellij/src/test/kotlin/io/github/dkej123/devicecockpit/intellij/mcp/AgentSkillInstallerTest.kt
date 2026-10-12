@@ -51,10 +51,11 @@ class AgentSkillInstallerTest {
     }
 
     @Test
-    fun `the tip shows while the server is on, nothing is installed and it was not dismissed`() {
+    fun `the tip shows until agents are set up or it is dismissed — also on a first run with the server off`() {
+        assertEquals(true, showSkillTip(McpAccess.Off, dismissed = false, installed = false))
+        assertEquals(true, showSkillTip(McpAccess.Off, dismissed = false, installed = true))
         assertEquals(true, showSkillTip(McpAccess.ReadOnly, dismissed = false, installed = false))
-        assertEquals(false, showSkillTip(McpAccess.Off, dismissed = false, installed = false))
-        assertEquals(false, showSkillTip(McpAccess.FullControl, dismissed = true, installed = false))
         assertEquals(false, showSkillTip(McpAccess.FullControl, dismissed = false, installed = true))
+        assertEquals(false, showSkillTip(McpAccess.Off, dismissed = true, installed = false))
     }
 }

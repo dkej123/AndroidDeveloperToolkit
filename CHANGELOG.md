@@ -7,6 +7,9 @@ the Marketplace change notes and the GitHub release notes are generated from it
 ## [1.2.0] - 2026-10-09
 
 ### Added
+- **First-run tip**: the amber tip at the top of the tool window now shows from the first run until agents
+  are set up; one click turns the MCP server on (Full control — Uninstall and Clear data still ask) and
+  connects Claude Code with its skill.
 - **Connect Claude Code**: one button in Settings › AI agents registers the running MCP server with
   Claude Code (`claude mcp add`, user scope) and installs the agent skill — no snippet to paste.
 - **Process death**: Current app › Process death sends the app home, lets Android kill it in the

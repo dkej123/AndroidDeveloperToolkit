@@ -70,6 +70,9 @@ class AgentSkillInstaller(
     }
 }
 
-/** The tool window's skill tip: only while the server runs, nothing is installed and it was never dismissed. */
+/**
+ * The tool window's agents tip: from the first run until agents are set up (server on and a skill
+ * installed) or the user closes it for good.
+ */
 fun showSkillTip(access: McpAccess, dismissed: Boolean, installed: Boolean): Boolean =
-    access != McpAccess.Off && !dismissed && !installed
+    !dismissed && (access == McpAccess.Off || !installed)
