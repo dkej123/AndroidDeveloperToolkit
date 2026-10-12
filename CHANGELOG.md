@@ -4,7 +4,7 @@ All notable changes to Device Cockpit for Android (formerly ADB Toolbox). Each r
 the Marketplace change notes and the GitHub release notes are generated from it
 (`release/README.md`).
 
-## [1.2.0] - 2026-10-09
+## [1.2.0] - 2026-10-12
 
 ### Added
 - **First-run tip**: the amber tip at the top of the tool window now shows from the first run until agents
