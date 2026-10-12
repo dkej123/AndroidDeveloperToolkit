@@ -32,6 +32,8 @@ the Marketplace change notes and the GitHub release notes are generated from it
   keep working — the name is only the key in the agent's config.
 
 ### Fixed
+- Current app › Process: the running time counts up every second instead of freezing at the
+  value read when the app started.
 - App names and icons were missing on Samsung phones with Android 16 (the on-device helper crashed);
   old helper copies are now removed from the device when a new one is installed.
 - App names and icons stopped after the first few dozen apps on Samsung phones: rendering an icon

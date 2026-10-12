@@ -11,6 +11,7 @@ import com.intellij.util.ui.JBUI
 import io.github.dkej123.devicecockpit.application.currentapp.CurrentAppAction
 import io.github.dkej123.devicecockpit.application.currentapp.CurrentAppDisplay
 import io.github.dkej123.devicecockpit.application.currentapp.CurrentAppViewState
+import io.github.dkej123.devicecockpit.domain.foreground.ProcessInfo
 import io.github.dkej123.devicecockpit.domain.foreground.RuntimePermission
 import io.github.dkej123.devicecockpit.domain.packages.AppIcon
 import io.github.dkej123.devicecockpit.intellij.apps.DashedTopBorder
@@ -218,6 +219,28 @@ class CurrentAppSection(
         add(section, BorderLayout.CENTER)
     }
 
+    // The process time is read once per PID; between polls it keeps counting here, once a second.
+    private var shownProcess: ProcessInfo? = null
+    private val processTicker = javax.swing.Timer(1_000) { if (isShowing) showProcessTime() }
+
+    private fun showProcessTime() {
+        val process = shownProcess
+        processValue.text = if (process == null) "not running" else "${process.pid} · ${process.runningNow()?.let(::formatElapsed) ?: "?"}"
+    }
+
+    override fun addNotify() {
+        super.addNotify()
+        val process = shownProcess
+        if (process?.measuredAt != null && process.runningFor != null) processTicker.start()
+    }
+
+    override fun removeNotify() {
+        processTicker.stop()
+        super.removeNotify()
+    }
+
+    internal fun tickForTest() = showProcessTime()
+
     override fun getMaximumSize(): Dimension = Dimension(Int.MAX_VALUE, preferredSize.height)
 
     fun update(state: CurrentAppViewState) {
@@ -226,6 +249,8 @@ class CurrentAppSection(
         updateMeta(state)
         listOf(skeleton, identityRow, errorBlock, factsPanel, helpLabel, actionRow, noteRow, destructiveZone).forEach { it.isVisible = false }
         target = null
+        shownProcess = null
+        processTicker.stop()
         when (display) {
             CurrentAppDisplay.Reading -> skeleton.isVisible = true
             is CurrentAppDisplay.App -> showApp(display, busy)
@@ -315,7 +340,9 @@ class CurrentAppSection(
         versionValue.text = details?.let { "${it.versionName ?: "?"} (${it.versionCode ?: "?"})" } ?: "—"
         versionValue.toolTipText = details?.let { "versionName ${it.versionName} · versionCode ${it.versionCode}" }
         val process = display.snapshot.process
-        processValue.text = if (process == null) "not running" else "${process.pid} · ${process.runningFor?.let(::formatElapsed) ?: "?"}"
+        shownProcess = process
+        showProcessTime()
+        if (process?.measuredAt != null && process.runningFor != null) processTicker.start() else processTicker.stop()
         processValue.foreground = if (process == null) AdbToolboxTheme.Colors.textFaint else AdbToolboxTheme.Colors.text
         targetValue.text = details?.targetSdk?.toString() ?: "—"
         targetValue.toolTipText = details?.let { "targetSdkVersion ${it.targetSdk} · minSdk ${it.minSdk}" }

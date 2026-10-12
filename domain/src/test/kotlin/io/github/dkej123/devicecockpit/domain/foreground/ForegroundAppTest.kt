@@ -162,4 +162,16 @@ class PackageDetailsCommandTest {
         details.versionCode shouldBe 41200
         details.runtimePermissions shouldBe emptyList()
     }
+
+    @Test
+    fun `a process keeps running between reads`() {
+        val clock = kotlin.time.TestTimeSource()
+        val process = ProcessInfo(8155, 192.seconds, clock.markNow())
+
+        clock += 5.seconds
+
+        process.runningNow() shouldBe 197.seconds
+        ProcessInfo(8155, null, clock.markNow()).runningNow() shouldBe null
+        ProcessInfo(8155, 192.seconds).runningNow() shouldBe 192.seconds
+    }
 }

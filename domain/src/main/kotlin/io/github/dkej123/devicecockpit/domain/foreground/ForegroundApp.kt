@@ -9,6 +9,7 @@ import io.github.dkej123.devicecockpit.domain.adb.DeviceSerial
 import io.github.dkej123.devicecockpit.domain.adb.ShellToken
 import io.github.dkej123.devicecockpit.domain.adb.ShellValue
 import kotlin.time.Duration
+import kotlin.time.TimeMark
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.minutes
@@ -96,8 +97,13 @@ object HomeActivityCommand {
         .lastOrNull { '/' in it && !it.contains(' ') }?.substringBefore('/')
 }
 
-/** The process of a package: PID and how long it has been running (design §3a "Process"). */
-data class ProcessInfo(val pid: Int, val runningFor: Duration?)
+/**
+ * The process of a package: PID and how long it had been running when read at [measuredAt]
+ * (design §3a "Process"). The elapsed time is read once per PID, so [runningNow] adds the time since.
+ */
+data class ProcessInfo(val pid: Int, val runningFor: Duration?, val measuredAt: TimeMark? = null) {
+    fun runningNow(): Duration? = runningFor?.let { read -> measuredAt?.let { read + it.elapsedNow() } ?: read }
+}
 
 object ProcessInfoCommand {
     fun pidRequest(serial: DeviceSerial, packageName: String) = AdbDeviceRequest(

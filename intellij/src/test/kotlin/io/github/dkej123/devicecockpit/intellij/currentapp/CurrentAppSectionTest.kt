@@ -67,6 +67,18 @@ class CurrentAppSectionTest : BasePlatformTestCase() {
         assertEquals(listOf("com.acme.shop"), details)
     }
 
+    fun `test the process time keeps counting between polls`() {
+        val clock = kotlin.time.TestTimeSource()
+        val s = section()
+        val running = app().let { it.copy(snapshot = it.snapshot.copy(process = ProcessInfo(8155, 192.seconds, clock.markNow()))) }
+        s.update(CurrentAppViewState(display = running, deviceOnline = true))
+
+        clock += 3.seconds
+        s.tickForTest()
+
+        assertEquals("8155 · 3m 15s", s.processForTest)
+    }
+
     fun `test a killed app reads not running with Launch`() {
         val s = section()
         s.update(CurrentAppViewState(display = app(killed = true), deviceOnline = true))
