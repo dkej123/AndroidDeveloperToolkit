@@ -1,5 +1,6 @@
 package io.github.dkej123.devicecockpit.intellij.logcat
 
+import io.github.dkej123.devicecockpit.intellij.ui.common.DesignIconButton
 import com.intellij.icons.AllIcons
 import com.intellij.ui.scale.JBUIScale
 import io.github.dkej123.devicecockpit.intellij.ui.common.ShortcutHints
@@ -500,13 +501,8 @@ class LogcatPanel(
             addActionListener { onToggle() }
         }
 
-        fun iconButton(icon: Icon, tooltip: String): JButton = JButton(icon).apply {
-            preferredSize = Dimension(AdbToolboxTheme.Sizes.iconButton, AdbToolboxTheme.Sizes.iconButton)
-            toolTipText = tooltip
+        fun iconButton(icon: Icon, tooltip: String): JButton = DesignIconButton(icon, tooltip).apply {
             getAccessibleContext().accessibleName = tooltip.substringBefore("  ")
-            isContentAreaFilled = false
-            isFocusPainted = false
-            isBorderPainted = false
         }
 
         fun linkButton(text: String, onClick: () -> Unit) = DesignButton(text, DesignButtonStyle.LINK).apply {

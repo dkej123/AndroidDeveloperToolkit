@@ -1,5 +1,6 @@
 package io.github.dkej123.devicecockpit.intellij.devicebar
 
+import io.github.dkej123.devicecockpit.intellij.ui.common.DesignIconButton
 import com.intellij.icons.AllIcons
 import com.intellij.ui.scale.JBUIScale
 import io.github.dkej123.devicecockpit.intellij.ui.common.ShortcutHints
@@ -101,14 +102,8 @@ class DeviceContextBarPanel(
         addActionListener { onRefresh() }
     }
 
-    private val refreshButton = JButton(AllIcons.Actions.Refresh).apply {
-        preferredSize = java.awt.Dimension(AdbToolboxTheme.Sizes.iconButton, AdbToolboxTheme.Sizes.iconButton)
-        margin = java.awt.Insets(0, 0, 0, 0)
+    private val refreshButton = DesignIconButton(AllIcons.Actions.Refresh, "Refresh device list").apply {
         toolTipText = ShortcutHints.withAction("Refresh device list", "AdbToolbox.RefreshDevices")
-        getAccessibleContext().accessibleName = "Refresh device list"
-        isContentAreaFilled = false
-        isBorderPainted = false
-        isFocusPainted = false
         addActionListener { onRefresh() }
     }
 

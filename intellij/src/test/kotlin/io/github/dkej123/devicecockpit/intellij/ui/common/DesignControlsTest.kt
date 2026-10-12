@@ -79,4 +79,28 @@ class DesignControlsTest : BasePlatformTestCase() {
 
         assertTrue(text.preferredSize.height > singleLine)
     }
+
+    fun `test design combos leave their bounds unpainted so no default-panel rectangle shows around the field`() {
+        assertFalse(designCombo<String> { it }.isOpaque)
+    }
+
+    fun `test a clicked screen tool button does not keep the focus outline but stays reachable by keyboard`() {
+        val caret = ScreenToolButton(null, segment = ToolButtonSegment.CARET)
+
+        assertFalse(caret.isRequestFocusEnabled)
+        assertTrue(caret.isFocusable)
+    }
+
+    fun `test icon buttons fill under the pointer and deeper while pressed`() {
+        val button = DesignIconButton(com.intellij.icons.AllIcons.Actions.Refresh, "Refresh device list")
+
+        assertEquals(0, button.fillLayers)
+        button.model.isRollover = true
+        assertEquals(1, button.fillLayers)
+        button.model.isArmed = true
+        button.model.isPressed = true
+        assertEquals(2, button.fillLayers)
+        assertFalse(button.isRequestFocusEnabled)
+        assertEquals("Refresh device list", button.getAccessibleContext().accessibleName)
+    }
 }

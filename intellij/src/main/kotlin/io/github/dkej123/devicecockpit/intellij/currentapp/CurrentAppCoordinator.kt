@@ -9,9 +9,9 @@ import io.github.dkej123.devicecockpit.application.currentapp.CurrentAppAction
 import io.github.dkej123.devicecockpit.application.currentapp.CurrentAppViewModel
 import io.github.dkej123.devicecockpit.domain.dispatch.DispatcherProvider
 import java.awt.AWTEvent
-import java.awt.KeyboardFocusManager
 import java.awt.Toolkit
 import java.awt.event.AWTEventListener
+import java.awt.event.FocusEvent
 import java.awt.event.HierarchyEvent
 import java.awt.event.MouseEvent
 import javax.swing.JPanel
@@ -27,7 +27,7 @@ import kotlinx.coroutines.withContext
  * Mounts Current app (design §3a) at the top of the Device view and feeds its freshness inputs:
  * shown/hidden (the section's own showing state covers both the rail and the tool window), IDE
  * focus, pointer and keyboard focus inside the section (a pointer leaving releases a held change
- * after 600 ms) and an open confirmation.
+ * after 600 ms; see [holdsFocus] for which focus counts) and an open confirmation.
  */
 class CurrentAppCoordinator(
     slot: JPanel,
@@ -72,9 +72,9 @@ class CurrentAppCoordinator(
         }
     }
 
-    private val focusWatcher = java.beans.PropertyChangeListener { event ->
-        val owner = event.newValue as? java.awt.Component
-        viewModel.setFocusInside(owner != null && SwingUtilities.isDescendingFrom(owner, section))
+    private val focusWatcher = AWTEventListener { event ->
+        val focus = event as? FocusEvent ?: return@AWTEventListener
+        if (focus.id == FocusEvent.FOCUS_GAINED && !focus.isTemporary) viewModel.setFocusInside(holdsFocus(focus, section))
     }
 
     // "updated 2 s ago" ages between readbacks.
@@ -88,7 +88,7 @@ class CurrentAppCoordinator(
             }
         }
         Toolkit.getDefaultToolkit().addAWTEventListener(mouseWatcher, AWTEvent.MOUSE_EVENT_MASK or AWTEvent.MOUSE_MOTION_EVENT_MASK)
-        KeyboardFocusManager.getCurrentKeyboardFocusManager().addPropertyChangeListener("permanentFocusOwner", focusWatcher)
+        Toolkit.getDefaultToolkit().addAWTEventListener(focusWatcher, AWTEvent.FOCUS_EVENT_MASK)
         ApplicationManager.getApplication()?.messageBus?.connect(this)?.subscribe(
             ApplicationActivationListener.TOPIC,
             object : ApplicationActivationListener {
@@ -119,7 +119,7 @@ class CurrentAppCoordinator(
         metaTicker.stop()
         releasePointer.stop()
         Toolkit.getDefaultToolkit().removeAWTEventListener(mouseWatcher)
-        KeyboardFocusManager.getCurrentKeyboardFocusManager().removePropertyChangeListener("permanentFocusOwner", focusWatcher)
+        Toolkit.getDefaultToolkit().removeAWTEventListener(focusWatcher)
         scope.cancel()
     }
 
@@ -134,6 +134,22 @@ class CurrentAppCoordinator(
         }
     }
 }
+
+private val KEYBOARD_FOCUS_CAUSES = setOf(
+    FocusEvent.Cause.TRAVERSAL,
+    FocusEvent.Cause.TRAVERSAL_FORWARD,
+    FocusEvent.Cause.TRAVERSAL_BACKWARD,
+    FocusEvent.Cause.TRAVERSAL_UP,
+    FocusEvent.Cause.TRAVERSAL_DOWN,
+)
+
+/**
+ * Only keyboard focus inside [section] holds a change. A click leaves focus on the clicked button,
+ * and so does a closed confirmation; counting those held every later change behind "Update" until
+ * focus left the section. The pointer hold already covers a click in progress.
+ */
+internal fun holdsFocus(event: FocusEvent, section: java.awt.Component): Boolean =
+    event.cause in KEYBOARD_FOCUS_CAUSES && SwingUtilities.isDescendingFrom(event.component, section)
 
 /** ⌥⇧⌘R (design §3a): restart the app in front, or launch it when Current app shows it as killed. */
 class RestartForegroundAppAction : com.intellij.openapi.actionSystem.AnAction() {

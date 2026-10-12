@@ -1,5 +1,6 @@
 package io.github.dkej123.devicecockpit.intellij.currentapp
 
+import io.github.dkej123.devicecockpit.intellij.ui.common.DesignIconButton
 import io.github.dkej123.devicecockpit.intellij.ui.common.ShortcutHints
 import com.intellij.icons.AllIcons
 import com.intellij.openapi.ui.JBMenuItem
@@ -279,14 +280,7 @@ class CurrentAppSection(
         }
     }
 
-    private fun iconButton(icon: javax.swing.Icon, tooltip: String, action: (JButton) -> Unit): JButton = JButton(icon).apply {
-        preferredSize = Dimension(AdbToolboxTheme.Sizes.iconButton, AdbToolboxTheme.Sizes.iconButton)
-        margin = java.awt.Insets(0, 0, 0, 0)
-        toolTipText = tooltip
-        getAccessibleContext().accessibleName = tooltip
-        isContentAreaFilled = false
-        isBorderPainted = false
-        isFocusPainted = false
+    private fun iconButton(icon: javax.swing.Icon, tooltip: String, action: (JButton) -> Unit): JButton = DesignIconButton(icon, tooltip).apply {
         addActionListener { action(this) }
     }
 

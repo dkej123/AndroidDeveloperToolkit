@@ -28,6 +28,7 @@ import io.github.dkej123.devicecockpit.intellij.ui.common.DesignSections
 import io.github.dkej123.devicecockpit.intellij.ui.common.WrappingText
 import io.github.dkej123.devicecockpit.intellij.ui.common.flexRow
 import io.github.dkej123.devicecockpit.intellij.ui.common.flexSpacer
+import io.github.dkej123.devicecockpit.intellij.ui.common.transparentCombo
 import java.awt.BorderLayout
 import java.awt.CardLayout
 import java.awt.Component
@@ -40,7 +41,7 @@ import javax.swing.DefaultCellEditor
 import javax.swing.JComponent
 import javax.swing.JPanel
 import javax.swing.JTable
-import javax.swing.JTextField
+import com.intellij.ui.components.JBTextField
 import javax.swing.ListSelectionModel
 import javax.swing.event.DocumentEvent
 import javax.swing.event.DocumentListener
@@ -143,7 +144,7 @@ class AppDetailsPanel(
         addActionListener { onIntent(AppDetailsIntent.AnalyzeDeepLinks) }
     }
     private val deepLinksStatus = statusText()
-    private val deepLinkSearch = JTextField().apply {
+    private val deepLinkSearch = JBTextField().apply {
         name = "appDetailsDeepLinkSearch"
         emptyText("Filter by activity or domain")
         document.addDocumentListener(object : DocumentListener {
@@ -153,7 +154,7 @@ class AppDetailsPanel(
             private fun refresh() { if (!rendering) lastState?.let(::renderDeepLinks) }
         })
     }
-    private val deepLinkUri = JTextField().apply { name = "appDetailsDeepLinkUri"; emptyText("https://example.com/path") }
+    private val deepLinkUri = JBTextField().apply { name = "appDetailsDeepLinkUri"; emptyText("https://example.com/path") }
     private val openDeepLink = DesignButton("Open", DesignButtonStyle.SECONDARY).apply {
         name = "appDetailsOpenDeepLink"
         addActionListener { deepLinkUri.text.trim().takeIf(String::isNotEmpty)?.let { onIntent(AppDetailsIntent.OpenDeepLink(it)) } }
@@ -200,6 +201,7 @@ class AppDetailsPanel(
 
     private val prefsFiles = ComboBox<String>().apply {
         name = "appDetailsPrefsFiles"
+        transparentCombo()
         addActionListener { if (!rendering) (selectedItem as? String)?.let { if (it != shownPrefsFile) onIntent(AppDetailsIntent.OpenPrefs(it)) } }
     }
     private var shownPrefsFile: String? = null
@@ -238,11 +240,13 @@ class AppDetailsPanel(
 
     private val databaseFiles = ComboBox<String>().apply {
         name = "appDetailsDatabaseFiles"
+        transparentCombo()
         addActionListener { if (!rendering) (selectedItem as? String)?.let { if (it != shownDatabase) onIntent(AppDetailsIntent.OpenDatabase(it)) } }
     }
     private var shownDatabase: String? = null
     private val tables = ComboBox<String>().apply {
         name = "appDetailsTables"
+        transparentCombo()
         addActionListener { if (!rendering) (selectedItem as? String)?.let { if (it != shownTable) onIntent(AppDetailsIntent.ShowTable(it)) } }
     }
     private var shownTable: String? = null
@@ -265,7 +269,8 @@ class AppDetailsPanel(
     private val nextPage = DesignButton("›", DesignButtonStyle.SECONDARY).apply {
         addActionListener { onIntent(AppDetailsIntent.ShowPage(offset + PAGE)) }
     }
-    private val sqlField = JTextField().apply {
+    private val sqlField = JBTextField().apply {
+        name = "appDetailsSql"
         font = AdbToolboxTheme.Typography.mono
         emptyText("SELECT * FROM … / UPDATE …")
         addActionListener { runSql() }
@@ -619,9 +624,10 @@ class AppDetailsPanel(
         if (table.isEditing) table.cellEditor?.stopCellEditing()
     }
 
-    private fun JTextField.emptyText(text: String) {
+    /** The platform's grey hint inside an empty field ("JTextField.placeholderText" is FlatLaf-only, never shown here). */
+    private fun JBTextField.emptyText(text: String) {
         toolTipText = text
-        putClientProperty("JTextField.placeholderText", text)
+        emptyText.text = text
     }
 
     private fun gbc(x: Int, y: Int, weight: Double, width: Int = 1) = GridBagConstraints().apply {

@@ -143,6 +143,9 @@ import io.github.dkej123.devicecockpit.intellij.apps.UninstallConfirmationPresen
 import io.github.dkej123.devicecockpit.intellij.clipboard.ClipboardPortAdapter
 import io.github.dkej123.devicecockpit.intellij.diagnostics.DiagnosticsService
 import io.github.dkej123.devicecockpit.intellij.discovery.AndroidStudioSdkPlatformToolsSource
+import io.github.dkej123.devicecockpit.intellij.deeplinks.LazyDeepLinkAnalyzer
+import io.github.dkej123.devicecockpit.intellij.deeplinks.androidSdkDirectory
+import io.github.dkej123.devicecockpit.intellij.deeplinks.defaultSdkLocations
 import io.github.dkej123.devicecockpit.intellij.dispatch.IdeDispatcherProvider
 import io.github.dkej123.devicecockpit.intellij.persistence.AdbToolboxProjectState
 import io.github.dkej123.devicecockpit.intellij.persistence.AppsSelectionPersistenceAdapter
@@ -778,19 +781,20 @@ class AdbToolboxProjectService(private val project: Project) : Disposable {
         databases = AdbAppDatabaseTransfer(adbTransport),
         sqlite = JdbcSqliteEngine(),
         selectedDeviceState = selectedDeviceViewModel.state,
-        deepLinkAnalyzer = createDeepLinkAnalyzer(),
+        deepLinkAnalyzer = LazyDeepLinkAnalyzer(::createDeepLinkAnalyzer),
     )
 
     private fun createDeepLinkAnalyzer(): JvmApkDeepLinkAnalyzer? {
-        val sdk = sequenceOf(
-            shellEnvironment("ANDROID_SDK_ROOT"),
-            shellEnvironment("ANDROID_HOME"),
-            project.basePath?.let { base -> runCatching {
-                Files.readAllLines(Path.of(base, "local.properties")).firstOrNull { it.startsWith("sdk.dir=") }
-                    ?.substringAfter('=')?.replace("\\:", ":")?.replace("\\\\", "\\")
-            }.getOrNull() },
-            System.getProperty("user.home")?.let { "$it/Android/Sdk" },
-        ).filterNotNull().map(Path::of).firstOrNull(Files::isDirectory) ?: return null
+        val sdk = androidSdkDirectory(
+            listOfNotNull(
+                shellEnvironment("ANDROID_SDK_ROOT"),
+                shellEnvironment("ANDROID_HOME"),
+                project.basePath?.let { base -> runCatching {
+                    Files.readAllLines(Path.of(base, "local.properties")).firstOrNull { it.startsWith("sdk.dir=") }
+                        ?.substringAfter('=')?.replace("\\:", ":")?.replace("\\\\", "\\")
+                }.getOrNull() },
+            ).map(Path::of) + defaultSdkLocations(System.getProperty("os.name"), System.getProperty("user.home"), shellEnvironment("LOCALAPPDATA")),
+        ) ?: return null
         fun latestTool(folder: String, name: String): Path? {
             val root = sdk.resolve(folder)
             if (!Files.isDirectory(root)) return null

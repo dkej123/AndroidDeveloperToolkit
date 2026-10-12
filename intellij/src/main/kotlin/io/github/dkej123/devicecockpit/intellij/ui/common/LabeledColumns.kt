@@ -7,6 +7,7 @@ import java.awt.Component
 import java.awt.Container
 import java.awt.Dimension
 import java.awt.LayoutManager
+import javax.swing.JComboBox
 import javax.swing.JComponent
 import javax.swing.JPanel
 
@@ -55,6 +56,15 @@ class ResponsiveColumnsLayout(
     }
 }
 
+/**
+ * An opaque Darcula combo fills its whole bounds — focus ring inset included — with its parent's
+ * background; our parents are non-opaque, so that is the default panel colour, a dark rectangle
+ * around the rounded field on a card. The field itself is still painted by the combo UI.
+ */
+fun JComboBox<*>.transparentCombo() {
+    isOpaque = false
+}
+
 /** `dispColStyle`: a 10.5px `textDim` caption 3px above its 24px control. */
 fun labeledColumn(caption: String, control: JComponent): JPanel = verticalStackWithGap(JBUIScale.scale(3),
     JBLabel(caption).apply {
@@ -77,6 +87,7 @@ fun responsiveColumns(vararg columns: JComponent): JPanel = object : JPanel(Resp
 
 /** A 24px platform combo for a [labeledColumn]; every item — `null` included — renders through [label]. */
 fun <T> designCombo(label: (T) -> String): ComboBox<T> = ComboBox<T>().apply {
+    transparentCombo()
     renderer = textRenderer(label)
     font = AdbToolboxTheme.Typography.body.deriveFont(JBUIScale.scale(11.5f))
 }

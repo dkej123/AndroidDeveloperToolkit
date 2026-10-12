@@ -152,4 +152,14 @@ class AppDetailsPanelTest : BasePlatformTestCase() {
         assertTrue(panel.deepLinksValueForTest(0, 5).contains("Stale validation"))
         assertTrue(panel.deepLinksValueForTest(0, 5).contains("offline"))
     }
+
+    fun `test deep link and sql fields show their hint while empty`() {
+        val panel = AppDetailsPanel {}
+        fun field(name: String) = com.intellij.util.ui.UIUtil.findComponentsOfType(panel, com.intellij.ui.components.JBTextField::class.java)
+            .single { it.name == name }
+
+        assertEquals("Filter by activity or domain", field("appDetailsDeepLinkSearch").emptyText.text)
+        assertEquals("https://example.com/path", field("appDetailsDeepLinkUri").emptyText.text)
+        assertEquals("SELECT * FROM … / UPDATE …", field("appDetailsSql").emptyText.text)
+    }
 }

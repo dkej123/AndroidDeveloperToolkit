@@ -3,6 +3,7 @@ package io.github.dkej123.devicecockpit.intellij.display
 import io.github.dkej123.devicecockpit.domain.display.density.DensityReading
 import io.github.dkej123.devicecockpit.intellij.ui.common.responsiveColumns
 import io.github.dkej123.devicecockpit.intellij.ui.common.labeledColumn
+import io.github.dkej123.devicecockpit.intellij.ui.common.transparentCombo
 import javax.swing.JComboBox
 import javax.swing.DefaultComboBoxModel
 import io.github.dkej123.devicecockpit.intellij.ui.common.textRenderer
@@ -723,6 +724,7 @@ class DisplayPanel(
     private companion object {
         /** A 24px dropdown for the Display section; [markOverridden] colours its shown value. */
         fun <T> displayCombo(label: (T?) -> String): ComboBox<T> = ComboBox<T>().apply {
+            transparentCombo()
             font = AdbToolboxTheme.Typography.body.deriveFont(JBUIScale.scale(11.5f))
             renderer = textRenderer<T> { value -> label(value) }
             putClientProperty(DEFAULT_FOREGROUND, foreground)

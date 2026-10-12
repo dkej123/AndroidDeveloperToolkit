@@ -64,6 +64,8 @@ class ScreenToolButton(
         isContentAreaFilled = false
         isBorderPainted = false
         isFocusPainted = false
+        // A click must not leave the accent focus outline behind; Tab still focuses (and outlines) it.
+        isRequestFocusEnabled = false
         isOpaque = false
         isRolloverEnabled = true
         border = EmptyBorder(0, 0, 0, 0)
