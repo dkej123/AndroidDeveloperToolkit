@@ -471,6 +471,11 @@ class LayoutInspectorPanel(
 
     // ---- modes ----
 
+    /** Switches to the Accessibility mode, e.g. for a tab opened by the Accessibility audit action. */
+    fun showAudit() {
+        if (!auditChip.isSelected) auditChip.doClick()
+    }
+
     private fun setAudit(on: Boolean) {
         canvas.auditMode = on
         (rightCards.layout as CardLayout).show(rightCards, if (on) AUDIT else ATTRIBUTES)

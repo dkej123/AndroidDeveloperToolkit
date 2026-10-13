@@ -367,6 +367,9 @@ class VisualRegressionTest : BasePlatformTestCase() {
                 update(StatusState(process = scenario.process?.let(ProcessIndicator::InProgress) ?: ProcessIndicator.Idle, message = "Ready"))
                 updateOverrideCount(scenario.overrideCount)
             }
+            val view = scenario.view()
+            // As in the tool window: the Device view's screen toolbar sits on the rail above Settings.
+            if (scenario.chrome && view is DeviceFactsPanel) rail.actions.add(view.screenToolbar)
             val root = JPanel(BorderLayout()).apply {
                 background = DeviceCockpitTheme.Colors.bg
                 if (scenario.chrome) {
@@ -374,7 +377,7 @@ class VisualRegressionTest : BasePlatformTestCase() {
                     add(rail, BorderLayout.WEST)
                     add(status, BorderLayout.SOUTH)
                 }
-                add(scenario.view(), BorderLayout.CENTER)
+                add(view, BorderLayout.CENTER)
             }
             result = paint(root, scenario.width, scenario.height)
         }

@@ -515,14 +515,19 @@ class DeviceCockpitToolWindowPanelTest : BasePlatformTestCase() {
         val deviceView = panel.host.activeViewHost.componentFor(ViewId.Device.routeKey)
         assertTrue(deviceView is DeviceFactsPanel)
         val panelView = deviceView as DeviceFactsPanel
-        // Mirror, Screenshot and Record share the Screen toolbar, in that order; Inspect has its own row.
+        // Mirror, Screenshot and Record share the screen toolbar, in that order, on the rail above Settings;
+        // Inspect layout and Accessibility audit stay in the Device view's own row.
         assertEquals(
             listOf("Start mirroring", "Screenshot", "Record"),
             panelView.screenToolbar.components.map { group ->
                 ((group as java.awt.Container).getComponent(0) as javax.swing.JComponent).accessibleContext.accessibleName
             },
         )
-        assertEquals(1, panelView.inspectSlot.componentCount)
+        assertTrue(javax.swing.SwingUtilities.isDescendingFrom(panelView.screenToolbar, panel.navigationRailForTest.actions))
+        assertEquals(
+            listOf("Inspect layout", "Accessibility audit"),
+            panelView.inspectSlot.components.map { (it as javax.swing.JButton).text },
+        )
 
         panel.dispose()
     }

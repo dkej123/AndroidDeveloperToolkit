@@ -202,4 +202,39 @@ class NavigationRailPanelTest : BasePlatformTestCase() {
         assertEquals(settingsIndex, panel.list.locationToIndex(java.awt.Point(17, bottom - railButton / 2)))
         assertEquals(-1, panel.list.locationToIndex(java.awt.Point(17, bounds.y + 2)))
     }
+
+    fun `test screen actions sit just above Settings, clear of the destinations, and take the clicks there`() {
+        val panel = NavigationRailPanel()
+        val action = javax.swing.JButton().apply { preferredSize = java.awt.Dimension(30, 28) }
+        panel.actions.add(action)
+        panel.setBounds(0, 0, 34, 500)
+        panel.doLayout()
+        panel.list.doLayout()
+        panel.actions.doLayout()
+
+        val settingsIndex = ViewId.entries.indexOf(ViewId.Settings)
+        val settings = panel.list.getCellBounds(settingsIndex, settingsIndex)
+        val railButton = io.github.dkej123.devicecockpit.intellij.ui.common.DeviceCockpitTheme.Sizes.railButton
+        val settingsTop = settings.y + settings.height - railButton
+        val actions = panel.actions.bounds
+        assertTrue("actions end above the Settings button", actions.y + actions.height < settingsTop)
+        assertTrue("actions end close to the Settings button", settingsTop - (actions.y + actions.height) <= 12)
+        val lastDestination = panel.list.getCellBounds(settingsIndex - 1, settingsIndex - 1)
+        assertTrue("actions start below the destinations", actions.y >= lastDestination.y + lastDestination.height)
+        assertTrue("actions fit the rail", actions.x >= 0 && actions.x + actions.width <= 34)
+        assertSame(action, javax.swing.SwingUtilities.getDeepestComponentAt(panel, 17, actions.y + 10))
+    }
+
+    fun `test a short rail still keeps the actions between the destinations and Settings`() {
+        val panel = NavigationRailPanel()
+        panel.actions.add(javax.swing.JButton().apply { preferredSize = java.awt.Dimension(30, 120) })
+        panel.setBounds(0, 0, 34, 200)
+        panel.doLayout()
+        panel.list.doLayout()
+
+        val settingsIndex = ViewId.entries.indexOf(ViewId.Settings)
+        val lastDestination = panel.list.getCellBounds(settingsIndex - 1, settingsIndex - 1)
+        assertTrue(panel.actions.y >= lastDestination.y + lastDestination.height)
+        assertTrue(panel.minimumSize.height >= lastDestination.y + lastDestination.height + 120)
+    }
 }

@@ -113,6 +113,12 @@ Formerly <i>ADB Toolbox</i>.</p>
             <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="shift meta alt R"/>
         </action>
 
+        <action id="AdbToolbox.AccessibilityAudit"
+                class="io.github.dkej123.devicecockpit.intellij.inspector.AccessibilityAuditAction"
+                text="Accessibility Audit"
+                icon="/icons/expui/actions/a11yAudit.svg"
+                description="Capture the selected device's screen into the Layout Inspector, opened on the TalkBack order and its problems"/>
+
         <action id="AdbToolbox.InspectLayout"
                 class="io.github.dkej123.devicecockpit.intellij.inspector.InspectLayoutAction"
                 text="Inspect Layout"

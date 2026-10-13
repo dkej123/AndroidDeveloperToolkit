@@ -37,6 +37,20 @@ class CaptureAndMirroringE2ETest : E2eTest() {
     }
 
     @Test
+    fun `Accessibility audit opens an Inspector tab in its Accessibility mode`() {
+        studio.click("Accessibility audit")
+
+        // The chip is in the editor tab, outside the tool window.
+        val chip = studio.robot.find(
+            com.intellij.remoterobot.fixtures.ComponentFixture::class.java,
+            com.intellij.remoterobot.search.locators.byXpath("//div[@class='JToggleButton' and starts-with(@accessiblename, 'Accessibility')]"),
+            E2eConfig.deviceTimeout(30),
+        )
+        awaitUntil(E2eConfig.deviceTimeout(30), Duration.ofMillis(500), "the Inspector tab in Accessibility mode") { studio.isSelected(chip) }
+        studio.invokeAction("CloseAllEditors")
+    }
+
+    @Test
     fun `Screenshot saves a PNG of the device screen`() {
         studio.click("Screenshot")
 

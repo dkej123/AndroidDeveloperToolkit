@@ -89,6 +89,16 @@ class LayoutInspectorPanelTest : BasePlatformTestCase() {
         assertEquals(3, p.auditPanelForTest.cardTextsForTest.size)
     }
 
+    fun `test a tab opened for the accessibility audit starts in audit mode and keeps it when the capture arrives`() {
+        val p = panel()
+        p.showAudit()
+        p.update(LayoutInspectorState(capture = settingsCapture(), deviceOnline = true))
+
+        assertTrue(p.auditChipForTest.isSelected)
+        assertTrue(p.canvasForTest.auditMode)
+        assertTrue(p.auditPanelForTest.reportForTest().contains("| 1 | Search settings"))
+    }
+
     fun `test tree search keeps ancestors of matches and says when nothing matches`() {
         val p = panel()
         p.update(LayoutInspectorState(capture = settingsCapture(), deviceOnline = true))

@@ -19,6 +19,7 @@ import io.github.dkej123.devicecockpit.intellij.ui.common.VerticalStackLayout
 import io.github.dkej123.devicecockpit.intellij.ui.common.ViewportWidthPanel
 import io.github.dkej123.devicecockpit.intellij.ui.common.flexRow
 import io.github.dkej123.devicecockpit.intellij.ui.common.verticalStack
+import io.github.dkej123.devicecockpit.intellij.ui.common.stackColumn
 import java.awt.BorderLayout
 import java.awt.CardLayout
 import java.awt.Component
@@ -85,10 +86,11 @@ class DeviceFactsPanel(
 
     // ---- Screen (design §3 "Screen": the former Mirroring and Capture sections) ----
 
-    /** `screenBarStyle`: Mirror (split) · Screenshot (split) · Record, 4px apart, 10px inset. */
-    val screenToolbar: JPanel = flexRow(DeviceCockpitTheme.Spacing.s2).apply {
-        border = JBUI.Borders.empty(0, DeviceCockpitTheme.Spacing.sectionInset)
-    }
+    /**
+     * Mirror (split) · Screenshot (split) · Record, stacked 8px apart. Not part of this view: the tool
+     * window mounts it on the navigation rail, above Settings, so it is reachable from every view.
+     */
+    val screenToolbar: JPanel = stackColumn(DeviceCockpitTheme.Spacing.s4)
 
     /** Under the toolbar: the inline mirroring options and the scrcpy-missing help (own insets). */
     val mirroringSlot: JBPanel<Nothing> = stackSlot()
@@ -226,12 +228,11 @@ class DeviceFactsPanel(
     }
 
     // Rows that are empty or hidden take no space and no gap (VerticalStackLayout), so the Screen
-    // section is toolbar + Inspect layout until something is open or running.
+    // section is Inspect layout + Accessibility audit until something is open or running.
     private fun screenSection(): JPanel {
         val title = DesignSections.titleLabel("Screen")
         return DesignSections.section(
             DesignSections.header(title, screenMetaLabel),
-            screenToolbar,
             verticalStack(mirroringSlot, inspectSlot, screenStatusSlot, captureNoteSlot),
         ).also { DesignSections.makeCollapsible(it, "screen", title) }
     }

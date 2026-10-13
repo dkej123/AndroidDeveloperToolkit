@@ -110,7 +110,8 @@ fun screenAndInputTools(env: McpToolEnvironment): List<McpTool> = listOf(
     SimpleTool(
         "accessibility_audit",
         "TalkBack order of the screen with what each stop announces and its problems: missing labels, " +
-            "touch targets under 48 dp, images without a description. Markdown.",
+            "touch targets under 48 dp, images without a description. Each stop has its get_ui ref and frame in dp. " +
+            "Approximates TalkBack from the UI tree; vendor builds (e.g. Samsung) may word announcements differently. Markdown.",
         readOnly = true,
         inputSchema = schema(SERIAL),
     ) { args, _ ->
@@ -306,6 +307,7 @@ private fun McpToolEnvironment.annotated(serial: DeviceSerial, png: ByteArray, h
     } else {
         "Shapes outside the UI tree (tap mark=N):\n" + found.mapIndexed { i, b -> "m${i + 1} @${b.left},${b.top} ${b.width}x${b.height}" }.joinToString("\n")
     }
-    val text = UiTreeText.screenSummary(h) + "\nNumbered boxes are get_ui refs (tap ref=N).\n" + listing
+    val legend = if (tree.isEmpty()) "" else "Numbered boxes are get_ui refs (tap ref=N):\n" + UiTreeText.tree(h, interactiveOnly = true) + "\n"
+    val text = UiTreeText.screenSummary(h) + "\n" + legend + listing
     return McpToolResult(listOf(McpContent.Image(Base64.encode(image)), McpContent.Text(text)))
 }

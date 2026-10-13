@@ -7,6 +7,7 @@ import io.github.dkej123.devicecockpit.intellij.ui.common.ScreenToolButton
 import io.github.dkej123.devicecockpit.intellij.ui.common.ToolButtonSegment
 import io.github.dkej123.devicecockpit.intellij.ui.common.FlexRowLayout
 import io.github.dkej123.devicecockpit.intellij.ui.common.DeviceCockpitTheme
+import io.github.dkej123.devicecockpit.intellij.ui.common.VerticalStackLayout
 import com.intellij.openapi.Disposable
 import com.intellij.ui.components.JBPanel
 import io.github.dkej123.devicecockpit.application.capture.CaptureIntent
@@ -44,14 +45,14 @@ class CaptureView(
     private val viewModel: CaptureViewModel,
     private val scope: CoroutineScope,
     private val dispatchers: DispatcherProvider,
-) : JBPanel<CaptureView>(FlexRowLayout(0)), Disposable {
+) : JBPanel<CaptureView>(VerticalStackLayout { 0 }), Disposable {
 
     /** Where screenshots go, as shown to the user (see DeviceSectionMetaViewModel). */
     private var destinationLabel = "~/Desktop"
     private var lastState = CaptureViewState()
 
     /** The Screen toolbar's camera button (design §3): saves a PNG of the current screen. */
-    val screenshotButton = ScreenToolButton(DeviceCockpitIcons.Actions.screenshot, segment = ToolButtonSegment.MAIN).apply {
+    val screenshotButton = ScreenToolButton(DeviceCockpitIcons.Actions.screenshot, segment = ToolButtonSegment.TOP).apply {
         getAccessibleContext().accessibleName = "Screenshot"
         toolTipText = screenshotTooltip()
         addActionListener { viewModel.handle(CaptureIntent.CaptureScreenshot) }
@@ -73,10 +74,10 @@ class CaptureView(
     }
 
     /** The split button's caret (user decision, 2026-10-08: Full page lives in this menu). */
-    val moreButton: ScreenToolButton = ScreenToolButton(null, segment = ToolButtonSegment.CARET).apply {
+    val moreButton: ScreenToolButton = ScreenToolButton(null, segment = ToolButtonSegment.BOTTOM).apply {
         getAccessibleContext().accessibleName = "More screenshot options"
         toolTipText = "More screenshots — Full page"
-        addActionListener { moreMenu.show(this, 0, height) }
+        addActionListener { moreMenu.show(this, width, 0) }
     }
 
     init {

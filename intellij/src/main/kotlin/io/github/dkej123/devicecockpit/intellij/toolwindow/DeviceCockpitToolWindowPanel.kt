@@ -248,6 +248,20 @@ class DeviceCockpitToolWindowPanel(
         }
     }.also { deviceFactsCoordinator.panel.inspectSlot.add(it) }
 
+    // Next to Inspect layout: captures into a new Inspector tab that opens in its Accessibility mode.
+    private val accessibilityAuditButton = io.github.dkej123.devicecockpit.intellij.ui.common.ScreenToolButton(
+        io.github.dkej123.devicecockpit.intellij.icons.DeviceCockpitIcons.Actions.a11yAudit,
+        AUDIT_LABEL,
+    ).apply {
+        toolTipText = AUDIT_TOOLTIP
+        addActionListener {
+            val actions = com.intellij.openapi.actionSystem.ActionManager.getInstance()
+            actions.getAction("AdbToolbox.AccessibilityAudit")?.let { action ->
+                actions.tryToExecute(action, null, this, "DeviceCockpitCapture", true)
+            }
+        }
+    }.also { deviceFactsCoordinator.panel.inspectSlot.add(it) }
+
     // Design §9: while an inspector tab is open (and a device is online), Capture says so.
     private val inspectorOpenRow = io.github.dkej123.devicecockpit.intellij.inspector.InspectorOpenRow(onShowInspector, onRecaptureInspector)
         .also { deviceFactsCoordinator.panel.captureNoteSlot.add(it, BorderLayout.CENTER) }
@@ -435,12 +449,20 @@ class DeviceCockpitToolWindowPanel(
 
     init {
         host.navigationSlot.add(navigationRail, BorderLayout.CENTER)
+        // Mirror, Screenshot and Record live on the rail above Settings, reachable from every view;
+        // the mirroring options open inline in the Device view, so the caret goes there.
+        navigationRail.actions.add(deviceFactsCoordinator.panel.screenToolbar)
+        mirroringCoordinator.view.onOptionsShown = {
+            navigationViewModel.handle(io.github.dkej123.devicecockpit.application.nav.NavigationIntent.Select(ViewId.Device))
+        }
         add(host, BorderLayout.CENTER)
 
         scope.launch {
             viewModel.effects.collect { /* no feature-specific wiring yet — task 007 has no real feature */ }
         }
     }
+
+    internal val navigationRailForTest: NavigationRailPanel get() = navigationRail
 
     override fun dispose() {
         navigationCoordinator.dispose()
@@ -463,6 +485,8 @@ class DeviceCockpitToolWindowPanel(
 }
 
 private const val INSPECT_LABEL = "Inspect layout"
+private const val AUDIT_LABEL = "Accessibility audit"
+private const val AUDIT_TOOLTIP = "Capture the screen and open the Inspector's TalkBack order and problems"
 private const val RECAPTURE_LABEL = "Re-capture layout"
 private const val INSPECT_TOOLTIP = "Capture screen + view hierarchy into an editor tab"
 private const val RECAPTURE_TOOLTIP = "Re-capture layout into the open Inspector tab"

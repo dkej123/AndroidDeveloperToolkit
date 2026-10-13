@@ -172,7 +172,7 @@ class AccessibilityAuditTest {
     }
 
     @Test
-    fun `the report lists every stop with its problems`() {
+    fun `the report lists every stop with its problems and where it is in dp`() {
         val report = AccessibilityAudit.audit(UiHierarchy(n(0, PixelRect(0, 0, 1080, 2340), children = arrayOf(
             n(1, big(0), "android.widget.ImageButton", flags = CLICKABLE),
             n(2, big(dp(100)), "android.widget.TextView", text = "Hello"),
@@ -184,16 +184,18 @@ class AccessibilityAuditTest {
             |
             |2 stops, 1 with problems; 1 image without a description.
             |
-            || # | Announced | Problems |
-            ||---|---|---|
-            || 1 | Button, double-tap to activate | No label: TalkBack says only "Button" |
-            || 2 | Hello | — |
+            |Element is the get_ui ref and frame in dp: @x,y WxH.
+            |
+            || # | Announced | Problems | Element |
+            ||---|---|---|---|
+            || 1 | Button, double-tap to activate | No label: TalkBack says only "Button" | [1] @0,0 200x56 |
+            || 2 | Hello | — | [2] @0,100 200x56 |
             |
             |## Images TalkBack skips
             |
             |Fine when decorative; give them a content description when they carry meaning.
             |
-            |- ImageView at [0,550][550,704] px
+            |- [3] ImageView @0,200 200x56
             |""".trimMargin()
     }
 }

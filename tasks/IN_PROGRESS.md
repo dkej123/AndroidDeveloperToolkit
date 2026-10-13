@@ -1,5 +1,12 @@
 # ⏸ Work in progress — resume here
 
+**1.4.0 built, NOT published (user: "wydanie do sklepu narazie nie", 2026-10-13)**: Mirror/Screenshot/Record
+on the rail above Settings, Accessibility audit button next to Inspect layout, `accessibility_audit` refs + dp,
+`screenshot annotate` legend. ZIP in `/work/downloads/adb-toolbox-1.4.0.zip`; no tag, no Marketplace upload.
+Open ideas (user said not to change yet): per-device TalkBack wording (Samsung vs Pixel — real
+`AccessibilityNodeInfo` via the helper, Google TalkBack's open-source compositor rules, device locale);
+`screenrecord` stops at its 180 s limit (chain segments or record via scrcpy).
+
 **1.3.0 published 2026-10-13** (tag `v1.3.0` on `7ed6961`, Publish Plugin run 38368279396 — first
 attempt failed on a flaky `LogcatCoordinatorTest` badge test (5 s deadline), the rerun passed;
 GitHub release by hand; store screenshots unchanged from 1.2.0). Waiting for JetBrains moderation.

@@ -23,12 +23,16 @@ enum class ToolButtonTone(val fill: () -> Color, val outline: () -> Color, val g
     ACCENT({ DeviceCockpitTheme.Colors.accentBg }, { DeviceCockpitTheme.Colors.accentBorder }, { DeviceCockpitTheme.Colors.accent }),
 }
 
-/** Which part of a split button this is: whole, or the main/caret half that shares an edge. */
-enum class ToolButtonSegment { WHOLE, MAIN, CARET }
+/**
+ * Which part of a split button this is: whole, or the main/caret half that shares an edge — side by
+ * side ([MAIN], [CARET]) or stacked on the rail ([TOP], [BOTTOM] — the caret under the glyph).
+ */
+enum class ToolButtonSegment { WHOLE, MAIN, CARET, TOP, BOTTOM }
 
 /**
- * The Screen section's toolbar button (design §3 "Screen"): 28px high, radius 5, 1px `border`,
- * a 16px glyph in `textDim`; 30px wide for an icon, 16px for a split button's caret, or padded
+ * The screen toolbar button (design §3 "Screen"): radius 5, 1px `border`, a 16px glyph in `textDim`;
+ * 26px square for an icon (the rail's button size, where Mirror, Screenshot and Record live), 12px
+ * high for a stacked caret, 16px wide for a side-by-side caret, or 28px high and padded
  * `0 10px 0 8px` with a 6px gap when it carries a [text] label (Inspect layout). While [tone] is
  * set the button takes that tone's fill, outline and glyph colour; otherwise hover fills `hover`.
  * Disabled renders at the design's 45%. A real [JButton], so focus, keyboard and accessibility
@@ -75,10 +79,10 @@ class ScreenToolButton(
 
     override fun getPreferredSize(): Dimension {
         if (isPreferredSizeSet) return super.getPreferredSize()
-        val height = JBUIScale.scale(28)
+        val height = JBUIScale.scale(if (segment == ToolButtonSegment.BOTTOM) 12 else if (text.isNullOrEmpty()) 26 else 28)
         val width = when {
             segment == ToolButtonSegment.CARET -> JBUIScale.scale(16)
-            text.isNullOrEmpty() -> JBUIScale.scale(30)
+            text.isNullOrEmpty() -> JBUIScale.scale(26)
             else -> JBUIScale.scale(8) + JBUIScale.scale(16) + JBUIScale.scale(6) +
                 getFontMetrics(font).stringWidth(text) + JBUIScale.scale(10)
         }
@@ -122,7 +126,7 @@ class ScreenToolButton(
             g2.stroke = BasicStroke(JBUIScale.scale(1f))
             g2.draw(shape)
 
-            if (segment == ToolButtonSegment.CARET) {
+            if (segment == ToolButtonSegment.CARET || segment == ToolButtonSegment.BOTTOM) {
                 paintCaret(g2)
                 return
             }
@@ -157,6 +161,8 @@ class ScreenToolButton(
             ToolButtonSegment.WHOLE -> RoundRectangle2D.Float(half, half, w - stroke, h - stroke, arc, arc)
             ToolButtonSegment.MAIN -> roundedOn(half, half, w - half, h - half, arc / 2, left = true)
             ToolButtonSegment.CARET -> roundedOn(-half, half, w - half, h - half, arc / 2, left = false)
+            ToolButtonSegment.TOP -> roundedOnTop(half, half, w - half, h - half, arc / 2)
+            ToolButtonSegment.BOTTOM -> roundedOnBottom(half, -half, w - half, h - half, arc / 2)
         }
     }
 
@@ -169,6 +175,20 @@ class ScreenToolButton(
                 moveTo(x0, y0); lineTo(x1 - r, y0); quadTo(x1, y0, x1, y0 + r)
                 lineTo(x1, y1 - r); quadTo(x1, y1, x1 - r, y1); lineTo(x0, y1)
             }
+        }
+
+    /** Rounded top corners; the bottom edge is shared with the caret under it, drawn square. */
+    private fun roundedOnTop(x0: Float, y0: Float, x1: Float, y1: Float, r: Float): Path2D.Float =
+        Path2D.Float().apply {
+            moveTo(x0, y1); lineTo(x0, y0 + r); quadTo(x0, y0, x0 + r, y0)
+            lineTo(x1 - r, y0); quadTo(x1, y0, x1, y0 + r); lineTo(x1, y1); closePath()
+        }
+
+    /** Rounded bottom corners; the top edge belongs to the button above, so it is left out. */
+    private fun roundedOnBottom(x0: Float, y0: Float, x1: Float, y1: Float, r: Float): Path2D.Float =
+        Path2D.Float().apply {
+            moveTo(x0, y0); lineTo(x0, y1 - r); quadTo(x0, y1, x0 + r, y1)
+            lineTo(x1 - r, y1); quadTo(x1, y1, x1, y1 - r); lineTo(x1, y0)
         }
 
     /** `caretIconStyle`: a 5px chevron, 1.3px `textDim` strokes, pointing down. */
