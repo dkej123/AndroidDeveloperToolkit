@@ -1,5 +1,6 @@
 package io.github.dkej123.devicecockpit.e2e.tests
 
+import com.intellij.remoterobot.fixtures.ComponentFixture
 import com.intellij.remoterobot.fixtures.JListFixture
 import com.intellij.remoterobot.search.locators.byXpath
 import io.github.dkej123.devicecockpit.e2e.infra.Adb
@@ -45,6 +46,8 @@ class MarketplaceScreenshotsE2ETest : E2eTest() {
         openSampleCode()
         studio.hideToolWindow("Project")
         studio.openToolWindow()
+        // The first-run agents tip would top every picture; the listing shows the views themselves.
+        runCatching { studio.toolWindow().find(ComponentFixture::class.java, byXpath("//div[@accessiblename='Hide tip']"), Duration.ofSeconds(5)).click() }
         warmUp()
     }
 
@@ -84,7 +87,8 @@ class MarketplaceScreenshotsE2ETest : E2eTest() {
             Adb.shell("monkey -p $LOGCAT_APP -c android.intent.category.LAUNCHER 1")
             studio.navigate(View.Device)
             awaitUntil(E2eConfig.deviceTimeout(60), Duration.ofMillis(500), "the current app facts") {
-                studio.visibleTexts().let { texts -> texts.any { it.startsWith("updated") } && "reading…" !in texts }
+                // The app's process line ("8155 · 3m 12s") shows once its facts are read.
+                studio.visibleTexts().any { Regex("""^\d+ · \d""").containsMatchIn(it) }
             }
             // Every quick toggle and the process limit read back (they show "—" while reading).
             awaitUntil(E2eConfig.deviceTimeout(60), Duration.ofMillis(500), "the quick toggles") {
