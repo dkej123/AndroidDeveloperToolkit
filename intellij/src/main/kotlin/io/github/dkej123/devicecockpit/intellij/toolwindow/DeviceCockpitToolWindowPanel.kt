@@ -110,6 +110,7 @@ import kotlinx.coroutines.withContext
  * into [deviceContextAggregator] the same way [displayCoordinator] does.
  */
 class DeviceCockpitToolWindowPanel(
+    private val deepLinkMemory: io.github.dkej123.devicecockpit.domain.deeplinks.DeepLinkLaunchMemory? = null,
     viewModel: ShellViewModel,
     dispatchers: DispatcherProvider,
     private val scope: CoroutineScope,
@@ -285,6 +286,7 @@ class DeviceCockpitToolWindowPanel(
         scope = appsScope,
         dispatchers = dispatchers,
         appDetailsViewModel = appDetailsViewModel,
+        deepLinkMemory = deepLinkMemory,
     )
 
     init {

@@ -12,6 +12,8 @@ the Marketplace change notes and the GitHub release notes are generated from it
   a field per parameter (exact names, types and defaults from Navigation graphs; otherwise inferred
   from `pathPattern`/`pathPrefix` wildcards), **Add parameter** for any query parameter, a live
   URI preview, **Open**, **Copy URI** and **Copy adb command**.
+- **Deep Links remember what you typed**: each link's parameter values and added parameters are kept
+  per project and come back when you select it again, also after restarting the IDE.
 
 ## [1.2.0] - 2026-10-12
 

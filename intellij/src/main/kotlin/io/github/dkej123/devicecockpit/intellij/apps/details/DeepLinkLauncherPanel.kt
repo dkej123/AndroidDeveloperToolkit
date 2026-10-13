@@ -4,6 +4,8 @@ import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBTextField
 import com.intellij.ui.scale.JBUIScale
 import com.intellij.util.ui.JBUI
+import io.github.dkej123.devicecockpit.domain.deeplinks.DeepLinkLaunchMemory
+import io.github.dkej123.devicecockpit.domain.deeplinks.DeepLinkLaunchValues
 import io.github.dkej123.devicecockpit.domain.deeplinks.DeepLinkVariant
 import io.github.dkej123.devicecockpit.domain.deeplinks.DeepLinkVariants
 import io.github.dkej123.devicecockpit.domain.deeplinks.ParameterLocation
@@ -31,6 +33,8 @@ import javax.swing.event.DocumentListener
 class DeepLinkLauncherPanel(
     private val onOpen: (String) -> Unit,
     private val onCopy: (String) -> Unit,
+    /** Restores what was last typed for each link, also in a later IDE session. */
+    private val memory: DeepLinkLaunchMemory? = null,
 ) : JPanel(BorderLayout()) {
 
     private var variant: DeepLinkVariant? = null
@@ -38,6 +42,8 @@ class DeepLinkLauncherPanel(
     private val fields = linkedMapOf<String, JBTextField>()
     /** Values typed for this app, by parameter name, so they carry over to other links and back. */
     private val remembered = mutableMapOf<String, String>()
+    /** True while [show] rebuilds the fields, so their initial values are not saved back. */
+    private var restoring = false
     private val extras = mutableListOf<Pair<JBTextField, JBTextField>>()
 
     private val title = JBLabel().apply { font = DeviceCockpitTheme.Typography.mono.deriveFont(java.awt.Font.BOLD) }
@@ -82,6 +88,15 @@ class DeepLinkLauncherPanel(
 
     /** Shows [selected] (or a prompt to pick one) for [pkg]; typed values are kept per parameter name. */
     fun show(selected: DeepLinkVariant?, pkg: String) {
+        restoring = true
+        try {
+            showNow(selected, pkg)
+        } finally {
+            restoring = false
+        }
+    }
+
+    private fun showNow(selected: DeepLinkVariant?, pkg: String) {
         if (pkg != packageName) remembered.clear() else fields.forEach { (name, field) -> remembered[name] = field.text }
         val previous = remembered.toMap()
         variant = selected
@@ -106,6 +121,7 @@ class DeepLinkLauncherPanel(
             append(if (selected.fromNavigation) " · parameters from the Navigation graph" else " · parameters inferred from the manifest")
             selected.advancedPattern?.let { append(" · path must match $it") }
         }
+        val saved = memory?.load(pkg, selected.template)
         selected.parameters.forEachIndexed { row, parameter ->
             val label = JBLabel(buildString {
                 append(parameter.name)
@@ -119,7 +135,7 @@ class DeepLinkLauncherPanel(
                     if (parameter.requirement == ParameterRequirement.REQUIRED) "required" else "optional",
                 ).joinToString(" · ")
             }
-            val field = JBTextField(previous[parameter.name] ?: parameter.defaultValue.orEmpty()).apply {
+            val field = JBTextField(saved?.parameters?.get(parameter.name) ?: previous[parameter.name] ?: parameter.defaultValue.orEmpty()).apply {
                 name = "deepLinkParam_${parameter.name}"
                 emptyText.text = listOfNotNull(parameter.type, if (parameter.location == ParameterLocation.QUERY) "query" else null)
                     .joinToString(" · ").ifEmpty { "value" }
@@ -134,11 +150,12 @@ class DeepLinkLauncherPanel(
                 gridx = 1; gridy = row; weightx = 1.0; fill = GridBagConstraints.HORIZONTAL; insets = JBUI.insets(2, 0)
             })
         }
+        saved?.extras?.forEach { (key, value) -> addExtra(key, value, focus = false) }
         refreshPreview()
         refreshLayout()
     }
 
-    private fun addExtra(key: String, value: String) {
+    private fun addExtra(key: String, value: String, focus: Boolean = true) {
         val keyField = JBTextField(key, 12).apply { emptyText.text = "key"; onChange { refreshPreview() } }
         val valueField = JBTextField(value).apply { emptyText.text = "value"; onChange { refreshPreview() } }
         val pair = keyField to valueField
@@ -160,7 +177,7 @@ class DeepLinkLauncherPanel(
         extrasPanel.add(row)
         refreshPreview()
         refreshLayout()
-        keyField.requestFocusInWindow()
+        if (focus) keyField.requestFocusInWindow()
     }
 
     private fun built() = variant?.let { selected ->
@@ -176,6 +193,14 @@ class DeepLinkLauncherPanel(
 
     private fun refreshPreview() {
         val result = built() ?: return
+        val selected = variant
+        if (!restoring && selected != null) {
+            memory?.save(
+                packageName,
+                selected.template,
+                DeepLinkLaunchValues(fields.mapValues { it.value.text }, extras.map { it.first.text to it.second.text }),
+            )
+        }
         preview.text = result.uri
         missing.text = if (result.missing.isEmpty()) "" else "Fill in ${result.missing.joinToString()} to open it."
         listOf(open, copyUri, copyAdb).forEach { it.isEnabled = result.missing.isEmpty() }

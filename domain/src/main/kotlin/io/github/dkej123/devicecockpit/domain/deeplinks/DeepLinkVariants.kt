@@ -190,3 +190,16 @@ object DeepLinkVariants {
         }
     }
 }
+
+/** What was last typed for one deep link: its parameters' values and the extra query parameters added. */
+data class DeepLinkLaunchValues(
+    val parameters: Map<String, String> = emptyMap(),
+    val extras: List<Pair<String, String>> = emptyList(),
+)
+
+/** Remembers [DeepLinkLaunchValues] per app and link template across IDE sessions. */
+interface DeepLinkLaunchMemory {
+    fun load(packageName: String, template: String): DeepLinkLaunchValues?
+
+    fun save(packageName: String, template: String, values: DeepLinkLaunchValues)
+}
