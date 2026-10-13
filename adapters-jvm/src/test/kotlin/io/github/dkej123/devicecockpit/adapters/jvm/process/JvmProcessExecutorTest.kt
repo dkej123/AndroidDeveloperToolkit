@@ -12,6 +12,7 @@ import io.kotest.matchers.string.shouldContain
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.launchIn
@@ -19,6 +20,8 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
+import java.nio.file.Files
+import org.junit.jupiter.api.Assumptions.assumeFalse
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 import kotlin.time.Duration.Companion.milliseconds
@@ -132,6 +135,28 @@ class JvmProcessExecutorTest {
             }
             // Reaching this line within the test timeout demonstrates no coroutine/thread
             // deadlocked waiting on a leaked process across 20 dispose cycles.
+        }
+    }
+
+    @Test
+    @Timeout(20)
+    fun `cancelling waits the stop grace period so the process can finish its shutdown`() {
+        assumeFalse(System.getProperty("os.name").startsWith("Windows"), "no SIGTERM on Windows")
+        runBlocking {
+            val marker = Files.createTempFile("slow-shutdown", ".txt").also(Files::delete)
+            val request = ProcessRequest(
+                command = JavaHelperProcess.command("slow-shutdown", marker.toString(), "700"),
+                stopGracePeriod = 10.seconds,
+            )
+
+            val ready = CompletableDeferred<Unit>()
+            val job = launch(Dispatchers.IO) {
+                executor.execute(request).collect { if (it is ProcessEvent.StdoutText) ready.complete(Unit) }
+            }
+            withTimeout(10.seconds) { ready.await() }
+            job.cancelAndJoinSafely()
+
+            Files.readString(marker) shouldBe "finished"
         }
     }
 

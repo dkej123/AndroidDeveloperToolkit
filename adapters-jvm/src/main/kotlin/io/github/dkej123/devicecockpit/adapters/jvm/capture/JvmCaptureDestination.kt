@@ -52,18 +52,28 @@ private class JvmCaptureTarget(
     private val finalPath: Path,
 ) : CaptureTarget {
 
-    private val outputStream: OutputStream = Files.newOutputStream(tempPath)
+    // Opened on the first sink write, so a host tool writing to [writablePath] owns the file alone.
+    private var outputStream: OutputStream? = null
 
     @Volatile
     private var finished = false
 
-    override val sink = ByteSink { bytes -> outputStream.write(bytes) }
+    override val sink = ByteSink { bytes ->
+        val stream = outputStream ?: Files.newOutputStream(tempPath).also { outputStream = it }
+        stream.write(bytes)
+    }
+
+    override val writablePath: String = tempPath.toString()
+
+    override suspend fun size(): Long = withContext(Dispatchers.IO) {
+        outputStream?.flush()
+        if (Files.exists(tempPath)) Files.size(tempPath) else 0L
+    }
 
     override suspend fun commit(): CaptureLocation = withContext(Dispatchers.IO) {
         check(!finished) { "capture target already finished (committed or discarded)" }
         finished = true
-        outputStream.flush()
-        outputStream.close()
+        outputStream?.close()
         Files.move(tempPath, finalPath, StandardCopyOption.ATOMIC_MOVE)
         CaptureLocation(displayPath = finalPath.toString())
     }
@@ -71,7 +81,7 @@ private class JvmCaptureTarget(
     override suspend fun discard() = withContext(Dispatchers.IO) {
         if (finished) return@withContext
         finished = true
-        runCatching { outputStream.close() }
+        runCatching { outputStream?.close() }
         Files.deleteIfExists(tempPath)
         Unit
     }

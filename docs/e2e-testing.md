@@ -188,5 +188,6 @@ physical restores it` (the read-back after `wm density 484` times out, so no Res
 - `adb root` restarts adbd; commands in flight at that moment fail once (seen as a toast).
 - The suite hides bottom tool windows (Terminal, Run, …) before each test because they shrink the
   plugin panel.
-- Recording relies on the device's `screenrecord`; on the software-rendered emulator it works but
-  produces small files.
+- Recording goes through the provisioned scrcpy (2.4+ records with `--no-window`); without it the
+  plugin falls back to the device's `screenrecord`. On the software-rendered emulator either works
+  but produces small files.

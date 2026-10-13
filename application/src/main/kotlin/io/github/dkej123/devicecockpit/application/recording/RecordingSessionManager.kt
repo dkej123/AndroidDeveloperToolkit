@@ -6,13 +6,24 @@ import io.github.dkej123.devicecockpit.domain.adb.AdbOutcome
 import io.github.dkej123.devicecockpit.domain.adb.AdbTransport
 import io.github.dkej123.devicecockpit.domain.adb.DeviceSerial
 import io.github.dkej123.devicecockpit.domain.capture.CaptureDestination
+import io.github.dkej123.devicecockpit.domain.capture.CaptureTarget
 import io.github.dkej123.devicecockpit.domain.capture.FileNamePolicy
+import io.github.dkej123.devicecockpit.domain.discovery.DiscoveryOutcome
+import io.github.dkej123.devicecockpit.domain.discovery.ToolId
+import io.github.dkej123.devicecockpit.domain.discovery.ToolLocator
 import io.github.dkej123.devicecockpit.domain.dispatch.DispatcherProvider
 import io.github.dkej123.devicecockpit.domain.process.ByteSink
+import io.github.dkej123.devicecockpit.domain.process.ProcessCommand
+import io.github.dkej123.devicecockpit.domain.process.ProcessEvent
+import io.github.dkej123.devicecockpit.domain.process.ProcessExecutor
+import io.github.dkej123.devicecockpit.domain.process.ProcessOutcome
+import io.github.dkej123.devicecockpit.domain.process.ProcessOutputKind
+import io.github.dkej123.devicecockpit.domain.process.ProcessRequest
 import io.github.dkej123.devicecockpit.domain.recording.RecordingCommands
 import io.github.dkej123.devicecockpit.domain.recording.RecordingSessionError
 import io.github.dkej123.devicecockpit.domain.recording.RecordingSessionState
 import io.github.dkej123.devicecockpit.domain.recording.RecordingStartOutcome
+import io.github.dkej123.devicecockpit.domain.recording.ScrcpyRecording
 import io.github.dkej123.devicecockpit.domain.time.MonotonicClock
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
@@ -33,6 +44,9 @@ import kotlinx.datetime.Clock
  * auto-completion should end it. */
 val DEFAULT_RECORDING_PULL_TIMEOUT: Duration = 30.seconds
 val DEFAULT_RECORDING_CLEANUP_TIMEOUT: Duration = 10.seconds
+
+/** How long scrcpy gets after SIGTERM to write the MP4's index before it is killed. */
+val SCRCPY_RECORDING_STOP_GRACE_PERIOD: Duration = 10.seconds
 
 /**
  * Owns one cancellable remote `screenrecord` session per explicit [DeviceSerial] (task 020),
@@ -63,6 +77,12 @@ val DEFAULT_RECORDING_CLEANUP_TIMEOUT: Duration = 10.seconds
  * job or state. Cancelling [scope] (feature/project disposal) cancels every owned job, which tears
  * down any in-flight remote `screenrecord` stream via the same [AdbTransport.executeStream]
  * cancellation contract — no explicit `dispose()` is needed for that guarantee.
+ *
+ * When [toolLocator] and [processExecutor] are given and a recent enough scrcpy is found
+ * ([ScrcpyRecording.supports]), the recording runs on the host through scrcpy instead, written
+ * straight into the capture target's [CaptureTarget.writablePath]: `screenrecord` stops after 180 s,
+ * scrcpy does not. Stopping sends scrcpy SIGTERM and waits [SCRCPY_RECORDING_STOP_GRACE_PERIOD] for
+ * it to finish the file.
  */
 class RecordingSessionManager(
     private val scope: CoroutineScope,
@@ -74,6 +94,8 @@ class RecordingSessionManager(
     private val clock: Clock = Clock.System,
     private val pullTimeout: Duration = DEFAULT_RECORDING_PULL_TIMEOUT,
     private val cleanupTimeout: Duration = DEFAULT_RECORDING_CLEANUP_TIMEOUT,
+    private val toolLocator: ToolLocator? = null,
+    private val processExecutor: ProcessExecutor? = null,
 ) {
 
     private class SessionEntry(initial: RecordingSessionState) {
@@ -131,6 +153,19 @@ class RecordingSessionManager(
 
     private suspend fun runSession(serial: DeviceSerial, entry: SessionEntry) {
         val baseFileName = fileNamePolicy.baseFileName(clock.now())
+        val scrcpy = try {
+            locateScrcpy()
+        } catch (cancellation: CancellationException) {
+            entry.state.value = RecordingSessionState.Idle(serial)
+            throw cancellation
+        }
+        if (scrcpy != null && processExecutor != null) {
+            val target = captureDestination.beginCapture(baseFileName)
+            val path = target.writablePath
+            if (path != null) return runScrcpySession(serial, entry, scrcpy, processExecutor, target, path)
+            target.discard()
+        }
+
         val remotePath = RecordingCommands.remotePath(baseFileName)
         try {
             entry.state.value = RecordingSessionState.Recording(serial, monotonicClock.markNow())
@@ -155,6 +190,82 @@ class RecordingSessionManager(
             withContext(NonCancellable) { pullAndCleanup(serial, entry, remotePath) }
             throw cancellation
         }
+    }
+
+    private class ScrcpyTool(val executable: String, val adb: String?)
+
+    private suspend fun locateScrcpy(): ScrcpyTool? {
+        val locator = toolLocator ?: return null
+        val tool = (locator.locate(ToolId.Scrcpy) as? DiscoveryOutcome.Found)?.tool ?: return null
+        if (!ScrcpyRecording.supports(tool.version)) return null
+        // scrcpy runs `adb` itself; hand it the adb this plugin resolved (see MirroringSessionManager).
+        val adb = (locator.locate(ToolId.Adb) as? DiscoveryOutcome.Found)?.tool?.path?.value
+        return ScrcpyTool(tool.path.value, adb)
+    }
+
+    private suspend fun runScrcpySession(
+        serial: DeviceSerial,
+        entry: SessionEntry,
+        scrcpy: ScrcpyTool,
+        executor: ProcessExecutor,
+        target: CaptureTarget,
+        outputPath: String,
+    ) {
+        val request = ProcessRequest(
+            command = ProcessCommand(
+                executable = scrcpy.executable,
+                arguments = ScrcpyRecording.arguments(serial, outputPath),
+                environment = scrcpy.adb?.let { mapOf("ADB" to it) } ?: emptyMap(),
+            ),
+            outputKind = ProcessOutputKind.Text,
+            timeout = null,
+            stopGracePeriod = SCRCPY_RECORDING_STOP_GRACE_PERIOD,
+        )
+        var outcome: ProcessOutcome? = null
+        var firstError: String? = null
+        try {
+            entry.state.value = RecordingSessionState.Recording(serial, monotonicClock.markNow())
+            executor.execute(request).collect { event ->
+                if (firstError == null) firstError = scrcpyErrorMessage(event)
+                if (event is ProcessEvent.Completed) outcome = event.outcome
+            }
+            entry.state.value = RecordingSessionState.Stopping(serial)
+            finishScrcpyRecording(serial, entry, target, outcome, firstError)
+        } catch (cancellation: CancellationException) {
+            // The executor has already stopped scrcpy (with its grace period) by the time this runs.
+            withContext(NonCancellable) { finishScrcpyRecording(serial, entry, target, outcome, firstError) }
+            throw cancellation
+        }
+    }
+
+    private suspend fun finishScrcpyRecording(
+        serial: DeviceSerial,
+        entry: SessionEntry,
+        target: CaptureTarget,
+        outcome: ProcessOutcome?,
+        firstError: String?,
+    ) {
+        if (target.size() > 0L) {
+            entry.state.value = RecordingSessionState.Saved(serial, target.commit())
+            return
+        }
+        target.discard()
+        val reason = firstError?.let { "scrcpy: $it" } ?: when (outcome) {
+            is ProcessOutcome.StartFailure -> "scrcpy could not start: ${outcome.reason}"
+            is ProcessOutcome.Completed -> "scrcpy exited with code ${outcome.exitCode} before recording anything"
+            else -> "scrcpy stopped before recording anything"
+        }
+        entry.state.value = RecordingSessionState.Error(serial, RecordingSessionError.StartFailure(reason))
+    }
+
+    /** scrcpy reports failures as `ERROR: <message>` lines (on stderr, or stdout on some builds). */
+    private fun scrcpyErrorMessage(event: ProcessEvent): String? {
+        val line = when (event) {
+            is ProcessEvent.StderrText -> event.line
+            is ProcessEvent.StdoutText -> event.line
+            else -> return null
+        }
+        return line.trim().takeIf { it.startsWith("ERROR:") }?.removePrefix("ERROR:")?.trim()?.ifEmpty { null }
     }
 
     private suspend fun pullAndCleanup(serial: DeviceSerial, entry: SessionEntry, remotePath: String) {

@@ -16,6 +16,7 @@ import com.intellij.openapi.Disposable
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.SystemInfo
 import com.intellij.openapi.application.PathManager
 import com.intellij.util.EnvironmentUtil
 import io.github.dkej123.devicecockpit.adapters.adb.binary.BinaryAdbTransport
@@ -547,6 +548,9 @@ class DeviceCockpitProjectService(private val project: Project) : Disposable {
         captureDestination = captureDestination,
         fileNamePolicy = recordingFileNamePolicy,
         monotonicClock = SystemMonotonicClock,
+        // Windows cannot SIGTERM scrcpy: it would be killed outright and leave an unfinished MP4.
+        toolLocator = toolLocator.takeUnless { SystemInfo.isWindows },
+        processExecutor = processExecutor,
     )
 
     /**

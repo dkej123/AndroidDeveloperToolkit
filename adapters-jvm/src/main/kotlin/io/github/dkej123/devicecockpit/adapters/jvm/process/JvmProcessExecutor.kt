@@ -1,5 +1,6 @@
 package io.github.dkej123.devicecockpit.adapters.jvm.process
 
+import io.github.dkej123.devicecockpit.domain.process.DEFAULT_STOP_GRACE_PERIOD
 import io.github.dkej123.devicecockpit.domain.process.ProcessEvent
 import io.github.dkej123.devicecockpit.domain.process.ProcessOutcome
 import io.github.dkej123.devicecockpit.domain.process.ProcessOutputKind
@@ -84,7 +85,7 @@ class JvmProcessExecutor : ProcessExecutor {
             waiterJob.cancel()
             stdoutJob.cancel()
             stderrJob.cancel()
-            destroyProcessTree(process)
+            destroyProcessTree(process, request.stopGracePeriod)
         }
     }.buffer(request.outputBufferCapacity)
 
@@ -130,15 +131,15 @@ class JvmProcessExecutor : ProcessExecutor {
         decoder?.finish()?.forEach { line -> onText(line) }
     }
 
-    private fun destroyProcessTree(process: Process) {
+    /** Stops the process first so it can shut down its own children cleanly (scrcpy finishes its
+     * recording while its adb connection is still up), then whatever it left behind. */
+    private fun destroyProcessTree(process: Process, gracePeriod: kotlin.time.Duration = DEFAULT_STOP_GRACE_PERIOD) {
         if (!process.isAlive) return
-        val handle = process.toHandle()
-        handle.descendants().forEach { it.destroy() }
+        val descendants = process.toHandle().descendants().toList()
         process.destroy()
-        process.waitFor(200, TimeUnit.MILLISECONDS)
-        if (process.isAlive) {
-            handle.descendants().forEach { it.destroyForcibly() }
-            process.destroyForcibly()
-        }
+        process.waitFor(gracePeriod.inWholeMilliseconds, TimeUnit.MILLISECONDS)
+        if (process.isAlive) process.destroyForcibly()
+        descendants.filter { it.isAlive }.forEach { it.destroy() }
+        descendants.filter { it.isAlive }.forEach { it.destroyForcibly() }
     }
 }

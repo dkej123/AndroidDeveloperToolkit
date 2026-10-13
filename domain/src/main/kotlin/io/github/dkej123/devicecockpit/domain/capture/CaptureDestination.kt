@@ -23,6 +23,13 @@ interface CaptureDestination {
 interface CaptureTarget {
     val sink: ByteSink
 
+    /** A file a host tool can write this capture into itself (scrcpy `--record`) instead of [sink];
+     * null when this target only accepts [sink] bytes. Use one or the other, never both. */
+    val writablePath: String? get() = null
+
+    /** Bytes captured so far, through [sink] or into [writablePath]. */
+    suspend fun size(): Long
+
     suspend fun commit(): CaptureLocation
 
     suspend fun discard()

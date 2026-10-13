@@ -144,7 +144,7 @@ class RecordingViewTest : BasePlatformTestCase() {
         assertTrue(view.toggleButton.toolTipText.endsWith("Connect a device to use this"))
 
         view.render(RecordingViewState(controlPolicy = ControlPolicy.Enabled, presentationState = RecordingPresentationState.Idle))
-        assertEquals("Record the screen — max 3 minutes per adb", view.toggleButton.toolTipText)
+        assertEquals("Record the screen — no time limit with scrcpy 2.4+, 3 minutes with adb alone", view.toggleButton.toolTipText)
         view.dispose()
     }
 

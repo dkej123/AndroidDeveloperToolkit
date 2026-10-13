@@ -42,6 +42,20 @@ object HelperProcessMain {
                 exitProcess(0)
             }
 
+            "slow-shutdown" -> {
+                // Like scrcpy finishing a recording: on SIGTERM it needs a moment before it exits.
+                val marker = java.io.File(args[1])
+                Runtime.getRuntime().addShutdownHook(
+                    Thread {
+                        Thread.sleep(args[2].toLong())
+                        marker.writeText("finished")
+                    },
+                )
+                stdout.println("ready")
+                Thread.sleep(60_000)
+                exitProcess(0)
+            }
+
             "echo-args" -> {
                 args.drop(1).forEach { stdout.println(it) }
                 exitProcess(0)
