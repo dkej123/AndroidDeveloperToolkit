@@ -44,11 +44,15 @@ class DeepLinksPermissionsE2ETest : E2eTest() {
     fun `Analyze APK discovers the fixture and Open starts its activity`() {
         selectTab("Deep Links")
         named("appDetailsAnalyzeDeepLinks").click()
-        val table = named("appDetailsDeepLinksTable")
+        // DeepLinksList: one row per link, named after its template.
         awaitUntil(E2eConfig.deviceTimeout(60), Duration.ofMillis(500), "an analyzed deep-link row") {
-            table.callJs<Int>("component.getModel().getRowCount()", true) > 0
+            studio.robot.findAll(com.intellij.remoterobot.fixtures.ComponentFixture::class.java, byXpath("//div[starts-with(@name, 'appDetailsDeepLink:')]")).isNotEmpty()
         }
 
+        // The list shows the last analysis while a new one runs; Open waits for it to finish.
+        awaitUntil(E2eConfig.deviceTimeout(60), Duration.ofMillis(500), "the analysis to finish") {
+            named("appDetailsOpenDeepLink").callJs<Boolean>("component.isEnabled()", true)
+        }
         named("appDetailsDeepLinkUri").runJs("component.setText('$URI')", true)
         studio.clickWhenShowing { named("appDetailsOpenDeepLink") }
 
