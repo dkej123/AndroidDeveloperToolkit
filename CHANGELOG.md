@@ -9,6 +9,9 @@ the Marketplace change notes and the GitHub release notes are generated from it
 ### Added
 - **Accessibility audit button**: next to Inspect layout in the Device view. It captures the screen
   into a new Inspector tab that opens straight on the TalkBack order and its problems.
+- **Recordings longer than 3 minutes**: with scrcpy 2.4 or newer installed, Record runs scrcpy in the
+  background (no window) and writes the MP4 straight to the capture folder, without Android's
+  180-second `screenrecord` limit. Without scrcpy, and on Windows, Record still uses `screenrecord`.
 
 ### Changed
 - **Mirror, Screenshot and Record on the rail**: the screen buttons moved from the Device view to the

@@ -128,4 +128,28 @@ class JvmCaptureDestinationTest {
 
         Files.exists(Path.of(location.displayPath)) shouldBe true
     }
+
+    @Test
+    fun `a host tool can write the capture through writablePath and commit publishes it`() = runTest {
+        val dir = tempDir()
+        val target = JvmCaptureDestination(dir).beginCapture("screen-20260902-101530.mp4")
+
+        val path = Path.of(target.writablePath!!)
+        Files.write(path, byteArrayOf(4, 5, 6, 7))
+        target.size() shouldBe 4L
+        val location = target.commit()
+
+        Files.readAllBytes(Path.of(location.displayPath)) shouldBe byteArrayOf(4, 5, 6, 7)
+        Files.exists(path) shouldBe false
+    }
+
+    @Test
+    fun `size counts the bytes written to the sink`() = runTest {
+        val target = JvmCaptureDestination(tempDir()).beginCapture("screen.png")
+
+        target.size() shouldBe 0L
+        target.sink.write(byteArrayOf(1, 2, 3))
+
+        target.size() shouldBe 3L
+    }
 }

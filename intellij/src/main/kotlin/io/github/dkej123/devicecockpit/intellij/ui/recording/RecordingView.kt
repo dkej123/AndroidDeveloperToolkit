@@ -112,7 +112,7 @@ class RecordingView(
     private companion object {
         const val RECORD_NAME = "Record"
         const val STOP_NAME = "Stop recording"
-        const val RECORD_TOOLTIP = "Record the screen — max 3 minutes per adb"
+        const val RECORD_TOOLTIP = "Record the screen — no time limit with scrcpy 2.4+, 3 minutes with adb alone"
         const val STOP_TOOLTIP = "Stop & save the recording"
 
         /** `design/README.md` Interactions: every device-mutating control "keeps its tooltip and

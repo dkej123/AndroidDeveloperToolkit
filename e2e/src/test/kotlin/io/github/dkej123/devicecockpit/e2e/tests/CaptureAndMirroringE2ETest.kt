@@ -79,16 +79,23 @@ class CaptureAndMirroringE2ETest : E2eTest() {
     }
 
     @Test
-    fun `Record then Stop and save writes an MP4`() {
+    fun `Record then Stop and save writes a finished MP4 through scrcpy`() {
         studio.click("Record")
         studio.byName("Stop & save", timeout = E2eConfig.deviceTimeout(10))
+        // scrcpy 2.4+ records on the host, so there is no 3-minute screenrecord limit.
+        awaitUntil(E2eConfig.deviceTimeout(15), Duration.ofMillis(500), "a scrcpy --record process") {
+            scrcpyProcesses().any { p -> p.info().arguments().orElse(emptyArray()).any { it.startsWith("--record=") } }
+        }
         Thread.sleep(E2eConfig.deviceTimeout(3).toMillis())
 
         studio.click("Stop & save")
 
         val mp4 = awaitNewFile(".mp4", E2eConfig.deviceTimeout(30))
         mp4.length() shouldBeGreaterThan 1_000L
+        // Stopped with SIGTERM, scrcpy still writes the index an MP4 player needs.
+        String(mp4.readBytes(), Charsets.ISO_8859_1).contains("moov") shouldBe true
         studio.byName("Record", timeout = E2eConfig.deviceTimeout(10))
+        scrcpyProcesses() shouldBe emptyList()
     }
 
     @Test
