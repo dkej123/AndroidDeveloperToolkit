@@ -4,6 +4,15 @@ All notable changes to Device Cockpit for Android (formerly ADB Toolbox). Each r
 the Marketplace change notes and the GitHub release notes are generated from it
 (`release/README.md`).
 
+## [Unreleased]
+
+### Added
+- **Deep Links, one row per link**: every scheme × host × path an intent filter accepts is its own
+  row, as a template such as `app://acme/user/{userId}?tab={tab}`. Selecting one opens a launcher:
+  a field per parameter (exact names, types and defaults from Navigation graphs; otherwise inferred
+  from `pathPattern`/`pathPrefix` wildcards), **+ Add parameter** for any query parameter, a live
+  URI preview, **Open**, **Copy URI** and **Copy adb command**.
+
 ## [1.2.0] - 2026-10-12
 
 ### Added
