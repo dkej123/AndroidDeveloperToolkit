@@ -1,5 +1,9 @@
 # ⏸ Work in progress — resume here
 
+**1.3.0 published 2026-10-13** (tag `v1.3.0` on `7ed6961`, Publish Plugin run 38368279396 — first
+attempt failed on a flaky `LogcatCoordinatorTest` badge test (5 s deadline), the rerun passed;
+GitHub release by hand; store screenshots unchanged from 1.2.0). Waiting for JetBrains moderation.
+
 **1.2.0 published 2026-10-13** (tag `v1.2.0` on `1062379`, Publish Plugin run 38358892312, GitHub
 release, store screenshots `marketplace/screenshots/1.2.0`); waiting for JetBrains moderation. The
 tag push did not start the workflows (the tagged commit had `[skip ci]`): Publish Plugin was
