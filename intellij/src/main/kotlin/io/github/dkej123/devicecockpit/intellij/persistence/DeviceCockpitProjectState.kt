@@ -33,6 +33,7 @@ class DeviceCockpitProjectState : PersistentStateComponent<DeviceCockpitProjectS
         var mirroringOptions: MirroringOptionsPersistenceState = MirroringOptionsPersistenceState()
         var network: NetworkState = NetworkState()
         var logcatControls: LogcatControlsPersistenceState = LogcatControlsPersistenceState()
+        var deepLinkLaunches: DeepLinkLaunchState = DeepLinkLaunchState()
     }
 
     private var state = State()

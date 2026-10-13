@@ -46,4 +46,24 @@ class DeepLinkLauncherPanelTest : BasePlatformTestCase() {
 
         assertEquals("app://acme/profile/7", panel.previewForTest)
     }
+
+    fun `test what was typed for a link comes back in a new launcher, as after an IDE restart`() {
+        val saved = mutableMapOf<Pair<String, String>, io.github.dkej123.devicecockpit.domain.deeplinks.DeepLinkLaunchValues>()
+        val memory = object : io.github.dkej123.devicecockpit.domain.deeplinks.DeepLinkLaunchMemory {
+            override fun load(packageName: String, template: String) = saved[packageName to template]
+            override fun save(packageName: String, template: String, values: io.github.dkej123.devicecockpit.domain.deeplinks.DeepLinkLaunchValues) {
+                saved[packageName to template] = values
+            }
+        }
+        DeepLinkLauncherPanel(onOpen = {}, onCopy = {}, memory = memory).apply {
+            show(variant, "com.acme")
+            fieldForTest("userId").text = "42"
+            addExtraForTest("utm_source", "cockpit")
+        }
+
+        val restored = DeepLinkLauncherPanel(onOpen = {}, onCopy = {}, memory = memory)
+        restored.show(variant, "com.acme")
+
+        assertEquals("app://acme/user/42?tab=info&utm_source=cockpit", restored.previewForTest)
+    }
 }

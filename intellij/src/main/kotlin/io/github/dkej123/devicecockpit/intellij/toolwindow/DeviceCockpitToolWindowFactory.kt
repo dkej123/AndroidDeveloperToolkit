@@ -30,6 +30,7 @@ class DeviceCockpitToolWindowFactory : ToolWindowFactory, DumbAware {
         val composition = project.service<DeviceCockpitProjectService>()
         composition.registerMcpTools()
         val panel = DeviceCockpitToolWindowPanel(
+            deepLinkMemory = composition.deepLinkLaunchMemory,
             viewModel = composition.shellViewModel,
             dispatchers = composition.dispatcherProvider,
             scope = composition.childScope(),

@@ -46,9 +46,10 @@ class AppsCoordinator(
     private val scope: CoroutineScope,
     private val dispatchers: DispatcherProvider,
     private val appDetailsViewModel: AppDetailsViewModel? = null,
+    deepLinkMemory: io.github.dkej123.devicecockpit.domain.deeplinks.DeepLinkLaunchMemory? = null,
 ) : Disposable {
 
-    val detailsPanel = AppDetailsPanel { intent -> appDetailsViewModel?.handle(intent) }
+    val detailsPanel = AppDetailsPanel(deepLinkMemory) { intent -> appDetailsViewModel?.handle(intent) }
 
     val panel = AppsPanel(
         onQueryChange = { query -> viewModel.handle(AppsIntent.SetQuery(query)) },

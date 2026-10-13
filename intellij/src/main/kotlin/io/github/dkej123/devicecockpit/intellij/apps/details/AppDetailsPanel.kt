@@ -56,6 +56,7 @@ import javax.swing.table.AbstractTableModel
  * that changes what the tables show.
  */
 class AppDetailsPanel(
+    deepLinkMemory: io.github.dkej123.devicecockpit.domain.deeplinks.DeepLinkLaunchMemory? = null,
     private val onIntent: (AppDetailsIntent) -> Unit,
 ) : JPanel(BorderLayout()) {
 
@@ -167,6 +168,7 @@ class AppDetailsPanel(
     private val deepLinkLauncher = DeepLinkLauncherPanel(
         onOpen = { onIntent(AppDetailsIntent.OpenDeepLink(it)) },
         onCopy = { com.intellij.openapi.ide.CopyPasteManager.getInstance().setContents(java.awt.datatransfer.StringSelection(it)) },
+        memory = deepLinkMemory,
     )
     private val deepLinksTable = readOnlyTable(deepLinksModel).apply {
         name = "appDetailsDeepLinksTable"

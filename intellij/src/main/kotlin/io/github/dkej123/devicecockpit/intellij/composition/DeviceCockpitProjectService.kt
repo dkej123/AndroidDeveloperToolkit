@@ -432,6 +432,10 @@ class DeviceCockpitProjectService(private val project: Project) : Disposable {
     private val deviceHelperDeployment = DeviceHelperDeployment(adbTransport)
     private val appInfoHelper = AppInfoHelper(adbTransport, deployment = deviceHelperDeployment)
 
+    /** What App details › Deep Links remembers per link (project state file). */
+    val deepLinkLaunchMemory: io.github.dkej123.devicecockpit.domain.deeplinks.DeepLinkLaunchMemory =
+        io.github.dkej123.devicecockpit.intellij.persistence.DeepLinkLaunchPersistenceAdapter(project.service<io.github.dkej123.devicecockpit.intellij.persistence.DeviceCockpitProjectState>())
+
     private val captureScreenshotUseCase = CaptureScreenshotUseCase(
         adbTransport = adbTransport,
         captureDestination = captureDestination,
