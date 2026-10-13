@@ -1,7 +1,12 @@
 # ⏸ Work in progress — resume here
 
-Paused 2026-10-09. **Release 1.2.0 is NOT published**: no tag, no Marketplace upload. Don't tag,
-publish or build release artifacts until the owner says so.
+**1.2.0 published 2026-10-13** (tag `v1.2.0` on `1062379`, Publish Plugin run 38358892312, GitHub
+release, store screenshots `marketplace/screenshots/1.2.0`); waiting for JetBrains moderation. The
+tag push did not start the workflows (the tagged commit had `[skip ci]`): Publish Plugin was
+dispatched on the tag and the GitHub release created by hand. Full E2E 2026-10-13 on the local
+software-emulated AVD: Logcat autoscroll bug fixed (`f2b142b`), MCP tip test updated; still failing
+only on this machine: Display dark theme, Settings capture directory (screencap timeout), MCP
+marked-screenshot tap (System UI ANR dialog on the emulator).
 
 ## What is in `main` (unreleased 1.2.0)
 
