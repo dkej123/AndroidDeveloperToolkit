@@ -4,7 +4,7 @@ All notable changes to Device Cockpit for Android (formerly ADB Toolbox). Each r
 the Marketplace change notes and the GitHub release notes are generated from it
 (`release/README.md`).
 
-## [Unreleased]
+## [1.3.0] - 2026-10-13
 
 ### Added
 - **Deep Links, one row per link**: every scheme × host × path an intent filter accepts is its own
