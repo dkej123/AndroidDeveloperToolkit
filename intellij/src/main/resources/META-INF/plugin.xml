@@ -9,7 +9,7 @@
     <vendor email="damian.kwasniak@gmail.com">dkwasniak</vendor>
 
     <description><![CDATA[
-<p>ADB device control for Android&trade; developers and their AI agents: mirroring, screenshots,
+<p>Device control for Android developers and their AI agents over ADB: mirroring, screenshots,
 layout inspection, app data, developer toggles, proxy and logcat in one tool window of Android Studio
 or IntelliJ IDEA &ndash; plus a local MCP server for Claude Code, Codex CLI, Cursor and Gemini CLI.
 Formerly <i>ADB Toolbox</i>.</p>
