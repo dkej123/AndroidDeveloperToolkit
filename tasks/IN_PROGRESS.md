@@ -1,11 +1,15 @@
 # ⏸ Work in progress — resume here
 
-**1.4.0 built, NOT published (user: "wydanie do sklepu narazie nie", 2026-10-13)**: Mirror/Screenshot/Record
-on the rail above Settings, Accessibility audit button next to Inspect layout, `accessibility_audit` refs + dp,
-`screenshot annotate` legend, Record through scrcpy 2.4+ (no 180 s limit; not on Windows). ZIP in `/work/downloads/adb-toolbox-1.4.0.zip`; no tag, no Marketplace upload.
+**1.4.0 published 2026-10-13** (tag `v1.4.0` on `4daa551`, Publish Plugin run 38468424787 dispatched on
+the tag; GitHub release by hand): Mirror/Screenshot/Record on the rail above Settings, Accessibility audit
+button next to Inspect layout, `accessibility_audit` refs + dp, `screenshot annotate` legend, Record
+through scrcpy 2.4+ (no 180 s limit; screenrecord fallback without scrcpy and on Windows). Verified: a
+211 s scrcpy recording stopped with SIGTERM is a finished MP4. E2E CaptureAndMirroring on the local TCG
+AVD: Record passes; Screenshot (screencap 15 s timeout) and Show touches (settings read timeout) failed
+on the overloaded emulator only. The pool phone (phone-bridge, remote adb server) cannot run scrcpy:
+its tunnel opens on the bridge's localhost.
 Open ideas (user said not to change yet): per-device TalkBack wording (Samsung vs Pixel — real
-`AccessibilityNodeInfo` via the helper, Google TalkBack's open-source compositor rules, device locale);
-recording without scrcpy (and on Windows) still stops at `screenrecord`'s 180 s.
+`AccessibilityNodeInfo` via the helper, Google TalkBack's open-source compositor rules, device locale).
 
 **1.3.0 published 2026-10-13** (tag `v1.3.0` on `7ed6961`, Publish Plugin run 38368279396 — first
 attempt failed on a flaky `LogcatCoordinatorTest` badge test (5 s deadline), the rerun passed;
