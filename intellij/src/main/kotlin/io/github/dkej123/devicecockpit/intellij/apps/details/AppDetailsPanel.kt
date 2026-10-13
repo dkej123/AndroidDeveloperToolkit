@@ -142,57 +142,27 @@ class AppDetailsPanel(
 
     // ---- Deep links tab ----
 
-    private val analyzeDeepLinks = DesignButton("Analyze APK", DesignButtonStyle.PRIMARY).apply {
-        name = "appDetailsAnalyzeDeepLinks"
-        addActionListener { onIntent(AppDetailsIntent.AnalyzeDeepLinks) }
-    }
-    private val deepLinksStatus = statusText()
-    private val deepLinkSearch = JBTextField().apply {
-        name = "appDetailsDeepLinkSearch"
-        emptyText("Filter by link, activity or parameter")
-        document.addDocumentListener(object : DocumentListener {
-            override fun insertUpdate(e: DocumentEvent?) = refresh()
-            override fun removeUpdate(e: DocumentEvent?) = refresh()
-            override fun changedUpdate(e: DocumentEvent?) = refresh()
-            private fun refresh() { if (!rendering) lastState?.let(::renderDeepLinks) }
-        })
-    }
+    private val deepLinksList = DeepLinksList(
+        onAnalyze = { onIntent(AppDetailsIntent.AnalyzeDeepLinks) },
+        onOpen = { onIntent(AppDetailsIntent.OpenDeepLink(it)) },
+        onCopy = { com.intellij.openapi.ide.CopyPasteManager.getInstance().setContents(java.awt.datatransfer.StringSelection(it)) },
+        memory = deepLinkMemory,
+    )
     private val deepLinkUri = JBTextField().apply { name = "appDetailsDeepLinkUri"; emptyText("Or open any URI: https://example.com/path") }
     private val openDeepLink = DesignButton("Open", DesignButtonStyle.SECONDARY).apply {
         name = "appDetailsOpenDeepLink"
         addActionListener { deepLinkUri.text.trim().takeIf(String::isNotEmpty)?.let { onIntent(AppDetailsIntent.OpenDeepLink(it)) } }
     }
-    private val deepLinksModel = RowsModel(listOf("Deep link", "Activity", "Parameters", "Source", "Device", "Warnings"))
-    /** The variants behind the table's rows, in row order (filtered). */
-    private var shownVariants: List<DeepLinkVariant> = emptyList()
-    private val deepLinkLauncher = DeepLinkLauncherPanel(
-        onOpen = { onIntent(AppDetailsIntent.OpenDeepLink(it)) },
-        onCopy = { com.intellij.openapi.ide.CopyPasteManager.getInstance().setContents(java.awt.datatransfer.StringSelection(it)) },
-        memory = deepLinkMemory,
-    )
-    private val deepLinksTable = readOnlyTable(deepLinksModel).apply {
-        name = "appDetailsDeepLinksTable"
-        selectionModel.selectionMode = javax.swing.ListSelectionModel.SINGLE_SELECTION
-        selectionModel.addListSelectionListener { event ->
-            if (!event.valueIsAdjusting && !rendering) {
-                deepLinkLauncher.show(shownVariants.getOrNull(selectedRow), lastState?.packageName.orEmpty())
-            }
-        }
-        toolTipText = "Select a link to open it with parameters"
-    }
     private val deepLinksTab = JPanel(BorderLayout()).apply {
         background = DeviceCockpitTheme.Colors.bg
-        add(column(
-            flexRow(DeviceCockpitTheme.Spacing.s3, analyzeDeepLinks, deepLinkSearch, fill = deepLinkSearch).apply { border = inset() },
-            deepLinksStatus,
-        ), BorderLayout.NORTH)
-        add(JBScrollPane(deepLinksTable), BorderLayout.CENTER)
-        add(column(
-            deepLinkLauncher,
-            flexRow(DeviceCockpitTheme.Spacing.s3, deepLinkUri, openDeepLink, fill = deepLinkUri).apply {
-                border = JBUI.Borders.empty(0, DeviceCockpitTheme.Spacing.sectionInset, DeviceCockpitTheme.Spacing.s3, DeviceCockpitTheme.Spacing.sectionInset)
-            },
-        ), BorderLayout.SOUTH)
+        add(deepLinksList.header, BorderLayout.NORTH)
+        add(JBScrollPane(deepLinksList.content).apply { border = JBUI.Borders.empty() }, BorderLayout.CENTER)
+        add(flexRow(DeviceCockpitTheme.Spacing.s3, deepLinkUri, openDeepLink, fill = deepLinkUri).apply {
+            border = JBUI.Borders.compound(
+                JBUI.Borders.customLine(DeviceCockpitTheme.Colors.border, 1, 0, 0, 0),
+                JBUI.Borders.empty(DeviceCockpitTheme.Spacing.s3, DeviceCockpitTheme.Spacing.sectionInset),
+            )
+        }, BorderLayout.SOUTH)
     }
 
     // ---- Permissions tab ----
@@ -335,9 +305,9 @@ class AppDetailsPanel(
     internal val databaseSaveForTest: DesignButton get() = databaseSave
     internal val titleForTest: String get() = titleLabel.text
     internal val tabsForTest: JBTabbedPane get() = tabs
-    internal val analyzeDeepLinksForTest: DesignButton get() = analyzeDeepLinks
-    internal val deepLinksRowCountForTest: Int get() = deepLinksModel.rowCount
-    internal fun deepLinksValueForTest(row: Int, column: Int): String = deepLinksModel.getValueAt(row, column).toString()
+    internal val analyzeDeepLinksForTest: DesignButton get() = deepLinksList.analyze
+    internal val deepLinksRowCountForTest: Int get() = deepLinksList.templatesForTest.size
+    internal val deepLinksListForTest: DeepLinksList get() = deepLinksList
     internal val permissionsRowCountForTest: Int get() = permissionsList.visibleRowsForTest.size
     internal fun accessMessageForTest(): String = (prefsTab.getClientProperty(ACCESS_MESSAGE) as WrappingText).text
     internal val infoTextForTest: String
@@ -388,60 +358,8 @@ class AppDetailsPanel(
     }
 
     private fun renderDeepLinks(state: AppDetailsState) {
-        val analysis = state.deepLinks
-        val query = deepLinkSearch.text.trim().lowercase()
-        val selected = shownVariants.getOrNull(deepLinksTable.selectedRow)
-        val rows = analysis?.catalog?.targets.orEmpty().flatMap { target ->
-            val sources = target.sources.sortedBy(DeepLinkSource::ordinal).joinToString(" · ") { source ->
-                source.name.lowercase().replace('_', ' ').replaceFirstChar(Char::uppercase)
-            }
-            DeepLinkVariants.expand(target).map { variant ->
-                val host = Regex("""^[A-Za-z][A-Za-z0-9+.-]*://([^/:?#{]+)""").find(variant.template)?.groupValues?.get(1)
-                val verification = host?.let { h -> analysis?.verifications?.firstOrNull { it.host == h } }
-                val device = verification?.deviceState?.name?.lowercase()?.replaceFirstChar(Char::uppercase)
-                    ?: if (variant.autoVerify) "App link" else ""
-                val warnings = buildList {
-                    if (!target.hasDefaultCategory) add("Missing DEFAULT")
-                    if (DeepLinkSource.RUNTIME_UNKNOWN in target.sources) add("Runtime unknown")
-                    if (verification?.stale == true) add("Stale validation${verification.validatedAtEpochMillis?.let { " from $it" }.orEmpty()}")
-                    verification?.error?.let(::add)
-                    variant.advancedPattern?.let { add("Path regex: $it") }
-                }.distinct().joinToString(" · ")
-                val parameters = variant.parameters.joinToString(", ") {
-                    it.name + if (it.requirement == ParameterRequirement.REQUIRED) "*" else ""
-                }
-                variant to listOf(
-                    variant.template,
-                    target.componentName.substringAfterLast('.'),
-                    parameters,
-                    sources + if (variant.fromNavigation) " · Navigation" else "",
-                    device,
-                    warnings,
-                )
-            }
-        }.filter { (variant, row) -> query.isEmpty() || row.any { it.lowercase().contains(query) } || variant.componentName.lowercase().contains(query) }
-        shownVariants = rows.map { it.first }
-        val wasRendering = rendering
-        rendering = true // the table's own selection events must not reset the launcher while rows are replaced
-        try {
-            deepLinksModel.setRows(rows.map { it.second })
-            val keep = selected?.let { shownVariants.indexOf(it) } ?: -1
-            if (keep >= 0) deepLinksTable.setRowSelectionInterval(keep, keep) else deepLinksTable.clearSelection()
-            deepLinkLauncher.show(shownVariants.getOrNull(keep), state.packageName.orEmpty())
-        } finally {
-            rendering = wasRendering
-        }
-        analyzeDeepLinks.isEnabled = !state.deepLinksLoading
-        openDeepLink.isEnabled = !state.deepLinksLoading && analysis != null
-        deepLinksStatus.text = when {
-            state.deepLinksLoading -> "Reading installed APK and split manifests…"
-            state.deepLinksError != null -> state.deepLinksError
-            analysis == null -> "Analysis runs only on demand. Cached results are restored when available."
-            else -> "${shownVariants.size} ${if (shownVariants.size == 1) "link" else "links"} in " +
-                analysis.catalog.targets.size.let { n -> "$n ${if (n == 1) "activity" else "activities"}" } +
-                " · ${if (analysis.fromCache) "cached" else "analyzed"} · select one to open it"
-        }
-        deepLinksStatus.foreground = if (state.deepLinksError != null) DeviceCockpitTheme.Colors.red else DeviceCockpitTheme.Colors.textFaint
+        deepLinksList.render(state.deepLinks, state.packageName.orEmpty(), state.deepLinksLoading, state.deepLinksError)
+        openDeepLink.isEnabled = !state.deepLinksLoading
     }
 
     private fun renderPermissions(state: AppDetailsState) {

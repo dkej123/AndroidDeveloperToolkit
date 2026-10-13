@@ -8,10 +8,11 @@ the Marketplace change notes and the GitHub release notes are generated from it
 
 ### Added
 - **Deep Links, one row per link**: every scheme × host × path an intent filter accepts is its own
-  row, as a template such as `app://acme/user/{userId}?tab={tab}`. Selecting one opens a launcher:
-  a field per parameter (exact names, types and defaults from Navigation graphs; otherwise inferred
-  from `pathPattern`/`pathPrefix` wildcards), **Add parameter** for any query parameter, a live
-  URI preview, **Open**, **Copy URI** and **Copy adb command**.
+  row, as a template such as `app://acme/user/{userId}?tab={tab}`, grouped by activity in the same
+  list style as Permissions — chips for app-link state (Verified, App link), Navigation and warnings.
+  **Open…** unfolds a launcher under the row: a field per parameter (exact names, types and defaults
+  from Navigation graphs; otherwise inferred from `pathPattern`/`pathPrefix` wildcards), **Add
+  parameter** for any query parameter, a live URI preview, **Open**, **Copy URI** and **Copy adb command**.
 - **Deep Links remember what you typed**: each link's parameter values and added parameters are kept
   per project and come back when you select it again, also after restarting the IDE.
 

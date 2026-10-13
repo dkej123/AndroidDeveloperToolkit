@@ -300,7 +300,7 @@ private class PermissionRow(permission: AppPermission, busy: String?, onIntent: 
 }
 
 /** A small rounded label: state chips and flag tags. */
-private class Tag(text: String, fg: Color, private val fill: Color) : JBLabel(text) {
+internal class Tag(text: String, fg: Color, private val fill: Color) : JBLabel(text) {
     init {
         font = DeviceCockpitTheme.Typography.caption
         foreground = fg

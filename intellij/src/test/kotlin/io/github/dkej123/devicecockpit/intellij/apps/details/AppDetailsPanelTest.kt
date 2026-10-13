@@ -148,12 +148,9 @@ class AppDetailsPanelTest : BasePlatformTestCase() {
                 remoteValid = true, validatedAtEpochMillis = 1234L, stale = true, error = "offline")),
         )))
 
-        assertEquals("https://example.com", panel.deepLinksValueForTest(0, 0))
-        assertEquals("Main", panel.deepLinksValueForTest(0, 1))
-        assertEquals("Project · Runtime unknown", panel.deepLinksValueForTest(0, 3))
-        assertEquals("Verified", panel.deepLinksValueForTest(0, 4))
-        assertTrue(panel.deepLinksValueForTest(0, 5).contains("Stale validation"))
-        assertTrue(panel.deepLinksValueForTest(0, 5).contains("offline"))
+        val list = panel.deepLinksListForTest
+        assertEquals(listOf("https://example.com"), list.templatesForTest)
+        assertEquals(listOf("Verified", "Not in the APK", "Stale check", "Check failed"), list.chipsForTest("https://example.com"))
     }
 
     fun `test deep link and sql fields show their hint while empty`() {
