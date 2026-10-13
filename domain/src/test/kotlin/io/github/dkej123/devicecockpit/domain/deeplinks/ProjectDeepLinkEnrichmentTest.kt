@@ -42,6 +42,12 @@ class ProjectDeepLinkEnrichmentTest {
             DeepLinkParameter("campaign", ParameterLocation.QUERY, "string", DeepLinkSource.PROJECT,
                 ParameterRequirement.OPTIONAL, defaultValue = "direct", nullable = true),
         )
+        target.navigationUris shouldBe listOf("https://example.com/products/{id}?campaign={campaign}")
+        // The hand-written pathPrefix accepts more than the Navigation link, so it stays a variant of its own.
+        DeepLinkVariants.expand(target).map { it.template } shouldBe listOf(
+            "https://example.com/products/{id}?campaign={campaign}",
+            "https://example.com/products{rest}",
+        )
     }
 
     @Test

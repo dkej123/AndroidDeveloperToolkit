@@ -148,7 +148,10 @@ class AppDetailsPanelTest : BasePlatformTestCase() {
                 remoteValid = true, validatedAtEpochMillis = 1234L, stale = true, error = "offline")),
         )))
 
+        assertEquals("https://example.com", panel.deepLinksValueForTest(0, 0))
+        assertEquals("Main", panel.deepLinksValueForTest(0, 1))
         assertEquals("Project · Runtime unknown", panel.deepLinksValueForTest(0, 3))
+        assertEquals("Verified", panel.deepLinksValueForTest(0, 4))
         assertTrue(panel.deepLinksValueForTest(0, 5).contains("Stale validation"))
         assertTrue(panel.deepLinksValueForTest(0, 5).contains("offline"))
     }
@@ -158,8 +161,8 @@ class AppDetailsPanelTest : BasePlatformTestCase() {
         fun field(name: String) = com.intellij.util.ui.UIUtil.findComponentsOfType(panel, com.intellij.ui.components.JBTextField::class.java)
             .single { it.name == name }
 
-        assertEquals("Filter by activity or domain", field("appDetailsDeepLinkSearch").emptyText.text)
-        assertEquals("https://example.com/path", field("appDetailsDeepLinkUri").emptyText.text)
+        assertEquals("Filter by link, activity or parameter", field("appDetailsDeepLinkSearch").emptyText.text)
+        assertEquals("Or open any URI: https://example.com/path", field("appDetailsDeepLinkUri").emptyText.text)
         assertEquals("SELECT * FROM … / UPDATE …", field("appDetailsSql").emptyText.text)
     }
 }

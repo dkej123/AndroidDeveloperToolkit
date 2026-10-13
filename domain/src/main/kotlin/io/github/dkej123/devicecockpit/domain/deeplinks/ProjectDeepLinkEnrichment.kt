@@ -9,12 +9,17 @@ object NavigationDeepLinkParser {
         val manifestCatalog = ManifestDeepLinkParser.parse(mergedManifest)
         val manifestTree = XmlNode.parse(mergedManifest)
         val parametersByActivity = linkedMapOf<String, MutableList<DeepLinkParameter>>()
+        val urisByActivity = linkedMapOf<String, MutableList<String>>()
 
         manifestTree.descendants().filter { it.name == "activity" || it.name == "activity-alias" }.forEach { activity ->
             val component = qualify(packageName, activity.attributes["name"])
             val graphNames = activity.children.filter { it.name == "nav-graph" }
                 .mapNotNull { navigationRef.find(it.attributes["value"].orEmpty())?.groupValues?.get(1) }
             graphNames.forEach { graph ->
+                collectUris(graph, graphs, emptySet()).forEach { uri ->
+                    val target = urisByActivity.getOrPut(component) { mutableListOf() }
+                    if (uri !in target) target += uri
+                }
                 collectGraph(graph, graphs, emptySet()).forEach { parameter ->
                     val target = parametersByActivity.getOrPut(component) { mutableListOf() }
                     if (parameter !in target) target += parameter
@@ -26,8 +31,18 @@ object NavigationDeepLinkParser {
             target.copy(
                 sources = setOf(DeepLinkSource.PROJECT),
                 parameters = parametersByActivity[target.componentName].orEmpty(),
+                navigationUris = urisByActivity[target.componentName].orEmpty(),
             )
         })
+    }
+
+    private fun collectUris(name: String, graphs: Map<String, String>, visited: Set<String>): List<String> {
+        if (name in visited) return emptyList()
+        val tree = graphs[name]?.let(XmlNode::parse) ?: return emptyList()
+        val own = tree.descendants().filter { it.name == "deepLink" }.mapNotNull { it.attributes["uri"]?.takeIf(String::isNotBlank) }.toList()
+        return own + tree.descendants().filter { it.name == "include" }
+            .mapNotNull { navigationRef.find(it.attributes["graph"].orEmpty())?.groupValues?.get(1) }
+            .flatMap { collectUris(it, graphs, visited + name) }
     }
 
     private fun collectGraph(name: String, graphs: Map<String, String>, visited: Set<String>): List<DeepLinkParameter> {
@@ -143,6 +158,7 @@ object ProjectDeepLinkEnrichment {
             installedTarget.copy(
                 sources = installedTarget.sources + DeepLinkSource.PROJECT,
                 parameters = (installedTarget.parameters + projectTarget.parameters).distinct(),
+                navigationUris = (installedTarget.navigationUris + projectTarget.navigationUris).distinct(),
             )
         }
         val projectOnly = remaining.values.map { it.copy(sources = it.sources + DeepLinkSource.RUNTIME_UNKNOWN) }

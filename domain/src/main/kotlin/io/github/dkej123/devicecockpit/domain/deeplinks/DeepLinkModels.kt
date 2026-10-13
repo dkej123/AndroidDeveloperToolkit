@@ -44,6 +44,8 @@ data class DeepLinkTarget(
     val hasDefaultCategory: Boolean,
     val sources: Set<DeepLinkSource> = setOf(DeepLinkSource.APK),
     val parameters: List<DeepLinkParameter> = emptyList(),
+    /** Navigation graph `<deepLink app:uri>` templates of this activity, with `{argument}` slots. */
+    val navigationUris: List<String> = emptyList(),
 )
 
 data class DeepLinkCatalog(
