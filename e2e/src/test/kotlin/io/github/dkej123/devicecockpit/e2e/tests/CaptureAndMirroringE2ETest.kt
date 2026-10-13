@@ -86,6 +86,10 @@ class CaptureAndMirroringE2ETest : E2eTest() {
         awaitUntil(E2eConfig.deviceTimeout(15), Duration.ofMillis(500), "a scrcpy --record process") {
             scrcpyProcesses().any { p -> p.info().arguments().orElse(emptyArray()).any { it.startsWith("--record=") } }
         }
+        // scrcpy needs a few seconds to connect before the first frame lands in its temp file.
+        awaitUntil(E2eConfig.deviceTimeout(30), Duration.ofMillis(500), "scrcpy writing the recording") {
+            captureDir.listFiles().orEmpty().any { it.name.startsWith(".capture-") && it.length() > 0 }
+        }
         Thread.sleep(E2eConfig.deviceTimeout(3).toMillis())
 
         studio.click("Stop & save")
@@ -145,7 +149,8 @@ class CaptureAndMirroringE2ETest : E2eTest() {
         // Regression: saved options the Start button never saw until an IDE restart.
         Adb.putSetting("system", "show_touches", "0")
         studio.click("Mirroring options", "ScreenToolButton")
-        studio.click("Show touches", "JBCheckBox")
+        // The option is persisted, so a failed earlier run can leave it on: set it, don't toggle it.
+        setShowTouches(true)
 
         studio.click("Start mirroring")
 
@@ -159,8 +164,12 @@ class CaptureAndMirroringE2ETest : E2eTest() {
         awaitUntil(E2eConfig.deviceTimeout(15), Duration.ofMillis(500), "scrcpy to exit") { scrcpyProcesses().isEmpty() }
 
         // Leave the persisted options as the other tests expect them.
-        studio.click("Show touches", "JBCheckBox")
+        setShowTouches(false)
         studio.click("Mirroring options", "ScreenToolButton")
+    }
+
+    private fun setShowTouches(on: Boolean) {
+        if (studio.isSelected(studio.byName("Show touches", "JBCheckBox")) != on) studio.click("Show touches", "JBCheckBox")
     }
 
     private fun awaitNewFile(suffix: String, timeout: Duration): File {
