@@ -66,17 +66,20 @@ class LayoutInspectorFile(title: String) : LightVirtualFile(title, LayoutCapture
 @Service(Service.Level.PROJECT)
 class LayoutInspectorService(private val project: Project) : Disposable {
     private val models = linkedMapOf<LayoutInspectorFile, LayoutInspectorViewModel>()
+    private val auditTabs = mutableSetOf<LayoutInspectorFile>()
     private val statusJobs = mutableMapOf<LayoutInspectorFile, Job>()
     private val _status = MutableStateFlow<InspectorOpenStatus?>(null)
 
     /** The newest open tab, for Capture's "Inspector open" row (design §9). */
     val status: StateFlow<InspectorOpenStatus?> = _status.asStateFlow()
 
-    fun open() {
+    /** Captures the selected device into a new tab; [audit] opens it in the Accessibility mode. */
+    fun open(audit: Boolean = false) {
         val composition = project.service<DeviceCockpitProjectService>()
         val name = (composition.selectedDeviceViewModel.state.value as? io.github.dkej123.devicecockpit.domain.device.SelectedDeviceState.Online)
             ?.device?.displayName ?: "no device"
-        val file = LayoutInspectorFile("Layout · $name · ${SimpleDateFormat("HH:mm:ss").format(Date())}")
+        val file = LayoutInspectorFile("${if (audit) "Accessibility" else "Layout"} · $name · ${SimpleDateFormat("HH:mm:ss").format(Date())}")
+        if (audit) auditTabs += file
         val transport = composition.adbTransport
         val scope = composition.childScope()
         models[file] = LayoutInspectorViewModel(
@@ -109,8 +112,12 @@ class LayoutInspectorService(private val project: Project) : Disposable {
 
     fun model(file: LayoutInspectorFile): LayoutInspectorViewModel? = models[file]
 
+    /** Whether [file] was opened by the Accessibility audit action. */
+    fun opensInAudit(file: LayoutInspectorFile): Boolean = file in auditTabs
+
     fun closed(file: LayoutInspectorFile) {
         models.remove(file)
+        auditTabs.remove(file)
         statusJobs.remove(file)?.cancel()
         publishStatus()
     }
@@ -119,6 +126,7 @@ class LayoutInspectorService(private val project: Project) : Disposable {
         statusJobs.values.forEach { it.cancel() }
         statusJobs.clear()
         models.clear()
+        auditTabs.clear()
         _status.value = null
     }
 }
@@ -158,6 +166,7 @@ class LayoutInspectorEditor(private val project: Project, private val file: Layo
     )
 
     init {
+        if (service.opensInAudit(file)) panel.showAudit()
         model?.state?.onEach { state -> withContext(composition.dispatcherProvider.main) { panel.update(state) } }?.launchIn(scope)
     }
 
@@ -191,5 +200,18 @@ class InspectLayoutAction : AnAction(), DumbAware {
 
     override fun actionPerformed(e: AnActionEvent) {
         e.project?.service<LayoutInspectorService>()?.open()
+    }
+}
+
+/** Capture → Accessibility audit: a new inspector tab that opens in its Accessibility mode. */
+class AccessibilityAuditAction : AnAction(), DumbAware {
+    override fun getActionUpdateThread() = ActionUpdateThread.BGT
+
+    override fun update(e: AnActionEvent) {
+        e.presentation.isEnabledAndVisible = e.project != null
+    }
+
+    override fun actionPerformed(e: AnActionEvent) {
+        e.project?.service<LayoutInspectorService>()?.open(audit = true)
     }
 }

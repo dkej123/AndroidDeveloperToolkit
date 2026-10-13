@@ -22,7 +22,11 @@ data class AccessibilityStop(
  * they have no description and are not part of a control — fine when decorative, a problem when they
  * carry meaning, so they are listed rather than flagged.
  */
-data class AccessibilityReport(val stops: List<AccessibilityStop>, val unannouncedImages: List<UiNode>) {
+data class AccessibilityReport(
+    val stops: List<AccessibilityStop>,
+    val unannouncedImages: List<UiNode>,
+    val hierarchy: UiHierarchy,
+) {
     fun markdown(): String = buildString {
         val withProblems = stops.count { it.issues.isNotEmpty() }
         append("# Accessibility audit\n\n")
@@ -30,20 +34,23 @@ data class AccessibilityReport(val stops: List<AccessibilityStop>, val unannounc
         if (unannouncedImages.isNotEmpty()) {
             append("; ${unannouncedImages.size} image${if (unannouncedImages.size == 1) "" else "s"} without a description")
         }
-        append(".\n\n| # | Announced | Problems |\n|---|---|---|\n")
+        append(".\n\nElement is the get_ui ref and frame in dp: @x,y WxH.\n")
+        append("\n| # | Announced | Problems | Element |\n|---|---|---|---|\n")
         stops.forEach { stop ->
             val problems = stop.issues.joinToString("; ") { it.message }.ifEmpty { "—" }
-            append("| ${stop.order} | ${stop.spoken.cell()} | ${problems.cell()} |\n")
+            append("| ${stop.order} | ${stop.spoken.cell()} | ${problems.cell()} | ${element(stop.node)} |\n")
         }
         if (unannouncedImages.isNotEmpty()) {
             append("\n## Images TalkBack skips\n\n")
             append("Fine when decorative; give them a content description when they carry meaning.\n\n")
             unannouncedImages.forEach { image ->
-                val b = image.bounds
-                append("- ${image.label} at [${b.left},${b.top}][${b.right},${b.bottom}] px\n")
+                append("- [${image.id}] ${image.label} ${UiTreeText.frame(image.bounds, hierarchy)}\n")
             }
         }
     }
+
+    /** The node as get_ui knows it, so an agent can tap it or find it on a screenshot. */
+    private fun element(node: UiNode) = "[${node.id}] ${UiTreeText.frame(node.bounds, hierarchy)}"
 
     private fun String.cell() = replace("|", "\\|").replace("\n", " ")
 }
@@ -65,7 +72,7 @@ object AccessibilityAudit {
         val stops = mutableListOf<AccessibilityStop>()
         val images = mutableListOf<UiNode>()
         visit(hierarchy.root, hierarchy, hierarchy.root.bounds, stops, images)
-        return AccessibilityReport(stops, images)
+        return AccessibilityReport(stops, images, hierarchy)
     }
 
     fun items(hierarchy: UiHierarchy): List<AccessibilityStop> = audit(hierarchy).stops

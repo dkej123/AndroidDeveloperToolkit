@@ -47,6 +47,12 @@ import javax.swing.ListSelectionModel
  */
 class NavigationRailPanel : JBPanel<NavigationRailPanel>(BorderLayout()) {
 
+    /**
+     * Screen actions (Mirror, Screenshot, Record) stacked just above Settings, laid over the spacer
+     * of the stretched Settings row so the single-list keyboard model above stays as it is.
+     */
+    val actions: JBPanel<Nothing> = JBPanel<Nothing>(java.awt.BorderLayout()).apply { isOpaque = false }
+
     /** Fired when the user changes the selected destination (click or arrow-key). Not fired by [setSelected]. */
     var onSelect: (ViewId) -> Unit = {}
 
@@ -98,10 +104,12 @@ class NavigationRailPanel : JBPanel<NavigationRailPanel>(BorderLayout()) {
 
     init {
         preferredSize = java.awt.Dimension(DeviceCockpitTheme.Sizes.rail, 0)
-        minimumSize = java.awt.Dimension(DeviceCockpitTheme.Sizes.rail, 0)
         isOpaque = true
         background = DeviceCockpitTheme.Colors.panel
-        add(list, BorderLayout.CENTER)
+        layout = RailLayout()
+        // Added first so it is on top of the list: it paints last and takes the mouse.
+        add(actions)
+        add(list)
         val hoverTracker = object : java.awt.event.MouseAdapter() {
             override fun mouseMoved(e: MouseEvent) = hover(list.locationToIndex(e.point))
             override fun mouseExited(e: MouseEvent) = hover(-1)
@@ -145,7 +153,38 @@ class NavigationRailPanel : JBPanel<NavigationRailPanel>(BorderLayout()) {
         val row = RAIL_ROW_HEIGHT()
         val destinations = listModel.size() - 1
         val available = list.height - list.insets.top - list.insets.bottom - destinations * row
-        return available.coerceAtLeast(row)
+        return available.coerceAtLeast(row + actionsBlock())
+    }
+
+    /** The actions' height plus the gap that separates them from Settings, or 0 without actions. */
+    private fun actionsBlock(): Int {
+        val height = actions.preferredSize.height
+        return if (actions.componentCount == 0 || height == 0) 0 else height + DeviceCockpitTheme.Spacing.s4
+    }
+
+    override fun isOptimizedDrawingEnabled() = false
+
+    /** The list fills the rail; [actions] sit centred, [DeviceCockpitTheme.Spacing.s4] above the Settings button. */
+    private inner class RailLayout : java.awt.LayoutManager {
+        override fun addLayoutComponent(name: String?, comp: Component) = Unit
+        override fun removeLayoutComponent(comp: Component) = Unit
+
+        override fun preferredLayoutSize(parent: java.awt.Container) = minimumLayoutSize(parent)
+
+        override fun minimumLayoutSize(parent: java.awt.Container): java.awt.Dimension {
+            val destinations = listModel.size() - 1
+            val height = list.insets.top + list.insets.bottom + destinations * RAIL_ROW_HEIGHT() + RAIL_ROW_HEIGHT() + actionsBlock()
+            return java.awt.Dimension(DeviceCockpitTheme.Sizes.rail, height)
+        }
+
+        override fun layoutContainer(parent: java.awt.Container) {
+            list.setBounds(0, 0, parent.width, parent.height)
+            val size = actions.preferredSize
+            val settingsTop = parent.height - list.insets.bottom - DeviceCockpitTheme.Sizes.railButton
+            val destinationsEnd = list.insets.top + (listModel.size() - 1) * RAIL_ROW_HEIGHT()
+            val y = (settingsTop - DeviceCockpitTheme.Spacing.s4 - size.height).coerceAtLeast(destinationsEnd)
+            actions.setBounds((parent.width - size.width) / 2, y, size.width, size.height)
+        }
     }
 }
 

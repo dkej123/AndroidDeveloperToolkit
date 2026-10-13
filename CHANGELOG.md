@@ -4,6 +4,26 @@ All notable changes to Device Cockpit for Android (formerly ADB Toolbox). Each r
 the Marketplace change notes and the GitHub release notes are generated from it
 (`release/README.md`).
 
+## [1.4.0] - 2026-10-13
+
+### Added
+- **Accessibility audit button**: next to Inspect layout in the Device view. It captures the screen
+  into a new Inspector tab that opens straight on the TalkBack order and its problems.
+
+### Changed
+- **Mirror, Screenshot and Record on the rail**: the screen buttons moved from the Device view to the
+  left rail, above Settings, so they work from every view. The arrows under Mirror and Screenshot
+  still open the mirroring options (in the Device view) and the Full page screenshot.
+- **`accessibility_audit` for AI agents**: each stop now carries its `get_ui` ref and frame in dp, so
+  an agent can tap the element or find it on a screenshot. The tool description says the audit
+  approximates TalkBack and vendor builds such as Samsung's may word things differently.
+- **`screenshot annotate=true`** lists what each numbered box is, so the agent no longer needs a
+  separate `get_ui` call to read it.
+
+### Fixed
+- `accessibility_audit` listed images without a description in pixels, unlike every other tool;
+  it now uses dp.
+
 ## [1.3.0] - 2026-10-13
 
 ### Added

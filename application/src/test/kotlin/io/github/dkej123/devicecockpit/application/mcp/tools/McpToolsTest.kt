@@ -43,6 +43,8 @@ import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.string.shouldStartWith
+import io.kotest.matchers.string.shouldNotContain
+import io.kotest.matchers.ints.shouldBeLessThan
 import io.kotest.matchers.types.shouldBeInstanceOf
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.currentTime
@@ -291,10 +293,22 @@ class McpToolsTest {
         drawn.first { it.fromTree }.label shouldBe ref
         drawn.filterNot { it.fromTree }.map { it.label to it.box } shouldBe listOf("m1" to MarkBox(0, 0, 10, 10))
         result.text() shouldContain "m1 @0,0 10x10"
+        result.text() shouldContain first
 
         call("tap", "mark" to 1).text() shouldBe "Tapped mark m1 at 5,5 dp."
         commands.last() shouldBe "input tap 14 14"
         call("tap", "mark" to 7).text() shouldBe "Invalid arguments: mark 7 is not on the last annotated screenshot; take screenshot annotate=true again."
+    }
+
+    @Test
+    fun `the accessibility audit names each stop by a ref that tap accepts`() = runTest {
+        val audit = call("accessibility_audit").text()
+        val (ref, x, y) = Regex("""\| \[(\d+)] @(\d+),(\d+) \d+x\d+ \|""").find(audit)!!.destructured
+
+        call("tap", "ref" to ref.toInt()).text() shouldContain "Tapped [$ref]"
+        audit shouldNotContain "] px"
+        x.toInt() shouldBeLessThan 393
+        y.toInt() shouldBeLessThan 873
     }
 
     @Test

@@ -8,6 +8,7 @@ import io.github.dkej123.devicecockpit.intellij.ui.common.FlexRowLayout
 import io.github.dkej123.devicecockpit.intellij.ui.common.RoundedSurface
 import io.github.dkej123.devicecockpit.intellij.ui.common.WrappingText
 import io.github.dkej123.devicecockpit.intellij.ui.common.flexRow
+import io.github.dkej123.devicecockpit.intellij.ui.common.stackColumn
 import com.intellij.ide.BrowserUtil
 import com.intellij.openapi.Disposable
 import com.intellij.ui.components.JBLabel
@@ -52,20 +53,26 @@ class MirroringView(
 ) : JBPanel<MirroringView>(VerticalStackLayout { DeviceCockpitTheme.Spacing.s3 }), Disposable {
 
     /** Monitor glyph; brand-tinted while running, when a click stops the session. */
-    val mirrorButton = ScreenToolButton(DeviceCockpitIcons.Actions.mirror, segment = ToolButtonSegment.MAIN).apply {
+    val mirrorButton = ScreenToolButton(DeviceCockpitIcons.Actions.mirror, segment = ToolButtonSegment.TOP).apply {
         toolTipText = START_TOOLTIP
         getAccessibleContext().accessibleName = START_NAME
         addActionListener { viewModel.handle(MirroringIntent.Toggle) }
     }
 
+    /** Called when the caret shows the options: they open in the Device view, the caret sits on the rail. */
+    var onOptionsShown: () -> Unit = {}
+
     /** The split button's caret: shows and hides [optionsPanel] in place. */
-    val optionsButton = ScreenToolButton(null, segment = ToolButtonSegment.CARET).apply {
+    val optionsButton = ScreenToolButton(null, segment = ToolButtonSegment.BOTTOM).apply {
         toolTipText = OPTIONS_TOOLTIP
         getAccessibleContext().accessibleName = "Mirroring options"
-        addActionListener { setOptionsOpen(!isOpen) }
+        addActionListener {
+            setOptionsOpen(!isOpen)
+            if (isOpen) onOptionsShown()
+        }
     }
 
-    val toolbarPart = flexRow(0, mirrorButton, optionsButton)
+    val toolbarPart = stackColumn(0, mirrorButton, optionsButton)
 
     private val stopButton = DesignButton("Stop", DesignButtonStyle.DANGER).apply {
         addActionListener { viewModel.handle(MirroringIntent.Toggle) }

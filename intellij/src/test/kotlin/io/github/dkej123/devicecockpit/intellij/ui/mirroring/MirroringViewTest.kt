@@ -182,15 +182,19 @@ class MirroringViewTest : BasePlatformTestCase() {
         )
         val panel = MirroringOptionsPanel(optionsViewModel, viewScope, dispatchers)
         val view = MirroringView(vm, viewScope, dispatchers, optionsPanel = panel)
+        var shownCount = 0
+        view.onOptionsShown = { shownCount++ }
         view.render(MirroringViewState(controlPolicy = ControlPolicy.Enabled, presentationState = MirroringPresentationState.Idle))
         assertFalse(panel.isVisible)
 
         view.optionsButton.doClick()
         assertTrue(panel.isVisible)
         assertTrue(view.optionsButton.isOpen)
+        assertEquals("the caret on the rail brings the Device view, where the options open", 1, shownCount)
 
         view.optionsButton.doClick()
         assertFalse(panel.isVisible)
+        assertEquals(1, shownCount)
         assertEquals(MirroringPresentationState.Idle, vm.state.value.presentationState)
         viewScope.cancel()
         vmScope.cancel()

@@ -182,6 +182,12 @@ internal object DeviceViewFixture {
                 if (active) "Re-capture layout" else "Inspect layout",
             ).apply { if (active) tone = io.github.dkej123.devicecockpit.intellij.ui.common.ToolButtonTone.ACCENT },
         )
+        panel.inspectSlot.add(
+            io.github.dkej123.devicecockpit.intellij.ui.common.ScreenToolButton(
+                io.github.dkej123.devicecockpit.intellij.icons.DeviceCockpitIcons.Actions.a11yAudit,
+                "Accessibility audit",
+            ),
+        )
 
         val actions = DeviceActionsView(
             DeviceActionsViewModel(

@@ -351,6 +351,12 @@ fun verticalStack(vararg children: Component): JPanel = object : JPanel(Vertical
     children.forEach(::add)
 }
 
+/** A transparent [VerticalStackLayout] column, [gap] apart, as wide as its widest child. */
+fun stackColumn(gap: Int, vararg children: Component): JPanel = JPanel(VerticalStackLayout { gap }).apply {
+    isOpaque = false
+    children.forEach(::add)
+}
+
 /** A transparent [FlexRowLayout] row; [fill] (a child or a [flexSpacer]) takes the remaining width. */
 fun flexRow(gap: Int, vararg children: Component, fill: Component? = null, shrink: Component? = null): JPanel =
     JPanel(FlexRowLayout(gap)).apply {
