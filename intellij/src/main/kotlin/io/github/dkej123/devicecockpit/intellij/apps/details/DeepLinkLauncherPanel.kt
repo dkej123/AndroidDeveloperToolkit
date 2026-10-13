@@ -47,7 +47,7 @@ class DeepLinkLauncherPanel(
         isOpaque = false
         layout = BoxLayout(this, BoxLayout.Y_AXIS)
     }
-    private val addParameter = DesignButton("+ Add parameter", DesignButtonStyle.LINK).apply {
+    private val addParameter = DesignButton("Add parameter", DesignButtonStyle.SECONDARY).apply {
         name = "deepLinkAddParameter"
         toolTipText = "Adds a query parameter (?key=value)"
         addActionListener { addExtra("", "") }
@@ -71,7 +71,7 @@ class DeepLinkLauncherPanel(
         add(JPanel().apply {
             isOpaque = false
             layout = BoxLayout(this, BoxLayout.Y_AXIS)
-            listOf(title, hint, parametersGrid, extrasPanel, addParameter, preview, missing).forEach {
+            listOf(title, hint, parametersGrid, extrasPanel, flexRow(DeviceCockpitTheme.Spacing.s3, addParameter), preview, missing).forEach {
                 (it as java.awt.Component).let { c -> (c as javax.swing.JComponent).alignmentX = Component.LEFT_ALIGNMENT }
                 add(it)
             }
