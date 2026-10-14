@@ -25,7 +25,6 @@ import io.github.dkej123.devicecockpit.intellij.icons.DeviceCockpitIcons
 import io.github.dkej123.devicecockpit.intellij.ui.common.DeviceCockpitTheme
 import io.github.dkej123.devicecockpit.intellij.ui.common.ScreenToolButton
 import io.github.dkej123.devicecockpit.intellij.ui.common.StatusDotIcon
-import io.github.dkej123.devicecockpit.intellij.ui.common.ToolButtonSegment
 import io.github.dkej123.devicecockpit.intellij.ui.common.ToolButtonTone
 import io.github.dkej123.devicecockpit.intellij.ui.common.VerticalStackLayout
 import java.awt.BorderLayout
@@ -40,8 +39,8 @@ import kotlinx.coroutines.withContext
 
 /**
  * The Screen section's mirroring controls (design §3 "Screen"), bound to the existing mirroring
- * intent/state contract. The view itself is the stack under the toolbar (inline options, scrcpy
- * help); [toolbarPart] (the Mirror split button) and [statusRow] ("Mirroring · …" + Stop) are
+ * intent/state contract. The view itself is the stack under the toolbar (scrcpy help);
+ * [toolbarPart] (the Mirror button, whose click opens [MirroringStartDialog] while idle) and [statusRow] ("Mirroring · …" + Stop) are
  * mounted by [io.github.dkej123.devicecockpit.intellij.mirroring.MirroringCoordinator] into their own rows.
  */
 class MirroringView(
@@ -50,29 +49,22 @@ class MirroringView(
     private val dispatchers: DispatcherProvider,
     private val optionsPanel: MirroringOptionsPanel? = null,
     private val openInstallGuide: () -> Unit = { BrowserUtil.browse(INSTALL_GUIDE_URL) },
+    /** Shows the options over the Mirror button with "Start mirroring"; true when the user chose to start. */
+    private val confirmStart: (java.awt.Component, MirroringOptionsPanel) -> Boolean = { parent, panel ->
+        MirroringStartDialog(parent, panel).showAndGet()
+    },
 ) : JBPanel<MirroringView>(VerticalStackLayout { DeviceCockpitTheme.Spacing.s3 }), Disposable {
 
     /** Monitor glyph; brand-tinted while running, when a click stops the session. */
-    val mirrorButton = ScreenToolButton(DeviceCockpitIcons.Actions.mirror, segment = ToolButtonSegment.TOP).apply {
+    val mirrorButton = ScreenToolButton(DeviceCockpitIcons.Actions.mirror).apply {
         toolTipText = START_TOOLTIP
         getAccessibleContext().accessibleName = START_NAME
-        addActionListener { viewModel.handle(MirroringIntent.Toggle) }
+        addActionListener { onMirrorClicked() }
     }
 
-    /** Called when the caret shows the options: they open in the Device view, the caret sits on the rail. */
-    var onOptionsShown: () -> Unit = {}
+    val toolbarPart = stackColumn(0, mirrorButton)
 
-    /** The split button's caret: shows and hides [optionsPanel] in place. */
-    val optionsButton = ScreenToolButton(null, segment = ToolButtonSegment.BOTTOM).apply {
-        toolTipText = OPTIONS_TOOLTIP
-        getAccessibleContext().accessibleName = "Mirroring options"
-        addActionListener {
-            setOptionsOpen(!isOpen)
-            if (isOpen) onOptionsShown()
-        }
-    }
-
-    val toolbarPart = stackColumn(0, mirrorButton, optionsButton)
+    private var isRunning = false
 
     private val stopButton = DesignButton("Stop", DesignButtonStyle.DANGER).apply {
         addActionListener { viewModel.handle(MirroringIntent.Toggle) }
@@ -126,7 +118,6 @@ class MirroringView(
     init {
         isOpaque = false
         alignmentX = java.awt.Component.LEFT_ALIGNMENT
-        optionsPanel?.let { add(it.apply { isVisible = false }) }
         add(helpLabel)
         add(scrcpyFixRow)
         viewModel.state
@@ -136,23 +127,25 @@ class MirroringView(
 
     override fun getMaximumSize(): Dimension = Dimension(Int.MAX_VALUE, preferredSize.height)
 
-    fun setOptionsOpen(open: Boolean) {
-        optionsButton.isOpen = open && optionsPanel != null
-        optionsPanel?.isVisible = optionsButton.isOpen
-        revalidate()
-        repaint()
+    /**
+     * While idle a click opens the options dialog and starts from there (user request 2026-10-14);
+     * while running, or without options to show, it toggles straight away.
+     */
+    private fun onMirrorClicked() {
+        val panel = optionsPanel
+        if (isRunning || panel == null) {
+            viewModel.handle(MirroringIntent.Toggle)
+        } else if (confirmStart(mirrorButton, panel)) {
+            viewModel.handle(MirroringIntent.Toggle)
+        }
     }
 
     internal fun render(state: MirroringViewState) {
         val enabled = state.controlPolicy is ControlPolicy.Enabled
         val missing = state.scrcpy as? ScrcpyAvailability.Missing
-        val isRunning = state.presentationState is MirroringPresentationState.Running
+        isRunning = state.presentationState is MirroringPresentationState.Running
         mirrorButton.isEnabled = enabled && (missing == null || isRunning)
         stopButton.isEnabled = enabled
-        // The options only configure scrcpy: useless until it is installed (user request 2026-10-01).
-        optionsButton.isEnabled = enabled && missing == null
-        optionsButton.toolTipText = missing?.fixHint() ?: OPTIONS_TOOLTIP.withDisabledReason(enabled)
-        if (!optionsButton.isEnabled) setOptionsOpen(false)
 
         mirrorButton.tone = if (isRunning) ToolButtonTone.BRAND else null
         mirrorButton.getAccessibleContext().accessibleName = if (isRunning) STOP_NAME else START_NAME
@@ -179,9 +172,8 @@ class MirroringView(
     private companion object {
         const val START_NAME = "Start mirroring"
         const val STOP_NAME = "Stop mirroring"
-        val START_TOOLTIP: String get() = ShortcutHints.withAction("Start mirroring — opens a scrcpy window", "dev.acme.adbtoolbox.ToggleMirroring")
+        val START_TOOLTIP: String get() = ShortcutHints.withAction("Start mirroring — choose options, then a scrcpy window opens", "dev.acme.adbtoolbox.ToggleMirroring")
         val STOP_TOOLTIP: String get() = ShortcutHints.withAction("Stop mirroring", "dev.acme.adbtoolbox.ToggleMirroring")
-        const val OPTIONS_TOOLTIP = "Mirroring options — bitrate, resolution, stay awake, show touches"
         const val INSTALL_GUIDE_URL = "https://github.com/Genymobile/scrcpy#get-the-app"
 
         /** `design/README.md` Interactions: every device-mutating control "keeps its tooltip and

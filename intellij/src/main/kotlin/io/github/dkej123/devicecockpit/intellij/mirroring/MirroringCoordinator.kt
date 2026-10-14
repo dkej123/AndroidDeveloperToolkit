@@ -11,8 +11,8 @@ import kotlinx.coroutines.CoroutineScope
 
 /**
  * Mounts task 018's [MirroringView] into the Device view's Screen section (design §3): the Mirror
- * split button into [DeviceFactsPanel.screenToolbar] (first), the inline options and scrcpy help
- * into [DeviceFactsPanel.mirroringSlot], and the "Mirroring · …" row into
+ * button into [DeviceFactsPanel.screenToolbar] (first), the scrcpy help into
+ * [DeviceFactsPanel.mirroringSlot], and the "Mirroring · …" row into
  * [DeviceFactsPanel.screenStatusSlot]. [deviceFactsPanel] must therefore already be constructed,
  * and [scope]/[dispatchers] are this feature's own — cancelling [scope] via [dispose] never touches
  * the Device-facts, Capture, or Device-actions features' own lifecycles.
@@ -22,7 +22,7 @@ class MirroringCoordinator(
     viewModel: MirroringViewModel,
     scope: CoroutineScope,
     dispatchers: DispatcherProvider,
-    /** Backs the inline "Mirroring options" panel; without it the caret has nothing to open. */
+    /** Backs the start dialog's "Mirroring options"; without it the Mirror button starts straight away. */
     optionsViewModel: MirroringOptionsViewModel? = null,
 ) : Disposable {
 

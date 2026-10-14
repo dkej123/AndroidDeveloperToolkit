@@ -123,7 +123,6 @@ internal object DeviceViewFixture {
         )
         if (active) {
             mirroring.runningLabel.text = "Mirroring · 1080×2400 @ 60 fps"
-            mirroring.setOptionsOpen(true)
         }
         panel.screenToolbar.add(mirroring.toolbarPart)
         panel.mirroringSlot.add(mirroring)

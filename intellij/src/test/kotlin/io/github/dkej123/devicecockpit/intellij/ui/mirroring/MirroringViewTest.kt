@@ -80,12 +80,10 @@ class MirroringViewTest : BasePlatformTestCase() {
 
         view.render(MirroringViewState(controlPolicy = ControlPolicy.Disabled(DeviceCommandContext.Disabled.NoDeviceSelected), presentationState = MirroringPresentationState.Unavailable))
         assertFalse(view.toggleButton.isEnabled)
-        assertFalse(view.optionsButton.isEnabled)
         assertEquals("Start mirroring", view.toggleButton.accessibleContext.accessibleName)
 
         view.render(MirroringViewState(controlPolicy = ControlPolicy.Enabled, presentationState = MirroringPresentationState.Idle))
         assertTrue(view.toggleButton.isEnabled)
-        assertTrue(view.optionsButton.isEnabled)
         assertSame(view.mirrorButton, view.toggleButton)
 
         view.render(MirroringViewState(controlPolicy = ControlPolicy.Enabled, presentationState = MirroringPresentationState.Running))
@@ -101,7 +99,7 @@ class MirroringViewTest : BasePlatformTestCase() {
         assertFalse(scope.isActive)
     }
 
-    fun `test idle state shows only the split button, without help text or the running row`() {
+    fun `test idle state shows only the Mirror button, without a caret, help text or the running row`() {
         val dispatchers = TestDispatchers()
         val scope = CoroutineScope(SupervisorJob() + dispatchers.default)
         val vm = viewModel(scope, dispatchers, MutableStateFlow(SelectedDeviceState.None))
@@ -110,7 +108,7 @@ class MirroringViewTest : BasePlatformTestCase() {
         view.render(MirroringViewState(controlPolicy = ControlPolicy.Enabled, presentationState = MirroringPresentationState.Idle))
 
         assertEquals("Start mirroring", view.toggleButton.accessibleContext.accessibleName)
-        assertEquals(listOf(view.mirrorButton, view.optionsButton), view.toolbarPart.components.toList())
+        assertEquals(listOf<java.awt.Component>(view.mirrorButton), view.toolbarPart.components.toList())
         assertFalse(view.statusRow.isVisible)
         assertFalse(view.helpLabel.isVisible)
         view.dispose()
@@ -133,17 +131,7 @@ class MirroringViewTest : BasePlatformTestCase() {
         vmScope.cancel()
     }
 
-    fun `test the options icon button exposes an accessible name derived from its tooltip`() {
-        val dispatchers = TestDispatchers()
-        val scope = CoroutineScope(SupervisorJob() + dispatchers.default)
-        val vm = viewModel(scope, dispatchers, MutableStateFlow(SelectedDeviceState.None))
-        val view = MirroringView(vm, scope, dispatchers)
-
-        assertEquals("Mirroring options", view.optionsButton.getAccessibleContext().accessibleName)
-        view.dispose()
-    }
-
-    fun `test a disabled control policy names the blocker in the start and options tooltips`() {
+    fun `test a disabled control policy names the blocker in the start tooltip`() {
         val dispatchers = TestDispatchers()
         val scope = CoroutineScope(SupervisorJob() + dispatchers.default)
         val vm = viewModel(scope, dispatchers, MutableStateFlow(SelectedDeviceState.None))
@@ -157,45 +145,72 @@ class MirroringViewTest : BasePlatformTestCase() {
         )
 
         assertTrue(view.toggleButton.toolTipText.endsWith("Connect a device to use this"))
-        assertTrue(view.optionsButton.toolTipText.endsWith("Connect a device to use this"))
 
         view.render(MirroringViewState(controlPolicy = ControlPolicy.Enabled, presentationState = MirroringPresentationState.Idle))
         // The chord comes from the active keymap (ShortcutHintsTest), never a hardcoded "⇧⌘M".
-        assertTrue(view.toggleButton.toolTipText.startsWith("Start mirroring — opens a scrcpy window"))
+        assertTrue(view.toggleButton.toolTipText.startsWith("Start mirroring — choose options, then a scrcpy window opens"))
         if (!com.intellij.openapi.util.SystemInfo.isMac) assertFalse('⌘' in view.toggleButton.toolTipText)
-        assertEquals("Mirroring options — bitrate, resolution, stay awake, show touches", view.optionsButton.toolTipText)
         view.dispose()
     }
 
-    fun `test the options caret shows and hides the inline options panel without touching the session`() {
-        val dispatchers = TestDispatchers()
-        val vmScope = CoroutineScope(SupervisorJob() + dispatchers.default)
-        val selectedDeviceState = MutableStateFlow<SelectedDeviceState>(SelectedDeviceState.Online(onlineDevice("emulator-5554")))
-        val vm = viewModel(vmScope, dispatchers, selectedDeviceState)
-        val viewScope = CoroutineScope(SupervisorJob() + dispatchers.default)
-        val optionsViewModel = io.github.dkej123.devicecockpit.application.mirroring.MirroringOptionsViewModel(
-            viewScope,
+    private fun optionsPanel(scope: CoroutineScope, dispatchers: DispatcherProvider) = MirroringOptionsPanel(
+        io.github.dkej123.devicecockpit.application.mirroring.MirroringOptionsViewModel(
+            scope,
             dispatchers,
             io.github.dkej123.devicecockpit.application.mirroring.MirroringOptionsUseCase(
                 io.github.dkej123.devicecockpit.domain.mirroring.FakeMirroringOptionsRepository(),
             ),
-        )
-        val panel = MirroringOptionsPanel(optionsViewModel, viewScope, dispatchers)
-        val view = MirroringView(vm, viewScope, dispatchers, optionsPanel = panel)
-        var shownCount = 0
-        view.onOptionsShown = { shownCount++ }
+        ),
+        scope,
+        dispatchers,
+    )
+
+    fun `test clicking Mirror while idle shows the options and starts only when the user confirms`() {
+        val dispatchers = TestDispatchers()
+        val vmScope = CoroutineScope(SupervisorJob() + HeldDispatcher)
+        val selectedDeviceState = MutableStateFlow<SelectedDeviceState>(SelectedDeviceState.Online(onlineDevice("emulator-5554")))
+        val vm = viewModel(vmScope, HeldDispatchers, selectedDeviceState)
+        val viewScope = CoroutineScope(SupervisorJob() + dispatchers.default)
+        val panel = optionsPanel(viewScope, dispatchers)
+        var confirm = false
+        val shown = mutableListOf<MirroringOptionsPanel>()
+        val parents = mutableListOf<java.awt.Component>()
+        val view = MirroringView(vm, viewScope, dispatchers, optionsPanel = panel, confirmStart = { parent, options ->
+            parents += parent
+            shown += options
+            confirm
+        })
         view.render(MirroringViewState(controlPolicy = ControlPolicy.Enabled, presentationState = MirroringPresentationState.Idle))
-        assertFalse(panel.isVisible)
+        assertNull("the options are no longer inline in the Device view", panel.parent)
 
-        view.optionsButton.doClick()
-        assertTrue(panel.isVisible)
-        assertTrue(view.optionsButton.isOpen)
-        assertEquals("the caret on the rail brings the Device view, where the options open", 1, shownCount)
+        view.mirrorButton.doClick()
+        assertEquals(listOf(panel), shown)
+        assertEquals("the dialog opens over the Mirror button", listOf<java.awt.Component>(view.mirrorButton), parents)
+        assertEquals("Cancel leaves the session alone", MirroringPresentationState.Idle, vm.state.value.presentationState)
 
-        view.optionsButton.doClick()
-        assertFalse(panel.isVisible)
-        assertEquals(1, shownCount)
-        assertEquals(MirroringPresentationState.Idle, vm.state.value.presentationState)
+        confirm = true
+        view.mirrorButton.doClick()
+        assertEquals(2, shown.size)
+        assertEquals(MirroringPresentationState.Starting, vm.state.value.presentationState)
+        viewScope.cancel()
+        vmScope.cancel()
+    }
+
+    fun `test clicking Mirror while running stops at once, without the options dialog`() {
+        val dispatchers = TestDispatchers()
+        val vmScope = CoroutineScope(SupervisorJob() + HeldDispatcher)
+        val vm = viewModel(vmScope, HeldDispatchers, MutableStateFlow(SelectedDeviceState.Online(onlineDevice("emulator-5554"))))
+        val viewScope = CoroutineScope(SupervisorJob() + dispatchers.default)
+        var dialogs = 0
+        val view = MirroringView(vm, viewScope, dispatchers, optionsPanel = optionsPanel(viewScope, dispatchers), confirmStart = { _, _ ->
+            dialogs++
+            true
+        })
+        view.render(MirroringViewState(controlPolicy = ControlPolicy.Enabled, presentationState = MirroringPresentationState.Running))
+
+        view.mirrorButton.doClick()
+
+        assertEquals(0, dialogs)
         viewScope.cancel()
         vmScope.cancel()
     }
@@ -214,9 +229,6 @@ class MirroringViewTest : BasePlatformTestCase() {
         view.render(MirroringViewState(controlPolicy = ControlPolicy.Enabled, presentationState = MirroringPresentationState.Idle, scrcpy = missing))
 
         assertFalse(view.toggleButton.isEnabled)
-        // Options only configure scrcpy, so they are useless until it is installed (user request 2026-10-01).
-        assertFalse(view.optionsButton.isEnabled)
-        assertEquals(missing.fixHint(), view.optionsButton.toolTipText)
         assertEquals(missing.fixHint(), view.toggleButton.toolTipText)
         assertEquals(missing.fixHint(), view.helpLabel.text)
         assertTrue(view.scrcpyFixRow.isVisible)
@@ -224,7 +236,6 @@ class MirroringViewTest : BasePlatformTestCase() {
         view.render(MirroringViewState(controlPolicy = ControlPolicy.Enabled, presentationState = MirroringPresentationState.Idle, scrcpy = ScrcpyAvailability.Available(ToolVersion.of("3.1"))))
 
         assertTrue(view.toggleButton.isEnabled)
-        assertTrue(view.optionsButton.isEnabled)
         assertFalse(view.scrcpyFixRow.isVisible)
         scope.cancel()
     }
@@ -251,7 +262,6 @@ class MirroringViewTest : BasePlatformTestCase() {
         view.render(MirroringViewState(controlPolicy = ControlPolicy.Enabled, presentationState = MirroringPresentationState.Idle, scrcpy = ScrcpyAvailability.Checking))
 
         assertTrue(view.toggleButton.isEnabled)
-        assertTrue(view.optionsButton.isEnabled)
         assertFalse(view.scrcpyFixRow.isVisible)
         scope.cancel()
     }

@@ -75,4 +75,21 @@ class MirroringOptionsPanelTest : BasePlatformTestCase() {
 
     private fun rendered(combo: javax.swing.JComboBox<Int?>, value: Int?): String =
         (combo.renderer.getListCellRendererComponent(javax.swing.JList(), value, 0, false, false) as javax.swing.JLabel).text
+
+    fun `test the start dialog shows the options with Start mirroring as its default action`() {
+        val h = Harness()
+        val parent = javax.swing.JPanel()
+        val dialog = MirroringStartDialog(parent, h.panel)
+        try {
+            assertEquals("Start Mirroring", dialog.title)
+            assertTrue(h.panel.isVisible)
+            assertNotNull("the options are mounted in the dialog", h.panel.parent)
+            val start = dialog.startActionForTest
+            assertEquals("Start mirroring", start.getValue(javax.swing.Action.NAME))
+            assertEquals(true, start.getValue(com.intellij.openapi.ui.DialogWrapper.DEFAULT_ACTION))
+        } finally {
+            com.intellij.openapi.util.Disposer.dispose(dialog.disposable)
+            h.scope.cancel()
+        }
+    }
 }
