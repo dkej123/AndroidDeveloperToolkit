@@ -1,5 +1,13 @@
 # ⏸ Work in progress — resume here
 
+**1.4.1 published 2026-10-14** (tag `v1.4.1` on `e740561`, Publish Plugin run 38568734715 dispatched on
+the tag; GitHub release by hand): Mirror opens a dialog with the mirroring options and Start mirroring,
+the caret under Mirror is gone (`b165fc6`). E2E on pool emu-1: 13/14 mirroring + settings tests pass;
+Show touches fails only because scrcpy cannot open an audio device in this crate (pool emulator has
+audio). `release/test.sh` fails `device-picker-dark-wide` by 0.031 pp only with `/work/.e2e-env.sh`
+loaded (its fonts.conf renders the mono serials differently); without it the full gate passes.
+Waiting for JetBrains moderation.
+
 **1.4.0 published 2026-10-13** (tag `v1.4.0` on `4daa551`, Publish Plugin run 38468424787 dispatched on
 the tag; GitHub release by hand): Mirror/Screenshot/Record on the rail above Settings, Accessibility audit
 button next to Inspect layout, `accessibility_audit` refs + dp, `screenshot annotate` legend, Record
