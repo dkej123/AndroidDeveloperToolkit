@@ -4,7 +4,7 @@ All notable changes to Device Cockpit for Android (formerly ADB Toolbox). Each r
 the Marketplace change notes and the GitHub release notes are generated from it
 (`release/README.md`).
 
-## [Unreleased]
+## [1.4.1] - 2026-10-14
 
 ### Changed
 - **Mirror opens a dialog**: clicking Mirror shows the mirroring options (resolution, bitrate, stay
