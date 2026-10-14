@@ -92,8 +92,6 @@ class SettingsE2ETest : E2eTest() {
         }
         studio.visibleTexts().any { "Fix or clear it in Settings." in it } shouldBe true
         studio.byName("Check again")
-        // The options only configure scrcpy (user request 2026-10-01).
-        studio.isEnabled(studio.byName("Mirroring options", "ScreenToolButton")) shouldBe false
 
         // "Open Settings" opens the plugin page every time, also after the dialog was closed once.
         repeat(2) {

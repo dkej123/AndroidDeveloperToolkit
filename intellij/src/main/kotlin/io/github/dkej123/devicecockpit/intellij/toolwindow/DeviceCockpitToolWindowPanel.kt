@@ -157,7 +157,7 @@ class DeviceCockpitToolWindowPanel(
     deviceContextAggregator: DeviceContextAggregator,
     private val displayScope: CoroutineScope,
     openSettings: () -> Unit = {},
-    /** Backs the Screen section's inline "Mirroring options" panel (design §3). */
+    /** Backs the "Mirroring options" the Mirror button's start dialog shows. */
     mirroringOptionsViewModel: io.github.dkej123.devicecockpit.application.mirroring.MirroringOptionsViewModel? = null,
     onResetOverrides: () -> Unit = {},
     diagnosticsLog: DiagnosticsLog = NoOpDiagnosticsLog,
@@ -449,12 +449,8 @@ class DeviceCockpitToolWindowPanel(
 
     init {
         host.navigationSlot.add(navigationRail, BorderLayout.CENTER)
-        // Mirror, Screenshot and Record live on the rail above Settings, reachable from every view;
-        // the mirroring options open inline in the Device view, so the caret goes there.
+        // Mirror, Screenshot and Record live on the rail above Settings, reachable from every view.
         navigationRail.actions.add(deviceFactsCoordinator.panel.screenToolbar)
-        mirroringCoordinator.view.onOptionsShown = {
-            navigationViewModel.handle(io.github.dkej123.devicecockpit.application.nav.NavigationIntent.Select(ViewId.Device))
-        }
         add(host, BorderLayout.CENTER)
 
         scope.launch {

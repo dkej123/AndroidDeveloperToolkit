@@ -1,5 +1,8 @@
 package io.github.dkej123.devicecockpit.e2e.tests
 
+import com.intellij.remoterobot.fixtures.ComponentFixture
+import com.intellij.remoterobot.fixtures.ContainerFixture
+import com.intellij.remoterobot.search.locators.byXpath
 import io.github.dkej123.devicecockpit.e2e.infra.Adb
 import io.github.dkej123.devicecockpit.e2e.infra.E2eConfig
 import io.github.dkej123.devicecockpit.e2e.infra.E2eTest
@@ -112,7 +115,7 @@ class CaptureAndMirroringE2ETest : E2eTest() {
 
     @Test
     fun `Start mirroring launches scrcpy for the device and Stop ends it`() {
-        studio.click("Start mirroring")
+        startMirroring()
 
         awaitUntil(E2eConfig.deviceTimeout(15), Duration.ofMillis(500), "a scrcpy process for ${E2eConfig.serial}") {
             scrcpyProcesses().any { E2eConfig.serial in it.info().arguments().orElse(emptyArray()).joinToString(" ") }
@@ -127,11 +130,10 @@ class CaptureAndMirroringE2ETest : E2eTest() {
 
     @Test
     fun `mirroring options are persisted and passed to scrcpy`() {
-        // Design handoff 4: the options open inline under the Screen toolbar and apply at once.
-        studio.click("Mirroring options", "ScreenToolButton")
-        studio.byName("Bitrate", "ComboBox").runJs("component.setSelectedItem(java.lang.Integer.valueOf(4))", true)
-
-        studio.click("Start mirroring")
+        // The Mirror button opens the options in a dialog; they are saved as they change.
+        startMirroring { dialog ->
+            option(dialog, "Bitrate", "ComboBox").runJs("component.setSelectedItem(java.lang.Integer.valueOf(4))", true)
+        }
 
         awaitUntil(E2eConfig.deviceTimeout(15), Duration.ofMillis(500), "scrcpy started with 4M video bit rate") {
             scrcpyProcesses().any { process ->
@@ -140,19 +142,27 @@ class CaptureAndMirroringE2ETest : E2eTest() {
             }
         }
         studio.click("Stop")
-        studio.byName("Bitrate", "ComboBox").runJs("component.setSelectedItem(null)", true)
-        studio.click("Mirroring options", "ScreenToolButton")
+        awaitUntil(E2eConfig.deviceTimeout(15), Duration.ofMillis(500), "scrcpy to exit") { scrcpyProcesses().isEmpty() }
+        // Leave the persisted options as the other tests expect them; Cancel keeps the change.
+        editOptionsWithoutStarting { dialog -> option(dialog, "Bitrate", "ComboBox").runJs("component.setSelectedItem(null)", true) }
+    }
+
+    @Test
+    fun `Cancel in the mirroring dialog does not start scrcpy`() {
+        studio.click("Start mirroring")
+        studio.dialogButton(studio.dialog(START_DIALOG), "Cancel").click()
+
+        Thread.sleep(2_000)
+        scrcpyProcesses() shouldBe emptyList()
+        studio.byName("Start mirroring")
     }
 
     @Test
     fun `Show touches from the options panel reaches scrcpy and the device`() {
         // Regression: saved options the Start button never saw until an IDE restart.
         Adb.putSetting("system", "show_touches", "0")
-        studio.click("Mirroring options", "ScreenToolButton")
         // The option is persisted, so a failed earlier run can leave it on: set it, don't toggle it.
-        setShowTouches(true)
-
-        studio.click("Start mirroring")
+        startMirroring { dialog -> setShowTouches(dialog, true) }
 
         awaitUntil(E2eConfig.deviceTimeout(15), Duration.ofMillis(500), "scrcpy started with --show-touches") {
             scrcpyProcesses().any { "--show-touches" in it.info().arguments().orElse(emptyArray()) }
@@ -164,13 +174,32 @@ class CaptureAndMirroringE2ETest : E2eTest() {
         awaitUntil(E2eConfig.deviceTimeout(15), Duration.ofMillis(500), "scrcpy to exit") { scrcpyProcesses().isEmpty() }
 
         // Leave the persisted options as the other tests expect them.
-        setShowTouches(false)
-        studio.click("Mirroring options", "ScreenToolButton")
+        editOptionsWithoutStarting { dialog -> setShowTouches(dialog, false) }
     }
 
-    private fun setShowTouches(on: Boolean) {
-        if (studio.isSelected(studio.byName("Show touches", "JBCheckBox")) != on) studio.click("Show touches", "JBCheckBox")
+    /** Clicks Mirror, sets [options] in its dialog, then starts from the dialog. */
+    private fun startMirroring(options: (ContainerFixture) -> Unit = {}) {
+        studio.click("Start mirroring")
+        val dialog = studio.dialog(START_DIALOG)
+        options(dialog)
+        studio.dialogButton(dialog, "Start mirroring").click()
     }
+
+    private fun editOptionsWithoutStarting(options: (ContainerFixture) -> Unit) {
+        studio.click("Start mirroring")
+        val dialog = studio.dialog(START_DIALOG)
+        options(dialog)
+        studio.dialogButton(dialog, "Cancel").click()
+    }
+
+    private fun setShowTouches(dialog: ContainerFixture, on: Boolean) {
+        val box = option(dialog, "Show touches", "JBCheckBox")
+        if (studio.isSelected(box) != on) box.click()
+    }
+
+    /** The options live in the start dialog, outside the tool window [Studio.byName] searches. */
+    private fun option(dialog: ContainerFixture, name: String, cls: String): ComponentFixture =
+        dialog.find(ComponentFixture::class.java, byXpath(studio.xpathByName(name, cls)), E2eConfig.deviceTimeout(15))
 
     private fun awaitNewFile(suffix: String, timeout: Duration): File {
         var found: File? = null
@@ -189,4 +218,8 @@ class CaptureAndMirroringE2ETest : E2eTest() {
         .filter { it.info().command().orElse("").endsWith("/scrcpy") && it.isAlive }
         .toList()
         .also { TimeUnit.MILLISECONDS.sleep(0) }
+
+    private companion object {
+        const val START_DIALOG = "Start Mirroring"
+    }
 }

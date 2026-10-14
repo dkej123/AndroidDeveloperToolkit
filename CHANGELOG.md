@@ -4,6 +4,14 @@ All notable changes to Device Cockpit for Android (formerly ADB Toolbox). Each r
 the Marketplace change notes and the GitHub release notes are generated from it
 (`release/README.md`).
 
+## [Unreleased]
+
+### Changed
+- **Mirror opens a dialog**: clicking Mirror shows the mirroring options (resolution, bitrate, stay
+  awake, show touches, screen off) with a Start mirroring button; the arrow under Mirror is gone.
+  While mirroring, the button still stops it at once, and the keyboard shortcut starts straight away
+  with the saved options.
+
 ## [1.4.0] - 2026-10-13
 
 ### Added

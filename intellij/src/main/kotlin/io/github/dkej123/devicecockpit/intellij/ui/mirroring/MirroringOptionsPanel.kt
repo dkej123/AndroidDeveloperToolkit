@@ -28,9 +28,9 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.withContext
 
 /**
- * The Screen section's inline "Mirroring options" panel (design §3, opened from the Mirror split
- * button's caret), replacing the former options dialog. Every change applies at once through
- * [MirroringOptionsViewModel] — there is no OK button — and, like before, only affects the next
+ * The "Mirroring options" panel, shown in [MirroringStartDialog] when the Mirror button is clicked
+ * while idle (user request 2026-10-14). Every change applies at once through
+ * [MirroringOptionsViewModel] — the dialog only starts mirroring, Cancel keeps them — and only affects the next
  * scrcpy start ("applies on next start" while a session runs).
  *
  * `mirOptsPanelStyle`: 10px side margin, `header` fill, 1px `border`, radius 5, padding 8 0 10,
