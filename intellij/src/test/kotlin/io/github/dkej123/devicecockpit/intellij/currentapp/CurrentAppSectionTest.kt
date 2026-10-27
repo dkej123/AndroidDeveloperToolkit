@@ -124,6 +124,37 @@ class CurrentAppSectionTest : BasePlatformTestCase() {
         }
     }
 
+    fun `test app tools is a full width button below actions and every part opens details`() {
+        val s = section()
+        s.update(CurrentAppViewState(display = app(), deviceOnline = true))
+        val button = s.detailsLinkForTest
+        assertEquals("App tools & details", button.accessibleContext.accessibleName)
+        assertEquals("Deep links · Permissions · Shared prefs · Databases", button.accessibleContext.accessibleDescription)
+        assertTrue(button.isFocusable)
+        for (width in listOf(300, 380, 560)) {
+            s.setSize(width, 2_000)
+            layoutTree(s)
+            s.setSize(width, s.preferredSize.height)
+            layoutTree(s)
+            val bounds = SwingUtilities.convertRectangle(button.parent, button.bounds, s)
+            val restart = SwingUtilities.convertRectangle(s.primaryButtonForTest.parent, s.primaryButtonForTest.bounds, s)
+            val reset = SwingUtilities.convertRectangle(s.resetPermissionsButtonForTest.parent, s.resetPermissionsButtonForTest.bounds, s)
+            val destructive = SwingUtilities.convertRectangle(s.clearDataButtonForTest.parent, s.clearDataButtonForTest.bounds, s)
+            assertEquals(restart.x, bounds.x)
+            assertEquals(width - 2 * bounds.x, bounds.width)
+            assertTrue("The tools bar must be below every action", bounds.y >= reset.y + reset.height)
+            assertTrue("The tools bar must be above destructive actions", bounds.y + bounds.height <= destructive.y)
+            for (x in listOf(2, button.width / 2, button.width - 3)) {
+                val y = button.height / 2
+                button.dispatchEvent(java.awt.event.MouseEvent(button, java.awt.event.MouseEvent.MOUSE_PRESSED, 0, 0, x, y, 1, false, java.awt.event.MouseEvent.BUTTON1))
+                button.dispatchEvent(java.awt.event.MouseEvent(button, java.awt.event.MouseEvent.MOUSE_RELEASED, 0, 0, x, y, 1, false, java.awt.event.MouseEvent.BUTTON1))
+            }
+        }
+        assertEquals(List(9) { "com.acme.shop" }, details)
+        s.update(CurrentAppViewState(display = CurrentAppDisplay.Locked, deviceOnline = true))
+        assertFalse(button.parent.isVisible)
+    }
+
     fun `test the process time keeps counting between polls`() {
         val clock = kotlin.time.TestTimeSource()
         val s = section()

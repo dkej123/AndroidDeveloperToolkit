@@ -4,6 +4,15 @@ All notable changes to Device Cockpit for Android (formerly ADB Toolbox). Each r
 the Marketplace change notes and the GitHub release notes are generated from it
 (`release/README.md`).
 
+## [1.4.2] - 2026-10-27
+
+### Changed
+- **App tools & details**: a full-width clickable bar in Current app opens the app's details,
+  listing Deep links, Permissions, Shared prefs and Databases.
+
+### Fixed
+- Added spacing below the back link on the app details page.
+
 ## [1.4.1] - 2026-10-14
 
 ### Changed

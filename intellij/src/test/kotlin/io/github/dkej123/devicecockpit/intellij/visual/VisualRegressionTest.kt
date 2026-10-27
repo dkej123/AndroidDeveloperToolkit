@@ -217,7 +217,7 @@ class VisualRegressionTest : BasePlatformTestCase() {
             }
         }),
         // Current app with a debuggable app in front (design §3a).
-        Scenario("device-current-app-dark-dock", 380, 360, dark = true, selected = ViewId.Device, view = {
+        Scenario("device-current-app-dark-dock", 380, 420, dark = true, selected = ViewId.Device, view = {
             io.github.dkej123.devicecockpit.intellij.currentapp.CurrentAppSection(
                 identity = { io.github.dkej123.devicecockpit.intellij.currentapp.AppIdentity("Acme Shop", null) },
                 onAction = { _, _ -> }, onDetails = {}, onRefresh = {}, onResetPermission = { _, _ -> },
