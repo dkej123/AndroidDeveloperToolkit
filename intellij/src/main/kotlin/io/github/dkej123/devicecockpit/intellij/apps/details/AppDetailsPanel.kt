@@ -115,7 +115,9 @@ class AppDetailsPanel(
             JBUI.Borders.empty(DeviceCockpitTheme.Spacing.s3, 0),
         )
         val spacer = flexSpacer()
-        add(flexRow(DeviceCockpitTheme.Spacing.s3, backLink, spacer, refreshLink, fill = spacer).apply { border = inset() })
+        add(flexRow(DeviceCockpitTheme.Spacing.s3, backLink, spacer, refreshLink, fill = spacer).apply {
+            border = JBUI.Borders.empty(0, DeviceCockpitTheme.Spacing.sectionInset, DeviceCockpitTheme.Spacing.s4, DeviceCockpitTheme.Spacing.sectionInset)
+        })
         val titles = JPanel().apply {
             layout = BoxLayout(this, BoxLayout.Y_AXIS)
             isOpaque = false

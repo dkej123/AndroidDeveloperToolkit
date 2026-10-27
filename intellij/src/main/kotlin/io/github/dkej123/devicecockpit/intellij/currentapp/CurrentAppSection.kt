@@ -20,6 +20,7 @@ import io.github.dkej123.devicecockpit.intellij.ui.common.DesignButtonStyle
 import io.github.dkej123.devicecockpit.intellij.ui.common.DesignSections
 import io.github.dkej123.devicecockpit.intellij.ui.common.RoundedSurface
 import io.github.dkej123.devicecockpit.intellij.ui.common.WrapRowLayout
+import io.github.dkej123.devicecockpit.intellij.ui.common.VerticalStackLayout
 import io.github.dkej123.devicecockpit.intellij.ui.common.flexRow
 import io.github.dkej123.devicecockpit.intellij.ui.common.flexSpacer
 import java.awt.BasicStroke
@@ -128,26 +129,23 @@ class CurrentAppSection(
     /** Reset permissions' caret: all granted permissions, or one of them (task 067). */
     private val resetMoreButton = iconButton(AllIcons.General.ChevronDown, "Reset one permission…") { showResetPopup(it) }.apply { getAccessibleContext().accessibleName = "Choose permissions to reset" }
 
-    private val detailsLink = DesignButton("Details", DesignButtonStyle.LINK).apply {
+    private val detailsLink = AppToolsDetailsButton().apply {
         addActionListener { target?.let(onDetails) }
     }
-    // The buttons wrap onto a second row in a narrow tool window; Details stays at the trailing edge.
-    private val actionRow = JPanel(BorderLayout(DeviceCockpitTheme.Spacing.s3, 0)).apply {
+    private val detailsRow = JPanel(BorderLayout()).apply {
+        isOpaque = false
+        border = JBUI.Borders.empty(0, DeviceCockpitTheme.Spacing.sectionInset)
+        add(detailsLink, BorderLayout.CENTER)
+    }
+    // The buttons wrap onto a second row in a narrow tool window.
+    private val actionRow = JPanel(WrapRowLayout(DeviceCockpitTheme.Spacing.s3, DeviceCockpitTheme.Spacing.s2)).apply {
         isOpaque = false
         alignmentX = Component.LEFT_ALIGNMENT
         border = JBUI.Borders.empty(0, DeviceCockpitTheme.Spacing.sectionInset)
-        add(JPanel(WrapRowLayout(DeviceCockpitTheme.Spacing.s3, DeviceCockpitTheme.Spacing.s2)).apply {
-            isOpaque = false
-            add(primaryButton)
-            add(killButton)
-            add(processDeathButton)
-            add(flexRow(0, resetPermissionsButton, resetMoreButton))
-        }, BorderLayout.CENTER)
-        add(JPanel(BorderLayout()).apply {
-            isOpaque = false
-            // As tall as a button, so the link lines up with the first row.
-            add(flexRow(0, javax.swing.Box.createRigidArea(Dimension(0, primaryButton.preferredSize.height)), detailsLink), BorderLayout.NORTH)
-        }, BorderLayout.EAST)
+        add(primaryButton)
+        add(killButton)
+        add(processDeathButton)
+        add(flexRow(0, resetPermissionsButton, resetMoreButton))
     }
 
     private val clearDataButton = DesignButton("Clear data", DesignButtonStyle.DANGER).apply {
@@ -219,8 +217,13 @@ class CurrentAppSection(
         listOf(46, 70).forEach { add(Bar(it)); add(javax.swing.Box.createVerticalStrut(JBUIScale.scale(6))) }
     }
 
-    private val section = DesignSections.section(header, skeleton, identityRow, errorBlock, factsPanel, helpLabel, actionRow, noteRow, destructiveZone)
-        .also { DesignSections.makeCollapsible(it, "app", titleLabel) }
+    private val section = DesignSections.section().apply {
+        layout = VerticalStackLayout { DeviceCockpitTheme.Spacing.s3 }
+        listOf(header, skeleton, identityRow, errorBlock, factsPanel, helpLabel, actionRow, detailsRow, noteRow, destructiveZone).forEach(::add)
+    }.also {
+        DesignSections.makeCollapsible(it, "app", titleLabel)
+        (it.components.last() as JPanel).layout = VerticalStackLayout { DeviceCockpitTheme.Spacing.s3 }
+    }
 
     init {
         isOpaque = false
@@ -261,7 +264,7 @@ class CurrentAppSection(
         val display = state.display
         val busy = state.busy
         updateMeta(state)
-        listOf(skeleton, identityRow, errorBlock, factsPanel, helpLabel, actionRow, noteRow, destructiveZone).forEach { it.isVisible = false }
+        listOf(skeleton, identityRow, errorBlock, factsPanel, helpLabel, actionRow, detailsRow, noteRow, destructiveZone).forEach { it.isVisible = false }
         target = null
         shownProcess = null
         processTicker.stop()
@@ -365,6 +368,7 @@ class CurrentAppSection(
         identityRow.isVisible = true
         factsPanel.isVisible = true
         actionRow.isVisible = true
+        detailsRow.isVisible = true
         destructiveZone.isVisible = true
         tile.set(identity?.icon, debuggable = details?.debuggable == true, dashed = false, dimmed = display.killed)
         labelLabel.text = if (display.systemUi) "System UI" else identity?.label ?: pkg.substringAfterLast('.').replaceFirstChar(Char::uppercase)
@@ -416,7 +420,7 @@ class CurrentAppSection(
         killButton.toolTipText = if (display.killed) "Not running" else "am force-stop — leaves data intact"
         processDeathButton.text = if (busy == CurrentAppAction.ProcessDeath) "Killing in background…" else "Process death"
         resetPermissionsButton.text = if (busy == CurrentAppAction.ResetPermissions) "Resetting…" else "Reset permissions"
-        detailsLink.toolTipText = "Open App details for $pkg — Info, Shared prefs, Databases"
+        detailsLink.toolTipText = "Open App details for $pkg — Deep links, Permissions, Shared prefs, Databases"
 
         val idle = busy == null
         val actionsOff = display.systemUi
