@@ -24,7 +24,7 @@ permissions:
 jobs:
   publish:
     name: Publish to JetBrains Marketplace
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
@@ -80,3 +80,10 @@ jobs:
             CHANNEL_ARGUMENT+=("-PmarketplaceChannel=$MARKETPLACE_CHANNEL")
           fi
           ./gradlew :intellij:publishPlugin --stacktrace "${CHANNEL_ARGUMENT[@]}"
+
+      - name: Upload release ZIP
+        uses: actions/upload-artifact@v4
+        with:
+          name: device-cockpit-1.4.2
+          path: intellij/build/distributions/adb-toolbox-1.4.2.zip
+          retention-days: 7
