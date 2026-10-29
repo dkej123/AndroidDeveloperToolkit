@@ -46,14 +46,25 @@ class CurrentAppUseCase(
      * [refreshDetails] re-reads the package (version, runtime permissions) even when the same app stays in front: a
      * manual refresh or the Reset permissions menu must see permissions granted meanwhile in App details or on the phone.
      */
-    suspend fun read(serial: DeviceSerial, previous: CurrentAppSnapshot? = null, refreshDetails: Boolean = false): CurrentAppSnapshot {
+    /**
+     * [stoppedApp]: the app we stopped (Reset permissions, Clear data) while the launcher is in front. It is still shown,
+     * so a refresh re-reads its details too — its permission list changed with the stop.
+     */
+    suspend fun read(
+        serial: DeviceSerial,
+        previous: CurrentAppSnapshot? = null,
+        refreshDetails: Boolean = false,
+        stoppedApp: String? = null,
+    ): CurrentAppSnapshot {
         val launcher = launchers.getOrPut(serial) { HomeActivityCommand.parse(transport.executeText(HomeActivityCommand.request(serial))) }
         val foreground = ForegroundAppCommand.parse(transport.executeText(ForegroundAppCommand.request(serial)), launcher)
         val app = when (foreground) {
             is ForegroundState.App -> foreground
             is ForegroundState.SystemUi -> foreground.behind
             else -> null
-        } ?: return CurrentAppSnapshot(foreground)
+        } ?: return CurrentAppSnapshot(foreground, details = stoppedApp?.takeIf { refreshDetails }?.let { pkg ->
+            PackageDetailsCommand.parse(transport.executeText(PackageDetailsCommand.request(serial, pkg)), pkg)
+        })
         val previousApp = (previous?.foreground as? ForegroundState.App) ?: (previous?.foreground as? ForegroundState.SystemUi)?.behind
         val samePackage = previousApp?.packageName == app.packageName
         val details = if (samePackage && previous?.details != null && !refreshDetails) {
@@ -75,6 +86,19 @@ class CurrentAppUseCase(
         if (previous?.pid == pid) return previous
         val elapsed = ProcessInfoCommand.parseElapsed(transport.executeText(ProcessInfoCommand.elapsedRequest(serial, pid)))
         return ProcessInfo(pid, elapsed, timeSource.markNow())
+    }
+
+    /** Grants one runtime permission (`pm grant`); `null` when done, else why not (user request, 2026-10-29). */
+    suspend fun grantPermission(serial: DeviceSerial, packageName: String, permission: String, userId: Int = 0): String? {
+        val result = transport.executeText(io.github.dkej123.devicecockpit.domain.appdata.PermissionCommands.grant(serial, packageName, permission, userId))
+        // ddmlib merges stderr into stdout and reports no exit code: a failure shows up as an exception message.
+        val output = (result.stderr + "\n" + result.stdout).trim()
+        return when {
+            result.outcome !is AdbOutcome.Completed -> "pm grant $permission failed"
+            output.contains("Exception") || ((result.outcome as AdbOutcome.Completed).exitCode ?: 0) != 0 ->
+                output.lineSequence().firstOrNull { it.isNotBlank() } ?: "pm grant $permission failed"
+            else -> null
+        }
     }
 
     /** Revokes every granted runtime permission, or only [permission] when given (task 067). */

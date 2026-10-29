@@ -39,6 +39,7 @@ private class Dispatchers(d: CoroutineDispatcher) : DispatcherProvider {
 private class Phone(var front: String = "com.acme.shop", var running: Boolean = true) {
     val commands = mutableListOf<String>()
     val granted = mutableListOf("android.permission.CAMERA")
+    val requested get() = (listOf("android.permission.CAMERA", "android.permission.ACCESS_COARSE_LOCATION") + granted).distinct()
     var queries = 0
 
     fun transport() = FakeAdbTransport(textScript = { request ->
@@ -53,8 +54,14 @@ private class Phone(var front: String = "com.acme.shop", var running: Boolean = 
                 val component = if (front == "home") "com.launcher/.Home" else "$front/.Main"
                 ok("  topResumedActivity=ActivityRecord{1 u0 $component t1}\n--adbtoolbox-window--\n")
             }
-            line.startsWith("dumpsys package") -> ok("Packages:\n  Package [$front] (1):\n    versionCode=1 minSdk=26 targetSdk=36\n    versionName=1.0\n    runtime permissions:\n" +
-                granted.joinToString("") { "      $it: granted=true\n" })
+            line.startsWith("dumpsys package") -> {
+                val pkg = line.substringAfter("dumpsys package ").trim('\'')
+                ok("Packages:\n  Package [$pkg] (1):\n    versionCode=1 minSdk=26 targetSdk=36\n    versionName=1.0\n    runtime permissions:\n" +
+                    requested.joinToString("") { "      $it: granted=${it in granted}\n" })
+            }
+            line.startsWith("pm grant") -> { granted += line.substringAfterLast(' ').trim('\''); ok() }
+            // Revoking a runtime permission kills the app; the phone shows the launcher again.
+            line.startsWith("pm revoke") -> { granted -= line.substringAfterLast(' ').trim('\''); running = false; front = "home"; ok() }
             line.startsWith("pidof") -> if (running) ok("4242") else AdbTextResult(AdbOutcome.Completed(1), "", "")
             line.startsWith("ps -o") -> ok("00:05")
             line.startsWith("am force-stop") -> { running = false; front = "home"; ok() }
@@ -228,10 +235,36 @@ class CurrentAppViewModelTest {
         scope.runCurrent()
         collector.cancel()
         fun permissions(state: CurrentAppViewState) =
-            (state.display as? CurrentAppDisplay.App)?.snapshot?.details?.runtimePermissions?.map { it.name }.orEmpty()
+            (state.display as? CurrentAppDisplay.App)?.snapshot?.details?.runtimePermissions?.filter { it.granted }?.map { it.name }.orEmpty()
         permissions(vm.state.value) shouldBe listOf("android.permission.CAMERA", "android.permission.ACCESS_FINE_LOCATION")
         val started = seen.indexOfFirst { it.refreshing }
         (started >= 0) shouldBe true
         seen.drop(started).filter { !it.refreshing }.forEach { permissions(it).size shouldBe 2 }
+    }
+
+    /** Reset of one permission kills the app; reopening the menu still said "granted" (user report, 2026-10-29). */
+    @Test
+    fun `after resetting one permission the stopped app shows it as denied`() {
+        phone.granted += "android.permission.ACCESS_COARSE_LOCATION"
+        scope.runCurrent()
+        vm.resetPermission("com.acme.shop", "android.permission.ACCESS_COARSE_LOCATION")
+        scope.testScheduler.advanceTimeBy(5_000); scope.runCurrent()
+        vm.refreshNow(); scope.runCurrent()
+        val display = vm.state.value.display as CurrentAppDisplay.App
+        display.killed shouldBe true
+        display.snapshot.details?.runtimePermissions?.associate { it.name to it.granted } shouldBe
+            mapOf("android.permission.CAMERA" to true, "android.permission.ACCESS_COARSE_LOCATION" to false)
+    }
+
+    /** Denied permissions can be granted from the same menu, without opening App details (user request, 2026-10-29). */
+    @Test
+    fun `granting a denied permission from Current app shows it granted`() {
+        scope.runCurrent()
+        vm.grantPermission("com.acme.shop", "android.permission.ACCESS_COARSE_LOCATION")
+        scope.testScheduler.advanceTimeBy(5_000); scope.runCurrent()
+        phone.commands.any { it.startsWith("pm grant") && it.endsWith("'android.permission.ACCESS_COARSE_LOCATION'") } shouldBe true
+        val display = vm.state.value.display as CurrentAppDisplay.App
+        display.snapshot.details?.runtimePermissions?.first { it.name == "android.permission.ACCESS_COARSE_LOCATION" }?.granted shouldBe true
+        events.last() shouldBe CurrentAppEvent.Done("Granted Access coarse location to com.acme.shop")
     }
 }

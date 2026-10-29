@@ -33,7 +33,7 @@ import kotlinx.coroutines.sync.withLock
 /** An action of the Current app section (design §3a). */
 private const val POINTER_IDLE_MS = 2_000L
 
-enum class CurrentAppAction { Restart, Launch, Kill, ProcessDeath, ResetPermissions, ClearData, Uninstall }
+enum class CurrentAppAction { Restart, Launch, Kill, ProcessDeath, ResetPermissions, GrantPermission, ClearData, Uninstall }
 
 /** What is shown (design §3a states). */
 sealed interface CurrentAppDisplay {
@@ -193,7 +193,7 @@ class CurrentAppViewModel(
         val serial = eligibleSerial() ?: return@launch
         queryLock.withLock {
             _state.update { it.copy(refreshing = true) }
-            val snapshot = runCatching { currentApp.read(serial, lastSnapshot, refreshDetails = manual) }.getOrElse {
+            val snapshot = runCatching { currentApp.read(serial, lastSnapshot, refreshDetails = manual, stoppedApp = killedPackage) }.getOrElse {
                 CurrentAppSnapshot(ForegroundState.Unknown(it.message ?: "adb error"))
             }
             if (eligibleSerial() != serial) return@withLock
@@ -250,7 +250,7 @@ class CurrentAppViewModel(
                 val killed = killedPackage
                 val previous = (_state.value.display as? CurrentAppDisplay.App)?.takeIf { it.app.packageName == killed }
                 if (killed != null && previous != null) {
-                    previous.copy(killed = true, snapshot = previous.snapshot.copy(process = null))
+                    previous.copy(killed = true, snapshot = previous.snapshot.copy(process = null, details = snapshot.details ?: previous.snapshot.details))
                 } else {
                     CurrentAppDisplay.Home(f.launcherPackage, lastApp)
                 }
@@ -279,6 +279,9 @@ class CurrentAppViewModel(
 
     /** Resets one runtime permission of [packageName] (task 067); Reset permissions without a choice resets all. */
     fun resetPermission(packageName: String, permission: String) = perform(CurrentAppAction.ResetPermissions, packageName, permission)
+
+    /** Grants a denied runtime permission from the Reset permissions menu, without opening App details. */
+    fun grantPermission(packageName: String, permission: String) = perform(CurrentAppAction.GrantPermission, packageName, permission)
 
     private fun perform(action: CurrentAppAction, packageName: String, permission: String?) {
         val serial = eligibleSerial() ?: return
@@ -330,6 +333,14 @@ class CurrentAppViewModel(
                 },
             ).also { if (r.revoked > 0) killed(pkg) }
             is PermissionResetResult.Failed -> CurrentAppEvent.Failed(r.reason, pkg)
+        }
+        CurrentAppAction.GrantPermission -> {
+            val name = permission.orEmpty()
+            val readable = name.substringAfterLast('.').lowercase().replace('_', ' ').replaceFirstChar(Char::uppercase)
+            when (val failure = currentApp.grantPermission(serial, pkg, name)) {
+                null -> CurrentAppEvent.Done("Granted $readable to $pkg")
+                else -> CurrentAppEvent.Failed("Couldn’t grant $readable — $failure", pkg)
+            }
         }
         CurrentAppAction.ClearData -> when (val r = clearData.clearData(serial, pkg)) {
             ClearDataResult.Success -> CurrentAppEvent.Done("Data cleared for $pkg").also { killed(pkg) }

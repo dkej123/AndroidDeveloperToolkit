@@ -12,10 +12,14 @@ import io.github.dkej123.devicecockpit.domain.foreground.RuntimePermission
 import javax.swing.SwingUtilities
 import kotlin.time.Duration.Companion.seconds
 
+import javax.swing.JPanel
+import javax.swing.JLabel
+
 class CurrentAppSectionTest : BasePlatformTestCase() {
     private val actions = mutableListOf<Pair<CurrentAppAction, String>>()
     private val details = mutableListOf<String>()
     private val resets = mutableListOf<Pair<String, String>>()
+    private val grants = mutableListOf<Pair<String, String>>()
     private var refreshes = 0
 
     private fun section() = CurrentAppSection(
@@ -24,6 +28,7 @@ class CurrentAppSectionTest : BasePlatformTestCase() {
         onDetails = { details += it },
         onRefresh = { refreshes++ },
         onResetPermission = { pkg, permission -> resets += pkg to permission },
+        onGrantPermission = { pkg, permission -> grants += pkg to permission },
         onApplyPending = {},
         onWake = {},
         onLaunchLast = {},
@@ -269,20 +274,121 @@ class CurrentAppSectionTest : BasePlatformTestCase() {
             ),
         )
 
-        // Every runtime permission with its state, so a reset one stays listed as denied (user request, 2026-10-29).
+        // Every runtime permission with the App details state chip; a granted one resets, a denied one grants
+        // (user requests, 2026-10-29).
         val items = s.resetChoicesForTest()
-        assertEquals(
-            listOf("All granted permissions (2)", "Camera · granted", "Access fine location · granted", "Record audio · denied"),
-            items.map { it.label },
-        )
+        assertEquals(listOf("All granted permissions (2)", "Camera", "Access fine location", "Record audio"), items.map { it.label })
+        assertEquals(listOf(null, "Granted", "Granted", "Denied"), items.map { it.state })
         assertEquals(listOf(false, true, false, false), items.map { it.separatorAbove })
-        assertEquals("android.permission.CAMERA", items[1].description)
+        assertEquals("android.permission.CAMERA — click to reset", items[1].description)
         assertFalse("Fixed by a policy", items[2].enabled)
-        assertFalse("Nothing to revoke", items[3].enabled)
-        assertEquals("android.permission.RECORD_AUDIO — not granted", items[3].description)
+        assertTrue("A denied permission can be granted", items[3].enabled)
+        assertEquals("android.permission.RECORD_AUDIO — click to grant", items[3].description)
+        items[3].run()
+        assertEquals(listOf("com.acme.shop" to "android.permission.RECORD_AUDIO"), grants)
         items[1].run()
         items[0].run()
         assertEquals(listOf("com.acme.shop" to "android.permission.CAMERA"), resets)
         assertEquals(listOf(CurrentAppAction.ResetPermissions to "com.acme.shop"), actions)
+    }
+
+    fun `test the state chip icon paints the App details chip`() {
+        val image = java.awt.image.BufferedImage(200, 60, java.awt.image.BufferedImage.TYPE_INT_ARGB)
+        val g = image.createGraphics()
+        try {
+            var x = 0
+            for (state in listOf("Granted", "Granted once", "Denied")) {
+                val icon = StateChipIcon(state)
+                icon.paintIcon(null, g, 0, x)
+                x += icon.iconHeight + 4
+            }
+        } finally { g.dispose() }
+        java.nio.file.Files.createDirectories(java.nio.file.Path.of("build"))
+        javax.imageio.ImageIO.write(image, "png", java.nio.file.Path.of("build", "permission-chips.png").toFile())
+        assertTrue((0 until 60).any { x -> (0 until 15).any { y -> image.getRGB(x, y) ushr 24 != 0 } })
+        assertEquals(StateChipIcon("Denied").iconWidth, StateChipIcon("Granted once").iconWidth)
+    }
+
+    /** Names were cut off: the list popup measured the text only, not the chip in front of it (user screenshot). */
+    fun `test the permissions popup is wide enough for the chip and the longest name`() {
+        val s = section()
+        s.update(CurrentAppViewState(display = app(permissions = listOf(
+            RuntimePermission("android.permission.READ_EXTERNAL_STORAGE", granted = false, flags = emptySet()),
+            RuntimePermission("android.permission.CAMERA", granted = true, flags = setOf("ONE_TIME")),
+        )), deviceOnline = true))
+        val choices = s.resetChoicesForTest()
+        val metrics = s.getFontMetrics(com.intellij.util.ui.JBUI.Fonts.label())
+        assertTrue(s.resetPopupWidth(choices) >= metrics.stringWidth("Read external storage") + StateChipIcon("Granted once").iconWidth)
+    }
+
+    /** The state chip is on the right of the name (user request), on every row of the IDE list popup. */
+    fun `test the permissions popup shows the state chip right of the name`() {
+        val s = section()
+        s.update(CurrentAppViewState(display = app(permissions = listOf(
+            RuntimePermission("android.permission.POST_NOTIFICATIONS", granted = false, flags = emptySet()),
+            RuntimePermission("android.permission.CAMERA", granted = true, flags = setOf("ONE_TIME")),
+        )), deviceOnline = true))
+        val choices = s.resetChoicesForTest()
+        val list = javax.swing.JList(choices.toTypedArray<Any?>())
+        val renderer = permissionRowRenderer()
+        val width = s.resetPopupWidth(choices)
+        val image = java.awt.image.BufferedImage(width, 200, java.awt.image.BufferedImage.TYPE_INT_ARGB)
+        val g = image.createGraphics()
+        var y = 0
+        try {
+            choices.forEachIndexed { index, choice ->
+                val row = renderer.getListCellRendererComponent(list, choice, index, index == 1, false) as java.awt.Container
+                row.setSize(width, row.preferredSize.height)
+                fun layout(c: java.awt.Container) { c.doLayout(); c.components.filterIsInstance<java.awt.Container>().forEach(::layout) }
+                layout(row)
+                val gr = g.create(0, y, width, row.height); try { row.printAll(gr) } finally { gr.dispose() }
+                fun allLabels(c: java.awt.Container): List<JLabel> = c.components.flatMap { child ->
+                    (if (child is JLabel) listOf(child) else emptyList()) + if (child is java.awt.Container && child !is JLabel) allLabels(child) else emptyList()
+                }
+                allLabels((row as PermissionRow).item).firstOrNull { it.icon == null && it.text == choice.label }?.let { name ->
+                    assertTrue("The name is not cut: ${choice.label}", name.width >= name.preferredSize.width)
+                }
+                if (index == 1) {
+                    // The selection covers the whole item line, chip included, and not the header above it.
+                    val item = (row as PermissionRow).item
+                    val selectionRgb = list.selectionBackground.rgb
+                    assertEquals(selectionRgb, image.getRGB(item.x + item.width - 3, y + item.y + item.height / 2))
+                    assertFalse(image.getRGB(item.x + item.width - 3, y + 2) == selectionRgb)
+                }
+                val item = (row as PermissionRow).item
+                if (choice.state != null) {
+                    fun labels(c: java.awt.Container): List<JLabel> = c.components.flatMap { child ->
+                        (if (child is JLabel) listOf(child) else emptyList()) + if (child is java.awt.Container && child !is JLabel) labels(child) else emptyList()
+                    }
+                    val chip = labels(item).single { it.icon is StateChipIcon }
+                    val name = labels(item).first { it.icon == null }
+                    val chipX = javax.swing.SwingUtilities.convertPoint(chip, 0, 0, item).x
+                    assertTrue("Chip right of the name", chipX > name.x + name.preferredSize.width / 2)
+                }
+                y += row.height
+            }
+        } finally { g.dispose() }
+        javax.imageio.ImageIO.write(image.getSubimage(0, 0, width, y), "png", java.nio.file.Path.of("build", "permissions-popup.png").toFile())
+    }
+
+    /** What a click does is shown on the highlighted row, and the caret says it grants too (user request, 2026-10-29). */
+    fun `test the highlighted row says whether a click grants or resets`() {
+        val s = section()
+        s.update(CurrentAppViewState(display = app(permissions = listOf(
+            RuntimePermission("android.permission.POST_NOTIFICATIONS", granted = false, flags = emptySet()),
+            RuntimePermission("android.permission.CAMERA", granted = true, flags = emptySet()),
+            RuntimePermission("android.permission.ACCESS_FINE_LOCATION", granted = true, flags = setOf("POLICY_FIXED")),
+        )), deviceOnline = true))
+        assertEquals("Grant or reset one permission…", s.resetMoreButtonForTest.toolTipText)
+        val choices = s.resetChoicesForTest()
+        assertEquals(listOf("Reset", "Grant", "Reset", null), choices.map { it.action })
+        val list = javax.swing.JList(choices.toTypedArray<Any?>())
+        val renderer = permissionRowRenderer()
+        fun hint(index: Int, selected: Boolean) = (renderer.getListCellRendererComponent(list, choices[index], index, selected, false) as PermissionRow).hint
+        assertEquals("Grant", hint(1, selected = true)?.text)
+        assertNull("Only the highlighted row shows the action", hint(1, selected = false))
+        assertEquals("Reset", hint(2, selected = true)?.text)
+        assertEquals("A fixed one says so, highlighted or not", "Fixed", hint(3, selected = false)?.text)
+        assertEquals("Click a permission to grant or reset it", PERMISSIONS_POPUP_HINT)
     }
 }

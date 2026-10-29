@@ -18,6 +18,9 @@ the Marketplace change notes and the GitHub release notes are generated from it
   chooser, delivery to an already running activity (with a one-click Cold start), and adb errors with the
   raw output to copy. A warning explains that a specific app skips App Link verification.
 - **Cold start** option (`am start -S`) for deep links.
+- **Permissions menu in Current app**: the Reset permissions caret lists every runtime permission with the App details
+  state chip (Granted, Granted once, Denied). Click a denied one to grant it, a granted one to reset it; the
+  highlighted row says which, and permissions fixed by the system or a policy are marked Fixed.
 - Copy report in the Device section now confirms with a toast.
 
 ### Changed
@@ -29,9 +32,8 @@ the Marketplace change notes and the GitHub release notes are generated from it
 ### Fixed
 - Launch, Restart and Process death opened a random launcher activity when an app declares several (for example
   LeakCanary's); they now open the app's main launcher activity, as tapping its icon does.
-- Reset permissions listed only the permissions granted when the app came to the front; the menu and Refresh now
-  read them again, so permissions granted meanwhile (in App details or on the phone) show up. The menu lists every
-  runtime permission with its state (granted / denied), so one you reset stays listed as denied.
+- Reset permissions listed only the permissions granted when the app came to the front, and still showed a permission
+  as granted after resetting it; the menu and Refresh now read them again from the phone.
 - TalkBack could not be turned on in Android Studio, and turning it on or off no longer switches off other
   accessibility services.
 - The app list, labels and icons load as soon as the phone is connected at IDE start, not only after

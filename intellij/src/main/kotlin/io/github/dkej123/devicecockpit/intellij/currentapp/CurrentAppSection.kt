@@ -33,10 +33,13 @@ import java.awt.Graphics2D
 import java.awt.GridLayout
 import java.awt.RenderingHints
 import javax.swing.BorderFactory
+import javax.swing.Icon
 import javax.swing.BoxLayout
 import javax.swing.JButton
 import javax.swing.JComponent
+import javax.swing.JLabel
 import javax.swing.JPanel
+import javax.swing.SwingConstants
 import kotlin.time.Duration
 
 /** What the section shows of an app: its label and launcher icon when the Apps list resolved them. */
@@ -52,6 +55,7 @@ class CurrentAppSection(
     private val onDetails: (String) -> Unit,
     private val onRefresh: () -> Unit,
     private val onResetPermission: (String, String) -> Unit,
+    private val onGrantPermission: (String, String) -> Unit,
     private val onApplyPending: () -> Unit,
     private val onWake: () -> Unit,
     private val onLaunchLast: (String) -> Unit,
@@ -127,7 +131,7 @@ class CurrentAppSection(
     private var permissions: List<RuntimePermission> = emptyList()
 
     /** Reset permissions' caret: all granted permissions, or one of them (task 067). */
-    private val resetMoreButton = iconButton(AllIcons.General.ChevronDown, "Reset one permission…") { requestResetMenu(it) }.apply { getAccessibleContext().accessibleName = "Choose permissions to reset" }
+    private val resetMoreButton = iconButton(AllIcons.General.ChevronDown, "Grant or reset one permission…") { requestResetMenu(it) }.apply { getAccessibleContext().accessibleName = "Grant or reset permissions" }
 
     private val detailsLink = AppToolsDetailsButton().apply {
         addActionListener { target?.let(onDetails) }
@@ -313,6 +317,10 @@ class CurrentAppSection(
         val description: String,
         val enabled: Boolean,
         val separatorAbove: Boolean,
+        /** The App details state chip ("Granted", "Granted once", "Denied"); `null` for the "all" entry. */
+        val state: String? = null,
+        /** What a click does ("Grant", "Reset"), shown on the highlighted row; `null` when nothing can change. */
+        val action: String? = null,
         val run: () -> Unit,
     )
 
@@ -324,19 +332,31 @@ class CurrentAppSection(
             description = "Revokes every runtime permission and clears “Don’t ask again”",
             enabled = true,
             separatorAbove = false,
+            action = "Reset",
         ) { onAction(CurrentAppAction.ResetPermissions, pkg) }
-        // Every runtime permission with its state: a permission reset from here stays listed, now as denied.
+        // Every runtime permission with the App details state chip: a granted one resets, a denied one grants, so
+        // neither needs App details (user requests, 2026-10-29).
         return listOf(all) + permissions.mapIndexed { index, permission ->
             ResetChoice(
-                label = readablePermission(permission.name) + if (permission.granted) " · granted" else " · denied",
+                label = readablePermission(permission.name),
                 description = when {
-                    !permission.granted -> "${permission.name} — not granted"
-                    permission.fixed -> "${permission.name} — fixed by the system or a policy, can’t be revoked"
-                    else -> permission.name
+                    permission.fixed -> "${permission.name} — fixed by the system or a policy, can’t be changed"
+                    permission.granted -> "${permission.name} — click to reset"
+                    else -> "${permission.name} — click to grant"
                 },
-                enabled = permission.granted && !permission.fixed,
+                enabled = !permission.fixed,
                 separatorAbove = index == 0,
-            ) { onResetPermission(pkg, permission.name) }
+                state = when {
+                    !permission.granted -> "Denied"
+                    "ONE_TIME" in permission.flags -> "Granted once"
+                    else -> "Granted"
+                },
+                action = when {
+                    permission.fixed -> null
+                    permission.granted -> "Reset"
+                    else -> "Grant"
+                },
+            ) { if (permission.granted) onResetPermission(pkg, permission.name) else onGrantPermission(pkg, permission.name) }
         }
     }
 
@@ -362,24 +382,38 @@ class CurrentAppSection(
         openResetMenuForTest?.invoke(anchor) ?: showResetPopup(anchor)
     }
 
+    /** Widest name plus its state chip, the gap and the list's own padding. */
+    internal fun resetPopupWidth(choices: List<ResetChoice>): Int {
+        val metrics = getFontMetrics(com.intellij.util.ui.JBUI.Fonts.label())
+        // Room for the highlighted row's action word ("Grant" / "Reset" / "Fixed") too, so the name never gets cut.
+        val bold = getFontMetrics(com.intellij.util.ui.JBUI.Fonts.label().deriveFont(Font.BOLD))
+        val action = listOf("Grant", "Reset", "Fixed").maxOf(bold::stringWidth) + JBUIScale.scale(8)
+        return choices.maxOf { choice ->
+            metrics.stringWidth(choice.label) + action + (choice.state?.let { StateChipIcon(it).iconWidth + JBUIScale.scale(8) } ?: 0)
+        } + JBUIScale.scale(64)
+    }
+
     /** The IDE's own list popup, so it looks like every other chooser: title, separator, speed search. */
     private fun showResetPopup(anchor: JComponent) {
         val choices = resetChoices()
         if (choices.isEmpty()) return
-        val step = object : com.intellij.openapi.ui.popup.util.BaseListPopupStep<ResetChoice>("Reset permissions", choices) {
+        val step = object : com.intellij.openapi.ui.popup.util.BaseListPopupStep<ResetChoice>("Permissions", choices) {
             override fun getTextFor(value: ResetChoice) = value.label
+
 
             override fun isSelectable(value: ResetChoice) = value.enabled
 
-            override fun getSeparatorAbove(value: ResetChoice) =
-                if (value.separatorAbove) com.intellij.openapi.ui.popup.ListSeparator("One permission") else null
 
             override fun isSpeedSearchEnabled() = true
 
             override fun onChosen(selectedValue: ResetChoice, finalChoice: Boolean): com.intellij.openapi.ui.popup.PopupStep<*>? =
                 doFinalStep { selectedValue.run() }
         }
-        com.intellij.openapi.ui.popup.JBPopupFactory.getInstance().createListPopup(step).showUnderneathOf(anchor)
+        val popup = PermissionsListPopup(step)
+        popup.setAdText(PERMISSIONS_POPUP_HINT, SwingConstants.LEFT)
+        // The list popup sizes itself from the text alone; make room for the state chip after each name.
+        popup.setMinimumSize(Dimension(resetPopupWidth(choices), 0))
+        popup.showUnderneathOf(anchor)
     }
 
     private fun iconButton(icon: javax.swing.Icon, tooltip: String, action: (JButton) -> Unit): JButton = DesignIconButton(icon, tooltip).apply {
@@ -639,3 +673,112 @@ class CurrentAppSection(
 }
 
 private const val RESTART_FOREGROUND_ACTION = "AdbToolbox.RestartForegroundApp"
+
+/** The App details permission state chip ([io.github.dkej123.devicecockpit.intellij.apps.details.Tag]) as a list icon. */
+internal class StateChipIcon(private val state: String) : Icon {
+    private val chip = io.github.dkej123.devicecockpit.intellij.apps.details.Tag(
+        state,
+        if (state == "Denied") DeviceCockpitTheme.Colors.red else DeviceCockpitTheme.Colors.green,
+        if (state == "Denied") DeviceCockpitTheme.Colors.redBg else DeviceCockpitTheme.Colors.greenBg,
+    ).apply { size = preferredSize; doLayout() }
+    // Fixed width so labels line up whatever the state.
+    private val width = io.github.dkej123.devicecockpit.intellij.apps.details.Tag("Granted once", DeviceCockpitTheme.Colors.green, DeviceCockpitTheme.Colors.greenBg).preferredSize.width
+
+    override fun getIconWidth() = width
+    override fun getIconHeight() = chip.preferredSize.height
+    override fun paintIcon(c: java.awt.Component?, g: Graphics, x: Int, y: Int) {
+        val g2 = g.create(x, y, chip.width, chip.height)
+        try { chip.paint(g2) } finally { g2.dispose() }
+    }
+}
+
+/**
+ * The IDE list popup (title, keyboard, speed search) with rows drawn by [PermissionRow]: the state chip on the right and
+ * one selection across the whole row (user requests, 2026-10-29).
+ */
+private class PermissionsListPopup(
+    step: com.intellij.openapi.ui.popup.ListPopupStep<CurrentAppSection.ResetChoice>,
+) : com.intellij.ui.popup.list.ListPopupImpl(null, step) {
+    override fun getListElementRenderer(): javax.swing.ListCellRenderer<*> = permissionRowRenderer()
+
+}
+
+/**
+ * One row of the Permissions popup, drawn whole: an optional "One permission" header with a line, then the item with a
+ * single rounded selection behind both the name and the state chip on the right. Wrapping the IDE row left the list's
+ * own rectangular selection showing beside it and over the header (user screenshot, 2026-10-29).
+ */
+internal fun permissionRowRenderer() =
+    javax.swing.ListCellRenderer<Any?> { list, value, _, selected, _ ->
+        val choice = value as CurrentAppSection.ResetChoice
+        PermissionRow(choice, selected, list.background, list.selectionBackground, list.selectionForeground, list.foreground)
+    }
+
+internal class PermissionRow(
+    choice: CurrentAppSection.ResetChoice,
+    private val selected: Boolean,
+    background: java.awt.Color,
+    private val selection: java.awt.Color,
+    selectionText: java.awt.Color,
+    text: java.awt.Color,
+) : JPanel(BorderLayout()) {
+    /** "Grant" / "Reset" on the highlighted row, "Fixed" on a row that cannot change; `null` otherwise. */
+    val hint: JLabel? = when {
+        !choice.enabled -> JLabel("Fixed").apply { foreground = com.intellij.util.ui.UIUtil.getLabelDisabledForeground() }
+        selected && choice.action != null -> JLabel(choice.action).apply { foreground = DeviceCockpitTheme.Colors.accent }
+        else -> null
+    }?.apply { font = com.intellij.util.ui.JBUI.Fonts.label().deriveFont(Font.BOLD) }
+
+    val item = JPanel(BorderLayout(com.intellij.util.ui.JBUI.scale(12), 0)).apply {
+        isOpaque = false
+        border = com.intellij.util.ui.JBUI.Borders.empty(4, 12)
+        add(JLabel(choice.label).apply {
+            font = com.intellij.util.ui.JBUI.Fonts.label()
+            foreground = when {
+                !choice.enabled -> com.intellij.util.ui.UIUtil.getLabelDisabledForeground()
+                selected -> selectionText
+                else -> text
+            }
+        }, BorderLayout.CENTER)
+        // Action word, then the state chip, on the right.
+        val right = JPanel(java.awt.FlowLayout(java.awt.FlowLayout.RIGHT, com.intellij.util.ui.JBUI.scale(8), 0)).apply { isOpaque = false }
+        hint?.let(right::add)
+        choice.state?.let { right.add(JLabel(StateChipIcon(it))) }
+        if (right.componentCount > 0) add(right, BorderLayout.EAST)
+    }
+
+    init {
+        isOpaque = true
+        this.background = background
+        border = com.intellij.util.ui.JBUI.Borders.empty(0, 8)
+        if (choice.separatorAbove) {
+            add(JPanel(BorderLayout()).apply {
+                isOpaque = false
+                border = javax.swing.BorderFactory.createCompoundBorder(
+                    com.intellij.util.ui.JBUI.Borders.customLineTop(com.intellij.util.ui.JBUI.CurrentTheme.Popup.separatorColor()),
+                    com.intellij.util.ui.JBUI.Borders.empty(6, 12, 2, 12),
+                )
+                add(JLabel("One permission").apply {
+                    font = com.intellij.util.ui.JBUI.Fonts.smallFont()
+                    foreground = com.intellij.util.ui.UIUtil.getLabelDisabledForeground()
+                })
+            }, BorderLayout.NORTH)
+        }
+        add(item, BorderLayout.CENTER)
+    }
+
+    override fun paintComponent(g: Graphics) {
+        super.paintComponent(g)
+        if (!selected) return
+        val g2 = g.create() as Graphics2D
+        try {
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
+            g2.color = selection
+            val arc = com.intellij.util.ui.JBUI.scale(8)
+            g2.fillRoundRect(item.x, item.y, item.width, item.height, arc, arc)
+        } finally { g2.dispose() }
+    }
+}
+
+/** The Permissions popup's footer: the list both grants and resets (user request, 2026-10-29). */
+internal const val PERMISSIONS_POPUP_HINT = "Click a permission to grant or reset it"
