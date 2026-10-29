@@ -34,6 +34,10 @@ Open the prototypes in a browser:
   per workflow, keyboard model, degradation ladder.
 - `designs/ADB Toolbox Icons.dc.html` — logo and icon specimens. Production SVGs are in `icons/`.
 
+Device-section deep-link dialog: [DEEP_LINK_DIALOG.md](DEEP_LINK_DIALOG.md), with the supplied
+[screenshot](screenshots/deep-link-dialog.png) (handoff 6, 2026-10-28) and the handoff 7 states in
+[screenshots/deep-link-h7](screenshots/deep-link-h7) (2026-10-29).
+
 `designs/support.js` is only the runtime that makes those HTML files render; ignore it for implementation.
 
 ## Fidelity
@@ -350,7 +354,7 @@ After Language & region. Header meta mono 9.5px: "Warsaw · 52.2297, 21.0122" / 
   selected app label (12px/700) + package (mono 9.5px);
   action row: primary **Restart** (tooltip "Force-stop, then launch the main activity  ⇧⌘R"),
   secondary **Force-stop** ("am force-stop — leaves data intact"), secondary **Launch**
-  ("monkey launch of the main activity");
+  ("launch of the main activity": the first launcher activity, see IMPLEMENTATION.md §4);
   then a **Destructive** group separated by a 1px dashed top border (padding 8px 10px 0, margin 0 10px):
   uppercase 9.5px/700 label "DESTRUCTIVE" on the left, then red outlined 24px buttons
   **Clear data** and **Uninstall** (hover fill `redBg`).

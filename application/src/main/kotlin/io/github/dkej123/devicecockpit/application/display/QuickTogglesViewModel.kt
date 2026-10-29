@@ -115,16 +115,23 @@ class QuickTogglesViewModel(
     }
 
     /** Detects the installed TalkBack each time rather than caching it: installing one must not need a device reconnect. */
-    private suspend fun resolveTalkBack(serial: DeviceSerial): TalkBackCommands {
+    private suspend fun resolveTalkBack(serial: DeviceSerial, services: List<String> = emptyList()): TalkBackCommands {
         val vendor = TalkBackCommand.vendorOf(transport.executeText(TalkBackCommand.detectionRequest(serial)))
-        return TalkBackCommand.resolve(vendor, customTalkBackCommands())
+        return TalkBackCommand.resolve(vendor, customTalkBackCommands(), services)
     }
 
     private suspend fun applyTalkBack(enabled: Boolean) {
         val serial = eligibleSerialOrNull() ?: return
         val previous = _state.value.talkBack
         _state.value = _state.value.copy(talkBack = QuickToggleFieldState.Applying(enabled))
-        val commands = resolveTalkBack(serial)
+        val servicesResult = transport.executeText(TalkBackCommand.readRequest(serial))
+        if (!isCurrentSerial(serial)) return
+        val services = TalkBackCommand.parseServices(servicesResult)
+        if (services !is DisplaySettingRead.Value) {
+            _state.value = _state.value.copy(talkBack = TalkBackCommand.parseRead(servicesResult).toFieldState(previous))
+            return
+        }
+        val commands = resolveTalkBack(serial, services.value)
         if (!isCurrentSerial(serial)) return
         val line = if (enabled) commands.on else commands.off
         if (line == null) {

@@ -16,17 +16,73 @@ import org.junit.jupiter.api.Test
 private val serial = DeviceSerial.of("emulator-5554")
 
 private class FakeLocales(var locale: String = "en-US", var failure: String? = null) : DeviceLocalePort {
+    var locales: List<String> = listOf(locale)
     val actions = mutableListOf<LocaleAction>()
 
     override suspend fun run(serial: DeviceSerial, action: LocaleAction): LocaleRead {
         actions += action
         failure?.let { return LocaleRead.Failed(it) }
-        if (action is LocaleAction.Set) locale = action.locales.first().value
-        return LocaleRead.Locales(listOf(locale))
+        if (action is LocaleAction.Set) {
+            locales = action.locales.map { it.value }
+            locale = locales.first()
+        }
+        return LocaleRead.Locales(locales)
     }
 }
 
 class DeviceLocaleUseCaseTest {
+
+    @Test
+    fun `reset preserves languages added since the original snapshot`() = runTest {
+        val port = FakeLocales("pl-PL").apply { locales = listOf("pl-PL", "en-US", "de-DE") }
+        val useCase = DeviceLocaleUseCase(port, InMemoryOriginalLocaleStore())
+        useCase.read(serial)
+        port.locales = listOf("de-DE", "pl-PL", "en-US", "uk-UA")
+        useCase.reset(serial)
+        port.locales shouldBe listOf("pl-PL", "en-US", "de-DE", "uk-UA")
+    }
+
+    @Test
+    fun `an unreadable or unsupported current locale list is never overwritten`() = runTest {
+        val port = FakeLocales()
+        val useCase = DeviceLocaleUseCase(port, InMemoryOriginalLocaleStore())
+        useCase.read(serial)
+        port.failure = "Device disconnected"
+        useCase.set(serial, LocaleTag.of("pl-PL")!!) shouldBe LocaleResult.Failed("Device disconnected")
+        useCase.reset(serial) shouldBe LocaleResult.Failed("Device disconnected")
+        port.failure = null
+        port.locales = listOf("en-US", "ca-ES-valencia")
+        useCase.set(serial, LocaleTag.of("pl-PL")!!) shouldBe LocaleResult.Failed("Cannot preserve device language: ca-ES-valencia")
+        port.actions.filterIsInstance<LocaleAction.Set>() shouldBe emptyList()
+    }
+
+    @Test
+    fun `selecting a language preserves all three languages and reset restores their order after restart`() = runTest {
+        val port = FakeLocales("pl-PL").apply { locales = listOf("pl-PL", "en-US", "de-DE") }
+        val store = InMemoryOriginalLocaleStore()
+        val useCase = DeviceLocaleUseCase(port, store)
+
+        useCase.set(serial, LocaleTag.of("en-US")!!)
+        port.locales shouldBe listOf("en-US", "pl-PL", "de-DE")
+        useCase.set(serial, LocaleTag.of("ar-XB")!!)
+        port.locales shouldBe listOf("ar-XB", "en-US", "pl-PL", "de-DE")
+
+        DeviceLocaleUseCase(port, store).reset(serial)
+        port.locales shouldBe listOf("pl-PL", "en-US", "de-DE", "ar-XB")
+    }
+
+    @Test
+    fun `a legacy stored original and languages added outside the tool are preserved`() = runTest {
+        val port = FakeLocales("en-US").apply { locales = listOf("en-US", "pl-PL", "de-DE") }
+        val store = InMemoryOriginalLocaleStore().apply { put(serial, "pl-PL") }
+        val useCase = DeviceLocaleUseCase(port, store)
+        useCase.set(serial, LocaleTag.of("fr-FR")!!)
+        port.locales = port.locales + "uk-UA"
+        useCase.set(serial, LocaleTag.of("de-DE")!!)
+        port.locales shouldBe listOf("de-DE", "fr-FR", "en-US", "pl-PL", "uk-UA")
+        useCase.reset(serial)
+        port.locales shouldBe listOf("pl-PL", "de-DE", "fr-FR", "en-US", "uk-UA")
+    }
 
     @Test
     fun `the first locale seen is the original, and a change is an override`() = runTest {

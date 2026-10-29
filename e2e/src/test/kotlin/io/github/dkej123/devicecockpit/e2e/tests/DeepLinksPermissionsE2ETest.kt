@@ -41,6 +41,43 @@ class DeepLinksPermissionsE2ETest : E2eTest() {
     }
 
     @Test
+    fun `Device deep link query fields stay synchronized and Clear works after an unhandled link`() {
+        studio.navigate(View.Device)
+        studio.click("Deep link")
+        studio.typeInto(named("deviceDeepLinkUri"), "unhandleddevicecockpit://item#details")
+        studio.click("+ Add parameter")
+        studio.typeInto(named("deviceDeepLinkQueryKey:0"), "ref")
+        studio.typeInto(named("deviceDeepLinkQueryValue:0"), "IDE & QA")
+        named("deviceDeepLinkUri").callJs<String>("component.getText()", true) shouldBe
+            "unhandleddevicecockpit://item?ref=IDE%20%26%20QA#details"
+        studio.click("Open on device")
+        awaitUntil(E2eConfig.deviceTimeout(25), Duration.ofMillis(200), "Open to recover after an unhandled URI") {
+            named("deviceDeepLinkOpen").callJs<Boolean>("component.isEnabled()", true) &&
+                studio.visibleTexts().any { "No app on this device handles this link" in it }
+        }
+        studio.click("Clear form")
+        named("deviceDeepLinkUri").callJs<String>("component.getText()", true) shouldBe ""
+        named("deviceDeepLinkOpen").callJs<Boolean>("component.isEnabled()", true) shouldBe true
+        studio.click("Close")
+    }
+
+    @Test
+    fun `Device deep link dialog opens an arbitrary URI without APK analysis`() {
+        studio.navigate(View.Device)
+        studio.click("Deep link")
+        val uri = "toolbox://e2e/open/from-dialog?ref=ide&source=test"
+        studio.typeInto(named("deviceDeepLinkUri"), uri)
+        studio.click("Open on device")
+        awaitUntil(E2eConfig.deviceTimeout(30), Duration.ofMillis(500), "$APP launched from the device dialog") {
+            Adb.pidOf(APP).isNotBlank()
+        }
+        awaitUntil(Duration.ofSeconds(10), Duration.ofMillis(200), "the successful link in the still-open dialog's history") {
+            named("deviceDeepLinkHistory").callJs<Boolean>("component.getRowCount() > 0 && component.getValueAt(component.getRowCount() - 1, 1).equals('$uri')", true)
+        }
+        studio.click("Close")
+    }
+
+    @Test
     fun `Analyze APK discovers the fixture and Open starts its activity`() {
         selectTab("Deep Links")
         named("appDetailsAnalyzeDeepLinks").click()

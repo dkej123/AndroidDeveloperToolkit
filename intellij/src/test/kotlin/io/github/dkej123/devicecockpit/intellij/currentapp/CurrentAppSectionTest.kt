@@ -210,6 +210,17 @@ class CurrentAppSectionTest : BasePlatformTestCase() {
         assertEquals("Wake", s.noteLinkForTest.text)
     }
 
+    /** The home and lock screens are the system, not an app: the tile shows the Android robot (user request). */
+    fun `test home and lock screens show the Android robot`() {
+        val s = section()
+        s.update(CurrentAppViewState(display = CurrentAppDisplay.Home("com.sec.android.app.launcher", null), deviceOnline = true))
+        assertTrue(s.tileShowsAndroidRobotForTest)
+        s.update(CurrentAppViewState(display = CurrentAppDisplay.Locked, deviceOnline = true))
+        assertTrue(s.tileShowsAndroidRobotForTest)
+        s.update(CurrentAppViewState(display = app(), deviceOnline = true))
+        assertFalse(s.tileShowsAndroidRobotForTest)
+    }
+
     fun `test a held change is announced in the header`() {
         val s = section()
         s.update(CurrentAppViewState(display = app(), pendingPackage = "com.maps", deviceOnline = true))

@@ -86,11 +86,13 @@ class DeviceActionsViewTest : BasePlatformTestCase() {
         assertTrue(view.rebootButton.isEnabled)
         assertTrue(view.openShellButton.isEnabled)
         assertTrue(view.wakeButton.isEnabled)
+        assertTrue(view.deepLinkButton.isEnabled)
 
         view.render(DeviceActionsViewState(controlPolicy = ControlPolicy.Enabled, busyAction = DeviceActionKind.Reboot))
         assertFalse(view.rebootButton.isEnabled)
         assertFalse(view.openShellButton.isEnabled)
         assertFalse(view.wakeButton.isEnabled)
+        assertFalse(view.deepLinkButton.isEnabled)
 
         view.dispose()
         assertFalse(scope.isActive)

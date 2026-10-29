@@ -39,6 +39,8 @@ These rules apply to every session in this repository.
 - The final visual design system and plugin UI design are versioned under `design/`. Read
   `design/README.md` and the task-specific references before UI work; use `design/tokens/tokens.json`,
   the prototypes under `design/designs/`, and production assets under `design/icons/` as specified.
+- Undecorated/rounded dialogs and rounded in-panel surfaces: follow `docs/macos-rounded-dialogs.md`
+  (macOS title-bar strip and corner artifacts — causes and the working fix).
 - Do not invent visual rules or copy visual design from `as_plugin`. `design/designs/support.js` is
   prototype runtime only and must not be ported or packaged.
 - There is no Display view: font scale, display scale and the quick toggles are sections of the

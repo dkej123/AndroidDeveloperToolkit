@@ -270,9 +270,34 @@
                       <div>{{ caPrimaryLabel }}</div>
                     </div>
                     <div style="{{ caKillStyle }}" style-hover="{{ caKillHover }}" onClick="{{ caKill }}" title="{{ caKillTip }}">{{ caKillLabel }}</div>
-                    <div style="{{ caPermsStyle }}" style-hover="{{ caPermsHover }}" onClick="{{ caPerms }}" title="{{ caPermsTip }}">{{ caPermsLabel }}</div>
-                    <div style="{{ spacerStyle }}"></div>
-                    <div style="{{ linkStyle }}" onClick="{{ caDetails }}" title="{{ caDetailsTip }}">Details</div>
+                    <div style="{{ caPdStyle }}" style-hover="{{ caPdHover }}" onClick="{{ caProcDeath }}" title="{{ caPdTip }}">{{ caPdLabel }}</div>
+                    <div style="position:relative;display:flex;gap:2px">
+                      <div style="{{ caPermsStyle }}" style-hover="{{ caPermsHover }}" onClick="{{ caPerms }}" title="{{ caPermsTip }}">{{ caPermsLabel }}</div>
+                      <div style="{{ caPermsCaretStyle }}" style-hover="{{ caPermsHover }}" onClick="{{ caPermsMenuToggle }}" title="Reset all or one permission"><svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3.5L5 6.5l3-3"></path></svg></div>
+                      <sc-if value="{{ caPermsMenuOpen }}" hint-placeholder-val="{{ false }}">
+                        <div style="position:fixed;inset:0;z-index:1000" onClick="{{ caPermsMenuClose }}"></div>
+                        <div style="{{ caPermsMenuStyle }}">
+                          <div style="{{ caPermsMenuTitleStyle }}">Reset permissions</div>
+                          <div style="{{ caPermsAllStyle }}" style-hover="{{ caPermsAllHover }}" onClick="{{ caPermsAll }}" title="pm reset-permissions — revokes every runtime permission and clears “Don’t ask again”">{{ caPermsAllLabel }}</div>
+                          <div style="{{ caPermsSepStyle }}"></div>
+                          <div style="{{ caPermsGroupStyle }}">One permission</div>
+                          <sc-for list="{{ caPermItems }}" as="p" hint-placeholder-count="3">
+                            <div style="{{ caPermItemStyle }}" style-hover="{{ caPermItemHover }}" onClick="{{ p.reset }}" title="{{ p.tip }}">{{ p.label }}</div>
+                          </sc-for>
+                          <sc-if value="{{ caPermsNone }}" hint-placeholder-val="{{ false }}">
+                            <div style="{{ caPermsEmptyStyle }}">No runtime permissions granted</div>
+                          </sc-if>
+                        </div>
+                      </sc-if>
+                    </div>
+                  </div>
+                  <div style="{{ caToolsCardStyle }}" style-hover="{{ caToolsCardHover }}" onClick="{{ caDetails }}" title="{{ caDetailsTip }}">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" style="{{ caToolsIconStyle }}"><rect x="2.5" y="2.5" width="4" height="4" rx="1"></rect><rect x="9.5" y="2.5" width="4" height="4" rx="1"></rect><rect x="2.5" y="9.5" width="4" height="4" rx="1"></rect><rect x="9.5" y="9.5" width="4" height="4" rx="1"></rect></svg>
+                    <div style="display:flex;flex-direction:column;gap:2px;min-width:0;flex:1">
+                      <div style="{{ caToolsTitleStyle }}">App tools &amp; details</div>
+                      <div style="{{ caToolsSubStyle }}">Deep links · Permissions · Shared prefs · Databases</div>
+                    </div>
+                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" style="{{ caToolsIconStyle }}"><path d="M4.5 2.5L8 6l-3.5 3.5"></path></svg>
                   </div>
                   <div style="{{ dangerZoneStyle }}">
                     <div style="{{ dangerLabelStyle }}">Destructive</div>
@@ -280,6 +305,86 @@
                     <div style="{{ caUninstallStyle }}" style-hover="{{ caUninstallHover }}" onClick="{{ caUninstall }}" title="{{ caUninstallTip }}">Uninstall</div>
                   </div>
                 </sc-if>
+                </sc-if>
+              </div>
+
+              <div style="{{ sectionStyle }}">
+                <div style="{{ sectionHeaderStyle }}">
+                  <div style="{{ secToggleStyle }}" style-hover="{{ secToggleHover }}" onClick="{{ sec.favs.toggle }}" title="{{ sec.favs.tip }}"><div style="{{ sec.favs.chevStyle }}"></div><div style="{{ sectionTitleStyle }}">Favorites</div></div>
+                  <div style="{{ favMetaStyle }}">{{ favMeta }}</div>
+                  <sc-if value="{{ favCanEdit }}" hint-placeholder-val="{{ true }}">
+                    <div style="{{ linkStyle }}" onClick="{{ favToggleEdit }}">{{ favEditLabel }}</div>
+                  </sc-if>
+                </div>
+                <sc-if value="{{ sec.favs.open }}" hint-placeholder-val="{{ true }}">
+                  <sc-if value="{{ favEmpty }}" hint-placeholder-val="{{ false }}">
+                    <div style="{{ favEmptyStyle }}">
+                      <div style="{{ favEmptyTitleStyle }}">Pin the tools you use every day</div>
+                      <div>Toggles, actions, presets and deep links — one click from here.</div>
+                      <div style="{{ favAddBtnStyle }}" style-hover="{{ hoverStyle }}" onClick="{{ favOpenAdd }}">+ Add favorites</div>
+                    </div>
+                  </sc-if>
+                  <sc-if value="{{ favHasItems }}" hint-placeholder-val="{{ true }}">
+                    <div style="{{ favGridStyle }}">
+                      <sc-for list="{{ favTiles }}" as="t" hint-placeholder-count="6">
+                        <div style="{{ t.style }}" style-hover="{{ t.hover }}" onClick="{{ t.onClick }}" title="{{ t.tip }}" draggable="{{ favEditing }}" onDragStart="{{ t.onDragStart }}" onDragOver="{{ t.onDragOver }}" onDrop="{{ t.onDrop }}">
+                          <sc-if value="{{ favEditing }}" hint-placeholder-val="{{ false }}">
+                            <div style="{{ favGripStyle }}">⋮⋮</div>
+                          </sc-if>
+                          <div style="{{ t.kindStyle }}">{{ t.kindGlyph }}</div>
+                          <div style="display:flex;flex-direction:column;gap:1px;min-width:0;flex:1">
+                            <div style="{{ favLabelStyle }}">{{ t.label }}</div>
+                            <div style="{{ t.subStyle }}">{{ t.sub }}</div>
+                          </div>
+                          <sc-if value="{{ favEditing }}" hint-placeholder-val="{{ false }}">
+                            <div style="{{ favRemoveStyle }}" style-hover="{{ hoverStyle }}" onClick="{{ t.remove }}" title="Unpin">×</div>
+                          </sc-if>
+                        </div>
+                      </sc-for>
+                      <div style="{{ favAddTileStyle }}" style-hover="{{ hoverStyle }}" onClick="{{ favOpenAdd }}" title="Pin more tools">+ Add</div>
+                    </div>
+                    <sc-if value="{{ favEditing }}" hint-placeholder-val="{{ false }}">
+                      <div style="{{ favHintStyle }}">Drag to reorder · × to unpin. Saved for your user, on every project.</div>
+                    </sc-if>
+                  </sc-if>
+                  <sc-if value="{{ favAddOpen }}" hint-placeholder-val="{{ false }}">
+                    <div style="{{ favPanelStyle }}">
+                      <div style="display:flex;align-items:center;gap:8px">
+                        <div style="{{ favPanelTitleStyle }}">Add to favorites</div>
+                        <div style="flex:1"></div>
+                        <div style="{{ linkStyle }}" onClick="{{ favCloseAdd }}">Done</div>
+                      </div>
+                      <input style="{{ favSearchStyle }}" value="{{ favQuery }}" onChange="{{ favOnQuery }}" placeholder="Search tools…" spellcheck="false"></input>
+                      <div style="{{ favCatScrollStyle }}">
+                        <sc-for list="{{ favCatalog }}" as="g" hint-placeholder-count="3">
+                          <div style="{{ favGroupLabelStyle }}">{{ g.label }}</div>
+                          <sc-for list="{{ g.items }}" as="c" hint-placeholder-count="3">
+                            <div style="{{ c.rowStyle }}" style-hover="{{ hoverStyle }}" onClick="{{ c.toggle }}" title="{{ c.tip }}">
+                              <div style="{{ c.starStyle }}">{{ c.star }}</div>
+                              <div style="{{ c.kindStyle }}">{{ c.kindGlyph }}</div>
+                              <div style="{{ favCatLabelStyle }}">{{ c.label }}</div>
+                              <div style="{{ favCatSubStyle }}">{{ c.sub }}</div>
+                            </div>
+                          </sc-for>
+                        </sc-for>
+                        <sc-if value="{{ favCatEmpty }}" hint-placeholder-val="{{ false }}">
+                          <div style="{{ favHintStyle }}">Nothing matches.</div>
+                        </sc-if>
+                      </div>
+                      <div style="{{ favCmdBoxStyle }}">
+                        <div style="{{ favGroupLabelStyle }}">New custom command</div>
+                        <input style="{{ favCmdNameStyle }}" value="{{ favCmdName }}" onChange="{{ favOnCmdName }}" placeholder="Name, e.g. Clear notifications" spellcheck="false"></input>
+                        <div style="{{ favCmdRowStyle }}">
+                          <div style="{{ favCmdPrefixStyle }}">adb shell</div>
+                          <input style="{{ favCmdTextStyle }}" value="{{ favCmdText }}" onChange="{{ favOnCmdText }}" placeholder="cmd notification cancel-all" spellcheck="false"></input>
+                          <div style="{{ favCmdBtnStyle }}" onClick="{{ favAddCmd }}">Pin</div>
+                        </div>
+                        <sc-if value="{{ favCmdHasErr }}" hint-placeholder-val="{{ false }}">
+                          <div style="{{ favCmdErrStyle }}">{{ favCmdErr }}</div>
+                        </sc-if>
+                      </div>
+                    </div>
+                  </sc-if>
                 </sc-if>
               </div>
 
@@ -373,6 +478,7 @@
                   <div style="{{ secondaryBtnStyle }}" style-hover="{{ hoverStyle }}">Reboot</div>
                   <div style="{{ secondaryBtnStyle }}" style-hover="{{ hoverStyle }}">Open shell</div>
                   <div style="{{ secondaryBtnStyle }}" style-hover="{{ hoverStyle }}">Wake</div>
+                  <div style="{{ secondaryBtnStyle }}" style-hover="{{ hoverStyle }}" onClick="{{ dlOpen }}" title="Fire any deep link or intent on this device">Deep link</div>
                 </div>
                 </sc-if>
               </div>
@@ -804,6 +910,207 @@
       </div>
     </sc-if>
 
+    <!-- deep link dialog -->
+    <sc-if value="{{ dlVisible }}" hint-placeholder-val="{{ false }}">
+      <div style="{{ dlScrimStyle }}" onClick="{{ dlClose }}">
+        <div style="{{ dlDialogStyle }}" onClick="{{ stopProp }}">
+          <div style="display:flex;align-items:baseline;gap:8px">
+            <div style="{{ dlTitleStyle }}">Open deep link</div>
+            <div style="flex:1;min-width:0"></div>
+            <div style="{{ dlMetaStyle }}">{{ dlDeviceLabel }}</div>
+            <div style="{{ dlIconBtnStyle }}" style-hover="{{ hoverStyle }}" onClick="{{ dlClose }}" title="Close (Esc)">×</div>
+          </div>
+
+          <sc-if value="{{ dlHasRecent }}" hint-placeholder-val="{{ true }}">
+            <div style="{{ dlLabelStyle }}">Recent · {{ dlRecentCount }}</div>
+            <div style="{{ dlRecentListStyle }}" ref="{{ dlRecentRef }}">
+              <div style="{{ dlRecentHeadRowStyle }}">
+                <div></div>
+                <div>Link</div>
+                <div>App</div>
+                <div>Last run</div>
+                <div></div>
+              </div>
+              <sc-for list="{{ dlRecentRows }}" as="r" hint-placeholder-count="3">
+                <div style="{{ r.rowStyle }}" style-hover="{{ r.hover }}" onClick="{{ r.load }}" title="{{ r.tip }}">
+                  <div style="{{ r.iconStyle }}"></div>
+                  <div style="{{ dlRecentUriStyle }}"><span style="{{ dlRecentHeadStyle }}">{{ r.head }}</span><span style="{{ dlRecentTailStyle }}">{{ r.tail }}</span></div>
+                  <div style="{{ dlRecentAppStyle }}">{{ r.app }}</div>
+                  <div style="{{ dlRecentTimeStyle }}">{{ r.at }}</div>
+                  <div style="display:flex;gap:2px;justify-content:flex-end">
+                    <div style="{{ dlRecentRunStyle }}" style-hover="{{ dlRecentRunHover }}" onClick="{{ r.run }}" title="Open again on this device"><svg width="10" height="10" viewBox="0 0 10 10"><path d="M2.5 1.5v7l6-3.5z" fill="currentColor"></path></svg></div>
+                    <div style="{{ dlIconBtnStyle }}" style-hover="{{ hoverStyle }}" onClick="{{ r.remove }}" title="Remove from history">×</div>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+
+          <div style="{{ dlLabelStyle }}">URI</div>
+          <input style="{{ dlUriFieldStyle }}" value="{{ dlUri }}" onChange="{{ dlOnUri }}" placeholder="myapp://product/42?ref=ide" spellcheck="false"></input>
+          <sc-if value="{{ dlHasErr }}" hint-placeholder-val="{{ false }}">
+            <div style="{{ dlErrStyle }}">{{ dlErr }}</div>
+          </sc-if>
+          <sc-if value="{{ dlResVisible }}" hint-placeholder-val="{{ false }}">
+            <div style="position:relative">
+              <div style="{{ dlResRowStyle }}" title="{{ dlResTip }}">
+                <sc-if value="{{ dlResChecking }}" hint-placeholder-val="{{ false }}">
+                  <div style="{{ dlSpinStyle }}"></div>
+                </sc-if>
+                <sc-if value="{{ dlResDone }}" hint-placeholder-val="{{ true }}">
+                  <div style="{{ dlResGlyphStyle }}">{{ dlResGlyph }}</div>
+                </sc-if>
+                <div style="{{ dlResTextStyle }}">{{ dlResText }}</div>
+                <sc-if value="{{ dlResHasApp }}" hint-placeholder-val="{{ false }}">
+                  <div style="{{ dlResTileStyle }}"></div>
+                  <div style="{{ dlResAppStyle }}">{{ dlResApp }}</div>
+                  <div style="{{ dlResActStyle }}">{{ dlResAct }}</div>
+                </sc-if>
+                <div style="flex:1;min-width:0"></div>
+                <sc-if value="{{ dlResHasList }}" hint-placeholder-val="{{ false }}">
+                  <div style="{{ dlResMoreStyle }}" onClick="{{ dlResToggle }}">{{ dlResMore }}</div>
+                </sc-if>
+              </div>
+              <sc-if value="{{ dlResOpen }}" hint-placeholder-val="{{ false }}">
+                <div style="{{ dlResPopStyle }}">
+                  <div style="{{ dlResPopHeadStyle }}">{{ dlResPopHead }}</div>
+                  <sc-for list="{{ dlResRows }}" as="m" hint-placeholder-count="2">
+                    <div style="{{ dlResPopRowStyle }}">
+                      <div style="{{ m.iconStyle }}"></div>
+                      <div style="display:flex;flex-direction:column;min-width:0;flex:1">
+                        <div style="{{ dlPkgLabelStyle }}">{{ m.label }}</div>
+                        <div style="{{ dlMetaStyle }}">{{ m.comp }}</div>
+                      </div>
+                      <sc-if value="{{ m.isTarget }}" hint-placeholder-val="{{ false }}">
+                        <div style="{{ dlResTagStyle }}">{{ m.tag }}</div>
+                      </sc-if>
+                      <sc-if value="{{ m.canUse }}" hint-placeholder-val="{{ true }}">
+                        <div style="{{ linkStyle }}" onClick="{{ m.use }}" title="Set Open in to this app">Open in this app</div>
+                      </sc-if>
+                    </div>
+                  </sc-for>
+                </div>
+              </sc-if>
+            </div>
+          </sc-if>
+
+          <div style="display:flex;align-items:center">
+            <div style="{{ dlLabelStyle }}">Query parameters</div>
+            <div style="flex:1"></div>
+            <div style="{{ dlAddParamStyle }}" onClick="{{ dlAddParam }}">+ Add parameter</div>
+          </div>
+          <sc-if value="{{ dlHasParams }}" hint-placeholder-val="{{ false }}">
+            <div style="{{ dlParamsBoxStyle }}">
+              <div style="{{ dlParamHeadStyle }}">
+                <div>Key</div>
+                <div></div>
+                <div>Value</div>
+                <div></div>
+              </div>
+              <sc-for list="{{ dlParamRows }}" as="p" hint-placeholder-count="2">
+                <div style="{{ dlParamRowStyle }}">
+                  <input style="{{ dlParamKeyStyle }}" value="{{ p.key }}" onChange="{{ p.onKey }}" placeholder="key" spellcheck="false"></input>
+                  <div style="{{ dlParamEqStyle }}">=</div>
+                  <input style="{{ dlParamValStyle }}" value="{{ p.val }}" onChange="{{ p.onVal }}" placeholder="value" spellcheck="false"></input>
+                  <div style="{{ dlIconBtnStyle }}" style-hover="{{ hoverStyle }}" onClick="{{ p.remove }}" title="Remove parameter">×</div>
+                </div>
+              </sc-for>
+            </div>
+            <div style="{{ dlHintStyle }}">Values are URL-encoded and kept in sync with the URI above.</div>
+          </sc-if>
+          <sc-if value="{{ dlNoParams }}" hint-placeholder-val="{{ true }}">
+            <div style="{{ dlParamsEmptyStyle }}">No parameters. Add one, or type <span style="{{ dlMonoInline }}">?key=value</span> in the URI.</div>
+          </sc-if>
+
+          <div style="{{ dlLabelStyle }}">Open in</div>
+          <div style="position:relative">
+            <div style="{{ dlPkgFieldStyle }}" onClick="{{ dlTogglePkg }}" title="Which app should receive the link">
+              <div style="{{ dlPkgIconStyle }}"></div>
+              <div style="display:flex;flex-direction:column;min-width:0;flex:1">
+                <div style="{{ dlPkgLabelStyle }}">{{ dlPkgLabel }}</div>
+                <div style="{{ dlMetaStyle }}">{{ dlPkgSub }}</div>
+              </div>
+              <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" style="{{ dlCaretStyle }}"><path d="M2 3.5L5 6.5l3-3"></path></svg>
+            </div>
+            <sc-if value="{{ dlPkgOpen }}" hint-placeholder-val="{{ false }}">
+              <div style="{{ dlPkgPopupStyle }}">
+                <input style="{{ dlPkgSearchStyle }}" value="{{ dlPkgQuery }}" onChange="{{ dlOnPkgQuery }}" placeholder="Filter installed apps…" spellcheck="false" autofocus="true"></input>
+                <div style="{{ dlPkgListStyle }}">
+                  <sc-for list="{{ dlPkgOptions }}" as="o" hint-placeholder-count="5">
+                    <div style="{{ o.rowStyle }}" style-hover="{{ hoverStyle }}" onClick="{{ o.pick }}">
+                      <div style="{{ o.iconStyle }}"></div>
+                      <div style="display:flex;flex-direction:column;min-width:0;flex:1">
+                        <div style="{{ dlPkgLabelStyle }}">{{ o.label }}</div>
+                        <div style="{{ dlMetaStyle }}">{{ o.sub }}</div>
+                      </div>
+                      <sc-if value="{{ o.isLast }}" hint-placeholder-val="{{ false }}">
+                        <div style="{{ dlMetaStyle }}">last used</div>
+                      </sc-if>
+                    </div>
+                  </sc-for>
+                  <sc-if value="{{ dlPkgEmpty }}" hint-placeholder-val="{{ false }}">
+                    <div style="{{ dlPkgEmptyStyle }}">No installed app matches</div>
+                  </sc-if>
+                </div>
+              </div>
+            </sc-if>
+          </div>
+
+          <sc-if value="{{ dlAppLinkWarn }}" hint-placeholder-val="{{ false }}">
+            <div style="{{ dlWarnRowStyle }}">
+              <div style="{{ dlWarnTextStyle }}">{{ dlAppLinkText }}</div>
+              <div style="{{ dlWarnLinkStyle }}" onClick="{{ dlUseAny }}">Test as a real tap</div>
+            </div>
+          </sc-if>
+
+          <div style="display:flex;align-items:center;gap:12px;margin-top:10px">
+            <div style="{{ dlLabelStyle }}">Command</div>
+            <div style="flex:1"></div>
+            <div style="{{ linkStyle }}" onClick="{{ dlToggleCmd }}">{{ dlCmdToggleLabel }}</div>
+            <div style="{{ linkStyle }}" onClick="{{ dlCopy }}">Copy</div>
+          </div>
+          <div style="{{ dlCmdStyle }}">{{ dlCmd }}</div>
+
+          <sc-if value="{{ dlHasResult }}" hint-placeholder-val="{{ false }}">
+            <div style="{{ dlBannerStyle }}">
+              <div style="{{ dlBannerGlyphStyle }}">{{ dlBannerGlyph }}</div>
+              <sc-if value="{{ dlBannerHasTile }}" hint-placeholder-val="{{ false }}">
+                <div style="{{ dlBannerTileStyle }}"></div>
+              </sc-if>
+              <div style="display:flex;flex-direction:column;gap:2px;min-width:0;flex:1">
+                <div style="{{ dlBannerTitleStyle }}">{{ dlBannerTitle }}</div>
+                <div style="{{ dlBannerDetailStyle }}">{{ dlBannerDetail }}</div>
+                <sc-if value="{{ dlBannerHasMono }}" hint-placeholder-val="{{ false }}">
+                  <div style="{{ dlBannerMonoStyle }}">{{ dlBannerMono }}</div>
+                </sc-if>
+              </div>
+              <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0">
+                <div style="display:flex;align-items:center;gap:6px">
+                  <div style="{{ dlBannerTimeStyle }}">{{ dlBannerTime }}</div>
+                  <div style="{{ dlIconBtnStyle }}" style-hover="{{ hoverStyle }}" onClick="{{ dlDismissResult }}" title="Dismiss">×</div>
+                </div>
+                <sc-if value="{{ dlBannerHasAction }}" hint-placeholder-val="{{ false }}">
+                  <div style="{{ linkStyle }}" onClick="{{ dlBannerAction }}">{{ dlBannerActionLabel }}</div>
+                </sc-if>
+                <div style="{{ dlBannerCopyStyle }}" onClick="{{ dlCopyOutput }}" title="Copy the raw am start output">Copy output</div>
+              </div>
+            </div>
+          </sc-if>
+
+          <div style="{{ dlActionsStyle }}">
+            <div style="{{ dlColdRowStyle }}" onClick="{{ dlToggleCold }}" title="Force-stop the app before opening the link (am start -S)">
+              <div style="{{ dlColdBoxStyle }}"><svg width="9" height="9" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="{{ dlColdTickStyle }}"><path d="M2 5.2l2 2L8 3"></path></svg></div>
+              <div>Cold start</div>
+            </div>
+            <div style="flex:1"></div>
+            <div style="{{ dlResetStyle }}" style-hover="{{ hoverStyle }}" onClick="{{ dlReset }}">Clear form</div>
+            <div style="{{ dlCancelStyle }}" style-hover="{{ hoverStyle }}" onClick="{{ dlClose }}">Close</div>
+            <div style="{{ dlRunStyle }}" onClick="{{ dlRun }}">{{ dlRunLabel }}</div>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
   </div>
 
   <div style="{{ captionStyle }}">{{ frameCaption }}</div>
@@ -851,6 +1158,7 @@ function theme(mode) {
   };
 }
 
+const FAV_DEFAULT = ['tg:Dark theme', 'tg:Animations off', 'app:restart', 'scr:shot', 'font:1.3', 'loc:Warsaw', 'cmd:Clear notifications|cmd notification cancel-all', 'dl:acmeshop://product/42?ref=ide|com.acme.shop.debug'];
 const DEVICES = [
   { id: 'd1', name: 'Pixel 9', serial: '49060DLAQ002W7', conn: 'USB', state: 'online' },
   { id: 'd2', name: 'Pixel Tablet', serial: '10.0.4.91:5555', conn: 'Wi-Fi', state: 'online', cellular: false },
@@ -913,6 +1221,7 @@ const LEVELS = ['V', 'D', 'I', 'W', 'E'];
 
 class Component extends DCLogic {
   frameRef = React.createRef();
+  dlRecentRef = React.createRef();
 
   state = {
     theme: 'dark', width: 380, height: 720,
@@ -928,6 +1237,8 @@ class Component extends DCLogic {
     toast: null, confirm: null, confirmPkg: null, confirmFrom: null, statusMessage: 'Ready',
     fg: 'debug', lastApp: 'debug', busy: null, pending: false, restarted: false, fresh: false, refreshing: false, appGone: false,
     detailPkg: null, detailFrom: null, detailTab: 'info',
+    dl: null, dlRecent: [], dlCmdOpen: false,
+    permMenu: false, permsGranted: {}, favs: null, favEditing: false, favAddOpen: false, favQuery: '', favCmdName: '', favCmdText: '', favCmdErr: '',
     mirOptsOpen: false, mirMaxSize: '0', mirBitrate: '8', mirStayAwake: true, mirShowTouches: true, mirScreenOff: false,
     clipCopy: true, inspectorOpen: false, localeQuery: '', locale: 'en-US',
     locName: null, locLat: 37.422, locLon: -122.0841, locCustomOpen: false, locLatIn: '52.2297', locLonIn: '21.0122', locErr: '',
@@ -948,6 +1259,7 @@ class Component extends DCLogic {
     clearTimeout(this._ca);
     this._ca = setTimeout(() => {
       if (kind === 'kill') { this.setState({ busy: null, fg: 'killed', restarted: false, fresh: true }); this.flash('Force-stopped ' + app.pkg); }
+      else if (kind === 'death') { this.setState({ busy: null, fg: 'killed', restarted: false, fresh: true }); this.flash('Process killed in the background · reopen ' + app.label + ' from Recents to test state restore'); }
       else if (kind === 'perms') { this.setState({ busy: null, fg: 'killed', restarted: false, fresh: true }); this.flash('Permissions reset for ' + app.pkg + ' — 4 revoked'); }
       else { this.setState({ busy: null, fg: this.state.lastApp, restarted: true, fresh: true }); this.flash((kind === 'launch' ? 'Launched ' : 'Restarted ') + app.pkg); }
     }, 1200);
@@ -956,6 +1268,9 @@ class Component extends DCLogic {
 
   componentDidMount() {
     try { const c = JSON.parse(localStorage.getItem('adbtb.collapsedSecs') || 'null'); if (c) this.setState({ collapsedSecs: c }); } catch (e) {}
+    try { this.setState({ dlCmdOpen: localStorage.getItem('adbtb.dlCmdOpen') === '1' }); } catch (e) {}
+    window.__dlDemo = (patch) => this.setState(s => ({ dl: { ...(s.dl || this.dlBlank()), ...patch }, dlRecent: s.dlRecent.length ? s.dlRecent : this.dlLoadRecent() }));
+    try { const f = JSON.parse(localStorage.getItem('adbtb.favs') || 'null'); this.setState({ favs: Array.isArray(f) ? f : FAV_DEFAULT }); } catch (e) { this.setState({ favs: FAV_DEFAULT }); }
     if (!this.frameRef.current || typeof ResizeObserver === 'undefined') return;
     this._ro = new ResizeObserver((e) => {
       const r = e[0].contentRect;
@@ -963,7 +1278,20 @@ class Component extends DCLogic {
     });
     this._ro.observe(this.frameRef.current);
   }
-  componentWillUnmount() { if (this._ro) this._ro.disconnect(); clearTimeout(this._t); }
+  componentDidUpdate() {
+    const d = this.state.dl, pd = this._prevDl, pr = this._prevRecent;
+    this._prevDl = d; this._prevRecent = this.state.dlRecent;
+    if (d && (!pd || pr !== this.state.dlRecent)) { const go = () => { const el = this.dlRecentRef.current; if (el) el.scrollTop = el.scrollHeight; }; go(); requestAnimationFrame(go); setTimeout(go, 60); }
+    const key = d ? (d.uri || '').trim() + '|' + (d.pkg || '') : null;
+    if (key === this._dlResKey) return;
+    this._dlResKey = key; clearTimeout(this._dlResT);
+    if (!d) return;
+    if (!this.dlValid(d.uri)) { if (d.res) this.dlSet({ res: null, resOpen: false }); return; }
+    if (d.res && d.res.key === key) return;
+    this.dlSet({ res: { status: 'checking', key }, resOpen: false });
+    this._dlResT = setTimeout(() => { if (this._dlResKey !== key || !this.state.dl) return; this.dlSet({ res: { status: 'done', key, ...this.dlResolve(d.uri.trim(), d.pkg || '') } }); }, 500);
+  }
+  componentWillUnmount() { clearTimeout(this._dlResT); clearTimeout(this._dlBusyT); if (this._ro) this._ro.disconnect(); clearTimeout(this._t); }
 
   flash(text, kind, actionLabel) {
     this.setState({ toast: { text, kind: kind || 'ok', actionLabel: actionLabel || null }, statusMessage: text });
@@ -972,6 +1300,111 @@ class Component extends DCLogic {
   }
   dismissToast() { clearTimeout(this._t); this.setState({ toast: null }); }
 
+  dlBlank() { let pkg = '', cold = false; try { pkg = localStorage.getItem('adbtb.dlPkg') || ''; cold = localStorage.getItem('adbtb.dlCold') === '1'; } catch (e) {} return { uri: '', pkg, params: [], err: '', pkgOpen: false, pkgQuery: '', cold, result: null, res: null, resOpen: false, busy: false }; }
+  dlValid(uri) { return /^[a-z][a-z0-9+.-]*:\S+/i.test((uri || '').trim()); }
+  dlResolve(uri, pkg) {
+    const m = /^([a-z][a-z0-9+.-]*):(\/\/([^/?#]*))?/i.exec(uri || '') || [];
+    const scheme = (m[1] || '').toLowerCase(), host = (m[3] || '').toLowerCase(), http = scheme === 'http' || scheme === 'https';
+    const CHROME = { pkg: 'com.android.chrome', act: 'com.google.android.apps.chrome.IntentDispatcher' };
+    const SHOP = [{ pkg: 'com.acme.shop', act: '.deeplink.DeepLinkActivity' }, { pkg: 'com.acme.shop.debug', act: '.deeplink.DeepLinkActivity' }];
+    let all = [];
+    if (scheme === 'acmeshop') all = SHOP;
+    else if (scheme === 'acmedriver') all = [{ pkg: 'com.acme.driver', act: '.ui.MainActivity' }];
+    else if (http) all = host === 'shop.acme.com' ? [...SHOP, CHROME] : [CHROME];
+    else if (scheme === 'geo') all = [{ pkg: 'com.google.android.apps.maps', act: 'com.google.android.maps.MapsActivity' }];
+    const base = { all, scheme, host, http, schemeHost: scheme + (host ? '://' + host : ':') };
+    if (pkg) { const mine = all.filter(x => x.pkg === pkg); return mine.length ? { ...base, kind: 'direct', target: mine[0] } : { ...base, kind: all.length ? 'mismatch' : 'none', target: null }; }
+    if (!all.length) return { ...base, kind: 'none', target: null };
+    const apps = all.filter(x => x.pkg !== CHROME.pkg);
+    if (http && apps.length) return { ...base, kind: 'browser', target: CHROME };
+    if (apps.length > 1) return { ...base, kind: 'chooser', target: null };
+    return { ...base, kind: 'direct', target: all[0] };
+  }
+  dlParse(uri) {
+    const u = uri || ''; const hi = u.indexOf('#'); const hash = hi >= 0 ? u.slice(hi) : ''; const rest = hi >= 0 ? u.slice(0, hi) : u;
+    const qi = rest.indexOf('?'); const base = qi >= 0 ? rest.slice(0, qi) : rest; const qs = qi >= 0 ? rest.slice(qi + 1) : '';
+    const dec = (x) => { try { return decodeURIComponent(x.replace(/\+/g, ' ')); } catch (e) { return x; } };
+    const params = qs ? qs.split('&').filter(Boolean).map(p => { const i = p.indexOf('='); return i >= 0 ? { key: dec(p.slice(0, i)), val: dec(p.slice(i + 1)) } : { key: dec(p), val: '' }; }) : [];
+    return { base, hash, params };
+  }
+  dlBuild(uri, params) {
+    const { base, hash } = this.dlParse(uri);
+    const enc = (x) => encodeURIComponent(x).replace(/%2C/gi, ',').replace(/%3A/gi, ':').replace(/%2F/gi, '/');
+    const qs = params.filter(p => p.key).map(p => enc(p.key) + '=' + enc(p.val)).join('&');
+    return base + (qs ? '?' + qs : '') + hash;
+  }
+  dlSetParams(f, params) { this.dlSet({ params, uri: this.dlBuild(f.uri, params), err: '', result: null }); }
+  dlLoadRecent() {
+    try { const v = JSON.parse(localStorage.getItem('adbtb.dlRecent3') || 'null'); if (Array.isArray(v)) return v; } catch (e) {}
+    return [
+      { uri: 'acmeshop://product/42?ref=ide', pkg: 'com.acme.shop.debug', at: '12:40' },
+      { uri: 'https://shop.acme.com/cart?coupon=SAVE20', pkg: 'com.acme.shop', at: '12:31' },
+      { uri: 'acmedriver://orders/9f21/track', pkg: '', at: '12:05' },
+      { uri: 'acmeshop://checkout?step=payment&method=card', pkg: 'com.acme.shop.debug', at: '11:48' },
+      { uri: 'acmeshop://account/orders/A-10293', pkg: 'com.acme.shop.debug', at: '11:20' },
+      { uri: 'https://shop.acme.com/p/wireless-earbuds-pro-2?utm_source=newsletter&utm_campaign=oct', pkg: '', at: '10:57' },
+      { uri: 'acmedriver://shift/start', pkg: 'com.acme.driver', at: '10:12' },
+      { uri: 'acmeshop://search?q=running+shoes&sort=price_asc', pkg: 'com.acme.shop', at: 'Yesterday' },
+      { uri: 'geo:52.2297,21.0122?q=Acme+Store', pkg: 'com.google.android.apps.maps', at: 'Yesterday' },
+      { uri: 'acmeshop://promo/black-friday', pkg: 'com.acme.shop.debug', at: 'Mon' },
+      { uri: 'https://shop.acme.com/reset-password?token=7f3c9a', pkg: 'com.acme.shop', at: 'Mon' },
+      { uri: 'acmedriver://settings/notifications', pkg: 'com.acme.driver', at: 'Oct 21' },
+    ];
+  }
+  dlSet(patch) { this.setState(s => ({ dl: { ...s.dl, ...patch } })); }
+  dlCommand(f, serial, multiline) {
+    const q = (v) => "'" + String(v).replace(/'/g, "'\\''") + "'";
+    const p = ['adb -s ' + serial + ' shell am start', '-W'];
+    if (f.cold) p.push('-S');
+    p.push('-a android.intent.action.VIEW', '-c android.intent.category.BROWSABLE', '-d ' + q(f.uri || '<uri>'));
+    if (f.pkg) p.push('-p ' + f.pkg);
+    return multiline ? p.join(' \\\n    ') : p.join(' ');
+  }
+  dlPickPkg(pkg) { try { localStorage.setItem('adbtb.dlPkg', pkg); } catch (e) {} this.dlSet({ pkg, pkgOpen: false, pkgQuery: '', resOpen: false, result: null }); }
+  dlExec(f) {
+    const uri = (f.uri || '').trim(), pkg = f.pkg || '';
+    const inDialog = !!this.state.dl;
+    if (!this.dlValid(uri)) { if (inDialog) this.dlSet({ err: 'Enter a URI with a scheme, e.g. myapp://path or https://…' }); return; }
+    const r = this.dlResolve(uri, pkg);
+    const now = new Date(), at = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+    const intent = 'Intent { act=android.intent.action.VIEW cat=[android.intent.category.BROWSABLE] dat=' + r.schemeHost + '/... ' + (pkg ? 'pkg=' + pkg + ' ' : '') + '}';
+    let result;
+    if (r.kind === 'none' || r.kind === 'mismatch') {
+      result = { kind: 'none', pkg, schemeHost: r.schemeHost, output: 'Starting: ' + intent + '\nError: Activity not started, unable to resolve ' + intent };
+    } else if (r.kind === 'chooser') {
+      result = { kind: 'chooser', n: r.all.length, http: r.http, host: r.host, output: 'Starting: ' + intent + '\nStatus: ok\nLaunchState: COLD\nActivity: android/com.android.internal.app.ResolverActivity\nTotalTime: 214\nWaitTime: 220\nComplete' };
+    } else {
+      const t = r.target, same = this._dlTop === t.pkg + '|' + uri;
+      this._dlRun = this._dlRun || {};
+      if (same && !f.cold) {
+        result = { kind: 'newintent', pkg: t.pkg, act: t.act, output: 'Starting: ' + intent + '\nWarning: Activity not started, intent has been delivered to currently running top-most instance.\nStatus: ok\nLaunchState: UNKNOWN (0)\nActivity: ' + t.pkg + '/' + t.act + '\nTotalTime: 0\nWaitTime: 18\nComplete' };
+      } else {
+        const launch = f.cold || !this._dlRun[t.pkg] ? 'COLD' : 'WARM';
+        const ms = launch === 'COLD' ? 380 + (uri.length * 7) % 240 : 120 + (uri.length * 5) % 90;
+        const intended = r.kind === 'browser' ? (r.all.find(x => x.pkg !== t.pkg) || {}).pkg : null;
+        result = { kind: 'ok', pkg: t.pkg, act: t.act, launch, ms, browser: r.kind === 'browser', intended, host: r.host, any: !pkg, output: 'Starting: ' + intent + '\nStatus: ok\nLaunchState: ' + launch + '\nActivity: ' + t.pkg + '/' + t.act + '\nTotalTime: ' + ms + '\nWaitTime: ' + (ms + 6) + '\nComplete' };
+        this._dlRun[t.pkg] = true;
+      }
+      this._dlTop = t.pkg + '|' + uri;
+    }
+    result.at = at;
+    let recent = this.state.dlRecent;
+    if (result.kind !== 'none') {
+      const entry = { uri, pkg, at };
+      recent = [entry, ...(recent.length ? recent : this.dlLoadRecent()).filter(x => !(x.uri === uri && (x.pkg || '') === pkg))].slice(0, 50);
+      try { localStorage.setItem('adbtb.dlRecent3', JSON.stringify(recent)); localStorage.setItem('adbtb.dlPkg', pkg); } catch (e) {}
+    }
+    const lab = (p) => (APPS.find(a => a.pkg === p) || {}).label || p;
+    if (!inDialog) {
+      if (result.kind === 'none') this.flash('No app on this device handles ' + uri, 'err');
+      else this.flash(result.kind === 'chooser' ? 'Chooser opened for ' + uri : 'Opened ' + uri + ' in ' + lab(result.pkg));
+      this.setState({ dlRecent: recent });
+      return;
+    }
+    this.dlSet({ busy: true, err: '', uri, pkg });
+    clearTimeout(this._dlBusyT);
+    this._dlBusyT = setTimeout(() => { if (!this.state.dl) return; this.setState(s => ({ dl: { ...s.dl, busy: false, result }, dlRecent: recent })); }, 650);
+  }
   setSize(w, h) { this.setState({ width: w, height: h, pickerOpen: false }); }
   askConfirm(kind, pkg, from) { this.setState({ confirm: kind, confirmPkg: pkg || null, confirmFrom: from || null }); }
   cancelConfirm() { if (this.state.confirmFrom === 'agent') this.flash('Declined Claude Code’s request to uninstall ' + this.state.confirmPkg); this.setState({ confirm: null, confirmPkg: null, confirmFrom: null }); }
@@ -1224,6 +1657,10 @@ class Component extends DCLogic {
     const pOff = caSysUI || (!!busy && !pBusy);
     const kOff = caKilled || caSysUI || (!!busy && busy !== 'kill');
     const rOff = caSysUI || (!!busy && busy !== 'perms');
+    const dOff = caKilled || caSysUI || (!!busy && busy !== 'death');
+    const PERM_LABELS = { POST_NOTIFICATIONS: 'Post notifications', ACCESS_FINE_LOCATION: 'Access fine location', ACCESS_COARSE_LOCATION: 'Access coarse location', CAMERA: 'Camera', RECORD_AUDIO: 'Record audio' };
+    const permPkg = caApp ? caApp.pkg : null;
+    const granted = permPkg ? ((s.permsGranted || {})[permPkg] || (caApp.system ? [] : ['POST_NOTIFICATIONS', 'ACCESS_FINE_LOCATION', 'ACCESS_COARSE_LOCATION'])) : [];
     const cOff = caSysUI || !!busy, uOff = caSys || !!busy;
     const sysUiTip = 'Disabled for System UI — it draws the status bar, shade and lock screen';
     const hasLast = !s.appGone && ['debug', 'release', 'system'].includes(s.lastApp);
@@ -1380,8 +1817,36 @@ class Component extends DCLogic {
       caPermsHover: rOff || busy ? {} : th.hover,
       caPermsLabel: busy === 'perms' ? 'Resetting…' : 'Reset permissions',
       caPermsTip: caSysUI ? sysUiTip : 'Revokes runtime permissions and clears “Don’t ask again” — the app is stopped, data stays',
-      caPerms: () => { if (rOff || busy) return; this.caRun('perms'); },
+      caPerms: () => { if (rOff || busy) return; this.setState(st => ({ permMenu: false, permsGranted: { ...(st.permsGranted || {}), [permPkg]: [] } })); this.caRun('perms'); },
+      caPdStyle: off({ ...secondaryBtn, cursor: busy === 'death' ? 'progress' : 'pointer' }, dOff),
+      caPdHover: dOff || busy ? {} : th.hover,
+      caPdLabel: busy === 'death' ? 'Killing…' : 'Process death',
+      caPdTip: caSysUI ? sysUiTip : caKilled ? 'Not running' : 'Sends the app to the background and kills its process (am kill), the way Android does under memory pressure. Reopen it from Recents to test state restore.',
+      caProcDeath: () => { if (dOff || busy) return; this.caRun('death'); },
+      caPermsCaretStyle: off({ ...secondaryBtn, padding: '0 6px', minWidth: 0, cursor: 'pointer', background: s.permMenu ? th.accentBg : secondaryBtn.background }, rOff),
+      caPermsMenuOpen: !!s.permMenu && !rOff,
+      caPermsMenuToggle: (e) => { if (rOff || busy) return; if (s.permMenu) return this.setState({ permMenu: false }); const r = e.currentTarget.getBoundingClientRect(); this.setState({ permMenu: { top: r.bottom + 4, left: Math.max(8, Math.min(r.right - 220, window.innerWidth - 228)) } }); },
+      caPermsMenuClose: () => this.setState({ permMenu: false }),
+      caPermsMenuStyle: { position: 'fixed', top: s.permMenu ? s.permMenu.top : 0, left: s.permMenu ? s.permMenu.left : 0, zIndex: 1001, width: 220, boxSizing: 'border-box', padding: 4, borderRadius: 7, background: th.panel, border: `1px solid ${th.borderStrong}`, boxShadow: th.shadow, display: 'flex', flexDirection: 'column' },
+      caPermsMenuTitleStyle: { fontSize: 11.5, fontWeight: 700, color: th.text, textAlign: 'center', padding: '5px 8px 6px' },
+      caPermsAllLabel: 'All granted permissions (' + granted.length + ')',
+      caPermsAllStyle: { fontSize: 11.5, color: granted.length ? th.text : th.textFaint, padding: '5px 8px', borderRadius: 4, background: granted.length ? th.accentBg : 'transparent', cursor: granted.length ? 'pointer' : 'default', whiteSpace: 'nowrap' },
+      caPermsAllHover: granted.length ? { filter: 'brightness(1.15)' } : {},
+      caPermsAll: () => { if (!granted.length) return; this.setState(st => ({ permMenu: false, permsGranted: { ...(st.permsGranted || {}), [permPkg]: [] } })); this.caRun('perms'); },
+      caPermsSepStyle: { height: 1, background: th.border, margin: '4px 2px' },
+      caPermsGroupStyle: { fontSize: 10.5, fontWeight: 600, color: th.textDim, padding: '4px 8px 2px' },
+      caPermItems: granted.map(p => ({ label: PERM_LABELS[p] || p, tip: 'pm revoke ' + permPkg + ' android.permission.' + p + ' + clears “Don’t ask again”. Android stops the app when a permission is revoked.',
+        reset: () => { this.setState(st => ({ permMenu: false, fg: 'killed', restarted: false, fresh: true, permsGranted: { ...(st.permsGranted || {}), [permPkg]: granted.filter(x => x !== p) } })); this.flash('Reset ' + (PERM_LABELS[p] || p) + ' for ' + permPkg + ' · the app was stopped'); } })),
+      caPermItemStyle: { fontSize: 11.5, color: th.text, padding: '5px 8px', borderRadius: 4, cursor: 'pointer', whiteSpace: 'nowrap' },
+      caPermItemHover: th.hover,
+      caPermsNone: granted.length === 0,
+      caPermsEmptyStyle: { fontSize: 11, color: th.textDim, padding: '4px 8px 6px' },
       caDetailsTip: caApp ? 'Open App details for ' + caApp.pkg + ' — Info, Shared prefs, Databases' : '',
+      caToolsCardStyle: { display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px', margin: '8px 10px 0', borderRadius: 7, cursor: caApp ? 'pointer' : 'default', opacity: caApp ? 1 : 0.5, background: th.accentBg, border: `1px solid ${th.accentBorder}` },
+      caToolsCardHover: caApp ? { background: s.theme === 'light' ? 'rgba(53,116,240,0.16)' : 'rgba(84,138,247,0.24)' } : {},
+      caToolsIconStyle: { color: th.accent, flexShrink: 0 },
+      caToolsTitleStyle: { fontSize: 12.5, fontWeight: 600, color: th.text },
+      caToolsSubStyle: { fontSize: 11, color: th.textDim, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
       caDetails: () => { if (!caApp) return; this.setState({ view: 'apps', detailPkg: caApp.pkg, detailFrom: 'device', detailTab: 'info', selectedPkg: caApp.pkg }); },
       caClearStyle: off(dangerBtn, cOff), caClearHover: cOff ? {} : { background: th.redBg },
       caClearTip: caSysUI ? sysUiTip : 'Deletes databases, prefs and caches. Cannot be undone.',
@@ -1497,7 +1962,113 @@ class Component extends DCLogic {
       emptyActionsStyle: { display: 'flex', gap: 6, marginTop: 4 },
       emptyFootStyle: { fontFamily: MONO, fontSize: 9.5, color: th.textFaint, marginTop: 8 },
 
-      sec: (() => { const o = {}; ["app","screen","device","display","font","density","locale","loc","toggles","proxy","recent"].forEach(k => { const open = !(this.state.collapsedSecs || {})[k]; o[k] = { open, tip: open ? 'Collapse section' : 'Expand section', chevStyle: { width: 0, height: 0, borderLeft: '4px solid ' + th.textDim, borderTop: '3.5px solid transparent', borderBottom: '3.5px solid transparent', transform: open ? 'rotate(90deg)' : 'none', transition: 'transform 120ms', flexShrink: 0 }, toggle: () => this.setState(st => { const c = { ...(st.collapsedSecs || {}), [k]: open }; try { localStorage.setItem('adbtb.collapsedSecs', JSON.stringify(c)); } catch (e) {} return { collapsedSecs: c }; }) }; }); return o; })(),
+      ...(() => {
+        const favs = s.favs || FAV_DEFAULT;
+        const save = (list) => { try { localStorage.setItem('adbtb.favs', JSON.stringify(list)); } catch (e) {} this.setState({ favs: list }); };
+        const KIND = { toggle: '◐', action: '▸', preset: 'Aa', link: '↗', cmd: '$' };
+        const pkgNow = caApp ? caApp.pkg : null;
+        const A = (id, label, sub, tip, run, o) => ({ id, kind: 'action', label, sub, tip, run, ...(o || {}) });
+        const P = (id, label, on, sub, tip, run) => ({ id, kind: 'preset', label, on, sub: on ? 'on · click to reset' : sub, tip, run });
+        const appActs = [
+          A('app:restart', 'Restart app', 'current app', 'Force-stop + launch the foreground app', () => this.caRun('restart')),
+          A('app:kill', 'Force stop', 'current app', 'am force-stop — data stays', () => this.caRun('kill')),
+          A('app:perms', 'Reset permissions', 'current app', 'pm reset-permissions', () => this.caRun('perms')),
+          A('app:death', 'Process death', 'current app', 'Background + am kill — test state restore', () => this.caRun('death')),
+          A('app:clear', 'Clear data', 'current app · confirm', 'pm clear — asks for confirmation', () => pkgNow && this.askConfirm('clear', pkgNow, 'current')),
+          A('app:uninstall', 'Uninstall', 'current app · confirm', 'Asks for confirmation', () => pkgNow && this.askConfirm('uninstall', pkgNow, 'current')),
+          A('app:details', 'App tools & details', 'current app', 'Deep links, permissions, prefs, databases', () => pkgNow && this.setState({ view: 'apps', detailPkg: pkgNow, detailFrom: 'device' })),
+        ];
+        const devActs = [
+          A('dev:reboot', 'Reboot', 'device', 'adb reboot', () => this.flash('Rebooting ' + dev.name + '…')),
+          A('dev:wake', 'Wake', 'device', 'input keyevent WAKEUP', () => this.flash('Woke ' + dev.name)),
+          A('dev:shell', 'Open shell', 'terminal', 'adb shell in a new terminal tab', () => this.flash('adb -s ' + dev.serial + ' shell — opened in Terminal')),
+          A('dev:report', 'Copy device report', 'clipboard', 'Model, API, ABI, serial…', () => this.flash('Device report copied')),
+          A('dev:deeplink', 'Deep link', 'dialog', 'Open the deep link dialog', () => this.setState({ dl: this.dlBlank(), dlRecent: this.dlLoadRecent() })),
+        ];
+        const scrActs = [
+          A('scr:mirror', 'Mirror', s.mirroring ? 'running' : 'scrcpy', 'Start / stop scrcpy', () => { const on = !s.mirroring; this.setState({ mirroring: on }); this.flash(on ? 'scrcpy started for ' + dev.name : 'Mirroring stopped'); }, { on: s.mirroring }),
+          A('scr:shot', 'Screenshot', '~/Desktop', 'Save a PNG', () => this.flash('Saved screen-2026-09-01.png', 'ok', 'Reveal')),
+          A('scr:rec', 'Record', s.recording ? 'recording' : 'screen', 'Start / stop recording', () => { const on = !s.recording; this.setState({ recording: on }); this.flash(on ? 'Recording started' : 'Saved screen-2026-09-01.mp4'); }, { on: s.recording }),
+          A('scr:inspect', 'Layout Inspector', 'capture', 'Capture the view hierarchy', () => { this.setState({ inspectorOpen: true }); this.flash('Captured layout of ' + dev.name); }),
+        ];
+        const fontP = FONT_PRESETS.filter(v => v !== 1).map(v => P('font:' + v, 'Font ' + v + '×', s.fontScale === v, 'font scale', 'Toggle font scale ' + v + '× ↔ 1×', () => { const n = s.fontScale === v ? 1 : v; this.setState({ fontScale: n }); this.flash('Font scale ' + n + '×'); }));
+        const densP = DENSITY_PRESETS.filter(v => v !== 100).map(v => P('dens:' + v, 'Display ' + v + '%', s.density === v, 'display size', 'Toggle display size ' + v + '% ↔ default', () => { const n = s.density === v ? 100 : v; this.setState({ density: n }); this.flash(n === 100 ? 'Display size reset' : 'Display size ' + n + '%'); }));
+        const rotP = ROT.map(v => P('rot:' + v, v === 'Auto' ? 'Auto-rotate' : 'Lock ' + v.toLowerCase(), s.rotation === v && v !== 'Auto', 'rotation', 'Rotation: ' + v, () => { const n = s.rotation === v ? 'Auto' : v; this.setState({ rotation: n }); this.flash(n === 'Auto' ? 'Auto-rotate on' : 'Rotation locked to ' + n.toLowerCase()); }));
+        const bgP = ['0', '1', '2', '3', '4'].map(v => P('bg:' + v, 'Bg limit ' + v, s.bgLimit === v, 'background processes', 'Toggle background process limit ' + v + ' ↔ standard', () => { const n = s.bgLimit === v ? 'Standard' : v; this.setState({ bgLimit: n }); this.flash('Background process limit: ' + n.toLowerCase()); }));
+        const seenLoc = {}; const locP = [...QUICK_LOCALES, ...LOCALES].filter(([c]) => c !== 'en-US' && !seenLoc[c] && (seenLoc[c] = 1)).map(([c, n]) => P('lang:' + c, c, s.locale === c, n.split(' — ')[0], 'Toggle language ' + c + ' ↔ en-US', () => { const v = s.locale === c ? 'en-US' : c; this.setState({ locale: v }); this.flash('Language ' + v); }));
+        const geoP = CITIES.map(([n, la, lo]) => P('loc:' + n, n, s.locName === n, la.toFixed(2) + ', ' + lo.toFixed(2), 'Toggle mock location ' + n + ' ↔ off', () => { const on = s.locName === n; this.setState(on ? { locName: null } : { locName: n, locLat: la, locLon: lo }); this.flash(on ? 'Mock location off' : 'Location set to ' + n); }));
+        const netP = [P('net:proxy', 'Proxy ' + s.proxyHost + ':' + s.proxyPort, s.proxyEnabled, 'global http proxy', 'Toggle global proxy', () => { const on = !s.proxyEnabled; this.setState({ proxyEnabled: on }); this.flash(on ? 'Proxy on' : 'Proxy off'); })];
+        const toggles = displayToggles.filter(t => !t.na).map(t => ({ id: 'tg:' + t.label, kind: 'toggle', label: t.label, sub: t.value, on: !!t.on, tip: t.tooltip, run: t.onClick }));
+        const links = this.dlLoadRecent().slice(0, 12).map(r => { const m = /^([a-z][a-z0-9+.-]*:\/\/)?(.*)$/i.exec(r.uri); const a = APPS.find(x => x.pkg === r.pkg); return { id: 'dl:' + r.uri + '|' + (r.pkg || ''), kind: 'link', label: m[2] || r.uri, sub: a ? a.label : 'Any app', tip: r.uri + (r.pkg ? ' → ' + r.pkg : ''), run: () => this.dlExec({ uri: r.uri, pkg: r.pkg || '' }) }; });
+        const mkCmd = (id) => { const [name, ...rest] = id.slice(4).split('|'); const c = rest.join('|'); return { id, kind: 'cmd', label: name, sub: c, tip: 'adb -s ' + dev.serial + ' shell ' + c, run: () => this.flash('Ran: ' + c) }; };
+        const cmds = favs.filter(f => f.startsWith('cmd:')).map(mkCmd);
+        const acts = [], presets = [];
+        const all = [...appActs, ...devActs, ...scrActs, ...fontP, ...densP, ...rotP, ...bgP, ...locP, ...geoP, ...netP, ...toggles, ...links, ...cmds];
+        const byId = {}; all.forEach(x => { byId[x.id] = x; });
+        favs.forEach(id => { if (!byId[id] && id.startsWith('cmd:')) byId[id] = mkCmd(id); if (!byId[id] && id.startsWith('dl:')) { const [uri, pkg] = id.slice(3).split('|'); byId[id] = { id, kind: 'link', label: uri.replace(/^[a-z][a-z0-9+.-]*:\/\//i, '') || uri, sub: pkg ? (APPS.find(x => x.pkg === pkg) || {}).label || pkg : 'Any app', tip: uri, run: () => this.dlExec({ uri, pkg: pkg || '' }) }; } });
+        const items = favs.map(id => byId[id]).filter(Boolean);
+        const kindStyle = (k, on) => ({ width: 18, height: 18, borderRadius: 4, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: k === 'preset' ? 8.5 : 10, fontWeight: 700, fontFamily: k === 'preset' ? UI : MONO, color: on ? th.accent : th.textDim, background: on ? 'transparent' : th.header, border: `1px solid ${on ? th.accentBorder : th.border}` });
+        const edit = s.favEditing;
+        const q = (s.favQuery || '').toLowerCase();
+        const groups = [['Current app', appActs], ['Device', devActs], ['Screen', scrActs], ['Toggles', toggles], ['Font scale', fontP], ['Display size', densP], ['Rotation', rotP], ['Background limit', bgP], ['Language', locP], ['Mock location', geoP], ['Network', netP], ['Recent deep links', links], ['Custom commands', cmds]].map(([label, list]) => ({ label, items: list.filter(x => !q || x.label.toLowerCase().includes(q) || (x.sub || '').toLowerCase().includes(q)).map(x => { const pinned = favs.includes(x.id); return {
+          label: x.label, sub: x.sub, tip: x.tip, kindGlyph: KIND[x.kind], kindStyle: kindStyle(x.kind, false),
+          star: pinned ? '★' : '☆', starStyle: { width: 14, flexShrink: 0, fontSize: 12, color: pinned ? th.amber : th.textFaint, textAlign: 'center' },
+          rowStyle: { display: 'flex', alignItems: 'center', gap: 8, padding: '4px 6px', borderRadius: 4, cursor: 'pointer', background: pinned ? th.accentBg : 'transparent' },
+          toggle: () => save(pinned ? favs.filter(f => f !== x.id) : [...favs, x.id]),
+        }; }) })).filter(g => g.items.length);
+        return {
+          favEmpty: items.length === 0, favHasItems: items.length > 0, favCanEdit: items.length > 0,
+          favEditing: edit, favEditLabel: edit ? 'Done' : 'Edit',
+          favToggleEdit: () => this.setState({ favEditing: !edit, favAddOpen: false }),
+          favMeta: items.length ? items.length + ' pinned' : '',
+          favMetaStyle: { fontFamily: MONO, fontSize: 9.5, color: th.textFaint, marginLeft: 'auto' },
+          favTiles: items.map((x, i) => ({
+            label: x.label, sub: x.sub, tip: edit ? 'Drag to reorder' : x.tip,
+            kindGlyph: KIND[x.kind], kindStyle: kindStyle(x.kind, x.on),
+            subStyle: { fontFamily: MONO, fontSize: 9.5, color: x.on ? th.accent : th.textDim, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
+            style: { display: 'flex', alignItems: 'center', gap: 7, minHeight: 38, padding: '4px 8px', boxSizing: 'border-box', borderRadius: 6, cursor: edit ? 'grab' : dis ? 'default' : 'pointer', opacity: dis && !edit ? 0.45 : 1, background: x.on ? th.accentBg : th.field, border: `1px solid ${x.on ? th.accentBorder : edit ? th.borderStrong : th.border}`, borderStyle: edit ? 'dashed' : 'solid', minWidth: 0 },
+            hover: edit || dis ? {} : th.hover,
+            onClick: () => { if (edit || dis) return; x.run(); },
+            remove: (e) => { e.stopPropagation(); save(favs.filter(f => f !== x.id)); },
+            onDragStart: (e) => { this._favDrag = i; try { e.dataTransfer.effectAllowed = 'move'; } catch (er) {} },
+            onDragOver: (e) => { if (edit) e.preventDefault(); },
+            onDrop: (e) => { e.preventDefault(); const from = this._favDrag; if (from == null || from === i) return; const ids = items.map(y => y.id); const [m] = ids.splice(from, 1); ids.splice(i, 0, m); save(ids); this._favDrag = null; },
+          })),
+          favGridStyle: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: 5, padding: '0 10px' },
+          favLabelStyle: { fontSize: 11.5, fontWeight: 600, color: th.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
+          favGripStyle: { fontSize: 9, letterSpacing: -2, color: th.textFaint, flexShrink: 0 },
+          favRemoveStyle: { width: 18, height: 18, borderRadius: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, cursor: 'pointer', color: th.textDim, fontSize: 13 },
+          favAddTileStyle: { display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 38, borderRadius: 6, border: `1px dashed ${th.borderStrong}`, fontSize: 11.5, fontWeight: 600, color: th.textDim, cursor: 'pointer' },
+          favHintStyle: { fontSize: 10.5, color: th.textDim, padding: '2px 10px 0' },
+          favEmptyStyle: { margin: '0 10px', padding: '12px', borderRadius: 6, border: `1px dashed ${th.borderStrong}`, display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'flex-start', fontSize: 11, color: th.textDim },
+          favEmptyTitleStyle: { fontSize: 12, fontWeight: 600, color: th.text },
+          favAddBtnStyle: { ...secondaryBtn, marginTop: 6, cursor: 'pointer' },
+          favAddOpen: s.favAddOpen,
+          favOpenAdd: () => this.setState({ favAddOpen: true, favQuery: '' }),
+          favCloseAdd: () => this.setState({ favAddOpen: false }),
+          favPanelStyle: { margin: '4px 10px 0', padding: 8, borderRadius: 6, border: `1px solid ${th.borderStrong}`, background: th.panel, boxShadow: th.shadow, display: 'flex', flexDirection: 'column', gap: 6 },
+          favPanelTitleStyle: { fontSize: 11.5, fontWeight: 700, color: th.text },
+          favSearchStyle: { ...field, width: '100%', boxSizing: 'border-box', fontFamily: UI, height: 26 },
+          favQuery: s.favQuery, favOnQuery: (e) => this.setState({ favQuery: e.target.value }),
+          favCatScrollStyle: { maxHeight: 300, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 1 },
+          favCatalog: groups, favCatEmpty: groups.length === 0,
+          favCmdName: s.favCmdName, favCmdText: s.favCmdText, favCmdErr: s.favCmdErr, favCmdHasErr: !!s.favCmdErr,
+          favOnCmdName: (e) => this.setState({ favCmdName: e.target.value, favCmdErr: '' }),
+          favOnCmdText: (e) => this.setState({ favCmdText: e.target.value, favCmdErr: '' }),
+          favAddCmd: () => { const n = s.favCmdName.trim(), c = s.favCmdText.trim().replace(/^adb( -s \S+)? shell /, ''); if (!n || !c) { this.setState({ favCmdErr: 'Name and command are both required.' }); return; } save([...favs, 'cmd:' + n.replace(/\|/g, '/') + '|' + c]); this.setState({ favCmdName: '', favCmdText: '' }); this.flash('Pinned “' + n + '”'); },
+          favCmdBoxStyle: { borderTop: `1px solid ${th.border}`, paddingTop: 8, display: 'grid', gridTemplateColumns: 'minmax(0,1fr)', gap: 5 },
+          favCmdRowStyle: { display: 'flex', alignItems: 'center', gap: 5, minWidth: 0 },
+          favCmdPrefixStyle: { fontFamily: MONO, fontSize: 10.5, color: th.textDim, whiteSpace: 'nowrap', flexShrink: 0 },
+          favCmdNameStyle: { ...field, width: '100%', boxSizing: 'border-box', fontFamily: UI, height: 26 },
+          favCmdTextStyle: { ...field, width: 0, flex: 1, height: 26 },
+          favCmdBtnStyle: { ...primaryBtn, height: 26, fontSize: 11, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 },
+          favCmdErrStyle: { fontSize: 10.5, color: th.red },
+          favGroupLabelStyle: { fontSize: 9.5, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase', color: th.textDim, padding: '8px 6px 3px' },
+          favCatLabelStyle: { fontSize: 11.5, color: th.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0, flex: 1 },
+          favCatSubStyle: { fontFamily: MONO, fontSize: 9.5, color: th.textDim, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '45%' },
+        };
+      })(),
+      sec: (() => { const o = {}; ["app","favs","screen","device","display","font","density","locale","loc","toggles","proxy","recent"].forEach(k => { const open = !(this.state.collapsedSecs || {})[k]; o[k] = { open, tip: open ? 'Collapse section' : 'Expand section', chevStyle: { width: 0, height: 0, borderLeft: '4px solid ' + th.textDim, borderTop: '3.5px solid transparent', borderBottom: '3.5px solid transparent', transform: open ? 'rotate(90deg)' : 'none', transition: 'transform 120ms', flexShrink: 0 }, toggle: () => this.setState(st => { const c = { ...(st.collapsedSecs || {}), [k]: open }; try { localStorage.setItem('adbtb.collapsedSecs', JSON.stringify(c)); } catch (e) {} return { collapsedSecs: c }; }) }; }); return o; })(),
       secToggleStyle: { display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', userSelect: 'none', minWidth: 0 },
       secToggleHover: { opacity: 0.85 },
       sectionStyle: { display: 'flex', flexDirection: 'column', gap: 6, padding: '10px 0 12px', borderBottom: `1px solid ${th.border}`, flexShrink: 0 },
@@ -1773,6 +2344,177 @@ class Component extends DCLogic {
       confirmCancelStyle: { height: 24, padding: '0 10px', display: 'inline-flex', alignItems: 'center', borderRadius: 5, fontSize: 11, fontWeight: 600, border: `1px solid ${th.accent}`, color: th.text, cursor: 'pointer' },
       confirmOkStyle: { height: 24, padding: '0 10px', display: 'inline-flex', alignItems: 'center', borderRadius: 5, fontSize: 11, fontWeight: 700, background: th.red, color: '#fff', cursor: 'pointer' },
       cancelConfirm: () => this.cancelConfirm(), acceptConfirm: () => this.acceptConfirm(),
+      ...(() => {
+        const f = s.dl || this.dlBlank();
+        let lastPkg = ''; try { lastPkg = localStorage.getItem('adbtb.dlPkg') || ''; } catch (e) {}
+        const appOf = (pkg) => APPS.find(a => a.pkg === pkg);
+        const appIcon = (pkg) => { const a = appOf(pkg); return { width: 16, height: 16, borderRadius: 5, flexShrink: 0, boxSizing: 'border-box', background: !pkg ? 'transparent' : a && a.debuggable ? th.brandBg : th.header, border: !pkg ? `1px dashed ${th.borderStrong}` : `1px solid ${a && a.debuggable ? th.brandBorder : th.border}` }; };
+        const splitUri = (u) => { const m = /^([a-z][a-z0-9+.-]*:\/\/[^/?#]*)(.*)$/i.exec(u); return m ? [m[1], m[2]] : [u, '']; };
+        const fq = (f.pkgQuery || '').toLowerCase();
+        const pkgOpts = [{ pkg: '', label: 'Any app', sub: 'System chooser' }, ...APPS.map(a => ({ pkg: a.pkg, label: a.label, sub: a.pkg }))]
+          .filter(o => !fq || o.label.toLowerCase().includes(fq) || o.pkg.toLowerCase().includes(fq));
+        const selApp = appOf(f.pkg);
+        const recentRows = s.dlRecent.map((r, i) => ({ r, i })).reverse().map(({ r, i }, vi) => {
+          const [head, tail] = splitUri(r.uri); const a = appOf(r.pkg);
+          const sel = s.dl && s.dl.uri === r.uri && (s.dl.pkg || '') === (r.pkg || '');
+          return {
+            head, tail, at: r.at, app: r.pkg ? (a ? a.label : r.pkg) : 'Any app',
+            iconStyle: appIcon(r.pkg),
+            uri: r.uri, tip: 'Click to load into the form · ' + r.uri, rowStyle: { display: 'grid', gridTemplateColumns: '16px minmax(0,1fr) 128px 64px 48px', alignItems: 'center', columnGap: 10, padding: '5px 6px 5px 10px', minHeight: 32, boxSizing: 'border-box', cursor: 'pointer', background: sel ? th.accentBg : 'transparent', borderTop: vi ? `1px solid ${th.border}` : 'none' },
+            hover: sel ? {} : th.hover,
+            load: () => this.setState({ dl: { ...this.dlBlank(), uri: r.uri, pkg: r.pkg || '', params: this.dlParse(r.uri).params } }),
+            run: (e) => { e.stopPropagation(); this.dlSet({ params: this.dlParse(r.uri).params, result: null }); this.dlExec({ ...f, uri: r.uri, pkg: r.pkg || '' }); },
+            remove: (e) => { e.stopPropagation(); const rest = s.dlRecent.filter((_, j) => j !== i); try { localStorage.setItem('adbtb.dlRecent3', JSON.stringify(rest)); } catch (er) {} this.setState({ dlRecent: rest }); },
+          };
+        });
+        return {
+          dlVisible: !!s.dl,
+          dlOpen: () => { if (dis) return; this.setState({ dl: this.dlBlank(), dlRecent: this.dlLoadRecent() }); },
+          dlClose: () => { if (f.pkgOpen || f.resOpen) { this.dlSet({ pkgOpen: false, resOpen: false }); return; } this.setState({ dl: null }); },
+          dlRecentRef: this.dlRecentRef,
+          dlDialogStyle: { width: 600, maxWidth: '100%', maxHeight: '100%', fontFamily: UI, padding: 18, overflowY: 'auto', boxSizing: 'border-box', borderRadius: 8, background: th.panel, border: `1px solid ${th.borderStrong}`, boxShadow: '0 16px 48px rgba(0,0,0,0.45)', display: 'block', fontSize: 11, color: th.text },
+          dlTitleStyle: { fontSize: 12.5, fontWeight: 700, whiteSpace: 'nowrap', flexShrink: 0 },
+          dlActionsStyle: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'flex-end', gap: 6, marginTop: 14 },
+          dlCancelStyle: { height: 24, padding: '0 10px', display: 'inline-flex', alignItems: 'center', borderRadius: 5, fontSize: 11, fontWeight: 600, border: `1px solid ${th.borderStrong}`, color: th.text, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 },
+          dlDeviceLabel: dev.name + ' · ' + dev.serial,
+          dlMetaStyle: { fontFamily: MONO, fontSize: 10, color: th.textDim, minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
+          dlLabelStyle: { fontSize: 9.5, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase', color: th.textDim, margin: '12px 0 5px' },
+          dlHasRecent: s.dlRecent.length > 0, dlRecentCount: s.dlRecent.length, dlRecentRows: recentRows,
+          dlRecentListStyle: { display: 'flex', flexDirection: 'column', maxHeight: 230, overflowY: 'auto', border: `1px solid ${th.border}`, borderRadius: 6, background: th.bg },
+          dlRecentUriStyle: { fontFamily: MONO, fontSize: 12, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0 },
+          dlRecentHeadRowStyle: { display: 'grid', gridTemplateColumns: '16px minmax(0,1fr) 128px 64px 48px', columnGap: 10, padding: '5px 6px 5px 10px', fontSize: 10.5, fontWeight: 600, color: th.textDim, borderBottom: `1px solid ${th.border}`, background: th.header, position: 'sticky', top: 0, zIndex: 1 },
+          dlHintStyle: { fontSize: 10.5, color: th.textDim, marginTop: 5 },
+          dlScrimStyle: { position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 },
+          dlRecentHeadStyle: { color: th.text, fontWeight: 600 },
+          dlRecentTailStyle: { color: th.textDim },
+          dlRecentAppStyle: { fontSize: 11.5, color: th.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0 },
+          dlRecentTimeStyle: { fontSize: 11, color: th.textDim, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0 },
+          dlRecentRunStyle: { width: 22, height: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 4, color: th.accent, cursor: 'pointer', flexShrink: 0 },
+          dlRecentRunHover: { background: th.accentBg },
+          dlIconBtnStyle: { width: 22, height: 22, borderRadius: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, cursor: 'pointer', color: th.textDim, fontSize: 13 },
+          dlUri: f.uri, dlOnUri: (e) => { const v = e.target.value; const parsed = this.dlParse(v).params; const blanks = (f.params || []).filter(p => !p.key && !p.val); this.dlSet({ uri: v, params: [...parsed, ...blanks], err: '', result: null }); },
+          dlHasParams: (f.params || []).length > 0, dlNoParams: !(f.params || []).length,
+          dlParamRows: (f.params || []).map((p, i) => ({ ...p,
+            onKey: (e) => this.dlSetParams(f, f.params.map((x, j) => j === i ? { ...x, key: e.target.value } : x)),
+            onVal: (e) => this.dlSetParams(f, f.params.map((x, j) => j === i ? { ...x, val: e.target.value } : x)),
+            remove: () => this.dlSetParams(f, f.params.filter((_, j) => j !== i)),
+          })),
+          dlAddParam: () => this.dlSet({ params: [...(f.params || []), { key: '', val: '' }] }),
+          dlAddParamStyle: { fontSize: 11, fontWeight: 600, color: th.accent, cursor: 'pointer', marginTop: 7, whiteSpace: 'nowrap' },
+          dlParamsBoxStyle: { border: `1px solid ${th.border}`, borderRadius: 6, background: th.bg, padding: '0 6px 6px' },
+          dlParamHeadStyle: { display: 'grid', gridTemplateColumns: 'minmax(0,1fr) 10px minmax(0,1.6fr) 22px', columnGap: 6, padding: '5px 0 4px', fontSize: 10.5, fontWeight: 600, color: th.textDim },
+          dlParamRowStyle: { display: 'grid', gridTemplateColumns: 'minmax(0,1fr) 10px minmax(0,1.6fr) 22px', columnGap: 6, alignItems: 'center', marginTop: 4 },
+          dlParamKeyStyle: { ...field, width: '100%', boxSizing: 'border-box', height: 26, fontSize: 11.5, fontWeight: 600 },
+          dlParamValStyle: { ...field, width: '100%', boxSizing: 'border-box', height: 26, fontSize: 11.5 },
+          dlParamEqStyle: { fontFamily: MONO, fontSize: 11.5, color: th.textDim, textAlign: 'center' },
+          dlParamsEmptyStyle: { fontSize: 11, color: th.textDim, padding: '8px 10px', border: `1px dashed ${th.border}`, borderRadius: 6 },
+          dlMonoInline: { fontFamily: MONO, color: th.text },
+          dlUriFieldStyle: { ...field, height: 28, fontSize: 12, width: '100%', boxSizing: 'border-box', borderColor: f.err ? th.red : th.borderStrong },
+          dlHasErr: !!f.err, dlErr: f.err, dlErrStyle: { fontSize: 10.5, color: th.red, marginTop: 4 },
+          dlTogglePkg: () => this.dlSet({ pkgOpen: !f.pkgOpen, pkgQuery: '' }),
+          dlPkgOpen: f.pkgOpen,
+          dlPkgFieldStyle: { display: 'flex', alignItems: 'center', gap: 8, height: 36, padding: '0 8px', boxSizing: 'border-box', borderRadius: 4, border: `1px solid ${f.pkgOpen ? th.accent : th.borderStrong}`, background: th.field, cursor: 'pointer' },
+          dlPkgIconStyle: appIcon(f.pkg),
+          dlPkgLabel: f.pkg ? (selApp ? selApp.label : f.pkg) : 'Any app',
+          dlPkgSub: f.pkg ? f.pkg : 'System chooser',
+          dlPkgLabelStyle: { fontSize: 11.5, fontWeight: 600, color: th.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
+          dlCaretStyle: { color: th.textDim, flexShrink: 0, transform: f.pkgOpen ? 'rotate(180deg)' : 'none' },
+          dlPkgPopupStyle: { position: 'absolute', top: 40, left: 0, right: 0, zIndex: 5, background: th.panel, border: `1px solid ${th.borderStrong}`, borderRadius: 6, boxShadow: th.shadow, padding: 4 },
+          dlPkgSearchStyle: { ...field, width: '100%', boxSizing: 'border-box', fontFamily: UI, marginBottom: 4 },
+          dlPkgQuery: f.pkgQuery, dlOnPkgQuery: (e) => this.dlSet({ pkgQuery: e.target.value }),
+          dlPkgListStyle: { maxHeight: 180, overflowY: 'auto', display: 'flex', flexDirection: 'column' },
+          dlPkgOptions: pkgOpts.map(o => ({ ...o, isLast: o.pkg === lastPkg && !!o.pkg, iconStyle: appIcon(o.pkg),
+            rowStyle: { display: 'flex', alignItems: 'center', gap: 8, padding: '5px 6px', borderRadius: 4, cursor: 'pointer', background: o.pkg === (f.pkg || '') ? th.accentBg : 'transparent' },
+            pick: () => this.dlPickPkg(o.pkg) })),
+          dlPkgEmpty: pkgOpts.length === 0, dlPkgEmptyStyle: { fontSize: 11, color: th.textDim, padding: '8px 6px' },
+          dlCmd: this.dlCommand(f, dev.serial, s.dlCmdOpen),
+          dlCmdToggleLabel: s.dlCmdOpen ? 'Collapse' : 'Expand',
+          dlToggleCmd: () => { const v = !s.dlCmdOpen; try { localStorage.setItem('adbtb.dlCmdOpen', v ? '1' : '0'); } catch (e) {} this.setState({ dlCmdOpen: v }); },
+          dlCmdStyle: { fontFamily: MONO, fontSize: 11, lineHeight: 1.6, color: th.text, background: th.field, border: `1px solid ${th.border}`, borderRadius: 5, padding: '7px 9px', whiteSpace: 'pre', overflowX: 'auto' },
+          dlCopy: () => { try { navigator.clipboard.writeText(this.dlCommand(f, dev.serial)); } catch (e) {} this.flash('Command copied'); },
+          dlReset: () => this.setState({ dl: this.dlBlank() }),
+          dlResetStyle: { height: 24, padding: '0 8px', display: 'inline-flex', alignItems: 'center', borderRadius: 5, fontSize: 11, color: th.textDim, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 },
+          dlRunStyle: { ...primaryBtn, height: 24, fontSize: 11, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 },
+          dlRun: () => { if (!f.busy) this.dlExec(f); },
+          dlRunLabel: f.busy ? 'Opening…' : 'Open on device',
+          ...(() => {
+            const lab = (p) => (APPS.find(a => a.pkg === p) || {}).label || p;
+            const tile = (p, sz) => { const a = APPS.find(x => x.pkg === p); return { width: sz, height: sz, borderRadius: sz > 16 ? 6 : 5, flexShrink: 0, boxSizing: 'border-box', background: a && a.debuggable ? th.brandBg : th.header, border: `1px solid ${a && a.debuggable ? th.brandBorder : th.border}` }; };
+            const shortAct = (p, a) => a.startsWith('.') ? a : a.startsWith(p + '.') ? a.slice(p.length) : a;
+            const TONE = { ok: [th.green, th.greenBg], warn: [th.amber, th.amberBg], bad: [th.red, th.redBg], dim: [th.textDim, 'transparent'] };
+            const glyph = (tone, sz) => ({ width: sz, height: sz, borderRadius: '50%', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: TONE[tone][0], color: th.panel, fontSize: sz > 14 ? 10 : 9, fontWeight: 800, fontFamily: UI, lineHeight: 1 });
+            // resolver strip
+            const RS = f.res; let rs = { tone: 'dim', glyph: '', text: '', app: null, act: '', more: '' };
+            if (RS && RS.status === 'done') {
+              const n = RS.all.length;
+              if (RS.kind === 'direct') rs = { tone: 'ok', glyph: '✓', text: f.pkg ? 'Handled by' : 'Opens directly in', app: RS.target.pkg, act: shortAct(RS.target.pkg, RS.target.act), more: n > 1 ? 'All ' + n + ' matches' : '' };
+              else if (RS.kind === 'chooser') rs = { tone: 'warn', glyph: '!', text: 'Chooser appears · ' + n + ' apps handle this link', more: 'Show apps' };
+              else if (RS.kind === 'browser') rs = { tone: 'warn', glyph: '!', text: 'Opens in Chrome · the App Link for ' + RS.host + ' isn’t verified', more: 'Show ' + n + ' matches' };
+              else if (RS.kind === 'mismatch') rs = { tone: 'bad', glyph: '✕', text: lab(f.pkg) + ' doesn’t handle this link · ' + n + (n === 1 ? ' other app does' : ' other apps do'), more: 'Show apps' };
+              else rs = { tone: 'bad', glyph: '✕', text: 'Nothing on this device handles this link' };
+            }
+            // banner
+            const R = f.result; let bn = null;
+            if (R) {
+              if (R.kind === 'ok' && R.browser) bn = { tone: 'warn', glyph: '!', tile: R.pkg, title: 'Opened in ' + lab(R.pkg) + ', not in ' + lab(R.intended), detail: 'The App Link for ' + R.host + ' isn’t verified on this device, so the tap went to the browser.', mono: R.pkg + '/' + R.act, action: 'Copy verify command', run: () => { try { navigator.clipboard.writeText('adb -s ' + dev.serial + ' shell pm get-app-links ' + R.intended); } catch (e) {} this.flash('Copied: pm get-app-links ' + R.intended); } };
+              else if (R.kind === 'ok') bn = { tone: 'ok', glyph: '✓', tile: R.pkg, title: 'Opened in ' + lab(R.pkg), detail: (R.launch === 'COLD' ? 'Cold start' : 'Warm start') + ' · ' + R.ms + ' ms' + (R.any ? ' · Android picked this app' : ''), mono: R.pkg + '/' + shortAct(R.pkg, R.act) };
+              else if (R.kind === 'chooser') bn = { tone: 'warn', glyph: '!', title: 'The system chooser opened on the device', detail: R.http ? 'The App Link for ' + R.host + ' isn’t verified, so Android asks which app to use. Pick one on the device.' : R.n + ' apps handle this link. Pick one on the device, or choose the app in Open in.', mono: 'Activity: android/com.android.internal.app.ResolverActivity' };
+              else if (R.kind === 'newintent') bn = { tone: 'warn', glyph: '!', tile: R.pkg, title: 'Delivered to the running activity', detail: lab(R.pkg) + ' was already on top and got the link in onNewIntent(). Nothing new was launched.', mono: R.pkg + '/' + shortAct(R.pkg, R.act), action: f.cold ? '' : 'Turn on Cold start', run: () => { try { localStorage.setItem('adbtb.dlCold', '1'); } catch (e) {} this.dlSet({ cold: true }); } };
+              else if (R.kind === 'none') bn = { tone: 'bad', glyph: '✕', title: 'No app on this device handles this link', detail: R.pkg ? lab(R.pkg) + ' has no activity for this link with VIEW + BROWSABLE.' : 'Nothing matches VIEW + BROWSABLE for ' + R.schemeHost + '. Check the scheme and host in the app’s intent filter.', mono: 'Error: Activity not started, unable to resolve Intent' };
+              else bn = { tone: 'bad', glyph: '✕', title: 'Couldn’t open the link', detail: 'adb returned an error. Nothing was launched.', mono: R.line || 'error: closed' };
+            }
+            const http = /^https?:\/\//i.test((f.uri || '').trim());
+            const host = ((/^https?:\/\/([^/?#]*)/i.exec((f.uri || '').trim()) || [])[1] || 'this host');
+            const btone = bn ? TONE[bn.tone] : TONE.dim;
+            return {
+              dlResVisible: !!RS, dlResChecking: !!RS && RS.status === 'checking', dlResDone: !!RS && RS.status === 'done',
+              dlResTip: 'Checked with cmd package query-activities, without launching. Updates as you type.',
+              dlResText: RS && RS.status === 'checking' ? 'Checking which apps handle this link…' : rs.text,
+              dlResGlyph: rs.glyph, dlResGlyphStyle: glyph(rs.tone, 14),
+              dlResHasApp: !!rs.app, dlResApp: rs.app ? lab(rs.app) : '', dlResAct: rs.act, dlResTileStyle: rs.app ? tile(rs.app, 14) : {},
+              dlResHasList: !!rs.more, dlResMore: rs.more + (f.resOpen ? ' ▴' : ' ▾'),
+              dlResToggle: () => this.dlSet({ resOpen: !f.resOpen, pkgOpen: false }),
+              dlResOpen: f.resOpen && !!RS && RS.status === 'done',
+              dlResRowStyle: { display: 'flex', alignItems: 'center', gap: 6, height: 24, marginTop: 5, fontSize: 11, color: rs.tone === 'bad' ? th.red : th.textDim, minWidth: 0, whiteSpace: 'nowrap' },
+              dlResTextStyle: { overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0, flexShrink: 1 },
+              dlResAppStyle: { fontSize: 11, fontWeight: 600, color: th.text, flexShrink: 0 },
+              dlResActStyle: { fontFamily: MONO, fontSize: 10, color: th.textDim, overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0 },
+              dlResMoreStyle: { fontSize: 11, fontWeight: 600, color: th.accent, cursor: 'pointer', flexShrink: 0 },
+              dlSpinStyle: { width: 10, height: 10, borderRadius: '50%', border: `1.5px solid ${th.textDim}`, borderTopColor: 'transparent', animation: 'adb-spin 0.7s linear infinite', flexShrink: 0 },
+              dlResPopStyle: { position: 'absolute', top: 30, left: 0, right: 0, zIndex: 6, background: th.panel, border: `1px solid ${th.borderStrong}`, borderRadius: 6, boxShadow: th.shadow, padding: 4 },
+              dlResPopHeadStyle: { fontFamily: MONO, fontSize: 10, color: th.textDim, padding: '4px 6px 6px', borderBottom: `1px solid ${th.border}`, marginBottom: 2 },
+              dlResPopHead: RS && RS.all ? 'query-activities · ' + RS.all.length + (RS.all.length === 1 ? ' match' : ' matches') + ' for VIEW + BROWSABLE' : '',
+              dlResPopRowStyle: { display: 'flex', alignItems: 'center', gap: 8, padding: '5px 6px', borderRadius: 4 },
+              dlResTagStyle: { fontSize: 10, fontWeight: 600, color: th.green, border: `1px solid ${th.green}66`, borderRadius: 3, padding: '1px 5px', flexShrink: 0 },
+              dlResRows: (RS && RS.all ? RS.all : []).map(m => ({ label: lab(m.pkg), comp: m.pkg + '/' + shortAct(m.pkg, m.act), iconStyle: tile(m.pkg, 16),
+                isTarget: !!RS.target && RS.target.pkg === m.pkg, tag: f.pkg ? 'selected' : 'opens',
+                canUse: m.pkg !== f.pkg, use: () => this.dlPickPkg(m.pkg) })),
+              dlAppLinkWarn: !!f.pkg && http,
+              dlAppLinkText: 'Open in ' + lab(f.pkg) + ' delivers this link even if the App Link isn’t verified. On Android 12+ a real tap opens the browser unless ' + host + ' is verified.',
+              dlUseAny: () => this.dlPickPkg(''),
+              dlWarnRowStyle: { display: 'flex', alignItems: 'baseline', gap: 12, marginTop: 6, padding: '6px 9px', borderRadius: 5, background: th.amberBg, border: `1px solid ${th.amber}55` },
+              dlWarnTextStyle: { fontSize: 10.5, lineHeight: 1.45, color: th.text, minWidth: 0, flex: 1, textWrap: 'pretty' },
+              dlWarnLinkStyle: { fontSize: 11, fontWeight: 600, color: th.accent, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 },
+              dlHasResult: !!bn,
+              dlBannerStyle: { display: 'flex', alignItems: 'flex-start', gap: 9, marginTop: 12, padding: '9px 8px 9px 10px', borderRadius: 6, background: btone[1], border: `1px solid ${btone[0]}66` },
+              dlBannerGlyph: bn ? bn.glyph : '', dlBannerGlyphStyle: { ...glyph(bn ? bn.tone : 'dim', 16), marginTop: 1 },
+              dlBannerHasTile: !!(bn && bn.tile), dlBannerTileStyle: bn && bn.tile ? { ...tile(bn.tile, 18), marginTop: 0 } : {},
+              dlBannerTitle: bn ? bn.title : '', dlBannerTitleStyle: { fontSize: 11.5, fontWeight: 600, color: th.text },
+              dlBannerDetail: bn ? bn.detail : '', dlBannerDetailStyle: { fontSize: 11, lineHeight: 1.45, color: th.textDim, textWrap: 'pretty' },
+              dlBannerHasMono: !!(bn && bn.mono), dlBannerMono: bn ? bn.mono : '', dlBannerMonoStyle: { fontFamily: MONO, fontSize: 10.5, color: th.textDim, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
+              dlBannerTime: R ? 'Last launch · ' + R.at : '', dlBannerTimeStyle: { fontFamily: MONO, fontSize: 10, color: th.textDim, whiteSpace: 'nowrap' },
+              dlBannerHasAction: !!(bn && bn.action), dlBannerActionLabel: bn ? bn.action : '', dlBannerAction: bn && bn.run ? bn.run : () => {},
+              dlBannerCopyStyle: { fontSize: 10.5, color: th.textDim, cursor: 'pointer', textDecoration: 'underline', textUnderlineOffset: 2 },
+              dlCopyOutput: () => { try { navigator.clipboard.writeText(R ? R.output : ''); } catch (e) {} this.flash('Output copied'); },
+              dlDismissResult: () => this.dlSet({ result: null }),
+              dlToggleCold: () => { const v = !f.cold; try { localStorage.setItem('adbtb.dlCold', v ? '1' : '0'); } catch (e) {} this.dlSet({ cold: v }); },
+              dlColdRowStyle: { display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: th.text, cursor: 'pointer', userSelect: 'none', whiteSpace: 'nowrap' },
+              dlColdBoxStyle: { width: 13, height: 13, borderRadius: 3, boxSizing: 'border-box', display: 'flex', alignItems: 'center', justifyContent: 'center', border: `1px solid ${f.cold ? th.accent : th.borderStrong}`, background: f.cold ? th.accent : th.field, color: '#fff' },
+              dlColdTickStyle: { opacity: f.cold ? 1 : 0 },
+            };
+          })(),
+        };
+      })(),
     };
   }
 }

@@ -107,7 +107,9 @@ packages           adb -s $S shell pm list packages -3        (add nothing for u
 app label          adb -s $S shell dumpsys package <pkg> | grep -m1 versionName  (label via aapt/PackageManager)
 debuggable         adb -s $S shell pm dump <pkg> | grep -m1 FLAG_DEBUGGABLE
 force-stop         adb -s $S shell am force-stop <pkg>
-launch             adb -s $S shell monkey -p <pkg> -c android.intent.category.LAUNCHER 1
+launch             adb -s $S shell first MAIN+LAUNCHER activity from `cmd package query-activities` (manifest order,
+                   as getLaunchIntentForPackage) via `am start -n`; `monkey -p <pkg> -c android.intent.category.LAUNCHER 1`
+                   only as the fallback — monkey alone picks a random launcher (e.g. LeakCanary's), 2026-10-29
 restart            force-stop, then launch
 clear data         adb -s $S shell pm clear <pkg>             ← confirm first
 uninstall          adb -s $S uninstall <pkg>                  ← confirm first

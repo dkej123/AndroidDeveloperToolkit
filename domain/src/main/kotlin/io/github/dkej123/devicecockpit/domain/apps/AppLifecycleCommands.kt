@@ -14,10 +14,8 @@ import io.github.dkej123.devicecockpit.domain.adb.ShellValue
  * [io.github.dkej123.devicecockpit.domain.packages.PackageMetadataCommand]'s established shape for the same
  * `<pkg>` argument.
  *
- * [launch] uses the design-approved `monkey -p <pkg> -c android.intent.category.LAUNCHER 1`
- * strategy (not a resolved-default-activity `am start`) — `design/IMPLEMENTATION.md` §4 pins this
- * exact command line, and it requires no separate "resolve the launcher activity" step/failure mode
- * beyond `monkey`'s own "no activities found" exit behavior (see
+ * [launch] starts the first LAUNCHER activity and falls back to `monkey -p <pkg> -c android.intent.category.LAUNCHER 1`
+ * (`design/IMPLEMENTATION.md` §4), keeping `monkey`'s own "no activities found" failure (see
  * [io.github.dkej123.devicecockpit.application.apps.AppLifecycleUseCase] for how that failure is surfaced).
  */
 object AppLifecycleCommands {
@@ -45,9 +43,18 @@ object AppLifecycleCommands {
         ShellToken.Value(ShellValue.of(packageName)),
     )
 
+    /**
+     * Starts the first LAUNCHER activity in manifest order — what Android's `getLaunchIntentForPackage` picks — with the
+     * launcher's own flags. `monkey` alone picks a random LAUNCHER activity, so an app that also declares LeakCanary's or a
+     * dev-tools launcher opened those at random; it stays the fallback when the query finds nothing, keeping its
+     * "No activities found" failure. One device shell line, so callers still see a single launch command.
+     */
     fun launch(packageName: String): AdbShellCommand = AdbShellCommand.of(
-        ShellToken.Literal("monkey"),
-        ShellToken.Literal("-p"),
+        ShellToken.Literal("c=\$(cmd package query-activities --brief -a android.intent.action.MAIN -c android.intent.category.LAUNCHER"),
+        ShellToken.Value(ShellValue.of(packageName)),
+        ShellToken.Literal("| grep -m1 / | tr -d ' ') && [ -n \"\$c\" ]"),
+        ShellToken.Literal("&& am start -a android.intent.action.MAIN -c android.intent.category.LAUNCHER -f 0x10200000 -n \"\$c\""),
+        ShellToken.Literal("|| monkey -p"),
         ShellToken.Value(ShellValue.of(packageName)),
         ShellToken.Literal("-c"),
         ShellToken.Literal("android.intent.category.LAUNCHER"),

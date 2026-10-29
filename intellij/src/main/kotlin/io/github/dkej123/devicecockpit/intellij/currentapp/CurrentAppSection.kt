@@ -469,6 +469,7 @@ class CurrentAppSection(
     internal val clearDataButtonForTest: JButton get() = clearDataButton
     internal val detailsLinkForTest: JButton get() = detailsLink
     internal val labelForTest: String get() = labelLabel.text
+    internal val tileShowsAndroidRobotForTest: Boolean get() = tile.showsAndroidRobot
     internal val tagForTest: String? get() = tagLabel.text.takeIf { tagLabel.isVisible }
     internal val processForTest: String get() = processValue.text
     internal val activityForTest: String get() = activityValue.text
@@ -513,6 +514,8 @@ class CurrentAppSection(
         private var icon: AppIcon? = null
         private var dashed = false
         private var dimmed = false
+        private val robot = io.github.dkej123.devicecockpit.intellij.ui.common.AndroidRobotIcon(24)
+        val showsAndroidRobot: Boolean get() = dashed
 
         init {
             preferredSize = Dimension(JBUIScale.scale(28), JBUIScale.scale(28))
@@ -536,11 +539,8 @@ class CurrentAppSection(
                 if (dimmed) g2.composite = java.awt.AlphaComposite.getInstance(java.awt.AlphaComposite.SRC_OVER, 0.55f)
                 val current = icon
                 when {
-                    dashed -> {
-                        g2.color = DeviceCockpitTheme.Colors.borderStrong
-                        g2.stroke = BasicStroke(JBUIScale.scale(1.5f), BasicStroke.CAP_BUTT, BasicStroke.JOIN_ROUND, 1f, floatArrayOf(JBUIScale.scale(3f), JBUIScale.scale(2f)), 0f)
-                        g2.drawRoundRect(1, 1, width - 3, height - 3, JBUIScale.scale(12), JBUIScale.scale(12))
-                    }
+                    // Home and lock screens are the system, not an app: the Android robot (user request, 2026-10-29).
+                    dashed -> robot.paintIcon(this, g2, (width - robot.iconWidth) / 2, (height - robot.iconHeight) / 2)
                     current != null -> AppIconImages.paint(g2, current, 0, 0, width, height)
                     else -> super.paintComponent(g2)
                 }

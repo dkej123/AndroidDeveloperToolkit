@@ -76,4 +76,25 @@ class ToastStackPanelTest : BasePlatformTestCase() {
 
         assertEquals("a", actedId)
     }
+
+    fun `test a toast is a rounded card whose corners show the tool window behind it`() {
+        val panel = ToastStackPanel(onAction = {}, onDismiss = {})
+        panel.update(listOf(FeedbackMessage("e", "Could not open link", FeedbackSeverity.Error, FeedbackAction("Retry") {})))
+        val row = panel.getComponent(0) as javax.swing.JComponent
+        row.setSize(360, row.preferredSize.height)
+        fun layout(container: java.awt.Container) { container.doLayout(); container.components.filterIsInstance<java.awt.Container>().forEach(::layout) }
+        layout(row)
+        val image = java.awt.image.BufferedImage(row.width, row.height, java.awt.image.BufferedImage.TYPE_INT_ARGB)
+        val graphics = image.createGraphics()
+        try { row.printAll(graphics) } finally { graphics.dispose() }
+        java.nio.file.Files.createDirectories(java.nio.file.Path.of("build"))
+        javax.imageio.ImageIO.write(image, "png", java.nio.file.Path.of("build", "toast-error.png").toFile())
+        assertFalse("Rounded card, no square background", row.isOpaque)
+        assertEquals("Top-right corner is outside the radius-5 card", 0, image.getRGB(row.width - 1, 0) ushr 24)
+        assertTrue("The card itself is painted", image.getRGB(row.width / 2, row.height / 2) ushr 24 > 0)
+        assertTrue(
+            "Action and Dismiss are design-system links, not IDE buttons with their own rounded fill",
+            buttonsOf(row).all { it is io.github.dkej123.devicecockpit.intellij.ui.common.DesignButton && it.style == io.github.dkej123.devicecockpit.intellij.ui.common.DesignButtonStyle.LINK },
+        )
+    }
 }

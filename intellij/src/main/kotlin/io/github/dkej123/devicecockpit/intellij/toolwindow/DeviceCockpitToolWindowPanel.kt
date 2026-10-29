@@ -164,6 +164,7 @@ class DeviceCockpitToolWindowPanel(
     sectionMeta: StateFlow<DeviceSectionMeta>? = null,
     inspectorStatus: StateFlow<io.github.dkej123.devicecockpit.intellij.inspector.InspectorOpenStatus?>? = null,
     onShowInspector: () -> Unit = {},
+    onDeepLink: () -> Unit = {},
     onRecaptureInspector: () -> Unit = {},
 ) : JBPanel<DeviceCockpitToolWindowPanel>(BorderLayout()), Disposable {
 
@@ -180,6 +181,17 @@ class DeviceCockpitToolWindowPanel(
         dispatchers = dispatchers,
         onRefresh = { deviceBarViewModel.handle(DeviceBarIntent.Refresh) },
         onPairOverWifi = { deviceBarViewModel.handle(DeviceBarIntent.RequestPairOverWifi) },
+        onReportCopied = {
+            feedbackViewModel.handle(
+                io.github.dkej123.devicecockpit.application.feedback.FeedbackIntent.Post(
+                    io.github.dkej123.devicecockpit.domain.feedback.FeedbackMessage(
+                        id = "device-report-${System.nanoTime()}",
+                        text = "Device report copied to clipboard",
+                        severity = io.github.dkej123.devicecockpit.domain.feedback.FeedbackSeverity.Success,
+                    ),
+                ),
+            )
+        },
     )
 
     private val deviceContextBarCoordinator = DeviceContextBarCoordinator(
@@ -214,6 +226,7 @@ class DeviceCockpitToolWindowPanel(
         viewModel = deviceActionsViewModel,
         scope = deviceActionsScope,
         dispatchers = dispatchers,
+        onDeepLink = onDeepLink,
     )
 
     // Mounted after deviceFactsCoordinator, into its already-registered mirroringSlot.

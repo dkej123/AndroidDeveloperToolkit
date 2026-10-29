@@ -6,6 +6,7 @@ import io.github.dkej123.devicecockpit.domain.adb.AdbOutcome
 import io.github.dkej123.devicecockpit.domain.adb.AdbShellCommand
 import io.github.dkej123.devicecockpit.domain.adb.AdbTextResult
 import io.github.dkej123.devicecockpit.domain.adb.DeviceSerial
+import io.github.dkej123.devicecockpit.domain.adb.ShellValue
 import io.github.dkej123.devicecockpit.domain.adb.ShellToken
 
 /**
@@ -38,11 +39,16 @@ private const val SAMSUNG_SERVICE =
     "com.samsung.android.accessibility.talkback/com.samsung.android.marvin.talkback.TalkBackService"
 private const val GOOGLE_SERVICE =
     "com.google.android.marvin.talkback/com.google.android.marvin.talkback.TalkBackService"
-private const val OFF_LINE =
-    "settings put secure $SERVICES_SETTING null && settings put secure accessibility_enabled 0"
+private fun servicesWrite(services: List<String>): String = AdbShellCommand.of(
+    ShellToken.Literal("settings put secure $SERVICES_SETTING"),
+    ShellToken.Value(ShellValue.of(services.joinToString(":").ifEmpty { "null" })),
+).render()
 
-private fun onLine(service: String) =
-    "settings put secure accessibility_enabled 1 && settings put secure $SERVICES_SETTING $service"
+private fun isKnownTalkBack(component: String): Boolean {
+    val packageName = component.substringBefore('/')
+    val className = component.substringAfter('/').let { if (it.startsWith('.')) packageName + it else it }
+    return "$packageName/$className" in listOf(SAMSUNG_SERVICE, GOOGLE_SERVICE)
+}
 
 // `adb shell `, optionally `adb -s <serial> shell `, at the start or after `&&`.
 private val LEADING_ADB_SHELL = Regex("""^adb\s+(?:-s\s+\S+\s+)?shell\s+""")
@@ -55,8 +61,8 @@ private val CHAINED_ADB_SHELL = Regex("""&&\s*adb\s+(?:-s\s+\S+\s+)?shell\s+""")
  * TalkBack packages actually installed (not the manufacturer, which says nothing about ROMs
  * without GMS); Settings may replace either direction with a custom command line.
  *
- * Note that the default commands replace the whole enabled-services list, which also turns off
- * any other accessibility service that was on.
+ * Default commands preserve other enabled accessibility services. The caller must supply a fresh,
+ * successfully read service list before writing.
  */
 object TalkBackCommand {
 
@@ -81,7 +87,17 @@ object TalkBackCommand {
         }
     }
 
-    fun resolve(vendor: TalkBackVendor?, custom: TalkBackCustomCommands): TalkBackCommands {
+    fun resolve(
+        vendor: TalkBackVendor?,
+        custom: TalkBackCustomCommands,
+        enabledServices: List<String> = emptyList(),
+    ): TalkBackCommands {
+        fun onLine(service: String): String {
+            val services = if (enabledServices.any { sameComponent(it, service) }) enabledServices else enabledServices + service
+            return "settings put secure accessibility_enabled 1 && " + servicesWrite(services)
+        }
+        val remaining = enabledServices.filterNot(::isKnownTalkBack)
+        val offLine = servicesWrite(remaining) + " && settings put secure accessibility_enabled " + if (remaining.isEmpty()) "0" else "1"
         val vendorOn = when (vendor) {
             TalkBackVendor.Samsung -> onLine(SAMSUNG_SERVICE)
             TalkBackVendor.Google -> onLine(GOOGLE_SERVICE)
@@ -94,7 +110,7 @@ object TalkBackCommand {
         }
         return TalkBackCommands(
             on = custom.on ?: vendorOn,
-            off = custom.off ?: OFF_LINE,
+            off = custom.off ?: offLine,
             profile = if (custom.on != null || custom.off != null) TalkBackProfile.Custom else vendorProfile,
         )
     }
@@ -127,11 +143,38 @@ object TalkBackCommand {
         ),
     )
 
-    /** On while any enabled accessibility service is a TalkBack service (either vendor's). */
-    fun parseRead(result: AdbTextResult): DisplaySettingRead<Boolean> {
+    /** Reads the entire list; failed or malformed reads must never be treated as an empty list for a write. */
+    fun parseServices(result: AdbTextResult): DisplaySettingRead<List<String>> {
         if (result.stderr.looksLikePermissionDenial()) return DisplaySettingRead.PermissionDenied(result.stderr)
-        if (!result.outcome.reachedDevice()) return DisplaySettingRead.TransportFailed(result.outcome)
-        return DisplaySettingRead.Value(result.stdout.contains("talkback", ignoreCase = true))
+        // ddmlib (the transport inside the IDE) completes without an exit code: only a real non-zero one is a failure.
+        if (result.outcome !is AdbOutcome.Completed || (result.outcome.exitCode ?: 0) != 0) {
+            return DisplaySettingRead.TransportFailed(result.outcome)
+        }
+        val text = result.stdout.trim()
+        if (text.isEmpty() || text == "null") return DisplaySettingRead.Value(emptyList())
+        val services = text.split(':')
+        if (services.any { !Regex("[A-Za-z0-9_.$]+/[A-Za-z0-9_.$]+").matches(it) }) {
+            return DisplaySettingRead.Malformed(result.stdout, "Invalid accessibility service list")
+        }
+        return DisplaySettingRead.Value(services)
+    }
+
+    /** On while an enabled service is TalkBack (also supports user-supplied TalkBack builds). */
+    fun parseRead(result: AdbTextResult): DisplaySettingRead<Boolean> = when (val services = parseServices(result)) {
+        is DisplaySettingRead.Value -> DisplaySettingRead.Value(services.value.any { it.contains("talkback", ignoreCase = true) })
+        is DisplaySettingRead.Malformed -> services
+        is DisplaySettingRead.PermissionDenied -> services
+        is DisplaySettingRead.TransportFailed -> services
+        DisplaySettingRead.NotSet -> DisplaySettingRead.NotSet
+    }
+
+    private fun sameComponent(left: String, right: String): Boolean {
+        fun expanded(component: String): String {
+            val packageName = component.substringBefore('/')
+            val className = component.substringAfter('/')
+            return packageName + "/" + if (className.startsWith('.')) packageName + className else className
+        }
+        return expanded(left) == expanded(right)
     }
 
     private fun shell(serial: DeviceSerial, command: AdbShellCommand) =

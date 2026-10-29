@@ -63,6 +63,10 @@ Formerly <i>ADB Toolbox</i>.</p>
          keymap entries give the suggested Mac chord and a Ctrl-based equivalent everywhere else,
          since IntelliJ's "meta" modifier only exists as a real key on macOS keymaps. -->
     <actions>
+        <action id="AdbToolbox.OpenDeepLink"
+                class="io.github.dkej123.devicecockpit.intellij.deeplinks.OpenDeviceDeepLinkAction"
+                text="Open Deep Link on Device"
+                description="Fire any deep link or intent on the selected device"/>
         <!-- Diagnostics: a one-click bundle to attach to bug reports, a sampling performance
              recording, and the log folder. Also offered in the tool window's gear menu. -->
         <group id="AdbToolbox.Diagnostics" text="Device Cockpit Diagnostics" popup="true">

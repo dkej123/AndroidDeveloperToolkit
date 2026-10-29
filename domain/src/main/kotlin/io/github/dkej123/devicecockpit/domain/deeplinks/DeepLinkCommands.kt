@@ -9,16 +9,22 @@ import io.github.dkej123.devicecockpit.domain.adb.ShellValue
 
 object DeepLinkCommands {
     private val packageName = Regex("""[A-Za-z0-9_.]+""")
-    private val uriScheme = Regex("""[A-Za-z][A-Za-z0-9+.-]*:.*""")
+    private val uriScheme = Regex("""[A-Za-z][A-Za-z0-9+.-]*:\S+""")
 
-    fun open(serial: DeviceSerial, packageName: String, uri: String): AdbDeviceRequest {
-        require(this.packageName.matches(packageName)) { "Invalid package name" }
-        require(uriScheme.matches(uri) && uri.none { it.isISOControl() }) { "Invalid URI" }
+    fun isValidUri(uri: String): Boolean = uriScheme.matches(uri) && uri.none { it.isISOControl() }
+
+    /** Chrome's `intent:` syntax is parsed by the browser into an Intent; sent with `-d` it is just opaque data. */
+    fun isBrowserIntentUri(uri: String): Boolean = uri.startsWith("intent:", ignoreCase = true)
+
+    fun open(serial: DeviceSerial, packageName: String, uri: String, coldStart: Boolean = false): AdbDeviceRequest {
+        require(packageName.isEmpty() || this.packageName.matches(packageName)) { "Invalid package name" }
+        require(isValidUri(uri)) { "Invalid URI" }
         fun l(value: String) = ShellToken.Literal(value)
         fun v(value: String) = ShellToken.Value(ShellValue.of(value))
         return AdbDeviceRequest(serial, AdbOperation.Shell(AdbShellCommand.of(
-            l("am"), l("start"), l("-W"), l("-a"), v("android.intent.action.VIEW"),
-            l("-c"), v("android.intent.category.BROWSABLE"), l("-d"), v(uri), l("-p"), v(packageName),
+            l("am"), l("start"), l("-W"), *if (coldStart) arrayOf(l("-S")) else emptyArray(), l("-a"), v("android.intent.action.VIEW"),
+            l("-c"), v("android.intent.category.BROWSABLE"), l("-d"), v(uri),
+            *if (packageName.isEmpty()) emptyArray() else arrayOf(l("-p"), v(packageName)),
         )))
     }
 }

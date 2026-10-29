@@ -83,8 +83,10 @@ class AppsViewModel(
         }
         scope.launch(dispatchers.io) { pinWrites.collectLatest { pinnedPackages.writePinnedPackages(it) } }
         scope.launch(dispatchers.default) {
+            // Only an Online phone is listed: at IDE start the remembered phone is Disconnected until adb is up, and
+            // listing it then failed with nothing to retry once it turned Online under the same serial.
             combine(selectedDeviceViewModel.state, _currentPackageScope) { deviceState, packageScope ->
-                serialOf(deviceState) to packageScope
+                (deviceState as? SelectedDeviceState.Online)?.device?.serial to packageScope
             }
                 .distinctUntilChanged()
                 .collect { (serial, packageScope) ->

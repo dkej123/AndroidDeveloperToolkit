@@ -16,6 +16,35 @@ private fun AdbOperation.line(): String = (this as AdbOperation.Shell).command.r
 class TalkBackCommandTest {
 
     @Test
+    fun `defaults preserve unrelated services and recognize short and full TalkBack components`() {
+        val other = "com.example/.SwitchAccess"
+        val google = "com.google.android.marvin.talkback/.TalkBackService"
+        val samsung = "com.samsung.android.accessibility.talkback/com.samsung.android.marvin.talkback.TalkBackService"
+        for (vendor in TalkBackVendor.entries) {
+            val existing = listOf(other, google, samsung)
+            val commands = TalkBackCommand.resolve(vendor, TalkBackCustomCommands(), existing)
+            commands.on shouldBe "settings put secure accessibility_enabled 1 && settings put secure enabled_accessibility_services '${existing.joinToString(":")}'"
+            commands.off shouldBe "settings put secure enabled_accessibility_services '$other' && settings put secure accessibility_enabled 1"
+        }
+        TalkBackCommand.resolve(null, TalkBackCustomCommands(), listOf(google)).off shouldBe
+            "settings put secure enabled_accessibility_services 'null' && settings put secure accessibility_enabled 0"
+    }
+
+    @Test
+    fun `the services parser preserves order and rejects failed or malformed reads`() {
+        TalkBackCommand.parseServices(ok("com.other/.Service:com.logger/.Service\n")) shouldBe
+            DisplaySettingRead.Value(listOf("com.other/.Service", "com.logger/.Service"))
+        TalkBackCommand.parseServices(ok("null\n")) shouldBe DisplaySettingRead.Value(emptyList())
+        (TalkBackCommand.parseServices(ok("error: settings unavailable")) is DisplaySettingRead.Malformed) shouldBe true
+        (TalkBackCommand.parseRead(ok("com.other/.Service:")) is DisplaySettingRead.Malformed) shouldBe true
+        val failure = AdbTextResult(AdbOutcome.Completed(1), "", "settings failed")
+        TalkBackCommand.parseServices(failure) shouldBe DisplaySettingRead.TransportFailed(failure.outcome)
+        TalkBackCommand.parseServices(AdbTextResult(AdbOutcome.TimedOut, "", "")) shouldBe
+            DisplaySettingRead.TransportFailed(AdbOutcome.TimedOut)
+        (TalkBackCommand.parseServices(AdbTextResult(AdbOutcome.Completed(1), "", "SecurityException")) is DisplaySettingRead.PermissionDenied) shouldBe true
+    }
+
+    @Test
     fun `detects which known TalkBack is installed`() {
         TalkBackCommand.detectionRequest(SERIAL).operation.line() shouldBe "pm list packages talkback"
         TalkBackCommand.vendorOf(ok("package:com.samsung.android.accessibility.talkback\n")) shouldBe TalkBackVendor.Samsung
@@ -45,9 +74,9 @@ class TalkBackCommandTest {
         val commands = TalkBackCommand.resolve(TalkBackVendor.Samsung, TalkBackCustomCommands())
 
         commands.on shouldBe "settings put secure accessibility_enabled 1 && settings put secure enabled_accessibility_services " +
-            "com.samsung.android.accessibility.talkback/com.samsung.android.marvin.talkback.TalkBackService"
+            "'com.samsung.android.accessibility.talkback/com.samsung.android.marvin.talkback.TalkBackService'"
         commands.off shouldBe
-            "settings put secure enabled_accessibility_services null && settings put secure accessibility_enabled 0"
+            "settings put secure enabled_accessibility_services 'null' && settings put secure accessibility_enabled 0"
         commands.profile shouldBe TalkBackProfile.Samsung
     }
 
@@ -56,7 +85,7 @@ class TalkBackCommandTest {
         val commands = TalkBackCommand.resolve(TalkBackVendor.Google, TalkBackCustomCommands())
 
         commands.on shouldBe "settings put secure accessibility_enabled 1 && settings put secure enabled_accessibility_services " +
-            "com.google.android.marvin.talkback/com.google.android.marvin.talkback.TalkBackService"
+            "'com.google.android.marvin.talkback/com.google.android.marvin.talkback.TalkBackService'"
         commands.profile shouldBe TalkBackProfile.Google
     }
 
@@ -105,5 +134,15 @@ class TalkBackCommandTest {
             DisplaySettingRead.TransportFailed(AdbOutcome.TimedOut)
         (TalkBackCommand.parseRead(AdbTextResult(AdbOutcome.Completed(1), "", "java.lang.SecurityException: Permission denial")) is
             DisplaySettingRead.PermissionDenied) shouldBe true
+    }
+
+    @Test
+    fun `a ddmlib read without an exit code is a valid service list`() {
+        // Inside Android Studio shell calls go through ddmlib, which reports no exit code (Completed(null)).
+        val result = AdbTextResult(AdbOutcome.Completed(exitCode = null), "null\n", "")
+        TalkBackCommand.parseServices(result) shouldBe DisplaySettingRead.Value(emptyList())
+        TalkBackCommand.parseRead(result) shouldBe DisplaySettingRead.Value(false)
+        val failed = AdbTextResult(AdbOutcome.Completed(exitCode = 1), "", "")
+        (TalkBackCommand.parseServices(failed) is DisplaySettingRead.TransportFailed) shouldBe true
     }
 }

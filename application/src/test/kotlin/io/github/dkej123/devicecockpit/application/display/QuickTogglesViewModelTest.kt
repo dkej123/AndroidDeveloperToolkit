@@ -60,7 +60,7 @@ private const val SAMSUNG_TALKBACK =
 private const val TALKBACK_ON_PREFIX =
     "settings put secure accessibility_enabled 1 && settings put secure enabled_accessibility_services "
 private const val TALKBACK_OFF =
-    "settings put secure enabled_accessibility_services null && settings put secure accessibility_enabled 0"
+    "settings put secure enabled_accessibility_services 'null' && settings put secure accessibility_enabled 0"
 
 /**
  * A scripted [AdbTransport] double built for this test file: routes by (serial, rendered shell
@@ -108,7 +108,11 @@ private class ScriptedAdbTransport(
             TALKBACK_OFF -> { settings.enabledAccessibilityServices = "null"; ok("") }
             else -> when {
                 rendered.startsWith(TALKBACK_ON_PREFIX) -> {
-                    settings.enabledAccessibilityServices = rendered.removePrefix(TALKBACK_ON_PREFIX)
+                    settings.enabledAccessibilityServices = rendered.removePrefix(TALKBACK_ON_PREFIX).removeSurrounding("'")
+                    ok("")
+                }
+                rendered.startsWith("settings put secure enabled_accessibility_services ") -> {
+                    settings.enabledAccessibilityServices = rendered.substringAfter("settings put secure enabled_accessibility_services '").substringBefore("'")
                     ok("")
                 }
                 rendered.startsWith("custom ") -> {
@@ -157,6 +161,42 @@ class QuickTogglesViewModelTest {
         val viewModel: QuickTogglesViewModel,
         val settingsBySerial: Map<DeviceSerial, FakeDeviceSettings>,
     )
+
+    @Test
+    fun `toggling TalkBack preserves other accessibility services including changes made outside the tool`() {
+        val other = "com.example/.SwitchAccess"
+        val settings = FakeDeviceSettings(
+            talkBackPackages = listOf("com.samsung.android.accessibility.talkback"),
+            enabledAccessibilityServices = other,
+        )
+        val (scope, _, _, viewModel) = harness(mapOf(serialA to settings))
+        scope.advanceUntilIdle()
+        viewModel.handle(QuickTogglesIntent.SetTalkBack(true))
+        scope.advanceUntilIdle()
+        settings.enabledAccessibilityServices shouldBe "$other:$SAMSUNG_TALKBACK"
+
+        settings.enabledAccessibilityServices += ":com.logger/.Service"
+        viewModel.handle(QuickTogglesIntent.SetTalkBack(false))
+        scope.advanceUntilIdle()
+        settings.enabledAccessibilityServices shouldBe "$other:com.logger/.Service"
+        viewModel.state.value.talkBack shouldBe QuickToggleFieldState.Idle(false)
+    }
+
+    @Test
+    fun `failed accessibility services read prevents any write`() {
+        val settings = FakeDeviceSettings(talkBackPackages = listOf("com.samsung.android.accessibility.talkback"))
+        val (scope, transport, _, viewModel) = harness(mapOf(serialA to settings))
+        scope.advanceUntilIdle()
+        transport.overrides[serialA to "settings get secure enabled_accessibility_services"] =
+            AdbTextResult(AdbOutcome.TimedOut, "", "")
+        val before = transport.requests.size
+        viewModel.handle(QuickTogglesIntent.SetTalkBack(true))
+        scope.advanceUntilIdle()
+        transport.requests.drop(before).none {
+            (it as AdbDeviceRequest).operation.toString().contains("settings put")
+        } shouldBe true
+        (viewModel.state.value.talkBack is QuickToggleFieldState.Error) shouldBe true
+    }
 
     @Test
     fun `initial refresh reads all three toggles for the exact selected serial`() {

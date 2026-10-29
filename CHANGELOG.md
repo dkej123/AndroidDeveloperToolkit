@@ -4,6 +4,36 @@ All notable changes to Device Cockpit for Android (formerly ADB Toolbox). Each r
 the Marketplace change notes and the GitHub release notes are generated from it
 (`release/README.md`).
 
+## [1.5.0] - 2026-10-29
+
+### Added
+- **Open deep link**: a Deep link button in the Device view (and Find Action) opens a dialog that fires any
+  link on the device the way a tap would (`am start -W`, VIEW + BROWSABLE). It has a Recent list of 50 links,
+  query parameters kept in sync with the URI, "Open in" any app or a specific one, and a one-line command
+  preview with Expand and Copy. The dialog stays open after a launch.
+- **Who handles this link?**: while you type, the dialog asks the device (without launching anything)
+  whether the link opens directly, shows the chooser, falls back to the browser because an App Link is not
+  verified, or is not handled at all; the matching apps are one click away.
+- **Launch result in the dialog**: the app that really took the link, cold/warm start and time, the
+  chooser, delivery to an already running activity (with a one-click Cold start), and adb errors with the
+  raw output to copy. A warning explains that a specific app skips App Link verification.
+- **Cold start** option (`am start -S`) for deep links.
+- Copy report in the Device section now confirms with a toast.
+
+### Changed
+- Recent deep links that went to one app show that app's name and icon; "Any app", system apps and the
+  home / lock screens show the Android robot.
+- Toasts are rounded cards with text actions.
+- Setting a device language keeps the other languages of the device, and Reset restores their original order.
+
+### Fixed
+- Launch, Restart and Process death opened a random launcher activity when an app declares several (for example
+  LeakCanary's); they now open the app's main launcher activity, as tapping its icon does.
+- TalkBack could not be turned on in Android Studio, and turning it on or off no longer switches off other
+  accessibility services.
+- The app list, labels and icons load as soon as the phone is connected at IDE start, not only after
+  opening Apps.
+
 ## [1.4.2] - 2026-10-27
 
 ### Changed

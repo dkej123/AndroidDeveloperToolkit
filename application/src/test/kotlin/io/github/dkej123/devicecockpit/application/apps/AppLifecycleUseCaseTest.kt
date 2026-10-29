@@ -48,7 +48,7 @@ class AppLifecycleUseCaseTest {
     }
 
     @Test
-    fun `launch targets the exact serial and package with the monkey launch shell command`() = runTest {
+    fun `launch targets the exact serial and package with the launch shell command`() = runTest {
         val transport = FakeAdbTransport()
         val useCase = AppLifecycleUseCase(transport)
 
@@ -276,7 +276,7 @@ class AppLifecycleUseCaseTest {
                 line.startsWith("pidof") -> (pids.removeFirstOrNull() ?: "").let { pid ->
                     AdbTextResult(AdbOutcome.Completed(if (pid.isEmpty()) 1 else 0), if (pid.isEmpty()) "" else "$pid\n", "")
                 }
-                line.startsWith("monkey") -> AdbTextResult(AdbOutcome.Completed(launchExit), "", "")
+                "monkey -p" in line -> AdbTextResult(AdbOutcome.Completed(launchExit), "", "")
                 else -> AdbTextResult(AdbOutcome.Completed(0), "", "")
             }
         },
@@ -293,7 +293,7 @@ class AppLifecycleUseCaseTest {
             "input keyevent KEYCODE_HOME",
             "am kill '$PACKAGE'",
             "pidof -s '$PACKAGE'",
-            "monkey -p '$PACKAGE' -c android.intent.category.LAUNCHER 1",
+            AppLifecycleCommands.launch(PACKAGE).render(),
         )
     }
 
@@ -310,7 +310,7 @@ class AppLifecycleUseCaseTest {
         val transport = processDeathDevice(MutableList(20) { "8155" })
 
         AppLifecycleUseCase(transport).simulateProcessDeath(SERIAL, PACKAGE) shouldBe AppProcessDeathResult.StillAlive
-        transport.textRequests.none { it.line().startsWith("monkey") } shouldBe true
+        transport.textRequests.none { "monkey -p" in it.line() } shouldBe true
     }
 
     @Test

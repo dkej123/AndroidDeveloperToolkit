@@ -477,4 +477,22 @@ class AppsViewModelTest {
 
         h.packageRepository.refreshRequests.last() shouldBe (serialA to PackageListScope.User)
     }
+
+    /**
+     * Seen at every IDE start (adb-toolbox.log): the remembered phone is selected as Disconnected before adb is up;
+     * listing it then fails ("daemon not running … device not found"), and when it turned Online with the same serial
+     * nothing listed again — icons appeared only after opening Apps. The list is fetched once the phone is Online.
+     */
+    @Test
+    fun `the package list is fetched when the selected phone comes online, not while it is disconnected`() = runTest {
+        val h = harness(devices = emptyList())
+        h.settle()
+        h.selectedDeviceViewModel.handle(io.github.dkej123.devicecockpit.application.device.SelectedDeviceIntent.Select(serialA))
+        h.settle()
+        (h.selectedDeviceViewModel.state.value is io.github.dkej123.devicecockpit.domain.device.SelectedDeviceState.Disconnected) shouldBe true
+        h.packageRepository.refreshRequests shouldBe emptyList()
+        h.deviceRepository.emit(listOf(Device(serialA, DeviceConnectionState.Online)))
+        h.settle()
+        h.packageRepository.refreshRequests shouldBe listOf(serialA to PackageListScope.User)
+    }
 }

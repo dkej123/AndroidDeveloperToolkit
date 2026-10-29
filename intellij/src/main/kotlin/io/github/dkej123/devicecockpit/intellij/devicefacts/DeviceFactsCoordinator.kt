@@ -31,6 +31,8 @@ class DeviceFactsCoordinator(
     private val dispatchers: DispatcherProvider,
     onRefresh: () -> Unit,
     onPairOverWifi: () -> Unit,
+    /** Copy report succeeded: the tool window confirms it with a toast. */
+    private val onReportCopied: () -> Unit = {},
 ) : Disposable {
 
     constructor(
@@ -51,6 +53,14 @@ class DeviceFactsCoordinator(
     init {
         viewModel.state
             .onEach { state -> withContext(dispatchers.main) { render(state) } }
+            .launchIn(scope)
+        viewModel.effects
+            .onEach { effect ->
+                when (effect) {
+                    io.github.dkej123.devicecockpit.application.devicefacts.DeviceFactsEffect.ReportCopied ->
+                        withContext(dispatchers.main) { onReportCopied() }
+                }
+            }
             .launchIn(scope)
     }
 

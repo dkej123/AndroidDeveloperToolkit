@@ -125,4 +125,29 @@ class DeviceFactsCoordinatorTest : BasePlatformTestCase() {
         assertNotNull(coordinator.panel)
         coordinator.dispose()
     }
+
+    fun `test copying the report confirms it so the toast can show`() {
+        val host = DeviceCockpitHostPanel()
+        val dispatchers = TestDispatchers()
+        val scope = CoroutineScope(SupervisorJob() + dispatchers.default)
+        val serial = DeviceSerial.of("R5CW72KKR4E")
+        val selected = MutableStateFlow<SelectedDeviceState>(
+            SelectedDeviceState.Online(io.github.dkej123.devicecockpit.domain.device.Device(serial = serial, state = io.github.dkej123.devicecockpit.domain.device.DeviceConnectionState.Online)),
+        )
+        val clipboard = FakeClipboardPort()
+        val viewModel = DeviceFactsViewModel(scope, dispatchers, selected, LoadDeviceFactsUseCase(FakeAdbTransport()), clipboard)
+        var confirmed = 0
+        val coordinator = DeviceFactsCoordinator(host, viewModel, scope, dispatchers, {}, {}, onReportCopied = { confirmed++ })
+        val deadline = System.currentTimeMillis() + 5_000
+        while (!coordinator.panel.copyReportButton.isEnabled && System.currentTimeMillis() < deadline) {
+            com.intellij.testFramework.PlatformTestUtil.dispatchAllEventsInIdeEventQueue(); Thread.sleep(10)
+        }
+        coordinator.panel.copyReportButton.doClick()
+        while (confirmed == 0 && System.currentTimeMillis() < deadline) {
+            com.intellij.testFramework.PlatformTestUtil.dispatchAllEventsInIdeEventQueue(); Thread.sleep(10)
+        }
+        assertEquals(1, clipboard.writes.size)
+        assertEquals(1, confirmed)
+        coordinator.dispose()
+    }
 }

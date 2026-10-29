@@ -22,9 +22,10 @@ class DeviceActionsCoordinator(
     viewModel: DeviceActionsViewModel,
     scope: CoroutineScope,
     dispatchers: DispatcherProvider,
+    onDeepLink: () -> Unit = {},
 ) : Disposable {
 
-    val view: DeviceActionsView = DeviceActionsView(viewModel, scope, dispatchers).also { deviceFactsPanel.deviceActionsSlot.add(it) }
+    val view: DeviceActionsView = DeviceActionsView(viewModel, scope, dispatchers, onDeepLink).also { deviceFactsPanel.deviceActionsSlot.add(it) }
 
     override fun dispose() {
         view.dispose()

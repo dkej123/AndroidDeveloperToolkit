@@ -33,6 +33,7 @@ class DeviceActionsView(
     private val viewModel: DeviceActionsViewModel,
     private val scope: CoroutineScope,
     private val dispatchers: DispatcherProvider,
+    onDeepLink: () -> Unit = {},
 ) : JBPanel<DeviceActionsView>(FlexRowLayout(DeviceCockpitTheme.Spacing.s3)), Disposable {
 
     val rebootButton = DesignButton("Reboot", DesignButtonStyle.SECONDARY).apply {
@@ -50,11 +51,17 @@ class DeviceActionsView(
         addActionListener { viewModel.handle(DeviceActionsIntent.Wake) }
     }
 
+    val deepLinkButton = DesignButton("Deep link", DesignButtonStyle.SECONDARY).apply {
+        toolTipText = "Fire any deep link or intent on this device"
+        addActionListener { onDeepLink() }
+    }
+
     init {
         isOpaque = false
         add(rebootButton)
         add(openShellButton)
         add(wakeButton)
+        add(deepLinkButton)
 
         viewModel.state
             .onEach { state -> withContext(dispatchers.main) { render(state) } }
@@ -67,6 +74,9 @@ class DeviceActionsView(
         rebootButton.isEnabled = enabled
         openShellButton.isEnabled = enabled
         wakeButton.isEnabled = enabled
+        deepLinkButton.isEnabled = enabled
+        deepLinkButton.toolTipText = "Fire any deep link or intent on this device" +
+            if (enabled) "" else " — Connect a device to use this"
         if (state.controlPolicy is ControlPolicy.Enabled) {
             rebootButton.toolTipText = "Reboot the selected device"
             openShellButton.toolTipText = "Open an adb shell session in the IDE's Terminal"

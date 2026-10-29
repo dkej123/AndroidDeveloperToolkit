@@ -102,7 +102,7 @@ class McpToolsTest {
                 )
                 line.startsWith("pidof") -> if (processAlive) ok("4242\n") else AdbTextResult(AdbOutcome.Completed(1), "", "")
                 line.startsWith("am kill") -> { processAlive = false; ok() }
-                line.startsWith("monkey") -> { processAlive = true; ok("Events injected: 1") }
+                "monkey -p" in line -> { processAlive = true; ok("Events injected: 1") }
                 line.startsWith("ps -o") -> ok("00:10")
                 line.startsWith("logcat -d") -> ok(
                     "--------- beginning of main\n10-07 12:00:00.000  4242  4242 I Shop: started\n10-07 12:00:01.000  4242  4242 E Shop: payment failed\n",
@@ -347,10 +347,10 @@ class McpToolsTest {
     fun `process_death kills the app in the background and reopens it`() = runTest {
         call("manage_app", "action" to "process_death").text() shouldBe
             "com.acme.shop was killed in the background and reopened; its activities were recreated from saved state."
-        commands.filter { it.startsWith("input keyevent") || it.startsWith("am kill") || it.startsWith("monkey") } shouldBe listOf(
+        commands.filter { it.startsWith("input keyevent") || it.startsWith("am kill") || "monkey -p" in it } shouldBe listOf(
             "input keyevent KEYCODE_HOME",
             "am kill 'com.acme.shop'",
-            "monkey -p 'com.acme.shop' -c android.intent.category.LAUNCHER 1",
+            io.github.dkej123.devicecockpit.domain.apps.AppLifecycleCommands.launch("com.acme.shop").render(),
         )
     }
 

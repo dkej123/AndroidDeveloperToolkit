@@ -81,6 +81,7 @@ class DeviceCockpitToolWindowFactory : ToolWindowFactory, DumbAware {
             displayScope = composition.childScope(),
             openSettings = { DeviceCockpitSettingsOpener.open(project) },
             mirroringOptionsViewModel = composition.mirroringOptionsViewModel,
+            onDeepLink = composition::openDeviceDeepLink,
             onResetOverrides = { composition.overrideResetCoordinator.resetAll() },
             diagnosticsLog = composition.diagnosticsLog,
             sectionMeta = composition.deviceSectionMetaViewModel.state,

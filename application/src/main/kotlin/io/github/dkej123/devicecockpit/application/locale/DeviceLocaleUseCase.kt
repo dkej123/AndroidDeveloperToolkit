@@ -21,7 +21,7 @@ sealed interface LocaleResult {
     data class Failed(val reason: String) : LocaleResult
 }
 
-/** Where the locale a device had when Device Cockpit first saw it is kept, per serial (persisted by the IDE layer). */
+/** Original ordered language tags, comma-separated, per serial (persisted by the IDE layer). Legacy values contain one tag. */
 interface OriginalLocaleStore {
     fun get(serial: DeviceSerial): String?
 
@@ -47,23 +47,38 @@ class DeviceLocaleUseCase(private val port: DeviceLocalePort, private val origin
     suspend fun read(serial: DeviceSerial): LocaleResult = applied(serial, port.run(serial, LocaleAction.Read))
 
     suspend fun set(serial: DeviceSerial, tag: LocaleTag): LocaleResult {
-        if (originals.get(serial) == null) {
-            (read(serial) as? LocaleResult.Failed)?.let { return it }
-        }
-        return applied(serial, port.run(serial, LocaleAction.Set(listOf(tag))))
+        // Always read fresh: the user may have added languages in Android Settings.
+        val read = port.run(serial, LocaleAction.Read)
+        val state = applied(serial, read)
+        if (state is LocaleResult.Failed) return state
+        val current = (read as LocaleRead.Locales).tags
+        return write(serial, listOf(tag.value) + current.filterNot { it.equals(tag.value, ignoreCase = true) })
     }
 
     suspend fun reset(serial: DeviceSerial): LocaleResult {
-        val original = originals.get(serial)?.let(LocaleTag::of) ?: return read(serial)
-        return applied(serial, port.run(serial, LocaleAction.Set(listOf(original))))
+        val saved = originals.get(serial) ?: return read(serial)
+        val original = saved.split(',')
+        // Restore the original preference order without dropping languages added in the meantime.
+        val tags = when (val current = port.run(serial, LocaleAction.Read)) {
+            is LocaleRead.Failed -> return LocaleResult.Failed(current.reason)
+            is LocaleRead.Locales -> original + current.tags.filterNot { tag -> original.any { it.equals(tag, ignoreCase = true) } }
+        }
+        return write(serial, tags)
+    }
+
+    private suspend fun write(serial: DeviceSerial, tags: List<String>): LocaleResult {
+        val locales = tags.map { tag ->
+            LocaleTag.of(tag) ?: return LocaleResult.Failed("Cannot preserve device language: $tag")
+        }
+        return applied(serial, port.run(serial, LocaleAction.Set(locales)))
     }
 
     private fun applied(serial: DeviceSerial, read: LocaleRead): LocaleResult = when (read) {
         is LocaleRead.Failed -> LocaleResult.Failed(read.reason)
         is LocaleRead.Locales -> {
             val current = read.tags.firstOrNull() ?: return LocaleResult.Failed("The device reported no locale")
-            val original = originals.get(serial) ?: current.also { originals.put(serial, it) }
-            LocaleResult.Applied(DeviceLocaleState(current, original))
+            val original = originals.get(serial) ?: read.tags.joinToString(",").also { originals.put(serial, it) }
+            LocaleResult.Applied(DeviceLocaleState(current, original.substringBefore(',')))
         }
     }
 }

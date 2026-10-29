@@ -706,6 +706,32 @@ class DeviceCockpitProjectService(private val project: Project) : Disposable {
             selectedDeviceState = selectedDeviceViewModel.state,
         )
 
+    private val deviceDeepLinks by lazy {
+        io.github.dkej123.devicecockpit.application.deeplinks.DeviceDeepLinkUseCase(
+            adbTransport,
+            com.intellij.openapi.components.service<io.github.dkej123.devicecockpit.intellij.persistence.DeviceDeepLinkHistory>(),
+            System::currentTimeMillis,
+        )
+    }
+
+    fun openDeviceDeepLink() {
+        val selected = selectedDeviceViewModel.state.value as? io.github.dkej123.devicecockpit.domain.device.SelectedDeviceState.Online ?: return
+        val serial = selected.device.serial
+        io.github.dkej123.devicecockpit.intellij.deeplinks.DeviceDeepLinkDialog(
+            project, serial, selected.device.displayName, deviceDeepLinks, childScope(), dispatcherProvider,
+            connected = { (selectedDeviceViewModel.state.value as? io.github.dkej123.devicecockpit.domain.device.SelectedDeviceState.Online)?.device?.serial == serial },
+            loadPackages = {
+                val known = (packageRepository.state.value as? io.github.dkej123.devicecockpit.domain.packages.PackageListState.Content)
+                    ?.takeIf { it.serial == serial }?.packages.orEmpty()
+                deviceDeepLinks.packages(serial, known)
+            },
+            copy = { text, toast ->
+                com.intellij.openapi.ide.CopyPasteManager.getInstance().setContents(java.awt.datatransfer.StringSelection(text))
+                if (toast != null) toast(toast, io.github.dkej123.devicecockpit.domain.feedback.FeedbackSeverity.Success)
+            },
+        ).show()
+    }
+
     private fun toast(text: String, severity: io.github.dkej123.devicecockpit.domain.feedback.FeedbackSeverity) {
         feedbackViewModel.handle(
             io.github.dkej123.devicecockpit.application.feedback.FeedbackIntent.Post(
