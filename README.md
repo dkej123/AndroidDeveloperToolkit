@@ -3,26 +3,37 @@
 _Formerly ADB Toolbox._
 
 Control your Android device from Android Studio or IntelliJ IDEA without opening a terminal.
-Device Cockpit puts the adb commands you run every day into one tool window: mirroring, screenshots,
-app data, developer toggles, proxy and logcat.
+Device Cockpit puts the adb commands you run every day into one tool window: the app in front,
+deep links, mirroring, screenshots, app data, developer toggles, proxy and logcat — and lets coding
+agents such as Claude Code drive the same device.
 
-![Device view](marketplace/screenshots/1.0.0/01-device-dark.png)
+![Device view](marketplace/screenshots/1.2.0/01-device-dark.png)
 
 ## Features
 
 **Device**
-- Device facts at a glance: model, Android version, battery, screen size and density.
-- Screenshots, including full-page screenshots of scrolling screens, and screen recording.
-- Mirroring with [scrcpy](https://github.com/Genymobile/scrcpy), with its common options.
-- Font scale and display density presets, custom values and one-click reset.
+- **Current app**: the app in front with its version, activity and process; Restart, Kill,
+  Process death (test state restore), Clear data, Uninstall, and a permissions menu that grants or
+  resets any runtime permission in one click. **App tools & details** opens everything else for it.
+- **Open deep link**: fire any link the way a tap would, with a history of recent links, query
+  parameters, a live check of which app handles it (and whether an App Link is verified), the real
+  launch result, Cold start, and the exact `adb` command to copy.
+- Device facts at a glance (model, Android version, battery, screen) with **Copy report**.
+- **Mirror, Screenshot and Record** on the left rail, from every view: mirroring with
+  [scrcpy](https://github.com/Genymobile/scrcpy), full-page screenshots of scrolling screens, and
+  recordings longer than 3 minutes with scrcpy 2.4+.
+- **Layout Inspector** and **Accessibility audit**: the screen with its view hierarchy, and the
+  estimated TalkBack order with its problems.
+- Font scale and display density presets, language & region, emulator location, rotation.
 - Quick toggles: dark theme, animations, show touches, TalkBack, stay awake, don't keep
-  activities, show view/surface updates and the background process limit.
+  activities, show view/surface updates, the background process limit and more.
 
 **Apps**
 - Searchable list of installed apps with launcher icons; pin the ones you work on.
 - Launch, restart, force-stop, clear data and uninstall.
-- App details: edit shared preferences and SQLite databases in place, grant and revoke runtime
-  permissions, list deep links and open any URI in the app.
+- App details: edit shared preferences and SQLite databases in place, grant, revoke and reset
+  runtime permissions, and every deep link the app declares (from the manifest and Navigation
+  graphs) with App Link verification, ready to open.
 
 **Network**
 - Set or clear a device-wide HTTP proxy (handy for Charles, Proxyman or mitmproxy).
@@ -31,11 +42,17 @@ app data, developer toggles, proxy and logcat.
 **Logcat**
 - Fast live stream with level filter, search, package filter, pause, autoscroll and line wrap.
 
+**AI agents (MCP)**
+- An optional local MCP server lets coding agents (Claude Code, Codex CLI, Gemini CLI and others)
+  see and drive the selected device: screenshots with numbered elements, the UI tree, tap, type and
+  swipe, device settings, apps and permissions, logcat, shared preferences and databases.
+  **Settings → Tools → Device Cockpit → AI agents** connects Claude Code and installs an agent skill.
+
 Also: several devices at once, pairing over Wi-Fi, and light and dark themes that match the IDE.
 
 | Apps | App databases | Logcat |
 |---|---|---|
-| ![Apps](marketplace/screenshots/1.0.0/02-apps-dark.png) | ![Databases](marketplace/screenshots/1.0.0/07-app-databases-dark.png) | ![Logcat](marketplace/screenshots/1.0.0/08-logcat-dark.png) |
+| ![Apps](marketplace/screenshots/1.2.0/02-apps-dark.png) | ![Databases](marketplace/screenshots/1.2.0/07-app-databases-dark.png) | ![Logcat](marketplace/screenshots/1.2.0/08-logcat-dark.png) |
 
 ## Installation
 
@@ -68,8 +85,8 @@ Device Cockpit finds adb and scrcpy on its own: in the IDE's Android SDK, the de
 ## Settings
 
 **Settings → Tools → Device Cockpit**: adb and scrcpy paths, where screenshots and recordings are
-saved, the logcat buffer size, and custom TalkBack commands for devices where the default does not
-work.
+saved (and whether they are copied to the clipboard), the logcat buffer size, custom TalkBack
+commands for devices where the default does not work, and the AI agents (MCP) server.
 
 ## Problems and feedback
 
