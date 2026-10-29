@@ -30,7 +30,8 @@ the Marketplace change notes and the GitHub release notes are generated from it
 - Launch, Restart and Process death opened a random launcher activity when an app declares several (for example
   LeakCanary's); they now open the app's main launcher activity, as tapping its icon does.
 - Reset permissions listed only the permissions granted when the app came to the front; the menu and Refresh now
-  read them again, so permissions granted meanwhile (in App details or on the phone) show up.
+  read them again, so permissions granted meanwhile (in App details or on the phone) show up. The menu lists every
+  runtime permission with its state (granted / denied), so one you reset stays listed as denied.
 - TalkBack could not be turned on in Android Studio, and turning it on or off no longer switches off other
   accessibility services.
 - The app list, labels and icons load as soon as the phone is connected at IDE start, not only after

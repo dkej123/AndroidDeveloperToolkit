@@ -269,11 +269,17 @@ class CurrentAppSectionTest : BasePlatformTestCase() {
             ),
         )
 
+        // Every runtime permission with its state, so a reset one stays listed as denied (user request, 2026-10-29).
         val items = s.resetChoicesForTest()
-        assertEquals(listOf("All granted permissions (2)", "Camera", "Access fine location"), items.map { it.label })
-        assertEquals(listOf(false, true, false), items.map { it.separatorAbove })
+        assertEquals(
+            listOf("All granted permissions (2)", "Camera · granted", "Access fine location · granted", "Record audio · denied"),
+            items.map { it.label },
+        )
+        assertEquals(listOf(false, true, false, false), items.map { it.separatorAbove })
         assertEquals("android.permission.CAMERA", items[1].description)
-        assertFalse(items[2].enabled)
+        assertFalse("Fixed by a policy", items[2].enabled)
+        assertFalse("Nothing to revoke", items[3].enabled)
+        assertEquals("android.permission.RECORD_AUDIO — not granted", items[3].description)
         items[1].run()
         items[0].run()
         assertEquals(listOf("com.acme.shop" to "android.permission.CAMERA"), resets)

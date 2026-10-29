@@ -325,11 +325,16 @@ class CurrentAppSection(
             enabled = true,
             separatorAbove = false,
         ) { onAction(CurrentAppAction.ResetPermissions, pkg) }
-        return listOf(all) + granted.mapIndexed { index, permission ->
+        // Every runtime permission with its state: a permission reset from here stays listed, now as denied.
+        return listOf(all) + permissions.mapIndexed { index, permission ->
             ResetChoice(
-                label = readablePermission(permission.name),
-                description = if (permission.fixed) "${permission.name} — fixed by the system or a policy, can’t be revoked" else permission.name,
-                enabled = !permission.fixed,
+                label = readablePermission(permission.name) + if (permission.granted) " · granted" else " · denied",
+                description = when {
+                    !permission.granted -> "${permission.name} — not granted"
+                    permission.fixed -> "${permission.name} — fixed by the system or a policy, can’t be revoked"
+                    else -> permission.name
+                },
+                enabled = permission.granted && !permission.fixed,
                 separatorAbove = index == 0,
             ) { onResetPermission(pkg, permission.name) }
         }
