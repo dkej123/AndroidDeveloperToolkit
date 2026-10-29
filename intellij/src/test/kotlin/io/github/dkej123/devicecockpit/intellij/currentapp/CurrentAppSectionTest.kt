@@ -210,6 +210,27 @@ class CurrentAppSectionTest : BasePlatformTestCase() {
         assertEquals("Wake", s.noteLinkForTest.text)
     }
 
+    /** The Reset permissions menu re-reads the permissions first: ones granted meanwhile were missing (user report). */
+    fun `test the reset menu opens after a refresh with the fresh permissions`() {
+        val s = section()
+        val opened = mutableListOf<List<String>>()
+        s.openResetMenuForTest = { opened += s.resetChoicesForTest().map { it.label } }
+        val camera = RuntimePermission("android.permission.CAMERA", granted = true, flags = emptySet())
+        val location = RuntimePermission("android.permission.ACCESS_FINE_LOCATION", granted = true, flags = emptySet())
+        s.update(CurrentAppViewState(display = app(permissions = listOf(camera)), deviceOnline = true))
+        val before = refreshes
+        s.resetMoreButtonForTest.doClick()
+        assertEquals("The click asks for a refresh", before + 1, refreshes)
+        assertTrue("Nothing opens before fresh data", opened.isEmpty())
+        s.update(CurrentAppViewState(display = app(permissions = listOf(camera)), refreshing = true, deviceOnline = true))
+        assertTrue(opened.isEmpty())
+        s.update(CurrentAppViewState(display = app(permissions = listOf(camera, location)), refreshing = false, deviceOnline = true))
+        assertEquals(1, opened.size)
+        assertEquals("All granted permissions (2)", opened.single().first())
+        s.update(CurrentAppViewState(display = app(permissions = listOf(camera, location)), deviceOnline = true))
+        assertEquals("Opens once per click", 1, opened.size)
+    }
+
     /** The home and lock screens are the system, not an app: the tile shows the Android robot (user request). */
     fun `test home and lock screens show the Android robot`() {
         val s = section()

@@ -127,7 +127,7 @@ class CurrentAppSection(
     private var permissions: List<RuntimePermission> = emptyList()
 
     /** Reset permissions' caret: all granted permissions, or one of them (task 067). */
-    private val resetMoreButton = iconButton(AllIcons.General.ChevronDown, "Reset one permission…") { showResetPopup(it) }.apply { getAccessibleContext().accessibleName = "Choose permissions to reset" }
+    private val resetMoreButton = iconButton(AllIcons.General.ChevronDown, "Reset one permission…") { requestResetMenu(it) }.apply { getAccessibleContext().accessibleName = "Choose permissions to reset" }
 
     private val detailsLink = AppToolsDetailsButton().apply {
         addActionListener { target?.let(onDetails) }
@@ -295,6 +295,7 @@ class CurrentAppSection(
         }
         revalidate()
         repaint()
+        openResetMenuWhenRefreshed(state)
     }
 
     private fun updateMeta(state: CurrentAppViewState) {
@@ -332,6 +333,28 @@ class CurrentAppSection(
                 separatorAbove = index == 0,
             ) { onResetPermission(pkg, permission.name) }
         }
+    }
+
+    /**
+     * The menu lists permissions read when the app came to the front; ones granted since (App details, the phone)
+     * were missing. The caret refreshes first and opens the menu on the first finished refresh after it.
+     */
+    private var resetMenuAnchor: JComponent? = null
+    private var resetRefreshStarted = false
+    internal var openResetMenuForTest: ((JComponent) -> Unit)? = null
+
+    private fun requestResetMenu(anchor: JComponent) {
+        resetMenuAnchor = anchor
+        resetRefreshStarted = false
+        onRefresh()
+    }
+
+    private fun openResetMenuWhenRefreshed(state: CurrentAppViewState) {
+        val anchor = resetMenuAnchor ?: return
+        if (state.refreshing) { resetRefreshStarted = true; return }
+        if (!resetRefreshStarted) return
+        resetMenuAnchor = null
+        openResetMenuForTest?.invoke(anchor) ?: showResetPopup(anchor)
     }
 
     /** The IDE's own list popup, so it looks like every other chooser: title, separator, speed search. */

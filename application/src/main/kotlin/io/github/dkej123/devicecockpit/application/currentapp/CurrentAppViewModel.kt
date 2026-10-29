@@ -193,18 +193,19 @@ class CurrentAppViewModel(
         val serial = eligibleSerial() ?: return@launch
         queryLock.withLock {
             _state.update { it.copy(refreshing = true) }
-            val snapshot = runCatching { currentApp.read(serial, lastSnapshot) }.getOrElse {
+            val snapshot = runCatching { currentApp.read(serial, lastSnapshot, refreshDetails = manual) }.getOrElse {
                 CurrentAppSnapshot(ForegroundState.Unknown(it.message ?: "adb error"))
             }
             if (eligibleSerial() != serial) return@withLock
             lastSnapshot = snapshot
-            _state.update { it.copy(refreshing = false, updatedAtMillis = now()) }
             if (!manual && held && changesTarget(snapshot)) {
                 pendingSnapshot = snapshot
                 _state.update { it.copy(pendingPackage = packageOf(snapshot) ?: "Home screen") }
             } else {
                 show(snapshot)
             }
+            // "Done" only once the snapshot is shown: the Reset permissions menu opens on it and must list fresh permissions.
+            _state.update { it.copy(refreshing = false, updatedAtMillis = now()) }
         }
     }
 

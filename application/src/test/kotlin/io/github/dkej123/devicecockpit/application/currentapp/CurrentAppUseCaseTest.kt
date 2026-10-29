@@ -74,6 +74,21 @@ class CurrentAppUseCaseTest {
         device.commands.map { it.substringBefore(" '").substringBefore(" |") } shouldBe listOf("dumpsys activity activities", "pidof -s")
     }
 
+    /** Permissions granted while the app stays in front (App details, the phone) showed only after switching apps (user report). */
+    @Test
+    fun `a refresh with fresh details re-reads the package and its permissions`() = runTest {
+        val device = Device()
+        val useCase = CurrentAppUseCase(device.transport())
+        val first = useCase.read(serial)
+        device.commands.clear()
+
+        val refreshed = useCase.read(serial, previous = first, refreshDetails = true)
+
+        device.commands.count { it.startsWith("dumpsys package") } shouldBe 1
+        refreshed.details?.runtimePermissions?.map { it.name } shouldBe
+            listOf("android.permission.CAMERA", "android.permission.POST_NOTIFICATIONS", "android.permission.ACCESS_FINE_LOCATION")
+    }
+
     @Test
     fun `the app's name and icon come from the device, once per app in front`() = runTest {
         val looked = mutableListOf<String>()

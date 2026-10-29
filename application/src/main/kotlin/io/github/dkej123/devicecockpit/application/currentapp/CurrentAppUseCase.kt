@@ -42,7 +42,11 @@ class CurrentAppUseCase(
 ) {
     private val launchers = mutableMapOf<DeviceSerial, String?>()
 
-    suspend fun read(serial: DeviceSerial, previous: CurrentAppSnapshot? = null): CurrentAppSnapshot {
+    /**
+     * [refreshDetails] re-reads the package (version, runtime permissions) even when the same app stays in front: a
+     * manual refresh or the Reset permissions menu must see permissions granted meanwhile in App details or on the phone.
+     */
+    suspend fun read(serial: DeviceSerial, previous: CurrentAppSnapshot? = null, refreshDetails: Boolean = false): CurrentAppSnapshot {
         val launcher = launchers.getOrPut(serial) { HomeActivityCommand.parse(transport.executeText(HomeActivityCommand.request(serial))) }
         val foreground = ForegroundAppCommand.parse(transport.executeText(ForegroundAppCommand.request(serial)), launcher)
         val app = when (foreground) {
@@ -52,7 +56,7 @@ class CurrentAppUseCase(
         } ?: return CurrentAppSnapshot(foreground)
         val previousApp = (previous?.foreground as? ForegroundState.App) ?: (previous?.foreground as? ForegroundState.SystemUi)?.behind
         val samePackage = previousApp?.packageName == app.packageName
-        val details = if (samePackage && previous?.details != null) {
+        val details = if (samePackage && previous?.details != null && !refreshDetails) {
             previous.details
         } else {
             PackageDetailsCommand.parse(transport.executeText(PackageDetailsCommand.request(serial, app.packageName)), app.packageName)

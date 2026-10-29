@@ -22,6 +22,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runCurrent
 import org.junit.jupiter.api.Test
@@ -37,6 +38,7 @@ private class Dispatchers(d: CoroutineDispatcher) : DispatcherProvider {
 /** The device: what is in front, whether its process runs, and every command seen. */
 private class Phone(var front: String = "com.acme.shop", var running: Boolean = true) {
     val commands = mutableListOf<String>()
+    val granted = mutableListOf("android.permission.CAMERA")
     var queries = 0
 
     fun transport() = FakeAdbTransport(textScript = { request ->
@@ -51,7 +53,8 @@ private class Phone(var front: String = "com.acme.shop", var running: Boolean = 
                 val component = if (front == "home") "com.launcher/.Home" else "$front/.Main"
                 ok("  topResumedActivity=ActivityRecord{1 u0 $component t1}\n--adbtoolbox-window--\n")
             }
-            line.startsWith("dumpsys package") -> ok("Packages:\n  Package [$front] (1):\n    versionCode=1 minSdk=26 targetSdk=36\n    versionName=1.0\n    runtime permissions:\n      android.permission.CAMERA: granted=true\n")
+            line.startsWith("dumpsys package") -> ok("Packages:\n  Package [$front] (1):\n    versionCode=1 minSdk=26 targetSdk=36\n    versionName=1.0\n    runtime permissions:\n" +
+                granted.joinToString("") { "      $it: granted=true\n" })
             line.startsWith("pidof") -> if (running) ok("4242") else AdbTextResult(AdbOutcome.Completed(1), "", "")
             line.startsWith("ps -o") -> ok("00:05")
             line.startsWith("am force-stop") -> { running = false; front = "home"; ok() }
@@ -208,5 +211,27 @@ class CurrentAppViewModelTest {
 
         phone.commands.filter { it.startsWith("pm revoke") } shouldBe listOf("pm revoke --user 0 'com.acme.shop' 'android.permission.CAMERA'")
         events.single() shouldBe CurrentAppEvent.Done("CAMERA reset for com.acme.shop")
+    }
+
+    /**
+     * Permissions granted while the same app stays in front showed only after switching apps, even after Refresh
+     * (user report). A manual refresh re-reads them, and it reports "done" only once the new list is shown — the
+     * Reset permissions menu opens on that signal.
+     */
+    @Test
+    fun `refresh re-reads permissions and finishes only with the new list shown`() {
+        scope.runCurrent()
+        phone.granted += "android.permission.ACCESS_FINE_LOCATION"
+        val seen = mutableListOf<CurrentAppViewState>()
+        val collector = scope.backgroundScope.launch(kotlinx.coroutines.test.UnconfinedTestDispatcher(scope.testScheduler)) { vm.state.collect { seen += it } }
+        vm.refreshNow()
+        scope.runCurrent()
+        collector.cancel()
+        fun permissions(state: CurrentAppViewState) =
+            (state.display as? CurrentAppDisplay.App)?.snapshot?.details?.runtimePermissions?.map { it.name }.orEmpty()
+        permissions(vm.state.value) shouldBe listOf("android.permission.CAMERA", "android.permission.ACCESS_FINE_LOCATION")
+        val started = seen.indexOfFirst { it.refreshing }
+        (started >= 0) shouldBe true
+        seen.drop(started).filter { !it.refreshing }.forEach { permissions(it).size shouldBe 2 }
     }
 }
